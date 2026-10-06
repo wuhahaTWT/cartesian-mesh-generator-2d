@@ -1,0 +1,4561 @@
+{
+  "format": "cartmesh2d-native-wall-recovery-v1",
+  "status": "research-only-not-default-or-original-Re20-repair",
+  "sourceHeadAtStart": "604032dccc2ccccec2d7c36c24280e88858d3375",
+  "environment": {
+    "system": "macOS-27.0.1-arm64-arm-64bit",
+    "compiler": "/usr/bin/clang++",
+    "compilerVersion": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "sourceSha256": {
+      "artifacts/current/native-laminar-wall-recovery.cpp": "0a44d7fbe7acbf92f36ede87786a349ea31fc01437d37f0908310e87e8240d52",
+      "artifacts/current/native-laminar-wall-recovery.py": "c3694c542fda434ac77176708ede61aa309b64e9e332bcce26561fa3f94cd9ae",
+      "artifacts/current/native-laminar-p1-stress.cpp": "dc3dbc6d369d36403072d273b86f20c797d21fe31767fade43eaa9927210f269",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11",
+      "tests/flow_face_test.cpp": "c7364ab94d75949f29ae06db6013ebc5871e9f3818e410e0204cf14589a79b1c"
+    },
+    "librarySha256": {
+      "libcartmesh2d_fv.a": "33b519a50bca6de8cf502c9b16a64f6cd5dbed6b6f02fc6bde2c6cb1907e6648",
+      "libcartmesh2d.a": "4c228f3f504ada8d883c4afcc4e5763e85e915cfb46231ddce0a0b138aed9340"
+    },
+    "binarySha256": {
+      "cartmesh2d-wall-recovery": "0a6945be1035d814a9fc808a2473a4a2ea6660a811525638d89f9987fafb37ac",
+      "cartmesh2d-wall-stress": "bfa1bb48c86363ab44d21cf7d550cfa12d350ba1f8cbff0b513012d3846d4bb8"
+    }
+  },
+  "definition": {
+    "viscosity_m2_s": 1,
+    "inertia": 0,
+    "boundary": "Analytically zero stationary no-slip velocity on every boundary. Existing native L2 projection has up to 2.38e-15 m/s roundoff, not exactly zero stored coefficients.",
+    "operator": "Same native condensed P1 cell/face Stokes, P1 pressure, P2 velocity reconstruction. Existing RT1 lift and full symmetric or Laplacian viscosity reused without changed K or b.",
+    "traction": "For a boundary face, residual moments r_j=(K_local state-rhs_local)_face,j including stabilization and RT1 face body-load. t_h(s)=(r_0+12*s*r_1)/face_length, s in [-1/2,1/2].",
+    "stationaryWallPressure": "p_t=-n dot t_h. For smooth incompressible no-slip stationary walls, exact n dot grad(u) dot n=0. This is a physical wall-closure reconstruction, not a claim that discrete weak normal strain is zero.",
+    "stressPressureControl": "p_sigma=p_t+c*n dot G_h(u) dot n, c=2 for symmetric and 1 for Laplacian at nu=1. Retained as a distinct negative/nonuniversal control, not selected per case.",
+    "omittedFaceLoadControl": "Replace residual by K_local state on boundary rows; equivalent to omitting RT1 face load, not a separate flow solve.",
+    "pressureGauge": "One global volume-weighted mean of p_h-p_exact removed before every trace comparison; never per-face or per-cell centering.",
+    "wallNorm": "Integral of error squared on all physical boundary faces divided by total boundary length, then square root; units m^2/s^2. Sample maxima are Gauss-point maxima, not certified continuous maxima.",
+    "nonzeroFlow": "psi=64*g(x-shear*y)*g(y), g(t)=t^2*(1-t)^2; u=(psi_y,-psi_x); p=sin(pi*(x-shear*y))*sin(pi*y)+lambda*(x^3+x*y^2). Exact field/forcing reused from native P1 driver.",
+    "hydrostatic": "u=0, p=x+2*y+x^3+x*y^2, f=grad(p). This exact problem is valid on every retained polygon.",
+    "ring": "Native body-fitted polygon rings, radii 0.5 and 1 m; radial/angular pairs (1,8),(2,16),(4,32), with 8/32/128 cells. Not Cartesian cut-cell annuli or the old 6606-cell flow problem. Whole topology passes makeFvMesh2D; no deleted cells or relaxed gates.",
+    "cut": "Existing true line-cut 14-cell fixture, untouched.",
+    "reference": "Analytic native manufactured fields and their exact-to-quadrature P1 face projections. NumPy only solves native matrix entries and compares exported fields.",
+    "cost": "40 full assembly/dense-LA/recovery/wall processes plus 40 additional wall recoveries on unchanged solutions. Bounded maximum 2175 unknowns. Timings exclude compiler and archive; no performance claim."
+  },
+  "summary": {
+    "runs": 40,
+    "fullProcessSeconds": 3.7084805840277113,
+    "additionalNativeRecoverySeconds": 1.4422500829678029,
+    "maximumUnknowns": 2175,
+    "maximumNativeDivergence": 1.915577753338493e-13,
+    "maximumMomentumBalance": 2.685705669179406e-11,
+    "maximumBoundaryVelocity": 2.3717435614901964e-15,
+    "gradientPairs": [
+      {
+        "base": "square-8-cell-symmetric",
+        "changed": "square-8-gradient-cell",
+        "cellP1VelocityDifferenceRms": 0.0004801921257847036,
+        "wallPressureShiftMinusExactP1ShiftRms": 0.008164851090253573
+      },
+      {
+        "base": "square-8-lift-symmetric",
+        "changed": "square-8-gradient-lift",
+        "cellP1VelocityDifferenceRms": 1.68033201601042e-16,
+        "wallPressureShiftMinusExactP1ShiftRms": 1.3734777103793862e-14
+      },
+      {
+        "base": "sheared-8-cell-symmetric",
+        "changed": "sheared-8-gradient-cell",
+        "cellP1VelocityDifferenceRms": 0.0015250748650393277,
+        "wallPressureShiftMinusExactP1ShiftRms": 0.06034778323961502
+      },
+      {
+        "base": "sheared-8-lift-symmetric",
+        "changed": "sheared-8-gradient-lift",
+        "cellP1VelocityDifferenceRms": 3.450465192921304e-16,
+        "wallPressureShiftMinusExactP1ShiftRms": 1.1274333259917349e-14
+      },
+      {
+        "base": "square-4-lift-symmetric",
+        "changed": "square-4-strong-gradient",
+        "cellP1VelocityDifferenceRms": 6.109033665240665e-14,
+        "wallPressureShiftMinusExactP1ShiftRms": 4.015136047951602e-12
+      }
+    ],
+    "quadrature": {
+      "cellCoefficientMaxDifference": 3.219646771412954e-14,
+      "wallCoefficientMaxDifference": 3.108624468950438e-14
+    },
+    "reproducerSingleControlMatches": true,
+    "readbackFiniteCsvFiles": 163
+  },
+  "conclusions": [
+    "Lifted hydrostatic ring/cut conservative pressure moments agree with analytic P1 face moments to at most 1.30e-14 m^2/s^2 RMS. Remaining pointwise pressure error is the P1 face approximation, not zero.",
+    "Lifted symmetric stationary-flow wall pressure decreases but remains 0.14389/0.17511 m^2/s^2 at 16x16 square/sheared grids. Last-step orders about 0.875/1.352; no mature wall-accuracy claim.",
+    "Complete symmetric viscosity is not uniformly more accurate than Laplacian at the same coarse controls; all four viscosity/load combinations and unfavorable cases are retained.",
+    "Adding reconstructed weak normal viscous stress to the pressure worsens these nonzero-flow controls. It is not a wall-accuracy repair.",
+    "The RT1 face body-force contribution is essential for pressure-gradient shifts. Strong gradient control has small pressure-moment shift error but a large finite P1 pressure approximation error; pressure robustness is not pressure accuracy.",
+    "No new threshold, product solver/default, original Re20 branch, convection, open-outlet or general curved-wall flow qualification was changed."
+  ],
+  "runs": [
+    {
+      "case": "square-2-cell-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "2",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 8.881784197001252e-16,
+        "relativeResidual": 1.138928498934112e-16
+      },
+      "native": {
+        "velocityRms": 0.13862591162455817,
+        "pressureRms": 0.47522440320604714,
+        "maxDivergence": 1.5834961520134019e-15,
+        "internalResidual": 1.4710455076283324e-15,
+        "interiorFaceResidual": 1.6653345369377348e-15,
+        "energyBalance": -1.4210854715202004e-14
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.4052847345693511,
+        "cellPressureTraceRms": 0.6870477413649929,
+        "reactionPressureRms": 1.1997935432203692,
+        "reactionPressureProjectionRms": 1.1997935432203692,
+        "bestP1PressureRms": 5.435400267418058e-18,
+        "omittedFaceLoadPressureRms": 1.1997935432203692,
+        "reactionPressureMaxAtQuadrature": 2.5050863437089887,
+        "cellPressureMaxAtQuadrature": 1.498537747980196,
+        "stressPressureRms": 2.259408849520199,
+        "stressPressureProjectionRms": 2.259408849520199,
+        "stressPressureMaxAtQuadrature": 3.6579984770324336,
+        "tractionRms": 2.0597067202837307,
+        "tractionProjectionRms": 2.029898276189524,
+        "shearRms": 1.6741825549290241,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 3.923097546722415e-15,
+        "seconds": 0.000842833
+      },
+      "wholeProcessSeconds": 1.0649132920079865
+    },
+    {
+      "case": "square-2-cell-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "2",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.249000902703301e-16,
+        "relativeResidual": 1.8726707642837755e-17
+      },
+      "native": {
+        "velocityRms": 0.14461625724505558,
+        "pressureRms": 0.21598832840349,
+        "maxDivergence": 1.2537336628995124e-15,
+        "internalResidual": 1.887379141862766e-15,
+        "interiorFaceResidual": 1.0269562977782698e-15,
+        "energyBalance": 2.842170943040401e-14
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.40528473456935005,
+        "cellPressureTraceRms": 0.33043794806519416,
+        "reactionPressureRms": 0.9894957324069078,
+        "reactionPressureProjectionRms": 0.9894957324069078,
+        "bestP1PressureRms": 5.435400267418058e-18,
+        "omittedFaceLoadPressureRms": 0.9894957324069078,
+        "reactionPressureMaxAtQuadrature": 2.0844692185370226,
+        "cellPressureMaxAtQuadrature": 0.8361676223967897,
+        "stressPressureRms": 1.8913481754587862,
+        "stressPressureProjectionRms": 1.8913481754587862,
+        "stressPressureMaxAtQuadrature": 2.985657151281964,
+        "tractionRms": 1.160013789195179,
+        "tractionProjectionRms": 1.1062220524009612,
+        "shearRms": 0.605417365683769,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 4.147186868724683e-15,
+        "seconds": 0.000704042
+      },
+      "wholeProcessSeconds": 0.02806879099807702
+    },
+    {
+      "case": "square-2-lift-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "2",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 8.881784197001252e-16,
+        "relativeResidual": 1.1728022681010277e-16
+      },
+      "native": {
+        "velocityRms": 0.1817940034462568,
+        "pressureRms": 1.2125497994311438,
+        "maxDivergence": 1.485287733225556e-15,
+        "internalResidual": 1.7763568394002505e-15,
+        "interiorFaceResidual": 1.3600232051658168e-15,
+        "energyBalance": -1.4210854715202004e-14
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.4052847345693496,
+        "cellPressureTraceRms": 1.7199865127993181,
+        "reactionPressureRms": 2.3504376990359654,
+        "reactionPressureProjectionRms": 2.3504376990359654,
+        "bestP1PressureRms": 5.435400267418058e-18,
+        "omittedFaceLoadPressureRms": 1.7262225021046844,
+        "reactionPressureMaxAtQuadrature": 4.137513044014247,
+        "cellPressureMaxAtQuadrature": 3.2911805958112605,
+        "stressPressureRms": 3.9604111391587025,
+        "stressPressureProjectionRms": 3.9604111391587025,
+        "stressPressureMaxAtQuadrature": 5.2960108574562055,
+        "tractionRms": 3.51254517548324,
+        "tractionProjectionRms": 3.4951493312741038,
+        "shearRms": 2.6102521396909335,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 8.341019717228798e-15,
+        "seconds": 0.002067458
+      },
+      "wholeProcessSeconds": 0.02415733301313594
+    },
+    {
+      "case": "square-2-lift-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "2",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 8.881784197001252e-16,
+        "relativeResidual": 8.212859381439232e-17
+      },
+      "native": {
+        "velocityRms": 0.14129142345488033,
+        "pressureRms": 0.9451488195088648,
+        "maxDivergence": 1.2901197385307943e-15,
+        "internalResidual": 2.5554226843930795e-15,
+        "interiorFaceResidual": 1.6237011735142914e-15,
+        "energyBalance": -3.552713678800501e-15
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.4052847345693493,
+        "cellPressureTraceRms": 1.3432840928294154,
+        "reactionPressureRms": 1.450792783088034,
+        "reactionPressureProjectionRms": 1.450792783088034,
+        "bestP1PressureRms": 5.435400267418058e-18,
+        "omittedFaceLoadPressureRms": 2.6418438234578336,
+        "reactionPressureMaxAtQuadrature": 2.7494870845329284,
+        "cellPressureMaxAtQuadrature": 2.6457545341367696,
+        "stressPressureRms": 3.6173588795474805,
+        "stressPressureProjectionRms": 3.6173588795474805,
+        "stressPressureMaxAtQuadrature": 4.682961263667016,
+        "tractionRms": 1.611180258057543,
+        "tractionProjectionRms": 1.5728944853516424,
+        "shearRms": 0.7007867896115385,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 9.777717780779037e-15,
+        "seconds": 0.002069167
+      },
+      "wholeProcessSeconds": 0.02044979197671637
+    },
+    {
+      "case": "square-4-cell-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 8.881784197001252e-16,
+        "relativeResidual": 2.802262795906924e-16
+      },
+      "native": {
+        "velocityRms": 0.02803770039202024,
+        "pressureRms": 0.2795462306742201,
+        "maxDivergence": 4.0671564348108385e-15,
+        "internalResidual": 3.4645250479779002e-15,
+        "interiorFaceResidual": 1.7486012637846216e-15,
+        "energyBalance": 7.105427357601002e-15
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.1149281084315458,
+        "cellPressureTraceRms": 0.5554668285780636,
+        "reactionPressureRms": 0.4815056959117716,
+        "reactionPressureProjectionRms": 0.4815056959117716,
+        "bestP1PressureRms": 1.3952960783431233e-18,
+        "omittedFaceLoadPressureRms": 0.4815056959117716,
+        "reactionPressureMaxAtQuadrature": 1.1521402926983375,
+        "cellPressureMaxAtQuadrature": 1.0887359420464753,
+        "stressPressureRms": 1.022145610061937,
+        "stressPressureProjectionRms": 1.022145610061937,
+        "stressPressureMaxAtQuadrature": 1.8339100441030216,
+        "tractionRms": 0.7887273930241635,
+        "tractionProjectionRms": 0.7551067067652963,
+        "shearRms": 0.6246944575640272,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.7507735363747332e-14,
+        "seconds": 0.001357459
+      },
+      "wholeProcessSeconds": 0.022814750001998618
+    },
+    {
+      "case": "square-4-cell-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 8.881784197001252e-16,
+        "relativeResidual": 3.5032610437196607e-16
+      },
+      "native": {
+        "velocityRms": 0.039083156111012825,
+        "pressureRms": 0.6665553633317147,
+        "maxDivergence": 4.758939099003166e-15,
+        "internalResidual": 6.857325344832036e-15,
+        "interiorFaceResidual": 1.6375789613221059e-15,
+        "energyBalance": 1.5987211554602254e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.1299014247280967,
+        "cellPressureTraceRms": 1.2272021633915957,
+        "reactionPressureRms": 0.5869585680680232,
+        "reactionPressureProjectionRms": 0.5869585680680232,
+        "bestP1PressureRms": 1.3952960783431233e-18,
+        "omittedFaceLoadPressureRms": 0.5869585680680232,
+        "reactionPressureMaxAtQuadrature": 1.1269332841693311,
+        "cellPressureMaxAtQuadrature": 2.4093214077569742,
+        "stressPressureRms": 1.8402459758325167,
+        "stressPressureProjectionRms": 1.8402459758325167,
+        "stressPressureMaxAtQuadrature": 3.457206485152405,
+        "tractionRms": 1.1850553610254595,
+        "tractionProjectionRms": 1.1629494601187187,
+        "shearRms": 1.0294832917860874,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.7738982253199586e-14,
+        "seconds": 0.001632834
+      },
+      "wholeProcessSeconds": 0.018071083002723753
+    },
+    {
+      "case": "square-4-lift-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 6.661338147750939e-16,
+        "relativeResidual": 2.508204698344349e-16
+      },
+      "native": {
+        "velocityRms": 0.04348525504193292,
+        "pressureRms": 0.4000585065372446,
+        "maxDivergence": 5.2778894997453616e-15,
+        "internalResidual": 2.5951463200613034e-15,
+        "interiorFaceResidual": 1.5543122344752192e-15,
+        "energyBalance": 1.5987211554602254e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.13907173441308124,
+        "cellPressureTraceRms": 0.7866749085641678,
+        "reactionPressureRms": 0.6140954498930655,
+        "reactionPressureProjectionRms": 0.6140954498930655,
+        "bestP1PressureRms": 1.3952960783431233e-18,
+        "omittedFaceLoadPressureRms": 0.6320667306855159,
+        "reactionPressureMaxAtQuadrature": 1.3474491433662508,
+        "cellPressureMaxAtQuadrature": 1.6612104316183374,
+        "stressPressureRms": 1.412255621018434,
+        "stressPressureProjectionRms": 1.412255621018434,
+        "stressPressureMaxAtQuadrature": 2.621522287202142,
+        "tractionRms": 1.1828075236968643,
+        "tractionProjectionRms": 1.1606588112831198,
+        "shearRms": 1.010900794605752,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.458910098704821e-14,
+        "seconds": 0.006934542
+      },
+      "wholeProcessSeconds": 0.03239999999641441
+    },
+    {
+      "case": "square-4-lift-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.3322676295501878e-15,
+        "relativeResidual": 3.4593618523732964e-16
+      },
+      "native": {
+        "velocityRms": 0.03803421177350952,
+        "pressureRms": 0.730190934505817,
+        "maxDivergence": 4.572329027235654e-15,
+        "internalResidual": 4.6629367034256575e-15,
+        "interiorFaceResidual": 2.609024107869118e-15,
+        "energyBalance": 7.105427357601002e-15
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.13907173441307474,
+        "cellPressureTraceRms": 1.4375562264614805,
+        "reactionPressureRms": 0.6917758568874,
+        "reactionPressureProjectionRms": 0.6917758568874,
+        "bestP1PressureRms": 1.3952960783431233e-18,
+        "omittedFaceLoadPressureRms": 0.7854447963795769,
+        "reactionPressureMaxAtQuadrature": 1.6073994236019253,
+        "cellPressureMaxAtQuadrature": 2.9625795178814776,
+        "stressPressureRms": 2.185865430308617,
+        "stressPressureProjectionRms": 2.185865430308617,
+        "stressPressureMaxAtQuadrature": 4.1688181388181835,
+        "tractionRms": 1.0796698954668724,
+        "tractionProjectionRms": 1.0553588590013752,
+        "shearRms": 0.8289350077087776,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.6562377005288683e-14,
+        "seconds": 0.006449708
+      },
+      "wholeProcessSeconds": 0.03283049998572096
+    },
+    {
+      "case": "square-8-cell-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.1102230246251565e-15,
+        "relativeResidual": 1.1247886060806776e-15
+      },
+      "native": {
+        "velocityRms": 0.004318149371832638,
+        "pressureRms": 0.07219188693478842,
+        "maxDivergence": 1.2778123803344423e-14,
+        "internalResidual": 5.523359547510154e-15,
+        "interiorFaceResidual": 2.220446049250313e-15,
+        "energyBalance": -1.4210854715202004e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.020961193761334762,
+        "cellPressureTraceRms": 0.1846384262346688,
+        "reactionPressureRms": 0.18422519796172207,
+        "reactionPressureProjectionRms": 0.18422519796172207,
+        "bestP1PressureRms": 3.5113777599894295e-19,
+        "omittedFaceLoadPressureRms": 0.18422519796172207,
+        "reactionPressureMaxAtQuadrature": 0.44412477277836576,
+        "cellPressureMaxAtQuadrature": 0.34584095353383154,
+        "stressPressureRms": 0.29973346359171676,
+        "stressPressureProjectionRms": 0.29973346359171676,
+        "stressPressureMaxAtQuadrature": 0.5206399840848682,
+        "tractionRms": 0.2813861682014764,
+        "tractionProjectionRms": 0.2739468036870435,
+        "shearRms": 0.21269520937499709,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 6.7490676435218445e-15,
+        "seconds": 0.003583541
+      },
+      "wholeProcessSeconds": 0.03267637500539422
+    },
+    {
+      "case": "square-8-cell-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.887379141862766e-15,
+        "relativeResidual": 1.58533681572069e-15
+      },
+      "native": {
+        "velocityRms": 0.008939200746611668,
+        "pressureRms": 0.21341753026836888,
+        "maxDivergence": 1.1224685853130483e-14,
+        "internalResidual": 8.502668390974416e-15,
+        "interiorFaceResidual": 3.885780586188048e-15,
+        "energyBalance": 7.105427357601002e-15
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.026890904534318607,
+        "cellPressureTraceRms": 0.5377949132909047,
+        "reactionPressureRms": 0.35322871009167384,
+        "reactionPressureProjectionRms": 0.35322871009167384,
+        "bestP1PressureRms": 3.5113777599894295e-19,
+        "omittedFaceLoadPressureRms": 0.35322871009167384,
+        "reactionPressureMaxAtQuadrature": 0.9786312831094341,
+        "cellPressureMaxAtQuadrature": 0.8943007193730182,
+        "stressPressureRms": 0.758471245903346,
+        "stressPressureProjectionRms": 0.758471245903346,
+        "stressPressureMaxAtQuadrature": 1.2529347502019064,
+        "tractionRms": 0.4622463720465399,
+        "tractionProjectionRms": 0.45775581270523075,
+        "shearRms": 0.29816302057290817,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 7.069213040200341e-15,
+        "seconds": 0.003730333
+      },
+      "wholeProcessSeconds": 0.03198033300577663
+    },
+    {
+      "case": "square-8-lift-laplace",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.5543122344752192e-15,
+        "relativeResidual": 1.3943884954958246e-15
+      },
+      "native": {
+        "velocityRms": 0.0062560068261808275,
+        "pressureRms": 0.08707577338987758,
+        "maxDivergence": 1.0481705040295722e-14,
+        "internalResidual": 4.187122422141059e-15,
+        "interiorFaceResidual": 2.581268532253489e-15,
+        "energyBalance": -4.618527782440651e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.037573627214860864,
+        "cellPressureTraceRms": 0.2152179084366386,
+        "reactionPressureRms": 0.10619253588541874,
+        "reactionPressureProjectionRms": 0.10619253588541874,
+        "bestP1PressureRms": 3.5113777599894295e-19,
+        "omittedFaceLoadPressureRms": 0.1893773215364098,
+        "reactionPressureMaxAtQuadrature": 0.20696991469679524,
+        "cellPressureMaxAtQuadrature": 0.41025576528202395,
+        "stressPressureRms": 0.36508086268025114,
+        "stressPressureProjectionRms": 0.36508086268025114,
+        "stressPressureMaxAtQuadrature": 0.5560179216301827,
+        "tractionRms": 0.3593944665684776,
+        "tractionProjectionRms": 0.3536001388507628,
+        "shearRms": 0.3433475322792705,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 9.621420274908397e-15,
+        "seconds": 0.023584792
+      },
+      "wholeProcessSeconds": 0.08782654200331308
+    },
+    {
+      "case": "square-8-lift-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.5543122344752192e-15,
+        "relativeResidual": 1.6326854500114822e-15
+      },
+      "native": {
+        "velocityRms": 0.009176368395800287,
+        "pressureRms": 0.2246222377449214,
+        "maxDivergence": 9.60142737746397e-15,
+        "internalResidual": 5.127842594987442e-15,
+        "interiorFaceResidual": 4.551914400963142e-15,
+        "energyBalance": -1.7763568394002505e-15
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.03757362721486172,
+        "cellPressureTraceRms": 0.5804742876048287,
+        "reactionPressureRms": 0.2639531780469817,
+        "reactionPressureProjectionRms": 0.2639531780469817,
+        "bestP1PressureRms": 3.5113777599894295e-19,
+        "omittedFaceLoadPressureRms": 0.3154872878438998,
+        "reactionPressureMaxAtQuadrature": 0.5688372740420473,
+        "cellPressureMaxAtQuadrature": 0.9988353586113408,
+        "stressPressureRms": 0.8173395557268032,
+        "stressPressureProjectionRms": 0.8173395557268032,
+        "stressPressureMaxAtQuadrature": 1.312898213972782,
+        "tractionRms": 0.3805264672287351,
+        "tractionProjectionRms": 0.37505875253994475,
+        "shearRms": 0.27409690268312037,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 4.785831547177952e-15,
+        "seconds": 0.023800167
+      },
+      "wholeProcessSeconds": 0.08919212501496077
+    },
+    {
+      "case": "sheared-2-cell-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "2",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.7763568394002505e-15,
+        "relativeResidual": 1.8400462915380743e-16
+      },
+      "native": {
+        "velocityRms": 0.16083148174315992,
+        "pressureRms": 0.7474205912659321,
+        "maxDivergence": 4.462056804053998e-15,
+        "internalResidual": 7.771561172376096e-15,
+        "interiorFaceResidual": 4.454769886308441e-15,
+        "energyBalance": -2.6056832229976683e-15
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4.441311123146741,
+        "area": 1,
+        "pressureGauge": -0.7071894826610029,
+        "cellPressureTraceRms": 1.0710375156009961,
+        "reactionPressureRms": 1.4178648501829931,
+        "reactionPressureProjectionRms": 1.4178648501829931,
+        "bestP1PressureRms": 1.4344599752130689e-16,
+        "omittedFaceLoadPressureRms": 1.4178648501829931,
+        "reactionPressureMaxAtQuadrature": 4.406763139566416,
+        "cellPressureMaxAtQuadrature": 2.2534529743353287,
+        "stressPressureRms": 2.692237080386885,
+        "stressPressureProjectionRms": 2.692237080386885,
+        "stressPressureMaxAtQuadrature": 4.869955061852224,
+        "tractionRms": 3.12721778731829,
+        "tractionProjectionRms": 3.0944835994103417,
+        "shearRms": 2.787319564731583,
+        "wallVelocityMax": 7.660099374954146e-16,
+        "forceBalanceNorm": 2.3740403383798514e-15,
+        "seconds": 0.00072925
+      },
+      "wholeProcessSeconds": 0.016212042013648897
+    },
+    {
+      "case": "sheared-2-cell-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "2",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.7763568394002505e-15,
+        "relativeResidual": 1.8121605627934396e-16
+      },
+      "native": {
+        "velocityRms": 0.343960939794081,
+        "pressureRms": 0.8423475875309595,
+        "maxDivergence": 1.3267293879728143e-15,
+        "internalResidual": 4.440892098500626e-15,
+        "interiorFaceResidual": 1.9984014443252818e-15,
+        "energyBalance": 1.1147798403504704e-14
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4.441311123146741,
+        "area": 1,
+        "pressureGauge": -0.7345201961125735,
+        "cellPressureTraceRms": 1.2070970937332002,
+        "reactionPressureRms": 1.895030351061527,
+        "reactionPressureProjectionRms": 1.895030351061527,
+        "bestP1PressureRms": 1.4344599752130689e-16,
+        "omittedFaceLoadPressureRms": 1.895030351061527,
+        "reactionPressureMaxAtQuadrature": 6.221821501389002,
+        "cellPressureMaxAtQuadrature": 3.191565011044595,
+        "stressPressureRms": 2.542188101185744,
+        "stressPressureProjectionRms": 2.542188101185744,
+        "stressPressureMaxAtQuadrature": 5.470404077324746,
+        "tractionRms": 2.8010011585782433,
+        "tractionProjectionRms": 2.7644068347579265,
+        "shearRms": 2.062636046158479,
+        "wallVelocityMax": 7.660099374954146e-16,
+        "forceBalanceNorm": 2.1053974181099184e-15,
+        "seconds": 0.000756875
+      },
+      "wholeProcessSeconds": 0.018500874983146787
+    },
+    {
+      "case": "sheared-2-lift-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "2",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.7763568394002505e-15,
+        "relativeResidual": 1.4997358813893665e-16
+      },
+      "native": {
+        "velocityRms": 0.2512019541264522,
+        "pressureRms": 2.545527120085006,
+        "maxDivergence": 3.063355973338445e-15,
+        "internalResidual": 2.220446049250313e-15,
+        "interiorFaceResidual": 1.9984014443252818e-15,
+        "energyBalance": 6.910790357957212e-14
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4.441311123146741,
+        "area": 1,
+        "pressureGauge": -1.5861296966576846,
+        "cellPressureTraceRms": 3.8164761271896674,
+        "reactionPressureRms": 3.8822156703434496,
+        "reactionPressureProjectionRms": 3.8822156703434496,
+        "bestP1PressureRms": 1.4344599752130689e-16,
+        "omittedFaceLoadPressureRms": 3.4395219045192955,
+        "reactionPressureMaxAtQuadrature": 7.840539836683012,
+        "cellPressureMaxAtQuadrature": 7.426614544382037,
+        "stressPressureRms": 5.881982136969563,
+        "stressPressureProjectionRms": 5.881982136969563,
+        "stressPressureMaxAtQuadrature": 9.42789299549309,
+        "tractionRms": 5.537326125900022,
+        "tractionProjectionRms": 5.518905533008753,
+        "shearRms": 3.9484657923698303,
+        "wallVelocityMax": 7.660099374954146e-16,
+        "forceBalanceNorm": 9.960233388641564e-15,
+        "seconds": 0.00204975
+      },
+      "wholeProcessSeconds": 0.019930040987674147
+    },
+    {
+      "case": "sheared-2-lift-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "2",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 4,
+      "unknowns": 19,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.9984014443252818e-15,
+        "relativeResidual": 2.1241407067422664e-16
+      },
+      "native": {
+        "velocityRms": 0.559553491127447,
+        "pressureRms": 2.127552727073032,
+        "maxDivergence": 3.851826876463851e-15,
+        "internalResidual": 7.549516567451064e-15,
+        "interiorFaceResidual": 4.773959005888173e-15,
+        "energyBalance": -1.0213878853713515e-13
+      },
+      "wall": {
+        "cells": 4,
+        "unknowns": 19,
+        "wallFaces": 8,
+        "wallLength": 4.441311123146741,
+        "area": 1,
+        "pressureGauge": -1.555080434934718,
+        "cellPressureTraceRms": 3.2748551149156158,
+        "reactionPressureRms": 2.357185509068055,
+        "reactionPressureProjectionRms": 2.3571855090680547,
+        "bestP1PressureRms": 1.4344599752130689e-16,
+        "omittedFaceLoadPressureRms": 3.9418017416932254,
+        "reactionPressureMaxAtQuadrature": 5.5935565915173,
+        "cellPressureMaxAtQuadrature": 4.993570883686685,
+        "stressPressureRms": 5.600664536379181,
+        "stressPressureProjectionRms": 5.600664536379181,
+        "stressPressureMaxAtQuadrature": 9.795389939548317,
+        "tractionRms": 3.458403770733591,
+        "tractionProjectionRms": 3.428832789612814,
+        "shearRms": 2.530658633096114,
+        "wallVelocityMax": 7.660099374954146e-16,
+        "forceBalanceNorm": 1.153855208101302e-14,
+        "seconds": 0.0020655
+      },
+      "wholeProcessSeconds": 0.019961333979154006
+    },
+    {
+      "case": "sheared-4-cell-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "4",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.7763568394002505e-15,
+        "relativeResidual": 3.406558695022867e-16
+      },
+      "native": {
+        "velocityRms": 0.04742979474822287,
+        "pressureRms": 0.5606435518138292,
+        "maxDivergence": 5.2740222770153046e-15,
+        "internalResidual": 3.497202527569243e-15,
+        "interiorFaceResidual": 3.1086244689504383e-15,
+        "energyBalance": -7.77504272918392e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -0.07601275521970556,
+        "cellPressureTraceRms": 1.0506291294199863,
+        "reactionPressureRms": 0.6790972099358403,
+        "reactionPressureProjectionRms": 0.6790972099358403,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 0.6790972099358403,
+        "reactionPressureMaxAtQuadrature": 1.9518810401707325,
+        "cellPressureMaxAtQuadrature": 2.631245931546753,
+        "stressPressureRms": 1.4321810328189486,
+        "stressPressureProjectionRms": 1.4321810328189488,
+        "stressPressureMaxAtQuadrature": 2.8605443481663926,
+        "tractionRms": 1.2680357572586407,
+        "tractionProjectionRms": 1.2333689938554215,
+        "shearRms": 1.0708602435163288,
+        "wallVelocityMax": 1.6241273921626445e-15,
+        "forceBalanceNorm": 1.6924825874034963e-14,
+        "seconds": 0.001522
+      },
+      "wholeProcessSeconds": 0.01838341701659374
+    },
+    {
+      "case": "sheared-4-cell-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "4",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.609823385706477e-15,
+        "relativeResidual": 3.6845699747210206e-16
+      },
+      "native": {
+        "velocityRms": 0.06962901942098876,
+        "pressureRms": 0.9724292005403959,
+        "maxDivergence": 6.210524912007505e-15,
+        "internalResidual": 1.0325074129013956e-14,
+        "interiorFaceResidual": 7.327471962526033e-15,
+        "energyBalance": -7.021719753599193e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -0.289223166208764,
+        "cellPressureTraceRms": 1.7463053014685175,
+        "reactionPressureRms": 1.1991683310006864,
+        "reactionPressureProjectionRms": 1.1991683310006864,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 1.1991683310006864,
+        "reactionPressureMaxAtQuadrature": 3.985535259479702,
+        "cellPressureMaxAtQuadrature": 4.187424919014794,
+        "stressPressureRms": 2.310905905512964,
+        "stressPressureProjectionRms": 2.310905905512964,
+        "stressPressureMaxAtQuadrature": 4.803503737230231,
+        "tractionRms": 1.643017095940072,
+        "tractionProjectionRms": 1.6164125620858034,
+        "shearRms": 1.1231653891909152,
+        "wallVelocityMax": 1.6241273921626445e-15,
+        "forceBalanceNorm": 2.668432300177011e-14,
+        "seconds": 0.001543042
+      },
+      "wholeProcessSeconds": 0.01856695898459293
+    },
+    {
+      "case": "sheared-4-lift-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "4",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.5543122344752192e-15,
+        "relativeResidual": 3.0254824087059254e-16
+      },
+      "native": {
+        "velocityRms": 0.08375245783204506,
+        "pressureRms": 0.6803231721166199,
+        "maxDivergence": 5.257088324339762e-15,
+        "internalResidual": 4.551914400963142e-15,
+        "interiorFaceResidual": 2.609024107869118e-15,
+        "energyBalance": 2.1669074429742082e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -0.6802607307941869,
+        "cellPressureTraceRms": 1.2649797402600118,
+        "reactionPressureRms": 1.060270136583552,
+        "reactionPressureProjectionRms": 1.060270136583552,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 0.9890781530542677,
+        "reactionPressureMaxAtQuadrature": 3.518033381528436,
+        "cellPressureMaxAtQuadrature": 2.8512760546375846,
+        "stressPressureRms": 2.1105051351990056,
+        "stressPressureProjectionRms": 2.1105051351990056,
+        "stressPressureMaxAtQuadrature": 5.749501841485281,
+        "tractionRms": 1.821999310048894,
+        "tractionProjectionRms": 1.79804501588144,
+        "shearRms": 1.4817249148501699,
+        "wallVelocityMax": 1.6241273921626445e-15,
+        "forceBalanceNorm": 2.4755060802227777e-15,
+        "seconds": 0.006511458
+      },
+      "wholeProcessSeconds": 0.03316733401152305
+    },
+    {
+      "case": "sheared-4-lift-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "4",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 2.6645352591003757e-15,
+        "relativeResidual": 4.406042780048445e-16
+      },
+      "native": {
+        "velocityRms": 0.11489255872583877,
+        "pressureRms": 1.1081520553538262,
+        "maxDivergence": 7.405676237148638e-15,
+        "internalResidual": 8.215650382226158e-15,
+        "interiorFaceResidual": 6.661338147750939e-15,
+        "energyBalance": 4.6821177647304094e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -1.2863976261121208,
+        "cellPressureTraceRms": 2.0090025133311356,
+        "reactionPressureRms": 1.0430579674812583,
+        "reactionPressureProjectionRms": 1.0430579674812583,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 1.2793371433066123,
+        "reactionPressureMaxAtQuadrature": 3.180240878870907,
+        "cellPressureMaxAtQuadrature": 4.274190881840977,
+        "stressPressureRms": 2.8647287322680164,
+        "stressPressureProjectionRms": 2.8647287322680164,
+        "stressPressureMaxAtQuadrature": 7.334041605143749,
+        "tractionRms": 1.4844563973112195,
+        "tractionProjectionRms": 1.45495539066861,
+        "shearRms": 1.0562390221877203,
+        "wallVelocityMax": 1.6241273921626445e-15,
+        "forceBalanceNorm": 9.94550180906645e-15,
+        "seconds": 0.0066945
+      },
+      "wholeProcessSeconds": 0.032919000019319355
+    },
+    {
+      "case": "sheared-8-cell-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 2.6645352591003757e-15,
+        "relativeResidual": 1.0288322854297702e-15
+      },
+      "native": {
+        "velocityRms": 0.008154362391758109,
+        "pressureRms": 0.16543980690921495,
+        "maxDivergence": 2.0636230999846763e-14,
+        "internalResidual": 7.681355551625302e-15,
+        "interiorFaceResidual": 5.4817261840867104e-15,
+        "energyBalance": 6.27272972075914e-15
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": 0.19054303796546537,
+        "cellPressureTraceRms": 0.3769806641019699,
+        "reactionPressureRms": 0.26258948372018376,
+        "reactionPressureProjectionRms": 0.2625894837201838,
+        "bestP1PressureRms": 1.1788710342450486e-16,
+        "omittedFaceLoadPressureRms": 0.26258948372018376,
+        "reactionPressureMaxAtQuadrature": 1.2553478177572859,
+        "cellPressureMaxAtQuadrature": 0.8185631172501734,
+        "stressPressureRms": 0.4614017816521828,
+        "stressPressureProjectionRms": 0.46140178165218276,
+        "stressPressureMaxAtQuadrature": 0.9066978300525075,
+        "tractionRms": 0.49664712306415626,
+        "tractionProjectionRms": 0.48964915481011695,
+        "shearRms": 0.42155086038041784,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 1.0956563999328779e-14,
+        "seconds": 0.00399
+      },
+      "wholeProcessSeconds": 0.03215095802443102
+    },
+    {
+      "case": "sheared-8-cell-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 4.107825191113079e-15,
+        "relativeResidual": 1.3465497455488567e-15
+      },
+      "native": {
+        "velocityRms": 0.015460903007391055,
+        "pressureRms": 0.32693789362801573,
+        "maxDivergence": 2.464181424502633e-14,
+        "internalResidual": 1.997707554934891e-14,
+        "interiorFaceResidual": 7.327471962526033e-15,
+        "energyBalance": -8.971299117717988e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": 0.367966685606657,
+        "cellPressureTraceRms": 0.776106901679254,
+        "reactionPressureRms": 0.5171774525090143,
+        "reactionPressureProjectionRms": 0.5171774525090143,
+        "bestP1PressureRms": 1.1788710342450486e-16,
+        "omittedFaceLoadPressureRms": 0.5171774525090143,
+        "reactionPressureMaxAtQuadrature": 2.3275052247427164,
+        "cellPressureMaxAtQuadrature": 1.559850831185512,
+        "stressPressureRms": 0.9728314036980176,
+        "stressPressureProjectionRms": 0.9728314036980176,
+        "stressPressureMaxAtQuadrature": 1.850569423401276,
+        "tractionRms": 0.6812505666233333,
+        "tractionProjectionRms": 0.6761658557506224,
+        "shearRms": 0.4434296078758155,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 3.82392852170364e-14,
+        "seconds": 0.004066833
+      },
+      "wholeProcessSeconds": 0.03328375000273809
+    },
+    {
+      "case": "sheared-8-lift-laplace",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "laplace",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 2.7200464103316335e-15,
+        "relativeResidual": 1.2195989267947226e-15
+      },
+      "native": {
+        "velocityRms": 0.012720119125120626,
+        "pressureRms": 0.1634497111104904,
+        "maxDivergence": 1.9507332732691886e-14,
+        "internalResidual": 6.772360450213455e-15,
+        "interiorFaceResidual": 4.551914400963142e-15,
+        "energyBalance": 7.73340046488514e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": 0.24209201380120082,
+        "cellPressureTraceRms": 0.3829123431703956,
+        "reactionPressureRms": 0.36601099192336756,
+        "reactionPressureProjectionRms": 0.3660109919233676,
+        "bestP1PressureRms": 1.1788710342450486e-16,
+        "omittedFaceLoadPressureRms": 0.3526342825349738,
+        "reactionPressureMaxAtQuadrature": 1.4521010472350864,
+        "cellPressureMaxAtQuadrature": 0.8118100786677166,
+        "stressPressureRms": 0.6125097352289188,
+        "stressPressureProjectionRms": 0.6125097352289189,
+        "stressPressureMaxAtQuadrature": 1.5837257824875164,
+        "tractionRms": 0.668572148204308,
+        "tractionProjectionRms": 0.663390267725478,
+        "shearRms": 0.5594860777050629,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 3.23509407614957e-15,
+        "seconds": 0.023974292
+      },
+      "wholeProcessSeconds": 0.08902866701828316
+    },
+    {
+      "case": "sheared-8-lift-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 3.608224830031759e-15,
+        "relativeResidual": 1.3610465103255693e-15
+      },
+      "native": {
+        "velocityRms": 0.015458931994905398,
+        "pressureRms": 0.3121121239124838,
+        "maxDivergence": 1.9705204520973783e-14,
+        "internalResidual": 1.102937186026054e-14,
+        "interiorFaceResidual": 8.534839501805891e-15,
+        "energyBalance": -8.613079423127564e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": 0.2614250831722518,
+        "cellPressureTraceRms": 0.7545247990627127,
+        "reactionPressureRms": 0.4468549046287556,
+        "reactionPressureProjectionRms": 0.44685490462875554,
+        "bestP1PressureRms": 1.1788710342450486e-16,
+        "omittedFaceLoadPressureRms": 0.4878112643296166,
+        "reactionPressureMaxAtQuadrature": 1.7515397710843983,
+        "cellPressureMaxAtQuadrature": 1.3674145356258496,
+        "stressPressureRms": 1.0423552355849146,
+        "stressPressureProjectionRms": 1.0423552355849146,
+        "stressPressureMaxAtQuadrature": 1.997178099709327,
+        "tractionRms": 0.5849108612097629,
+        "tractionProjectionRms": 0.5789806952908748,
+        "shearRms": 0.3774141091299751,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 4.0184898310229744e-14,
+        "seconds": 0.024203667
+      },
+      "wholeProcessSeconds": 0.08967070799553767
+    },
+    {
+      "case": "ring-1-8-cell",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-1-8.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 8,
+      "unknowns": 39,
+      "area": 2.1213203435596424,
+      "linear": {
+        "maxResidual": 1.249000902703301e-16,
+        "relativeResidual": 1.559542100527026e-16
+      },
+      "native": {
+        "velocityRms": 0.0013437645546447935,
+        "pressureRms": 0.06209842985355084,
+        "maxDivergence": 5.838409279158629e-17,
+        "internalResidual": 2.2309009354772564e-16,
+        "interiorFaceResidual": 3.3306690738754696e-16,
+        "energyBalance": 6.245004513516506e-17
+      },
+      "wall": {
+        "cells": 8,
+        "unknowns": 39,
+        "wallFaces": 16,
+        "wallLength": 9.184402376762153,
+        "area": 2.1213203435596424,
+        "pressureGauge": -0.5692779202941367,
+        "cellPressureTraceRms": 0.045266879821485556,
+        "reactionPressureRms": 0.05013832573350732,
+        "reactionPressureProjectionRms": 0.044080638261733494,
+        "bestP1PressureRms": 0.023890354492922074,
+        "omittedFaceLoadPressureRms": 0.05013832573350732,
+        "reactionPressureMaxAtQuadrature": 0.09527865559712945,
+        "cellPressureMaxAtQuadrature": 0.13496256763728187,
+        "stressPressureRms": 0.048198484331167885,
+        "stressPressureProjectionRms": 0.041861018310886275,
+        "stressPressureMaxAtQuadrature": 0.10580958355989334,
+        "tractionRms": 0.057035530202886965,
+        "tractionProjectionRms": 0.05179095160090184,
+        "shearRms": 0.027188232715002834,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 5.0242958677880805e-15,
+        "seconds": 0.001108
+      },
+      "wholeProcessSeconds": 0.025289125012932345
+    },
+    {
+      "case": "ring-1-8-lift",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-1-8.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 8,
+      "unknowns": 39,
+      "area": 2.1213203435596424,
+      "linear": {
+        "maxResidual": 2.220446049250313e-16,
+        "relativeResidual": 1.9371481283834478e-16
+      },
+      "native": {
+        "velocityRms": 1.5753194400831033e-17,
+        "pressureRms": 0.038018341343791354,
+        "maxDivergence": 9.305744126579778e-17,
+        "internalResidual": 1.6272834320003688e-16,
+        "interiorFaceResidual": 3.3306690738754696e-16,
+        "energyBalance": 0
+      },
+      "wall": {
+        "cells": 8,
+        "unknowns": 39,
+        "wallFaces": 16,
+        "wallLength": 9.184402376762153,
+        "area": 2.1213203435596424,
+        "pressureGauge": -0.511849948011756,
+        "cellPressureTraceRms": 0.07245697229375926,
+        "reactionPressureRms": 0.023890354492922056,
+        "reactionPressureProjectionRms": 1.3658337846556177e-15,
+        "bestP1PressureRms": 0.023890354492922074,
+        "omittedFaceLoadPressureRms": 0.07245697229375928,
+        "reactionPressureMaxAtQuadrature": 0.08023771233389554,
+        "cellPressureMaxAtQuadrature": 0.18809052623621847,
+        "stressPressureRms": 0.023890354492922074,
+        "stressPressureProjectionRms": 1.357362093802576e-15,
+        "stressPressureMaxAtQuadrature": 0.0802377123338951,
+        "tractionRms": 0.02389035449292204,
+        "tractionProjectionRms": 1.2521224608391187e-15,
+        "shearRms": 1.7747205559526636e-16,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 7.160723346098895e-15,
+        "seconds": 0.003668791
+      },
+      "wholeProcessSeconds": 0.029604458977701142
+    },
+    {
+      "case": "ring-2-16-cell",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-2-16.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 32,
+      "unknowns": 223,
+      "area": 2.2961005941905386,
+      "linear": {
+        "maxResidual": 1.6653345369377348e-16,
+        "relativeResidual": 4.170545782115169e-16
+      },
+      "native": {
+        "velocityRms": 0.0006866581675977488,
+        "pressureRms": 0.022257444096832103,
+        "maxDivergence": 7.341748450844396e-17,
+        "internalResidual": 1.171387283238459e-16,
+        "interiorFaceResidual": 3.3306690738754696e-16,
+        "energyBalance": -9.974659986866641e-18
+      },
+      "wall": {
+        "cells": 32,
+        "unknowns": 223,
+        "wallFaces": 32,
+        "wallLength": 9.364335456774159,
+        "area": 2.2961005941905386,
+        "pressureGauge": -1.1871664069593257,
+        "cellPressureTraceRms": 0.022861213947874152,
+        "reactionPressureRms": 0.019978808661139578,
+        "reactionPressureProjectionRms": 0.01889760681257515,
+        "bestP1PressureRms": 0.006483305659595539,
+        "omittedFaceLoadPressureRms": 0.019978808661139578,
+        "reactionPressureMaxAtQuadrature": 0.03635276943701249,
+        "cellPressureMaxAtQuadrature": 0.061280090335512405,
+        "stressPressureRms": 0.018168085970913572,
+        "stressPressureProjectionRms": 0.016971920797916852,
+        "stressPressureMaxAtQuadrature": 0.04007468096161751,
+        "tractionRms": 0.02223294282533994,
+        "tractionProjectionRms": 0.021266652167162926,
+        "shearRms": 0.009754534902106125,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.74499372324175e-14,
+        "seconds": 0.002488875
+      },
+      "wholeProcessSeconds": 0.025842542003374547
+    },
+    {
+      "case": "ring-2-16-lift",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-2-16.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 32,
+      "unknowns": 223,
+      "area": 2.2961005941905386,
+      "linear": {
+        "maxResidual": 1.8041124150158794e-16,
+        "relativeResidual": 4.0137136529428022e-16
+      },
+      "native": {
+        "velocityRms": 1.208236921864785e-17,
+        "pressureRms": 0.011254200412072753,
+        "maxDivergence": 7.621376199761889e-17,
+        "internalResidual": 1.1102230246251565e-16,
+        "interiorFaceResidual": 2.220446049250313e-16,
+        "energyBalance": 1.1555579666323415e-32
+      },
+      "wall": {
+        "cells": 32,
+        "unknowns": 223,
+        "wallFaces": 32,
+        "wallLength": 9.364335456774159,
+        "area": 2.2961005941905386,
+        "pressureGauge": -1.1640583987142008,
+        "cellPressureTraceRms": 0.022334947234941352,
+        "reactionPressureRms": 0.00648330565959555,
+        "reactionPressureProjectionRms": 9.761902592412564e-15,
+        "bestP1PressureRms": 0.006483305659595539,
+        "omittedFaceLoadPressureRms": 0.022334947234941473,
+        "reactionPressureMaxAtQuadrature": 0.022005931579897497,
+        "cellPressureMaxAtQuadrature": 0.06104367524170928,
+        "stressPressureRms": 0.006483305659595552,
+        "stressPressureProjectionRms": 9.774634199669318e-15,
+        "stressPressureMaxAtQuadrature": 0.022005931579897497,
+        "tractionRms": 0.00648330565959553,
+        "tractionProjectionRms": 9.781002908869855e-15,
+        "shearRms": 1.8439341343863032e-16,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.551136925266137e-14,
+        "seconds": 0.012308917
+      },
+      "wholeProcessSeconds": 0.055300209001870826
+    },
+    {
+      "case": "ring-4-32-cell",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-4-32.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 128,
+      "unknowns": 1023,
+      "area": 2.341083864193539,
+      "linear": {
+        "maxResidual": 1.5265566588595902e-16,
+        "relativeResidual": 9.243131210045067e-16
+      },
+      "native": {
+        "velocityRms": 0.00010335501414004814,
+        "pressureRms": 0.004441954719261309,
+        "maxDivergence": 4.781586247582189e-17,
+        "internalResidual": 3.469446951953614e-17,
+        "interiorFaceResidual": 2.220446049250313e-16,
+        "energyBalance": 5.421010862427522e-19
+      },
+      "wall": {
+        "cells": 128,
+        "unknowns": 1023,
+        "wallFaces": 64,
+        "wallLength": 9.409645471637822,
+        "area": 2.341083864193539,
+        "pressureGauge": -1.567466174807892,
+        "cellPressureTraceRms": 0.008458480737484437,
+        "reactionPressureRms": 0.00659602716779103,
+        "reactionPressureProjectionRms": 0.006385219183937051,
+        "bestP1PressureRms": 0.0016542522091025056,
+        "omittedFaceLoadPressureRms": 0.00659602716779103,
+        "reactionPressureMaxAtQuadrature": 0.015664400329590933,
+        "cellPressureMaxAtQuadrature": 0.022098704434071803,
+        "stressPressureRms": 0.005528360826959118,
+        "stressPressureProjectionRms": 0.005275056688011556,
+        "stressPressureMaxAtQuadrature": 0.014443819874619797,
+        "tractionRms": 0.0067748702570005715,
+        "tractionProjectionRms": 0.006569803393395524,
+        "shearRms": 0.0015463804838893147,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 4.272498255917048e-14,
+        "seconds": 0.005950541
+      },
+      "wholeProcessSeconds": 0.0778508750081528
+    },
+    {
+      "case": "ring-4-32-lift",
+      "controls": {
+        "mesh": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/ring-4-32.cm2d",
+        "n": "0",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 128,
+      "unknowns": 1023,
+      "area": 2.341083864193539,
+      "linear": {
+        "maxResidual": 1.6132928326584306e-16,
+        "relativeResidual": 9.45880995725844e-16
+      },
+      "native": {
+        "velocityRms": 8.586375249146415e-18,
+        "pressureRms": 0.0029333175550494057,
+        "maxDivergence": 5.97138197042486e-17,
+        "internalResidual": 5.551115123125783e-17,
+        "interiorFaceResidual": 2.220446049250313e-16,
+        "energyBalance": 2.3303752327085554e-32
+      },
+      "wall": {
+        "cells": 128,
+        "unknowns": 1023,
+        "wallFaces": 64,
+        "wallLength": 9.409645471637822,
+        "area": 2.341083864193539,
+        "pressureGauge": -1.564742716368879,
+        "cellPressureTraceRms": 0.006092499414067325,
+        "reactionPressureRms": 0.0016542522091025078,
+        "reactionPressureProjectionRms": 1.2920045432866865e-14,
+        "bestP1PressureRms": 0.0016542522091025056,
+        "omittedFaceLoadPressureRms": 0.006092499414067343,
+        "reactionPressureMaxAtQuadrature": 0.005631242564787975,
+        "cellPressureMaxAtQuadrature": 0.01672570418212116,
+        "stressPressureRms": 0.0016542522091025054,
+        "stressPressureProjectionRms": 1.2934817335314368e-14,
+        "stressPressureMaxAtQuadrature": 0.005631242564787975,
+        "tractionRms": 0.0016542522091025,
+        "tractionProjectionRms": 1.2945471141120925e-14,
+        "shearRms": 1.8267482243491573e-16,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 4.106804859452812e-14,
+        "seconds": 0.046404834
+      },
+      "wholeProcessSeconds": 0.20221587500418536
+    },
+    {
+      "case": "cut-4-hydro-cell",
+      "controls": {
+        "mesh": "cut",
+        "n": "4",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 14,
+      "unknowns": 93,
+      "area": 0.718,
+      "linear": {
+        "maxResidual": 1.3877787807814457e-16,
+        "relativeResidual": 3.1643583373144814e-16
+      },
+      "native": {
+        "velocityRms": 0.0007120343251202238,
+        "pressureRms": 0.015317772422234347,
+        "maxDivergence": 3.023795895093267e-17,
+        "internalResidual": 5.829636246943776e-17,
+        "interiorFaceResidual": 1.1102230246251565e-16,
+        "energyBalance": -2.168404344971009e-19
+      },
+      "wall": {
+        "cells": 14,
+        "unknowns": 93,
+        "wallFaces": 16,
+        "wallLength": 3.482947945219818,
+        "area": 0.718,
+        "pressureGauge": -3.97418531771563,
+        "cellPressureTraceRms": 0.033207538812963976,
+        "reactionPressureRms": 0.02867453526557997,
+        "reactionPressureProjectionRms": 0.027899820361137202,
+        "bestP1PressureRms": 0.006620347159572515,
+        "omittedFaceLoadPressureRms": 0.02867453526557997,
+        "reactionPressureMaxAtQuadrature": 0.10047431027880371,
+        "cellPressureMaxAtQuadrature": 0.12003174111719161,
+        "stressPressureRms": 0.026948036428360005,
+        "stressPressureProjectionRms": 0.02612216818778558,
+        "stressPressureMaxAtQuadrature": 0.10692492240963869,
+        "tractionRms": 0.03201486267336218,
+        "tractionProjectionRms": 0.03132287399778275,
+        "shearRms": 0.01423806374818042,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 3.614624287906422e-15,
+        "seconds": 0.001260583
+      },
+      "wholeProcessSeconds": 0.020215291006024927
+    },
+    {
+      "case": "cut-4-hydro-lift",
+      "controls": {
+        "mesh": "cut",
+        "n": "4",
+        "problem": "hydrostatic",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 14,
+      "unknowns": 93,
+      "area": 0.718,
+      "linear": {
+        "maxResidual": 1.6653345369377348e-16,
+        "relativeResidual": 3.3379837252374236e-16
+      },
+      "native": {
+        "velocityRms": 7.291968474055066e-18,
+        "pressureRms": 0.010555271553481838,
+        "maxDivergence": 3.5010161518077205e-17,
+        "internalResidual": 5.551115123125783e-17,
+        "interiorFaceResidual": 2.220446049250313e-16,
+        "energyBalance": 3.3703774026776627e-34
+      },
+      "wall": {
+        "cells": 14,
+        "unknowns": 93,
+        "wallFaces": 16,
+        "wallLength": 3.482947945219818,
+        "area": 0.718,
+        "pressureGauge": -3.983072916666653,
+        "cellPressureTraceRms": 0.018211821097047533,
+        "reactionPressureRms": 0.006620347159572509,
+        "reactionPressureProjectionRms": 1.2902099845635382e-14,
+        "bestP1PressureRms": 0.006620347159572515,
+        "omittedFaceLoadPressureRms": 0.018211821097047543,
+        "reactionPressureMaxAtQuadrature": 0.027858590165190655,
+        "cellPressureMaxAtQuadrature": 0.06358328943797353,
+        "stressPressureRms": 0.006620347159572503,
+        "stressPressureProjectionRms": 1.2891310837657343e-14,
+        "stressPressureMaxAtQuadrature": 0.027858590165190655,
+        "tractionRms": 0.006620347159572506,
+        "tractionProjectionRms": 1.2859816374655185e-14,
+        "shearRms": 1.885820457940893e-16,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 9.930136612989092e-16,
+        "seconds": 0.005831834
+      },
+      "wholeProcessSeconds": 0.032998249982483685
+    },
+    {
+      "case": "square-8-gradient-cell",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 1.4988010832439613e-15,
+        "relativeResidual": 1.489810893331808e-15
+      },
+      "native": {
+        "velocityRms": 0.008939266501731855,
+        "pressureRms": 0.21343366741636208,
+        "maxDivergence": 1.163238371705212e-14,
+        "internalResidual": 6.320416022842978e-15,
+        "interiorFaceResidual": 2.275957200481571e-15,
+        "energyBalance": 7.815970093361102e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -1.674195373666641,
+        "cellPressureTraceRms": 0.5379381779565298,
+        "reactionPressureRms": 0.35338276581079625,
+        "reactionPressureProjectionRms": 0.3533794176926102,
+        "bestP1PressureRms": 0.0015382858380978681,
+        "omittedFaceLoadPressureRms": 0.35338276581079625,
+        "reactionPressureMaxAtQuadrature": 1.014972929618613,
+        "cellPressureMaxAtQuadrature": 0.8940794308156268,
+        "stressPressureRms": 0.7585521857795773,
+        "stressPressureProjectionRms": 0.7585506260149381,
+        "stressPressureMaxAtQuadrature": 1.2580617701151995,
+        "tractionRms": 0.4623978649054075,
+        "tractionProjectionRms": 0.4579062073623788,
+        "shearRms": 0.2982153689818676,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 3.418639725148839e-14,
+        "seconds": 0.003669834
+      },
+      "wholeProcessSeconds": 0.03432754101231694
+    },
+    {
+      "case": "square-8-gradient-lift",
+      "controls": {
+        "mesh": "square",
+        "n": "8",
+        "problem": "noslip",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 2.1094237467877974e-15,
+        "relativeResidual": 1.7184231062403543e-15
+      },
+      "native": {
+        "velocityRms": 0.009176368395800315,
+        "pressureRms": 0.22461303907303568,
+        "maxDivergence": 1.2158033520160007e-14,
+        "internalResidual": 5.818262538426211e-15,
+        "interiorFaceResidual": 2.3869795029440866e-15,
+        "energyBalance": 1.7763568394002505e-15
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -1.6904056584648555,
+        "cellPressureTraceRms": 0.5804904076454248,
+        "reactionPressureRms": 0.2639576604768675,
+        "reactionPressureProjectionRms": 0.2639531780469816,
+        "bestP1PressureRms": 0.0015382858380978681,
+        "omittedFaceLoadPressureRms": 0.31551694659576973,
+        "reactionPressureMaxAtQuadrature": 0.5753818080033501,
+        "cellPressureMaxAtQuadrature": 0.9998514082057576,
+        "stressPressureRms": 0.8173410033021761,
+        "stressPressureProjectionRms": 0.8173395557268033,
+        "stressPressureMaxAtQuadrature": 1.3184291573340734,
+        "tractionRms": 0.3805295764916322,
+        "tractionProjectionRms": 0.3750587525399444,
+        "shearRms": 0.27409690268312,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 2.6986014091068465e-14,
+        "seconds": 0.023993791
+      },
+      "wholeProcessSeconds": 0.09275804198114201
+    },
+    {
+      "case": "square-16-lift-symmetric",
+      "controls": {
+        "mesh": "square",
+        "n": "16",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 256,
+      "unknowns": 2175,
+      "area": 1,
+      "linear": {
+        "maxResidual": 2.0048524472515705e-15,
+        "relativeResidual": 5.839429191379962e-15
+      },
+      "native": {
+        "velocityRms": 0.00107260574702957,
+        "pressureRms": 0.05012091075960886,
+        "maxDivergence": 2.5727824102511116e-14,
+        "internalResidual": 8.72193175766582e-15,
+        "interiorFaceResidual": 5.943162628696541e-15,
+        "energyBalance": 4.263256414560601e-14
+      },
+      "wall": {
+        "cells": 256,
+        "unknowns": 2175,
+        "wallFaces": 64,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.009576533278334352,
+        "cellPressureTraceRms": 0.14769006170874405,
+        "reactionPressureRms": 0.1438876463751729,
+        "reactionPressureProjectionRms": 0.1438876463751729,
+        "bestP1PressureRms": 8.79296192492237e-20,
+        "omittedFaceLoadPressureRms": 0.165162113846588,
+        "reactionPressureMaxAtQuadrature": 0.48384219479133006,
+        "cellPressureMaxAtQuadrature": 0.23193998373296384,
+        "stressPressureRms": 0.20311965464596973,
+        "stressPressureProjectionRms": 0.20311965464596973,
+        "stressPressureMaxAtQuadrature": 0.29575603216679036,
+        "tractionRms": 0.153272316201947,
+        "tractionProjectionRms": 0.15237968532380589,
+        "shearRms": 0.05280859905851328,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 4.9752907150291877e-14,
+        "seconds": 0.094555584
+      },
+      "wholeProcessSeconds": 0.5049250420124736
+    },
+    {
+      "case": "sheared-8-gradient-cell",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "1",
+        "load": "cell",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 4.884981308350689e-15,
+        "relativeResidual": 1.4472710313285198e-15
+      },
+      "native": {
+        "velocityRms": 0.015460744192839888,
+        "pressureRms": 0.3318047708680886,
+        "maxDivergence": 1.7926618099993903e-14,
+        "internalResidual": 1.1407541578023483e-14,
+        "interiorFaceResidual": 6.8833827526759706e-15,
+        "energyBalance": -1.1458703301960274e-13
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -4.979899886633303,
+        "cellPressureTraceRms": 0.7925089100852581,
+        "reactionPressureRms": 0.5405014745321874,
+        "reactionPressureProjectionRms": 0.5404897479440809,
+        "bestP1PressureRms": 0.003560384643938744,
+        "omittedFaceLoadPressureRms": 0.5405014745321874,
+        "reactionPressureMaxAtQuadrature": 2.6761320006384146,
+        "cellPressureMaxAtQuadrature": 1.5448712275475824,
+        "stressPressureRms": 0.9859823691885138,
+        "stressPressureProjectionRms": 0.985975940888915,
+        "stressPressureMaxAtQuadrature": 1.876672520993135,
+        "tractionRms": 0.7016553338324681,
+        "tractionProjectionRms": 0.6967104571592836,
+        "shearRms": 0.4474129675412674,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 7.3391116486858e-14,
+        "seconds": 0.006979625
+      },
+      "wholeProcessSeconds": 0.03540233298554085
+    },
+    {
+      "case": "sheared-8-gradient-lift",
+      "controls": {
+        "mesh": "sheared",
+        "n": "8",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "1",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 64,
+      "unknowns": 511,
+      "area": 1,
+      "linear": {
+        "maxResidual": 5.551115123125783e-15,
+        "relativeResidual": 1.4458699282789962e-15
+      },
+      "native": {
+        "velocityRms": 0.015458931994905412,
+        "pressureRms": 0.3121679596907908,
+        "maxDivergence": 2.3281548161127634e-14,
+        "internalResidual": 1.3829215550487106e-14,
+        "interiorFaceResidual": 6.5780714209040525e-15,
+        "energyBalance": 5.95304665995449e-14
+      },
+      "wall": {
+        "cells": 64,
+        "unknowns": 511,
+        "wallFaces": 32,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -5.200579311359016,
+        "cellPressureTraceRms": 0.7548919294094911,
+        "reactionPressureRms": 0.44686908835763645,
+        "reactionPressureProjectionRms": 0.4468549046287534,
+        "bestP1PressureRms": 0.003560384643938744,
+        "omittedFaceLoadPressureRms": 0.4886587428263666,
+        "reactionPressureMaxAtQuadrature": 1.7629144959747105,
+        "cellPressureMaxAtQuadrature": 1.4015440299406345,
+        "stressPressureRms": 1.0423613161903564,
+        "stressPressureProjectionRms": 1.0423552355849137,
+        "stressPressureMaxAtQuadrature": 2.008401768094106,
+        "tractionRms": 0.5849216972381495,
+        "tractionProjectionRms": 0.5789806952908736,
+        "shearRms": 0.37741410912997514,
+        "wallVelocityMax": 2.3717435614901964e-15,
+        "forceBalanceNorm": 6.81257310012017e-14,
+        "seconds": 0.028695167
+      },
+      "wholeProcessSeconds": 0.0931706249830313
+    },
+    {
+      "case": "sheared-16-lift-symmetric",
+      "controls": {
+        "mesh": "sheared",
+        "n": "16",
+        "problem": "noslip-sheared",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 256,
+      "unknowns": 2175,
+      "area": 1,
+      "linear": {
+        "maxResidual": 5.440092820663267e-15,
+        "relativeResidual": 4.906577871280225e-15
+      },
+      "native": {
+        "velocityRms": 0.0016219640709906043,
+        "pressureRms": 0.07505235924898263,
+        "maxDivergence": 5.4619639489186185e-14,
+        "internalResidual": 1.4220395694319876e-14,
+        "interiorFaceResidual": 9.520162436160717e-15,
+        "energyBalance": -1.2529278504828351e-14
+      },
+      "wall": {
+        "cells": 256,
+        "unknowns": 2175,
+        "wallFaces": 64,
+        "wallLength": 4.441311123146741,
+        "area": 1,
+        "pressureGauge": 0.227952524269341,
+        "cellPressureTraceRms": 0.22092927981043448,
+        "reactionPressureRms": 0.1751138849735044,
+        "reactionPressureProjectionRms": 0.1751138849735044,
+        "bestP1PressureRms": 1.1374482118204197e-16,
+        "omittedFaceLoadPressureRms": 0.19798086315004135,
+        "reactionPressureMaxAtQuadrature": 1.0606909330634915,
+        "cellPressureMaxAtQuadrature": 0.5313650196155263,
+        "stressPressureRms": 0.28455727227170197,
+        "stressPressureProjectionRms": 0.28455727227170197,
+        "stressPressureMaxAtQuadrature": 0.6994225362895282,
+        "tractionRms": 0.22375810594623002,
+        "tractionProjectionRms": 0.22273723161166284,
+        "shearRms": 0.13929399580071875,
+        "wallVelocityMax": 2.178170341990048e-15,
+        "forceBalanceNorm": 1.161949874503904e-13,
+        "seconds": 0.094122667
+      },
+      "wholeProcessSeconds": 0.49404912497266196
+    },
+    {
+      "case": "square-4-strong-gradient",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "10000",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "8"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 3.979039320256561e-13,
+        "relativeResidual": 2.840233750003289e-16
+      },
+      "native": {
+        "velocityRms": 0.03803421177349486,
+        "pressureRms": 103.44054151368,
+        "maxDivergence": 1.915577753338493e-13,
+        "internalResidual": 3.410605131648481e-13,
+        "interiorFaceResidual": 4.547473508864641e-13,
+        "energyBalance": 3.6415315207705135e-13
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -13580.86823840108,
+        "cellPressureTraceRms": 194.38682694997237,
+        "reactionPressureRms": 61.25127454348414,
+        "reactionPressureProjectionRms": 0.6917758568878138,
+        "bestP1PressureRms": 61.24736793826403,
+        "omittedFaceLoadPressureRms": 194.38309815234018,
+        "reactionPressureMaxAtQuadrature": 247.97003572994072,
+        "cellPressureMaxAtQuadrature": 635.8976765463376,
+        "stressPressureRms": 61.286361346098154,
+        "stressPressureProjectionRms": 2.1858654303094296,
+        "stressPressureMaxAtQuadrature": 247.9276615845556,
+        "tractionRms": 61.25688342095339,
+        "tractionProjectionRms": 1.05535885900175,
+        "shearRms": 0.8289350077089087,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 2.685705669179406e-11,
+        "seconds": 0.007337292
+      },
+      "wholeProcessSeconds": 0.035111791017698124
+    },
+    {
+      "case": "square-4-lift-symmetric-q12",
+      "controls": {
+        "mesh": "square",
+        "n": "4",
+        "problem": "noslip",
+        "gradientAmplitude": "0",
+        "load": "lift",
+        "viscosityForm": "symmetric",
+        "quadrature": "12"
+      },
+      "cells": 16,
+      "unknowns": 111,
+      "area": 1,
+      "linear": {
+        "maxResidual": 9.992007221626409e-16,
+        "relativeResidual": 3.798230532490469e-16
+      },
+      "native": {
+        "velocityRms": 0.0380342117735095,
+        "pressureRms": 0.730190934505818,
+        "maxDivergence": 2.56286992258111e-15,
+        "internalResidual": 4.052314039881821e-15,
+        "interiorFaceResidual": 2.338407245616736e-15,
+        "energyBalance": 4.085620730620576e-14
+      },
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4,
+        "area": 1,
+        "pressureGauge": -0.13907173441308332,
+        "cellPressureTraceRms": 1.4375562264614798,
+        "reactionPressureRms": 0.6917758568874006,
+        "reactionPressureProjectionRms": 0.6917758568874006,
+        "bestP1PressureRms": 1.395296078343125e-18,
+        "omittedFaceLoadPressureRms": 0.78544479637958,
+        "reactionPressureMaxAtQuadrature": 1.6298336359986176,
+        "cellPressureMaxAtQuadrature": 2.996108111943086,
+        "stressPressureRms": 2.185865430308617,
+        "stressPressureProjectionRms": 2.185865430308617,
+        "stressPressureMaxAtQuadrature": 4.210825912449225,
+        "tractionRms": 1.0796698954668729,
+        "tractionProjectionRms": 1.0553588590013758,
+        "shearRms": 0.8289350077087773,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.0220450035166404e-14,
+        "seconds": 0.00911225
+      },
+      "wholeProcessSeconds": 0.042263458017259836
+    }
+  ],
+  "archive": {
+    "path": "outputs/laminar-stability/wall-recovery/native-wall-recovery-research.tar.gz",
+    "bytes": 3776083,
+    "sha256": "28e5a24d3398cf007ae9cf59e72d450a14fb8ab681ee7bb97a2a2520f7e8420a",
+    "members": [
+      {
+        "path": "batch.json",
+        "bytes": 75735,
+        "sha256": "bc1894bab21047602a6866698c205adec3a94cdcd6cc7eea9d327780bb896858"
+      },
+      {
+        "path": "cut-4-hydro-cell.cells.csv",
+        "bytes": 9243,
+        "sha256": "8787d543ec2fc0e6441e2998ecfd06e6ba982b80f906771dde62f82f5cb350b7"
+      },
+      {
+        "path": "cut-4-hydro-cell.entries",
+        "bytes": 50496,
+        "sha256": "012159270b778740309d2170e40c8cedf71f27139ded263421466274109fde0c"
+      },
+      {
+        "path": "cut-4-hydro-cell.faces.csv",
+        "bytes": 5436,
+        "sha256": "d08a7599b470d01ab504973eafe99a7f1a3a5dc990f6793a103a7bc8920b6c05"
+      },
+      {
+        "path": "cut-4-hydro-cell.result.json",
+        "bytes": 2899,
+        "sha256": "832535c1e87ff29acc0c991506d2841372e00ac40b16d0fd32c2c45101a5d7f1"
+      },
+      {
+        "path": "cut-4-hydro-cell.rhs",
+        "bytes": 744,
+        "sha256": "0402a6aaf317b080f2cfbc3dabd68bb1b409d080b9ea70dc351048422f56e116"
+      },
+      {
+        "path": "cut-4-hydro-cell.solution",
+        "bytes": 744,
+        "sha256": "25a55f6176baaee2d110220b37d3ff6a52b48e6d9e4be4b522653a43ef723836"
+      },
+      {
+        "path": "cut-4-hydro-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "cut-4-hydro-cell.wall-before-stress.csv",
+        "bytes": 5610,
+        "sha256": "e062357370a660056abf7daca0775470b555973609cc86e2d5af91ba273eae4a"
+      },
+      {
+        "path": "cut-4-hydro-cell.wall-recovery.csv",
+        "bytes": 6993,
+        "sha256": "b6875b7b21b3dfb7ebd24081503364d18326004e747effd3dacf8acab777394e"
+      },
+      {
+        "path": "cut-4-hydro-cell.wall-stress.json",
+        "bytes": 1003,
+        "sha256": "036654a118d008f66c9e87bb74166358654f1e790f5d61e107ebe2bacb507c74"
+      },
+      {
+        "path": "cut-4-hydro-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "cut-4-hydro-lift.cells.csv",
+        "bytes": 9389,
+        "sha256": "8fc8906b60ff81f77e1e2d969f3500d3bbb0ae3069034a352f447f5482b04e60"
+      },
+      {
+        "path": "cut-4-hydro-lift.entries",
+        "bytes": 50496,
+        "sha256": "012159270b778740309d2170e40c8cedf71f27139ded263421466274109fde0c"
+      },
+      {
+        "path": "cut-4-hydro-lift.faces.csv",
+        "bytes": 5576,
+        "sha256": "a4a1e1a2604fddc40010ef426b6e57d379c569fab0834bb69373246587d07f88"
+      },
+      {
+        "path": "cut-4-hydro-lift.result.json",
+        "bytes": 3036,
+        "sha256": "d1b46d7ce96c4033078eed53c4087c4bf97c784553d81637bb89e1a06efe4412"
+      },
+      {
+        "path": "cut-4-hydro-lift.rhs",
+        "bytes": 744,
+        "sha256": "40a712b72f75d886ec7a82c3bd0e59f90f68a32701ca38b401463eec68684444"
+      },
+      {
+        "path": "cut-4-hydro-lift.solution",
+        "bytes": 744,
+        "sha256": "5807b36d7758ac4389963f3fc899f1693f889de5ec43e6a71d45ec21247b4e50"
+      },
+      {
+        "path": "cut-4-hydro-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "cut-4-hydro-lift.wall-before-stress.csv",
+        "bytes": 5629,
+        "sha256": "0f4c65013b93ce34f4d54a1c46af162ee68ed0d3da6d5fda10129d6e88f39a84"
+      },
+      {
+        "path": "cut-4-hydro-lift.wall-recovery.csv",
+        "bytes": 7057,
+        "sha256": "b0efe9282b7fb6446187d1c0025b5add0e18ff5fe2ac04528b814d4095908f3b"
+      },
+      {
+        "path": "cut-4-hydro-lift.wall-stress.json",
+        "bytes": 1019,
+        "sha256": "dd73e4d668eef83a5b1d73d66259d400e37102d595c15d1c140fd01901351ca7"
+      },
+      {
+        "path": "cut-4-hydro-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "extra.json",
+        "bytes": 51857,
+        "sha256": "a42ccf513ab5426c6584a9f7ae3afe760a7ad13bc104c360aa60ce421d3482a8"
+      },
+      {
+        "path": "reproducer-check/case-ring-1-8-lift.json",
+        "bytes": 3817,
+        "sha256": "5330135c194387b035175c4b6384b35cc3c0fd60673136bd5631944b285a5af0"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.cells.csv",
+        "bytes": 5620,
+        "sha256": "36fa788596b1843ad4959aa3172d94fc238d933b90a3e6e458c59288e3012917"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.entries",
+        "bytes": 14880,
+        "sha256": "561d48477584f9af2419a7e712502a3654fda6ee88a31151b23d4601d7cb4a28"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.faces.csv",
+        "bytes": 4586,
+        "sha256": "a9bb6b33a64ca8d35cf278d19be83c98ab31ac5869434a89b8f7b740291abb05"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.result.json",
+        "bytes": 3597,
+        "sha256": "c3848db153e053f82f5b0378ef78d1cf468c5f5e7a95003f995e5469e3e0aa64"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.rhs",
+        "bytes": 312,
+        "sha256": "85e2a1f8dafee5d5140117f6bce3b8f511da7da25114fb1b531b533fd93747cb"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.solution",
+        "bytes": 312,
+        "sha256": "8f44399dbaf1609c4ef44c46439bde47b0080042e666f63f2bc7314d585e3f78"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "reproducer-check/ring-1-8-lift.wall-recovery.csv",
+        "bytes": 8473,
+        "sha256": "b6094239a20394feaf9ea30480de2387188646f3747d736ff8551df0434fed14"
+      },
+      {
+        "path": "reproducer-check/ring-1-8.cm2d",
+        "bytes": 1325,
+        "sha256": "8888a47f9acbcdc0b5a521003ed6af1d49f07abf7ce3c3f703aabe7c06a9dcc9"
+      },
+      {
+        "path": "ring-1-8-cell.cells.csv",
+        "bytes": 5475,
+        "sha256": "81ece287b4208a647baf980d87af0a960b4b3b6e76ddb889540e853c7d16c84a"
+      },
+      {
+        "path": "ring-1-8-cell.entries",
+        "bytes": 14880,
+        "sha256": "561d48477584f9af2419a7e712502a3654fda6ee88a31151b23d4601d7cb4a28"
+      },
+      {
+        "path": "ring-1-8-cell.faces.csv",
+        "bytes": 4555,
+        "sha256": "a7b0e3985a7c1aace75231a9c30d8cd60bc2b752db459eeea3b0a295086414f2"
+      },
+      {
+        "path": "ring-1-8-cell.result.json",
+        "bytes": 3059,
+        "sha256": "115a9a445f2282e25dd5fa891d77bef906bec90641bbe008fbc95d508e75ad4a"
+      },
+      {
+        "path": "ring-1-8-cell.rhs",
+        "bytes": 312,
+        "sha256": "0183dd6c34cb3cdaa6912e4521390bc1621e9d842aa6a4b4050dde49f420b835"
+      },
+      {
+        "path": "ring-1-8-cell.solution",
+        "bytes": 312,
+        "sha256": "55edec991a59c1d9aef240ce685ec19ed8cbb2fc5334c3524c747011864ceaf8"
+      },
+      {
+        "path": "ring-1-8-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-1-8-cell.wall-before-stress.csv",
+        "bytes": 7029,
+        "sha256": "ec6b25dbf19873655fb98eb9f2536be0cef5ef69c811cc2bef34c911d3c23731"
+      },
+      {
+        "path": "ring-1-8-cell.wall-recovery.csv",
+        "bytes": 8408,
+        "sha256": "7db2913d4203deb0500e0b46cabf40d9b6c93fca1562b7aff81be8f45a18bb3e"
+      },
+      {
+        "path": "ring-1-8-cell.wall-stress.json",
+        "bytes": 1015,
+        "sha256": "24daf2a562a3d9320b4fdb8f82de71cff5b7651cf10aa924e2c09bf045eed6e2"
+      },
+      {
+        "path": "ring-1-8-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-1-8-lift.cells.csv",
+        "bytes": 5620,
+        "sha256": "36fa788596b1843ad4959aa3172d94fc238d933b90a3e6e458c59288e3012917"
+      },
+      {
+        "path": "ring-1-8-lift.entries",
+        "bytes": 14880,
+        "sha256": "561d48477584f9af2419a7e712502a3654fda6ee88a31151b23d4601d7cb4a28"
+      },
+      {
+        "path": "ring-1-8-lift.faces.csv",
+        "bytes": 4586,
+        "sha256": "a9bb6b33a64ca8d35cf278d19be83c98ab31ac5869434a89b8f7b740291abb05"
+      },
+      {
+        "path": "ring-1-8-lift.result.json",
+        "bytes": 3170,
+        "sha256": "0c80428355a781e77e0f0da93c11e2ba9389c33bf6d00fb2d5f77071571016d3"
+      },
+      {
+        "path": "ring-1-8-lift.rhs",
+        "bytes": 312,
+        "sha256": "85e2a1f8dafee5d5140117f6bce3b8f511da7da25114fb1b531b533fd93747cb"
+      },
+      {
+        "path": "ring-1-8-lift.solution",
+        "bytes": 312,
+        "sha256": "8f44399dbaf1609c4ef44c46439bde47b0080042e666f63f2bc7314d585e3f78"
+      },
+      {
+        "path": "ring-1-8-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-1-8-lift.wall-before-stress.csv",
+        "bytes": 7037,
+        "sha256": "88cb16e311a80dafdd0ab096185cc9a75f1411cb1492e9514bdff8013ba4765e"
+      },
+      {
+        "path": "ring-1-8-lift.wall-recovery.csv",
+        "bytes": 8473,
+        "sha256": "b6094239a20394feaf9ea30480de2387188646f3747d736ff8551df0434fed14"
+      },
+      {
+        "path": "ring-1-8-lift.wall-stress.json",
+        "bytes": 1021,
+        "sha256": "aca9945c58f87395eb8f4f0ec752e11c8d8d6c396329ad6a667f030a50632c7b"
+      },
+      {
+        "path": "ring-1-8-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-1-8.cm2d",
+        "bytes": 1325,
+        "sha256": "8888a47f9acbcdc0b5a521003ed6af1d49f07abf7ce3c3f703aabe7c06a9dcc9"
+      },
+      {
+        "path": "ring-1-8.cm2d.log",
+        "bytes": 23,
+        "sha256": "45ce15735d45c8575fecf1edc3d6543f5e0743ab2fa0a73f1077bd0704ab2314"
+      },
+      {
+        "path": "ring-2-16-cell.cells.csv",
+        "bytes": 21899,
+        "sha256": "1ef1b2e542c705b14689dd34c3c215ec554f74245d87f328bf818a9b85c9f403"
+      },
+      {
+        "path": "ring-2-16-cell.entries",
+        "bytes": 127584,
+        "sha256": "9a5c5cfaafd1668855389835fc156dcbf73f0351ea708bf59ef6cd5aaa06a5f6"
+      },
+      {
+        "path": "ring-2-16-cell.faces.csv",
+        "bytes": 16256,
+        "sha256": "9ea6750ded4a40e198d7adb65276e3f2e3a6115d3e4a84d546eef9df6dfa6d7e"
+      },
+      {
+        "path": "ring-2-16-cell.result.json",
+        "bytes": 3077,
+        "sha256": "c42287e06c2f75bfdab2ddc641d382395d3608c00752c66a60dbcaffa42f1c49"
+      },
+      {
+        "path": "ring-2-16-cell.rhs",
+        "bytes": 1784,
+        "sha256": "831c2a75e14251e89d27d898b3075363c844467d47dbc9eb819fc1e9fa607a96"
+      },
+      {
+        "path": "ring-2-16-cell.solution",
+        "bytes": 1784,
+        "sha256": "dd70b0ba7f2c2701b3180daede7b96c74a14d346ab3bf0ab323f2342d7dd076e"
+      },
+      {
+        "path": "ring-2-16-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-2-16-cell.wall-before-stress.csv",
+        "bytes": 13951,
+        "sha256": "ec098ec41829db1ebefd8eec807aa3304c8d902986356c677d4bf49cd7ce6e7b"
+      },
+      {
+        "path": "ring-2-16-cell.wall-recovery.csv",
+        "bytes": 16695,
+        "sha256": "1c08ef9a2189cfc41a4788cd78a3516b335449250c920271510e6721415d5f33"
+      },
+      {
+        "path": "ring-2-16-cell.wall-stress.json",
+        "bytes": 1021,
+        "sha256": "fc79b813f49cd25ea9c2375ca4c669b9f8d1fbf3ed36321bae3cdc7b1324e099"
+      },
+      {
+        "path": "ring-2-16-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-2-16-lift.cells.csv",
+        "bytes": 22220,
+        "sha256": "3a4d82c5ae0f5f1864dd08f7beb0d17a0a31c6026ba2564c119d5963b7e7010e"
+      },
+      {
+        "path": "ring-2-16-lift.entries",
+        "bytes": 127584,
+        "sha256": "9a5c5cfaafd1668855389835fc156dcbf73f0351ea708bf59ef6cd5aaa06a5f6"
+      },
+      {
+        "path": "ring-2-16-lift.faces.csv",
+        "bytes": 16216,
+        "sha256": "1ab1631e9a37af0c3ffc0c4387c0ca3007d253d961ea99af85ffea5300e96c18"
+      },
+      {
+        "path": "ring-2-16-lift.result.json",
+        "bytes": 3205,
+        "sha256": "7b6a496c028f69e17a78c0ea50e1341d58125f58fb3132b8f173ee325562e764"
+      },
+      {
+        "path": "ring-2-16-lift.rhs",
+        "bytes": 1784,
+        "sha256": "27e7448341d5fdfb373362e8ee8250800bd1bb74a05e59f65abc04190621126c"
+      },
+      {
+        "path": "ring-2-16-lift.solution",
+        "bytes": 1784,
+        "sha256": "b508fe211da274f6bbc256426e8b4930e8b565e811a045eeb2579f706241a5aa"
+      },
+      {
+        "path": "ring-2-16-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-2-16-lift.wall-before-stress.csv",
+        "bytes": 13957,
+        "sha256": "fefccfb05f2f9cf64b01df81861c03e1b681226e1136f7cea9f37bfcc0b4803a"
+      },
+      {
+        "path": "ring-2-16-lift.wall-recovery.csv",
+        "bytes": 16795,
+        "sha256": "ba175927fd4d95da5b95c200394db1ce0ae04daa5f128f5d6e54febd9d3f90e9"
+      },
+      {
+        "path": "ring-2-16-lift.wall-stress.json",
+        "bytes": 1028,
+        "sha256": "a988b73a285cb962eba320e84f559dc5b12e76af8e98dd9b465b9ba1f7dc68f9"
+      },
+      {
+        "path": "ring-2-16-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-2-16.cm2d",
+        "bytes": 4920,
+        "sha256": "68454a38d9c1cb4b188019eb6d0d185e60cef1ea887ac0f8ac605cb20bd09ef4"
+      },
+      {
+        "path": "ring-2-16.cm2d.log",
+        "bytes": 24,
+        "sha256": "76930fbe2960949fe9e56cd8f8a12440c098d5d0cf324b38dddeeda65cb82ad5"
+      },
+      {
+        "path": "ring-4-32-cell.cells.csv",
+        "bytes": 88421,
+        "sha256": "a7699630bab8fa82342c4a4e5e38b2e73af395df2a64d5e442b3bcb77c639d90"
+      },
+      {
+        "path": "ring-4-32-cell.entries",
+        "bytes": 697440,
+        "sha256": "4868b0d3537b34490f36ee69feb99fa43c24e393cd2a962f9ac1b30f46de7601"
+      },
+      {
+        "path": "ring-4-32-cell.faces.csv",
+        "bytes": 61095,
+        "sha256": "6e654bcdd4422b87ca2133060b3169ae2cc4c7c02c8320d81ec17c468e97d121"
+      },
+      {
+        "path": "ring-4-32-cell.result.json",
+        "bytes": 3084,
+        "sha256": "c60b8f02709889dd402b8c87463aad470866537624de63a9dc0f76c781094b25"
+      },
+      {
+        "path": "ring-4-32-cell.rhs",
+        "bytes": 8184,
+        "sha256": "ad470771a1ffc3ba1ae5c4b33e36c8081e64ece087a5fccdfe16f5c2c3fe8dbe"
+      },
+      {
+        "path": "ring-4-32-cell.solution",
+        "bytes": 8184,
+        "sha256": "d259b7a69fd2a98d1f66655f71647f11049b8729cff3787f9522f2f52d8ea902"
+      },
+      {
+        "path": "ring-4-32-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-4-32-cell.wall-before-stress.csv",
+        "bytes": 28014,
+        "sha256": "7881515ae4b97a1123c166ffb678fd2ded40d5f629d9107de02e483dc6789ab7"
+      },
+      {
+        "path": "ring-4-32-cell.wall-recovery.csv",
+        "bytes": 33532,
+        "sha256": "9f41c5aefb298729fad6b411156576d4f5a01e8e54d31174f48dd3e9d1e7dac2"
+      },
+      {
+        "path": "ring-4-32-cell.wall-stress.json",
+        "bytes": 1027,
+        "sha256": "8035e543ffecb7671b291e0ad042303f2862a9f2752b47ce3486100d38c0eec2"
+      },
+      {
+        "path": "ring-4-32-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-4-32-lift.cells.csv",
+        "bytes": 88704,
+        "sha256": "e941b5e72190be5d74b253e09d8f738ffd9f83c00b186c4f3c58d42a069d2bc5"
+      },
+      {
+        "path": "ring-4-32-lift.entries",
+        "bytes": 697440,
+        "sha256": "4868b0d3537b34490f36ee69feb99fa43c24e393cd2a962f9ac1b30f46de7601"
+      },
+      {
+        "path": "ring-4-32-lift.faces.csv",
+        "bytes": 61518,
+        "sha256": "3f90f228f8da59118b9c3b7023a6867739a35d8e46f8957aaaa0568584b70b09"
+      },
+      {
+        "path": "ring-4-32-lift.result.json",
+        "bytes": 3209,
+        "sha256": "3cf780c87a20b5bf3fcdb358cf88f53c30c8eac325e3434bc9053e0a4a876bd0"
+      },
+      {
+        "path": "ring-4-32-lift.rhs",
+        "bytes": 8184,
+        "sha256": "9ff88aea2617bd3ec1cbef3ef83240216ec59a034e2d28d929454424a4fe5275"
+      },
+      {
+        "path": "ring-4-32-lift.solution",
+        "bytes": 8184,
+        "sha256": "192d8fd143e4ecf953d6332a907ec0407875e775ce556fe3db24b2386b9f3c31"
+      },
+      {
+        "path": "ring-4-32-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-4-32-lift.wall-before-stress.csv",
+        "bytes": 28014,
+        "sha256": "b9f146b57c9febbb665f2025fc06e627d14a0e0a595352e9b3291f8ed1c3cc28"
+      },
+      {
+        "path": "ring-4-32-lift.wall-recovery.csv",
+        "bytes": 33649,
+        "sha256": "9278de44024a9f3c1350859a0be7f3e698772e9b7a82b5dd49c3995debf38a60"
+      },
+      {
+        "path": "ring-4-32-lift.wall-stress.json",
+        "bytes": 1033,
+        "sha256": "280e9e08bcf098ba0a35f1ae3e0fb538e5905a22cb284e5133839f85aa541743"
+      },
+      {
+        "path": "ring-4-32-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "ring-4-32.cm2d",
+        "bytes": 19738,
+        "sha256": "ca244294230b7c5f6ccedacd238ba6c446d6f4458ac9953141499323aac5406a"
+      },
+      {
+        "path": "ring-4-32.cm2d.log",
+        "bytes": 26,
+        "sha256": "ac26fc43a5aa807c4acdf735774ec8851fd288c7a7102df3356d59250cca4b43"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.cells.csv",
+        "bytes": 158410,
+        "sha256": "79e537187ccfb73293fe67d1946396bc80a7b0e8540b33fcdf67d9989755794d"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.entries",
+        "bytes": 1541760,
+        "sha256": "856393517039a0b33d061bf1c472701313f8e4b52f468914f5fc557c0052da64"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.faces.csv",
+        "bytes": 101892,
+        "sha256": "024e9777dac194b0516e3cdf87cf215a150d093947b77151d4cffc64d2a298cd"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.result.json",
+        "bytes": 3075,
+        "sha256": "900cd005f469f9b99aa98338f24f1314a0502dc888c4c9f346401c12580c48c7"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.rhs",
+        "bytes": 17400,
+        "sha256": "3befbd83b54abc71f3731f96d257e09726c7d8fb389516bf8de9e185e33601dd"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.solution",
+        "bytes": 17400,
+        "sha256": "ab0956853f130892701dbd4bedbb3fcec107525b6f9a75bb1d22578d909c4acf"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.wall-before-stress.csv",
+        "bytes": 24284,
+        "sha256": "9ed8ae1de7841fc457b5010f1b1cfa53e18373b18c2decdca9eac63782f706a5"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.wall-recovery.csv",
+        "bytes": 29603,
+        "sha256": "e66f7a5740394265bb17062e6572877bdf1a2ecdd29c050b951ce2d75de46d97"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.wall-stress.json",
+        "bytes": 1024,
+        "sha256": "20ccf48af88dfda19ce517f9ac40d217ab3126f17301cd171ec37b62378cb185"
+      },
+      {
+        "path": "sheared-16-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-cell-laplace.cells.csv",
+        "bytes": 2479,
+        "sha256": "549f558b66756984f9f057bb22789d5cf4dd85068e8fe1116499532b1487bc9a"
+      },
+      {
+        "path": "sheared-2-cell-laplace.entries",
+        "bytes": 6960,
+        "sha256": "f765b7327e2fc3d91d682b597a75a8e680ef9aeabc29fa543c6f0c83ae0249d3"
+      },
+      {
+        "path": "sheared-2-cell-laplace.faces.csv",
+        "bytes": 2170,
+        "sha256": "50052367d5cabe0083db262162cfcfbd86d257342651e7c7c2c770a4c27e3303"
+      },
+      {
+        "path": "sheared-2-cell-laplace.result.json",
+        "bytes": 2918,
+        "sha256": "81ea28f8df42c406f9355736cc66284e495b664798631cae99a2357d5912880c"
+      },
+      {
+        "path": "sheared-2-cell-laplace.rhs",
+        "bytes": 152,
+        "sha256": "7de5e02809853824ca1e9503c591930d84832f726a7a800bedcd5114e0d3cbad"
+      },
+      {
+        "path": "sheared-2-cell-laplace.solution",
+        "bytes": 152,
+        "sha256": "cfc75b5f6e3a3c8e38a178d571bd99fd795e0f43bbcf6da79b939094586f3163"
+      },
+      {
+        "path": "sheared-2-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-cell-laplace.wall-before-stress.csv",
+        "bytes": 3060,
+        "sha256": "5d6539222b9c47030d80ff551cf4dfc304f200771477d1f052033d1dc1d16c95"
+      },
+      {
+        "path": "sheared-2-cell-laplace.wall-recovery.csv",
+        "bytes": 3738,
+        "sha256": "7d1819c765716dabb29fbda058a13c82e03dcc4e80d8f5eda499b9bda2644cec"
+      },
+      {
+        "path": "sheared-2-cell-laplace.wall-stress.json",
+        "bytes": 1005,
+        "sha256": "22cd6eafa68e181d1ea00643e36de8628b23ceb07404f488a9d56a43da76ceda"
+      },
+      {
+        "path": "sheared-2-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.cells.csv",
+        "bytes": 2501,
+        "sha256": "55e53233f5d152ca91a4501691a49c4f3d0ad6169151e0ccc789d067b0089fbb"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.entries",
+        "bytes": 6960,
+        "sha256": "4a143e45e6faa9018b5642b0e663715a0ef209673d15dfe81736130479c81b8c"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.faces.csv",
+        "bytes": 2130,
+        "sha256": "71720ee6ea585bcfd3acd5aef8e17c8ad6dc1e2e449e30d578de003d48d63339"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.result.json",
+        "bytes": 2917,
+        "sha256": "7859dc5f25ae9cd286da8c63b4d5e613ccfca109c98b28018f3707f383ade6da"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.rhs",
+        "bytes": 152,
+        "sha256": "d23663af71f8e3362bb577a9938b66fe8f6ac5ddec8c87a3c6fd4c2f62b5e558"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.solution",
+        "bytes": 152,
+        "sha256": "f7a95f97b07c31494cd87d7670673c8dee52a54601da100fdeaf458cd8b354e7"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.wall-before-stress.csv",
+        "bytes": 3047,
+        "sha256": "91d76a7508d0855878dd0d82475eda0aff634862fc3e5dcbda3d9b01140ce55a"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.wall-recovery.csv",
+        "bytes": 3722,
+        "sha256": "4f5012be7aa612af15421beed3e9879b26286a72284b146b5cfa3f372406600f"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.wall-stress.json",
+        "bytes": 1006,
+        "sha256": "900e33e58088836524c7a1dcb7889e27d63ece5e5c875ffc1f0b0b8093e8b338"
+      },
+      {
+        "path": "sheared-2-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-lift-laplace.cells.csv",
+        "bytes": 2490,
+        "sha256": "694f53ca36c53c3c6c397ad98fb1e3d3542ae365a7109f3a8842cd35f497ab37"
+      },
+      {
+        "path": "sheared-2-lift-laplace.entries",
+        "bytes": 6960,
+        "sha256": "f765b7327e2fc3d91d682b597a75a8e680ef9aeabc29fa543c6f0c83ae0249d3"
+      },
+      {
+        "path": "sheared-2-lift-laplace.faces.csv",
+        "bytes": 2161,
+        "sha256": "05c814aa4bc35ac4f92d56ed5e843d8c81b2acec7e2a0cd915556699af3afda9"
+      },
+      {
+        "path": "sheared-2-lift-laplace.result.json",
+        "bytes": 3036,
+        "sha256": "6911a2debacc7bc4a6663b6e413b3c3bea7dd5b227b1d590075e25ddc5e1fa15"
+      },
+      {
+        "path": "sheared-2-lift-laplace.rhs",
+        "bytes": 152,
+        "sha256": "883bfac9463d3adc585cbc400b5cbe0310bbd68274611ad6eff4290aab7e5dc2"
+      },
+      {
+        "path": "sheared-2-lift-laplace.solution",
+        "bytes": 152,
+        "sha256": "e03aab9af27c4d623a45813e590d936d2ca71810ec8ede20af7fc8fc79ead7df"
+      },
+      {
+        "path": "sheared-2-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-lift-laplace.wall-before-stress.csv",
+        "bytes": 3036,
+        "sha256": "de9669e10be85139cd5191db07b9946162314f9cc0418ee7aeab3e5ebaf6516b"
+      },
+      {
+        "path": "sheared-2-lift-laplace.wall-recovery.csv",
+        "bytes": 3710,
+        "sha256": "3b99091bea569866fb1591aa82038fad3d84ffdc98ba89e170cfc3b9bd9e4c90"
+      },
+      {
+        "path": "sheared-2-lift-laplace.wall-stress.json",
+        "bytes": 1003,
+        "sha256": "e2d2ca0ec6a5df0b8cd6cfee0b91ed94087231b8447303052ca8ddc960ad84e6"
+      },
+      {
+        "path": "sheared-2-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.cells.csv",
+        "bytes": 2494,
+        "sha256": "5c564779a8194311e76cc9ab8a2d973be11772cbf42988a9b8cd5901363fcb77"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.entries",
+        "bytes": 6960,
+        "sha256": "4a143e45e6faa9018b5642b0e663715a0ef209673d15dfe81736130479c81b8c"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.faces.csv",
+        "bytes": 2139,
+        "sha256": "1860c87e089a845df86894db92e53c86c1c00f2af482b66cd4e3e4acd051b9b5"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.result.json",
+        "bytes": 3036,
+        "sha256": "f83948205d3acff735348f8ec0e23ab29ba6ae78e72651b8a8225f2363cad477"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.rhs",
+        "bytes": 152,
+        "sha256": "02a601169250dff8b913f5beff4668b0a63e3e7d34fea7a7f581144f9f4d46d3"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.solution",
+        "bytes": 152,
+        "sha256": "47fdf174042dca39c372eddd4772db90bcf9a937c2124b0fb816924f556e545b"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.wall-before-stress.csv",
+        "bytes": 3039,
+        "sha256": "40ed823e25beeddd09c5bb07dfcf7d43c14eff0e3bc26547758997985ad98a0a"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.wall-recovery.csv",
+        "bytes": 3718,
+        "sha256": "79b0a47b51011255652d24bda005a23e330caffd1b182787066493cdfbc041bf"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.wall-stress.json",
+        "bytes": 1000,
+        "sha256": "b1046c9744ce7ae6e94dc4feeb9bb71bd1d6c3f0c0691ead66dcb2fefadbe4b1"
+      },
+      {
+        "path": "sheared-2-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-cell-laplace.cells.csv",
+        "bytes": 9665,
+        "sha256": "7b941e2fd2d985a28a7ab78265a1d0e8d03bd0725182c737c1df6c6fd65994a4"
+      },
+      {
+        "path": "sheared-4-cell-laplace.entries",
+        "bytes": 64896,
+        "sha256": "574dc2bd628bd43976aa70e20ca50c5ec8aac0808960d34186bbba11de1c7076"
+      },
+      {
+        "path": "sheared-4-cell-laplace.faces.csv",
+        "bytes": 7180,
+        "sha256": "6f556225cb81a6582c91d1549ac403cf1806461bacc758502aac9b8eabeca347"
+      },
+      {
+        "path": "sheared-4-cell-laplace.result.json",
+        "bytes": 2927,
+        "sha256": "9c7290d0802e7275428f0dc8a4e8890ddc38f141b0ddb0dec5d45ecbffd03b88"
+      },
+      {
+        "path": "sheared-4-cell-laplace.rhs",
+        "bytes": 888,
+        "sha256": "2ff39cd633855304cf027d7303e08780438268129a23832410cf72f64dcd85e6"
+      },
+      {
+        "path": "sheared-4-cell-laplace.solution",
+        "bytes": 888,
+        "sha256": "03ec83e08b604ff490ee130b483c35a9dfdac01537a85510683b0db9ffa642d7"
+      },
+      {
+        "path": "sheared-4-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-cell-laplace.wall-before-stress.csv",
+        "bytes": 5989,
+        "sha256": "55927e7469af059aa6debcdd2c37bd7de25f3baa64d4e4059d73e8ed3c64f907"
+      },
+      {
+        "path": "sheared-4-cell-laplace.wall-recovery.csv",
+        "bytes": 7311,
+        "sha256": "7caa4b32feb26186d86de4028bdb74629a31741383f33f716898b81d23748777"
+      },
+      {
+        "path": "sheared-4-cell-laplace.wall-stress.json",
+        "bytes": 1013,
+        "sha256": "90620644ad4c17292b7f323d677c1d1cd7e89e603f0e28e338b97f6360de5c72"
+      },
+      {
+        "path": "sheared-4-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.cells.csv",
+        "bytes": 9670,
+        "sha256": "43f14a4031e0053d4f65ad76b20309822f0e73dd4f22c95a049684997273351a"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.entries",
+        "bytes": 64896,
+        "sha256": "149ededddc568f45b041d067e8213ea27e6d6ba1d5b110cd3d8153d7bba67e81"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.faces.csv",
+        "bytes": 7133,
+        "sha256": "b5c78e3da64e9ac2e9c7dd46344d570d299e4677c68d813fbb96a0f1c4490aa3"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.result.json",
+        "bytes": 2923,
+        "sha256": "5876c258e3b8e4f81f5a0df2f517d415f68bfa2b027833f23ccbd6ac6d499ecd"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.rhs",
+        "bytes": 888,
+        "sha256": "859adc8761581af78e4fba1abec25c4d9f827e081478013551e7c31da0bfb4bb"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.solution",
+        "bytes": 888,
+        "sha256": "8698376ba4fb5705a5e3029a464cf56452f961bc7b77f2e181c9aae090985ef9"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.wall-before-stress.csv",
+        "bytes": 5970,
+        "sha256": "c86bbecffcad830802c5d43425accaebaae85b9bac070fac4e9181d61a4d1b30"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.wall-recovery.csv",
+        "bytes": 7267,
+        "sha256": "5648ca436246a4d5a1c3e630adccd97c0ab216635aa4e16c6909cf2d4529c653"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.wall-stress.json",
+        "bytes": 1010,
+        "sha256": "45448ed9f0eee46125b7ef24856b22c271e533606f30118e3c070de2323a9021"
+      },
+      {
+        "path": "sheared-4-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-lift-laplace.cells.csv",
+        "bytes": 9669,
+        "sha256": "181ee01e8c3aa25b2a6b407d18ff438b00e19ad1b84e3cc06c69e1ff12d65c08"
+      },
+      {
+        "path": "sheared-4-lift-laplace.entries",
+        "bytes": 64896,
+        "sha256": "574dc2bd628bd43976aa70e20ca50c5ec8aac0808960d34186bbba11de1c7076"
+      },
+      {
+        "path": "sheared-4-lift-laplace.faces.csv",
+        "bytes": 7153,
+        "sha256": "b6bec1ad71d104f9eeb7855c9153d52c1d5fb9bef2019ef60c4a5947d0f591e6"
+      },
+      {
+        "path": "sheared-4-lift-laplace.result.json",
+        "bytes": 3043,
+        "sha256": "b02bfed927e80d6ce8a5006a3c4d5d4c3cb32a778314b69022f769e7e394686e"
+      },
+      {
+        "path": "sheared-4-lift-laplace.rhs",
+        "bytes": 888,
+        "sha256": "cbda5a03b9c6372f735aee0c299e07743101f7d7296f60a211c587b318599a8f"
+      },
+      {
+        "path": "sheared-4-lift-laplace.solution",
+        "bytes": 888,
+        "sha256": "c0de5ad50c512ae1e522121cb9cd2597df96eb67d308b1581ab1433a8779b126"
+      },
+      {
+        "path": "sheared-4-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-lift-laplace.wall-before-stress.csv",
+        "bytes": 5992,
+        "sha256": "4b2cd22418b8b5b852fe263bae866e82ee2ebe929692267c28fbb88b5109d03e"
+      },
+      {
+        "path": "sheared-4-lift-laplace.wall-recovery.csv",
+        "bytes": 7302,
+        "sha256": "5bec5dbcbddce913c5cce77547f4565bc46204b6cb950d021c68bdc35de6412b"
+      },
+      {
+        "path": "sheared-4-lift-laplace.wall-stress.json",
+        "bytes": 1009,
+        "sha256": "18e3677c64f9f57aa2b07b5dd256a93bd537a3e02b41822c0632b2637d7f05b4"
+      },
+      {
+        "path": "sheared-4-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.cells.csv",
+        "bytes": 9695,
+        "sha256": "530c1a34260726a1560dd82739a61e2eb97960f7eb722359c15d1466a83a074d"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.entries",
+        "bytes": 64896,
+        "sha256": "149ededddc568f45b041d067e8213ea27e6d6ba1d5b110cd3d8153d7bba67e81"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.faces.csv",
+        "bytes": 7125,
+        "sha256": "20cd70be30a41b070f42e92d61e4fc2e12b2b77273465bdca41021f8e22388f1"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.result.json",
+        "bytes": 3047,
+        "sha256": "3798267aaf43187883a513f8a9afba4752eeaac0fec6d5ccf63c61c5258f073c"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.rhs",
+        "bytes": 888,
+        "sha256": "f2c97520b33b519ece4172078c4446fca360384135d6dcab62239b8e5a8a5e21"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.solution",
+        "bytes": 888,
+        "sha256": "37e446504f230c2b3492f2ec49e66d5960ddc4ad80a1261ce5663fb98d79945d"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.wall-before-stress.csv",
+        "bytes": 5976,
+        "sha256": "6862334cad4930132c42ad9315617881e09e437e355c265f109f5e6689664b3e"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.wall-recovery.csv",
+        "bytes": 7275,
+        "sha256": "c55a55cf97f77a2b6bcc72c65059a4bf23c919976f1d3d269afdee6410fc0974"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.wall-stress.json",
+        "bytes": 1009,
+        "sha256": "d8ccd50d28eeb074667eedf0a634ee1bd92c9892560a80eb54721d4df8ee3f35"
+      },
+      {
+        "path": "sheared-4-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-cell-laplace.cells.csv",
+        "bytes": 38967,
+        "sha256": "b605de70825035e229ec43fe750325bd0540b328789201175a2d1dce2611e4c8"
+      },
+      {
+        "path": "sheared-8-cell-laplace.entries",
+        "bytes": 342144,
+        "sha256": "2e1f6f528dc0a8fde57c315fbbf276d091e6c59cddbd50ba04d7d2cb5339c6be"
+      },
+      {
+        "path": "sheared-8-cell-laplace.faces.csv",
+        "bytes": 26026,
+        "sha256": "529e0dbedccd53421b10c92af6384af1c8481cc3b539127d7fc12902cbd4898c"
+      },
+      {
+        "path": "sheared-8-cell-laplace.result.json",
+        "bytes": 2933,
+        "sha256": "1ab00371f44f40487e048e83d4a705aa72e73cabc122f29fba486928bca5cdf6"
+      },
+      {
+        "path": "sheared-8-cell-laplace.rhs",
+        "bytes": 4088,
+        "sha256": "168ce3b406f7d00572d392a5e2201395c25d31f47803b87604316e2cee57e952"
+      },
+      {
+        "path": "sheared-8-cell-laplace.solution",
+        "bytes": 4088,
+        "sha256": "e8c9b7e579b9a7bcfcc1638856839eb91f4859eac48a03fb229f84e3ebae3e90"
+      },
+      {
+        "path": "sheared-8-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-cell-laplace.wall-before-stress.csv",
+        "bytes": 11999,
+        "sha256": "fa68dcf2996d8404608c8260ee3d1bb942a3417eca6489b386b5b1bf6124fe8d"
+      },
+      {
+        "path": "sheared-8-cell-laplace.wall-recovery.csv",
+        "bytes": 14683,
+        "sha256": "71cd28fc2a3ca7fea2967976482e747b61f3994c004c88ab9f797662566fb85f"
+      },
+      {
+        "path": "sheared-8-cell-laplace.wall-stress.json",
+        "bytes": 1018,
+        "sha256": "d6674e3d2ef77c0177881af499bbb11e4486365d801fb84f1dfd5d55bedd21c4"
+      },
+      {
+        "path": "sheared-8-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.cells.csv",
+        "bytes": 38928,
+        "sha256": "6fcbc65223f1ff694328af5b086a6eedaf7c1eb28f318b07065595266d64ede7"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.entries",
+        "bytes": 342144,
+        "sha256": "d410193951592bbfda51b19df66fa7c2a6f09192e08bc285ee9da8f12f55e0b9"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.faces.csv",
+        "bytes": 26120,
+        "sha256": "a56e3c67ce545af01e1ff1f3de71070a10ecd782c53c46e78ef44f86c6a01f82"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.result.json",
+        "bytes": 2930,
+        "sha256": "0c9cf8b33911a4c751c663504b5fc9c7e997babd888c6f4d45cd29df7e8b9292"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.rhs",
+        "bytes": 4088,
+        "sha256": "4269657fcbeaba6193ce9f5a46b634b37cc15692efc333bbdf0724b19c0653de"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.solution",
+        "bytes": 4088,
+        "sha256": "dbeb2ad1bc0e1fb5953334b2c53c442e9e5336102d8c52fdd46e5285dc335364"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.wall-before-stress.csv",
+        "bytes": 11911,
+        "sha256": "12bf442034cd632edf0890fcdc1093784b578b7ed1fb53ab6b526bd07efb948f"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.wall-recovery.csv",
+        "bytes": 14528,
+        "sha256": "518c66c83b91aafb77c03ee1162371cd0686448112999254bcf82939fae255a2"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.wall-stress.json",
+        "bytes": 1011,
+        "sha256": "a48f45ad380f3c07f9dc98327bed0d2ce2926ac14decb0d543aee7334bf5c265"
+      },
+      {
+        "path": "sheared-8-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-gradient-cell.cells.csv",
+        "bytes": 38898,
+        "sha256": "cdb03fe91a81c8ebfc6a84993f9f59e55f0cf2c150e3d005481224fdbfdc6d77"
+      },
+      {
+        "path": "sheared-8-gradient-cell.entries",
+        "bytes": 342144,
+        "sha256": "d410193951592bbfda51b19df66fa7c2a6f09192e08bc285ee9da8f12f55e0b9"
+      },
+      {
+        "path": "sheared-8-gradient-cell.faces.csv",
+        "bytes": 26076,
+        "sha256": "461e6febca98330077a2d19198275f423308ba512229f74db14d88f0cc2db38b"
+      },
+      {
+        "path": "sheared-8-gradient-cell.result.json",
+        "bytes": 2928,
+        "sha256": "3c0e28b3c38b6a4f233e6f05f8d7cd8e70647535a04be353ecff59a6961b273d"
+      },
+      {
+        "path": "sheared-8-gradient-cell.rhs",
+        "bytes": 4088,
+        "sha256": "84e734962aeece893071ff028debc87cb719e83f659450e067a624fe40c4dbfc"
+      },
+      {
+        "path": "sheared-8-gradient-cell.solution",
+        "bytes": 4088,
+        "sha256": "7fb4065b355771cd1969879c91789f978a26068d8cdf4fa0441cfc7858cf74bd"
+      },
+      {
+        "path": "sheared-8-gradient-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-gradient-cell.wall-before-stress.csv",
+        "bytes": 12134,
+        "sha256": "65286fb79709cf149d3047c8e5296cf2e3bd7064ae6d2833c74533090ceaa754"
+      },
+      {
+        "path": "sheared-8-gradient-cell.wall-recovery.csv",
+        "bytes": 14732,
+        "sha256": "18614b292371ab94f70fe7cca38ca51851c1647f045e52c58065578575b411ec"
+      },
+      {
+        "path": "sheared-8-gradient-cell.wall-stress.json",
+        "bytes": 1009,
+        "sha256": "09ac5cfab44d7742f4d009227bc918fb0df0f38211673a64f82a13cffde21f83"
+      },
+      {
+        "path": "sheared-8-gradient-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-gradient-lift.cells.csv",
+        "bytes": 38881,
+        "sha256": "78c75e1174947d2bfce36b264e9d8dda3bb81b2aafc0f9cd76858b4c12b8d401"
+      },
+      {
+        "path": "sheared-8-gradient-lift.entries",
+        "bytes": 342144,
+        "sha256": "d410193951592bbfda51b19df66fa7c2a6f09192e08bc285ee9da8f12f55e0b9"
+      },
+      {
+        "path": "sheared-8-gradient-lift.faces.csv",
+        "bytes": 26065,
+        "sha256": "2ffdc482c94f30134910811d52fe596f6a6a5f9738129e41b0d5588a8bcee419"
+      },
+      {
+        "path": "sheared-8-gradient-lift.result.json",
+        "bytes": 3048,
+        "sha256": "48c0dd5ddbaf0ddff7b7c692518b65af61d38684cabbaca03a97b21c7f093c2f"
+      },
+      {
+        "path": "sheared-8-gradient-lift.rhs",
+        "bytes": 4088,
+        "sha256": "dda6bab9acc79459a03017932248db3368029d14f790329562633a2459892db5"
+      },
+      {
+        "path": "sheared-8-gradient-lift.solution",
+        "bytes": 4088,
+        "sha256": "6f24e5f3d0df048891856d56413b2e8d8e2876ccfe5767cff920efa2c4d7d6e6"
+      },
+      {
+        "path": "sheared-8-gradient-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-gradient-lift.wall-before-stress.csv",
+        "bytes": 12134,
+        "sha256": "8efececcbb66008188a58c4b58c10ef670aebc2e946fd7f388329d6c4a28f360"
+      },
+      {
+        "path": "sheared-8-gradient-lift.wall-recovery.csv",
+        "bytes": 14734,
+        "sha256": "37eb4b0e69ea41c237616293bded37b9b9c7811db08e66b63401bfe762e5f9c7"
+      },
+      {
+        "path": "sheared-8-gradient-lift.wall-stress.json",
+        "bytes": 1012,
+        "sha256": "841467b50fd939d2ead267edea77a6226ba77828247df3506e3b87bcc023426c"
+      },
+      {
+        "path": "sheared-8-gradient-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-lift-laplace.cells.csv",
+        "bytes": 39005,
+        "sha256": "ac5f09919a272d9606e1726105fedb94f52d3c8d6fe9de1069199780e06a7cbe"
+      },
+      {
+        "path": "sheared-8-lift-laplace.entries",
+        "bytes": 342144,
+        "sha256": "2e1f6f528dc0a8fde57c315fbbf276d091e6c59cddbd50ba04d7d2cb5339c6be"
+      },
+      {
+        "path": "sheared-8-lift-laplace.faces.csv",
+        "bytes": 26089,
+        "sha256": "78a72b293841d42cf84fb3dfa2fd2c39405e0ad8fae083f9178b07a7d267a276"
+      },
+      {
+        "path": "sheared-8-lift-laplace.result.json",
+        "bytes": 3044,
+        "sha256": "5537ef96f74a81a33c1c1de662e48c649016be3be5c26b0d930ec188d04697cf"
+      },
+      {
+        "path": "sheared-8-lift-laplace.rhs",
+        "bytes": 4088,
+        "sha256": "0df5830982138ff4d8629494ec608a3b327983fd0bd277c686d37fae880b3070"
+      },
+      {
+        "path": "sheared-8-lift-laplace.solution",
+        "bytes": 4088,
+        "sha256": "e202ec8dcff5de99d7a7c77b4f747cb4807035901666a4d99c281800c08bccbe"
+      },
+      {
+        "path": "sheared-8-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-lift-laplace.wall-before-stress.csv",
+        "bytes": 11974,
+        "sha256": "f586506d76a6eafefae46a38f47b8f9ee5bf882ba1cfcd35d433f67b7818e6f3"
+      },
+      {
+        "path": "sheared-8-lift-laplace.wall-recovery.csv",
+        "bytes": 14635,
+        "sha256": "aeb1246abc660037e6fcf18cd7cb52900904f941193b89b8b6fc45fc67071582"
+      },
+      {
+        "path": "sheared-8-lift-laplace.wall-stress.json",
+        "bytes": 1012,
+        "sha256": "06d5d37267cb2a99d74e448108e8d5b09cb3ae54df0fc60d26ce712e803dc094"
+      },
+      {
+        "path": "sheared-8-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.cells.csv",
+        "bytes": 38941,
+        "sha256": "0e69d2b9cba05577f7d375bb58c789ba51b2329899e764631f6e3d49c2681027"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.entries",
+        "bytes": 342144,
+        "sha256": "d410193951592bbfda51b19df66fa7c2a6f09192e08bc285ee9da8f12f55e0b9"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.faces.csv",
+        "bytes": 26139,
+        "sha256": "3a3e13f21a7e0885c74926d15a8058bf1f41a42ab8551adadedefd5b4b509478"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.result.json",
+        "bytes": 3057,
+        "sha256": "4cc650721515758eb0c5c89a837401e5354d92d8714ef0cc7563cd5b4c9889f8"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.rhs",
+        "bytes": 4088,
+        "sha256": "1de47509a74aa81b078e77f869ce489dc1a1210465b6ca2e432c428be6466259"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.solution",
+        "bytes": 4088,
+        "sha256": "fd5a977d6f55b179ca069c65f71ace1a9af9c5706010226b00c12120fedfd64b"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.wall-before-stress.csv",
+        "bytes": 11930,
+        "sha256": "42ecec816bf75c0f251deacf2fa1e2e6fa24020f3d29e452a54ea407050491d2"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.wall-recovery.csv",
+        "bytes": 14546,
+        "sha256": "9cc2bc1a5268363635ccbc2cf6ebbe2d3311f814cae699786a7f3a545e2a6a52"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.wall-stress.json",
+        "bytes": 1017,
+        "sha256": "bb0eb3c35f5cd0aa4658c2561e1b31ccd78a0a23aee70b81eab3abdc4d4594a4"
+      },
+      {
+        "path": "sheared-8-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-16-lift-symmetric.cells.csv",
+        "bytes": 159098,
+        "sha256": "55c6edb457aed9ce85abd12501c20e7ebaed580815dbadca964818926f10bf81"
+      },
+      {
+        "path": "square-16-lift-symmetric.entries",
+        "bytes": 1495872,
+        "sha256": "0f59817707c25be11d9de171f5f36f160918cefa567f6b9c47e53db60f59676b"
+      },
+      {
+        "path": "square-16-lift-symmetric.faces.csv",
+        "bytes": 88435,
+        "sha256": "15f6cccc70a9655e9f08b1dda8a9fd4b2359af1f5ba053cec8fac596e8c2c850"
+      },
+      {
+        "path": "square-16-lift-symmetric.result.json",
+        "bytes": 3001,
+        "sha256": "2506a672acf7bcf6f19a674435e4863388bb26f00aa7a503c540447bd404c887"
+      },
+      {
+        "path": "square-16-lift-symmetric.rhs",
+        "bytes": 17400,
+        "sha256": "1a4e79fcffd82f69de7464eb89cbc509fa2d13979d54dad69b0ce05defbdfaa5"
+      },
+      {
+        "path": "square-16-lift-symmetric.solution",
+        "bytes": 17400,
+        "sha256": "73c1a90442f43ceead9cae7fc4c4847a3e62601c323925117c5b5cf827a46b41"
+      },
+      {
+        "path": "square-16-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-16-lift-symmetric.wall-before-stress.csv",
+        "bytes": 21061,
+        "sha256": "1008397b541829659efee9c3617c0ac7889706261d32067f649ab3cd29d223e5"
+      },
+      {
+        "path": "square-16-lift-symmetric.wall-recovery.csv",
+        "bytes": 26426,
+        "sha256": "17fb8878094948dabce06dbcf49a4c52a17aab1f0d22217cb32f0c5ceaa63bfa"
+      },
+      {
+        "path": "square-16-lift-symmetric.wall-stress.json",
+        "bytes": 989,
+        "sha256": "3e5d3b7639f83686d2f3525abb6dbcb396999b068ebfe3f5ffa494cb9bb99b3c"
+      },
+      {
+        "path": "square-16-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-cell-laplace.cells.csv",
+        "bytes": 2491,
+        "sha256": "d6bbf3fd0e76403d5a34517b64cd0fb38d99d0063f028aedbd69f519eaae6434"
+      },
+      {
+        "path": "square-2-cell-laplace.entries",
+        "bytes": 5952,
+        "sha256": "984d5b6e7edae30d4d7c44e86b80e486ac2149fbb4f77ff028cf387cfbf71943"
+      },
+      {
+        "path": "square-2-cell-laplace.faces.csv",
+        "bytes": 1561,
+        "sha256": "8413e605f6d6b9724dec91fe871f22120567179c23b1f757c7e8fa984d354151"
+      },
+      {
+        "path": "square-2-cell-laplace.result.json",
+        "bytes": 2846,
+        "sha256": "ae85f0c034b0fa9f4ade5aed7f732ab4e74dbd62af299ee677a37b14f16ed983"
+      },
+      {
+        "path": "square-2-cell-laplace.rhs",
+        "bytes": 152,
+        "sha256": "271f42ab36df52bf2453cec42fd514d4a16a5af5f5f57dcff3df0a9489676733"
+      },
+      {
+        "path": "square-2-cell-laplace.solution",
+        "bytes": 152,
+        "sha256": "618c0dcdafc61200c412ee83c43fef609acb2b43436ea080f580791c34950672"
+      },
+      {
+        "path": "square-2-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-cell-laplace.wall-before-stress.csv",
+        "bytes": 2650,
+        "sha256": "f570596c6dec18354ff56850c5e488a44336d0603ea811c2ac0d432b62b06def"
+      },
+      {
+        "path": "square-2-cell-laplace.wall-recovery.csv",
+        "bytes": 3334,
+        "sha256": "2fc98ea194366ebf83a0bf6014079449bd4ca38e777281db8bc848a348798b30"
+      },
+      {
+        "path": "square-2-cell-laplace.wall-stress.json",
+        "bytes": 968,
+        "sha256": "a3cb6c518e80d3592f626827bc23cc558f9cdb227440f6ab0fdef879fa11d1ab"
+      },
+      {
+        "path": "square-2-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-cell-symmetric.cells.csv",
+        "bytes": 2490,
+        "sha256": "d1da979c52fbeb1a6a18d18f4a8ed76bd35b2cd99f44ae096d824b8911c248ed"
+      },
+      {
+        "path": "square-2-cell-symmetric.entries",
+        "bytes": 6720,
+        "sha256": "f1882a2efe7ec8e31743c2abebfe3ed225480013a9d7b6a7ba439df32c5f49c7"
+      },
+      {
+        "path": "square-2-cell-symmetric.faces.csv",
+        "bytes": 1533,
+        "sha256": "1ae2512a223f8664ebd30d4d91ac25131d5fcbf18daf2c3a176285f72726e626"
+      },
+      {
+        "path": "square-2-cell-symmetric.result.json",
+        "bytes": 2852,
+        "sha256": "d0f3c42068045edbbbd955fe7a35e1fe074700f589e01a826f00c053867e112d"
+      },
+      {
+        "path": "square-2-cell-symmetric.rhs",
+        "bytes": 152,
+        "sha256": "01c2de564f4921e0fcd09c26fccfda2afe66d6228d35648b1851e5884225240f"
+      },
+      {
+        "path": "square-2-cell-symmetric.solution",
+        "bytes": 152,
+        "sha256": "4c71a1567547108cd875433f837f8ba0e1067b941e5322cc5388ae2df6ab09ef"
+      },
+      {
+        "path": "square-2-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-cell-symmetric.wall-before-stress.csv",
+        "bytes": 2643,
+        "sha256": "f3cf1841d24dce2678391254e26a5070d3a36c61c41135c8e529662913c57d49"
+      },
+      {
+        "path": "square-2-cell-symmetric.wall-recovery.csv",
+        "bytes": 3324,
+        "sha256": "15fe4b06b8a0303c823f4daefbbb516f6580e25f17461a385309c6dfd84e4fe9"
+      },
+      {
+        "path": "square-2-cell-symmetric.wall-stress.json",
+        "bytes": 975,
+        "sha256": "41785996aaba099276e4fca3e8985bff90e99befaa1863f6c18c9e581860259c"
+      },
+      {
+        "path": "square-2-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-lift-laplace.cells.csv",
+        "bytes": 2498,
+        "sha256": "869f05e4faf152df3f453ccd171a1e24e654473e42ce3d43bdb1d8a4ffd6470e"
+      },
+      {
+        "path": "square-2-lift-laplace.entries",
+        "bytes": 5952,
+        "sha256": "984d5b6e7edae30d4d7c44e86b80e486ac2149fbb4f77ff028cf387cfbf71943"
+      },
+      {
+        "path": "square-2-lift-laplace.faces.csv",
+        "bytes": 1597,
+        "sha256": "ad9379048fcb0491d220ca94a7d832d474ae423e2f57e8da4af4a91f3f7c360d"
+      },
+      {
+        "path": "square-2-lift-laplace.result.json",
+        "bytes": 2967,
+        "sha256": "31716a97d3938b2e1be236606b8c040111468db65a09d96b5b14075bbf4a4db5"
+      },
+      {
+        "path": "square-2-lift-laplace.rhs",
+        "bytes": 152,
+        "sha256": "8d85939224aa9446e7d8ca85bb94102c3b0988e04d9e806678668fd1564bbb6e"
+      },
+      {
+        "path": "square-2-lift-laplace.solution",
+        "bytes": 152,
+        "sha256": "fbcc6b42b3463f1a946dc2a67249e84febeca84d6f79ef0de01d55af5110b7c7"
+      },
+      {
+        "path": "square-2-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-lift-laplace.wall-before-stress.csv",
+        "bytes": 2626,
+        "sha256": "7e09f5cc73b1872c4b4ff19d197f68ad237490c3651fd04dbd1d377fad4246a8"
+      },
+      {
+        "path": "square-2-lift-laplace.wall-recovery.csv",
+        "bytes": 3301,
+        "sha256": "6c79ca7a7c81a5240a8ac9e783726e42c1f2b630be6017bede90a94202807bde"
+      },
+      {
+        "path": "square-2-lift-laplace.wall-stress.json",
+        "bytes": 971,
+        "sha256": "aa3599de1b6f84a92f7f55925cbab9015ea8db420dcedbf54e645b02e0daee88"
+      },
+      {
+        "path": "square-2-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-lift-symmetric.cells.csv",
+        "bytes": 2505,
+        "sha256": "594fd3fe7e5f95069d94c2961a5e13f2906ffbad9d2870d1126d1613b4bdb78e"
+      },
+      {
+        "path": "square-2-lift-symmetric.entries",
+        "bytes": 6720,
+        "sha256": "f1882a2efe7ec8e31743c2abebfe3ed225480013a9d7b6a7ba439df32c5f49c7"
+      },
+      {
+        "path": "square-2-lift-symmetric.faces.csv",
+        "bytes": 1571,
+        "sha256": "466c09028c17a02cf903f4a272338067f2cabc30cb98438df4042fcc86e3c5d7"
+      },
+      {
+        "path": "square-2-lift-symmetric.result.json",
+        "bytes": 2976,
+        "sha256": "661bf32e8679bfe1bbb7c48c10a6e8f0792699a9d4018ab6e44970fa237b63bb"
+      },
+      {
+        "path": "square-2-lift-symmetric.rhs",
+        "bytes": 152,
+        "sha256": "dc187f42e49a0e06f50b36431675c0d3d57a725a6254e552d6e12edd8b200638"
+      },
+      {
+        "path": "square-2-lift-symmetric.solution",
+        "bytes": 152,
+        "sha256": "388ba5224adf44d9d81fb768ddd3461a26a347ee4c0e2a08dd8d9d54ddaa1bf0"
+      },
+      {
+        "path": "square-2-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-2-lift-symmetric.wall-before-stress.csv",
+        "bytes": 2621,
+        "sha256": "4fa7d5094cfcc601a33f3d7cf9432b141ba67668adc77f7cbc4776ea019616be"
+      },
+      {
+        "path": "square-2-lift-symmetric.wall-recovery.csv",
+        "bytes": 3293,
+        "sha256": "2bac3d6632ac52aa2df2266829df84409ff1b6454dd74c4704a234a23905dc91"
+      },
+      {
+        "path": "square-2-lift-symmetric.wall-stress.json",
+        "bytes": 972,
+        "sha256": "f1c0edd3cd82e8724a33f1e8ec4986049b45d6288bc4cf65e784d79dcca2c349"
+      },
+      {
+        "path": "square-2-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-cell-laplace.cells.csv",
+        "bytes": 9654,
+        "sha256": "da3a45603dd65a19e6fd47da31b353ff86c19e3634a54edb6dea7212fadb99aa"
+      },
+      {
+        "path": "square-4-cell-laplace.entries",
+        "bytes": 55872,
+        "sha256": "5bc2685a94c7a065aa6199631c157fef192e7542aad5d6ea7ac99541114db554"
+      },
+      {
+        "path": "square-4-cell-laplace.faces.csv",
+        "bytes": 5652,
+        "sha256": "e29164e01a592cffe08ab7b6493ae8a07adbaf0caaaea992f10862636200cff2"
+      },
+      {
+        "path": "square-4-cell-laplace.result.json",
+        "bytes": 2859,
+        "sha256": "339c337c9cdf25576ab58fbc28e2a29a603d671f0faf0fdca02363da6599c522"
+      },
+      {
+        "path": "square-4-cell-laplace.rhs",
+        "bytes": 888,
+        "sha256": "879635def1e47af0bfc7483b63c94aa4122328b2bd1488bb21f5fd2bd89aef71"
+      },
+      {
+        "path": "square-4-cell-laplace.solution",
+        "bytes": 888,
+        "sha256": "07255a0caddf0da943894825cdeba276214ff81aad7d7308e1447f2d94e03be1"
+      },
+      {
+        "path": "square-4-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-cell-laplace.wall-before-stress.csv",
+        "bytes": 5197,
+        "sha256": "fb3df5bf7cc36a074acb186e9326d86a71b63360f9f5ecdcb811d8aba7767c9e"
+      },
+      {
+        "path": "square-4-cell-laplace.wall-recovery.csv",
+        "bytes": 6525,
+        "sha256": "832f4db44c06f6aaee20dc74b37db90da2f3af65bfae138b6174f8d76b177bce"
+      },
+      {
+        "path": "square-4-cell-laplace.wall-stress.json",
+        "bytes": 976,
+        "sha256": "b3473a5b7f76d910399577a62f3c32bec4ea8c28934f11d2251b8684792a5219"
+      },
+      {
+        "path": "square-4-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-cell-symmetric.cells.csv",
+        "bytes": 9616,
+        "sha256": "401717891b1303a93e91db7e8c06e537750e022af593ad2f6cf213bd18114dce"
+      },
+      {
+        "path": "square-4-cell-symmetric.entries",
+        "bytes": 62784,
+        "sha256": "d671dd40945184e0d17158ea268ecd9d5ebfec867787042b7a252daf45c38723"
+      },
+      {
+        "path": "square-4-cell-symmetric.faces.csv",
+        "bytes": 5716,
+        "sha256": "a409fe6eefa9a2aea2bebf4d8d8c798e80726e56980b7dcdab745d763c7ae24d"
+      },
+      {
+        "path": "square-4-cell-symmetric.result.json",
+        "bytes": 2863,
+        "sha256": "91a0224e59e39cf8ede0b873935eaea27216e04b46cf627a305d34ad16596be6"
+      },
+      {
+        "path": "square-4-cell-symmetric.rhs",
+        "bytes": 888,
+        "sha256": "ae35787a069aab048177b922a659b194deed24377f750c39ea5350c7db007958"
+      },
+      {
+        "path": "square-4-cell-symmetric.solution",
+        "bytes": 888,
+        "sha256": "49c6ee482e27ee5de6410e4094dbbf12d172fca58c4ee9398379b1854be789c4"
+      },
+      {
+        "path": "square-4-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-cell-symmetric.wall-before-stress.csv",
+        "bytes": 5175,
+        "sha256": "bc46c36c12b6e72418d1d1b048aea0dadaf1c70ae599b375cdcec9f0183b0679"
+      },
+      {
+        "path": "square-4-cell-symmetric.wall-recovery.csv",
+        "bytes": 6462,
+        "sha256": "2aa1e799aeefd41765ca005b958bdc9a6d58540afae8a256dae3562cf0b86148"
+      },
+      {
+        "path": "square-4-cell-symmetric.wall-stress.json",
+        "bytes": 980,
+        "sha256": "cd2fd2c0ba90cc5c61e540e9b24ccee49aa787d49f12683ed047a7ff1b9662ff"
+      },
+      {
+        "path": "square-4-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-laplace.cells.csv",
+        "bytes": 9643,
+        "sha256": "6ae651116b4a24dbde331b5e0d2713a43beafc00ab3ceb4d1dc834c4707c37a6"
+      },
+      {
+        "path": "square-4-lift-laplace.entries",
+        "bytes": 55872,
+        "sha256": "5bc2685a94c7a065aa6199631c157fef192e7542aad5d6ea7ac99541114db554"
+      },
+      {
+        "path": "square-4-lift-laplace.faces.csv",
+        "bytes": 5716,
+        "sha256": "bdb8235c8fa98668f4456f9aee417a74464c951531887ec2470cb002fd4ac206"
+      },
+      {
+        "path": "square-4-lift-laplace.result.json",
+        "bytes": 2980,
+        "sha256": "d6fd79fe4c3201c49ffb8232e31b425d1ac2f66692d7948bebc99058f98420e7"
+      },
+      {
+        "path": "square-4-lift-laplace.rhs",
+        "bytes": 888,
+        "sha256": "08a8185593c3ddb846e1a918c0bb4ae562029c3a79ea8a27cc6b1f0c28bae06b"
+      },
+      {
+        "path": "square-4-lift-laplace.solution",
+        "bytes": 888,
+        "sha256": "5299a6168aba0226471a2d0f4e8233abcb2bbae5cd98a950e0a07a2b39c23ece"
+      },
+      {
+        "path": "square-4-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-laplace.wall-before-stress.csv",
+        "bytes": 5187,
+        "sha256": "e6b53fe719520c7277f2b99c23990cd294a49246a8d4a2e862f52f7fd80b2260"
+      },
+      {
+        "path": "square-4-lift-laplace.wall-recovery.csv",
+        "bytes": 6501,
+        "sha256": "e006c661ee0b09795b12a25209c7c4a962a34b51940ab5e003e365aae8fa1d18"
+      },
+      {
+        "path": "square-4-lift-laplace.wall-stress.json",
+        "bytes": 975,
+        "sha256": "1869d57646527a7bc46b93d948516aac7e5cfe1e1861c0061abb6f601a09783e"
+      },
+      {
+        "path": "square-4-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.cells.csv",
+        "bytes": 9632,
+        "sha256": "9c911fef6a33819f95e4eab2dccd7f035157aa709c740a843ffb2c8f77098706"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.entries",
+        "bytes": 62784,
+        "sha256": "2ad2536c3fbe1ed9a75bc9c15964eae7d45f0ceb42040b84d2d5e99f21ff5c4a"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.faces.csv",
+        "bytes": 5634,
+        "sha256": "3d3639a737a4e9c81a8be7181a0e104f3840d3ab2e8e3bd05fc2a3466d5bf2f0"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.result.json",
+        "bytes": 2986,
+        "sha256": "0086b04de8041fea2b66ffcd0cc117640bb751fd192342d447cd23a6e52c3d25"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.rhs",
+        "bytes": 888,
+        "sha256": "122e322dfdc57a4d80a1aa02c68815f60729a4a51e5b5c04d42dbd876248d0f1"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.solution",
+        "bytes": 888,
+        "sha256": "dc8dd55999795606d748d9f95516d8dc0dbe16746d8dda4665d8a8d527e001a1"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.wall-before-stress.csv",
+        "bytes": 5137,
+        "sha256": "c480535697cdbb4aec5868e14c30efaedfc83599f0453c96abd1b4afb526a24b"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.wall-recovery.csv",
+        "bytes": 6432,
+        "sha256": "67e1b2f427478f2aa0c7fe41c227b1ad7623b5957fc3178a2650ca551c508d6c"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.wall-stress.json",
+        "bytes": 978,
+        "sha256": "21921421cd8fc9dd70047fc16ec1ed3112f44d313bda987752eb1b8c257ee51f"
+      },
+      {
+        "path": "square-4-lift-symmetric-q12.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-symmetric.cells.csv",
+        "bytes": 9633,
+        "sha256": "7017bab26bfc1a58fcad2da54b6320f5cd7f3576fb011d35ba35e781a8963f64"
+      },
+      {
+        "path": "square-4-lift-symmetric.entries",
+        "bytes": 62784,
+        "sha256": "d671dd40945184e0d17158ea268ecd9d5ebfec867787042b7a252daf45c38723"
+      },
+      {
+        "path": "square-4-lift-symmetric.faces.csv",
+        "bytes": 5647,
+        "sha256": "9298fe51cdf7b4af1bc4cec4cb37eba7f8935510560e3000c01aefaa26daa62e"
+      },
+      {
+        "path": "square-4-lift-symmetric.result.json",
+        "bytes": 2978,
+        "sha256": "cc6bd5df9479d4554ac05a65e5284c52a9cf5b7418614ec55d37f389ba077b3b"
+      },
+      {
+        "path": "square-4-lift-symmetric.rhs",
+        "bytes": 888,
+        "sha256": "2d27db16f51646a94234986caa8d94fc1211817ec1979524fc95b4f8aeef6bc3"
+      },
+      {
+        "path": "square-4-lift-symmetric.solution",
+        "bytes": 888,
+        "sha256": "93a48e21abbbd68f054296d570bf2903308027d3464bbf7ab7f5b6fee5b5b45f"
+      },
+      {
+        "path": "square-4-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-lift-symmetric.wall-before-stress.csv",
+        "bytes": 5159,
+        "sha256": "732cfa66c2754f126ae7351bfb2fdc68e3ddc3273d550df6e7c884229423a16d"
+      },
+      {
+        "path": "square-4-lift-symmetric.wall-recovery.csv",
+        "bytes": 6456,
+        "sha256": "48c88b42e010c0ee1147cb2633e782e98cfd8399c553b08fef70303d1ac22432"
+      },
+      {
+        "path": "square-4-lift-symmetric.wall-stress.json",
+        "bytes": 974,
+        "sha256": "c76c469e44cd2cd9d6684e0043bca4f2aa4fc43223887f262bd4aeac1c14f676"
+      },
+      {
+        "path": "square-4-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-strong-gradient.cells.csv",
+        "bytes": 9582,
+        "sha256": "a005759df565dc8e3ee44a5a2b57285015db99516f1b2cb10726394724d1fe56"
+      },
+      {
+        "path": "square-4-strong-gradient.entries",
+        "bytes": 62784,
+        "sha256": "d671dd40945184e0d17158ea268ecd9d5ebfec867787042b7a252daf45c38723"
+      },
+      {
+        "path": "square-4-strong-gradient.faces.csv",
+        "bytes": 5409,
+        "sha256": "bb37d02dd24976f933f50fd670c30f294b5ff37f626bee9efd42f77cb5d181a2"
+      },
+      {
+        "path": "square-4-strong-gradient.result.json",
+        "bytes": 2975,
+        "sha256": "4cfeeb93a0ac203fa04e60d84d3915e91e846c9143f60a9ad09ad88bc4eb803d"
+      },
+      {
+        "path": "square-4-strong-gradient.rhs",
+        "bytes": 888,
+        "sha256": "5a42f5ac95c264fdd091aefcf7faf981731731997133b8428d42c03db05b8c44"
+      },
+      {
+        "path": "square-4-strong-gradient.solution",
+        "bytes": 888,
+        "sha256": "01d378f5779d6c0d5ad9bd6d556872be8a36723ab26e1d244e890a6131e15fe0"
+      },
+      {
+        "path": "square-4-strong-gradient.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-4-strong-gradient.wall-before-stress.csv",
+        "bytes": 5014,
+        "sha256": "cac3439ef02e1ffa22d6129f31207b0836fbbda20b90d1eb96eda784aa19386f"
+      },
+      {
+        "path": "square-4-strong-gradient.wall-recovery.csv",
+        "bytes": 6301,
+        "sha256": "52578776d78a2d70bbfc824abd9100872dd804c46895ab650f761a537ca71e75"
+      },
+      {
+        "path": "square-4-strong-gradient.wall-stress.json",
+        "bytes": 969,
+        "sha256": "e9e8cfe22ef5bd6d70ad9ec90c636a4f11434b669c878892cc2fbbe461b077fc"
+      },
+      {
+        "path": "square-4-strong-gradient.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-cell-laplace.cells.csv",
+        "bytes": 38996,
+        "sha256": "e6ccaf3162434d184af18dda2ce58376377245572cc08f9103d0ea7ce30330e0"
+      },
+      {
+        "path": "square-8-cell-laplace.entries",
+        "bytes": 293952,
+        "sha256": "40bbdda7d939ec083f91d8fd35c8fa8c6a85c55e815be10513766e4c65c21a5b"
+      },
+      {
+        "path": "square-8-cell-laplace.faces.csv",
+        "bytes": 22116,
+        "sha256": "168698fcf1eab0eeee1696363ea7147b7e814c6f2840f041ee3c70a50834130c"
+      },
+      {
+        "path": "square-8-cell-laplace.result.json",
+        "bytes": 2873,
+        "sha256": "aeeccd18f857e054e6994977749d1a0f2c6747e5770cab0df6dbfed560407d03"
+      },
+      {
+        "path": "square-8-cell-laplace.rhs",
+        "bytes": 4088,
+        "sha256": "abdb10abac713ad41b078acb27f628069025e23fc08161c4c465ef695509278a"
+      },
+      {
+        "path": "square-8-cell-laplace.solution",
+        "bytes": 4088,
+        "sha256": "04f4d4d53f3271cc0f9bc7d7877b45fcf37ce93fb9c3d323af1ad415f74fb531"
+      },
+      {
+        "path": "square-8-cell-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-cell-laplace.wall-before-stress.csv",
+        "bytes": 10462,
+        "sha256": "9373861a018e126e4fb9f20d8ecca638c6efb553faf45362e391bdeaf5140bce"
+      },
+      {
+        "path": "square-8-cell-laplace.wall-recovery.csv",
+        "bytes": 13158,
+        "sha256": "7823a934f32431c527440571b5cb83e16a2c532a9faf8db2714251f989bcf70a"
+      },
+      {
+        "path": "square-8-cell-laplace.wall-stress.json",
+        "bytes": 989,
+        "sha256": "f222a1a03c5eaefb33c78fcae0992931fee4898e41aa4502df812ea3feca79bb"
+      },
+      {
+        "path": "square-8-cell-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-cell-symmetric.cells.csv",
+        "bytes": 38967,
+        "sha256": "2923bbb5e404d6be0ce5244dac4c30709f48a542b5acaac7c96d09737596b6b3"
+      },
+      {
+        "path": "square-8-cell-symmetric.entries",
+        "bytes": 331584,
+        "sha256": "b391f60d343e259511e553d752cc8ad665bd1e143a4cbb22468e62685f67487c"
+      },
+      {
+        "path": "square-8-cell-symmetric.faces.csv",
+        "bytes": 22067,
+        "sha256": "7a65fe56b401ec1257086aa86f6d45282a580c62e47286ffb765ac279217339e"
+      },
+      {
+        "path": "square-8-cell-symmetric.result.json",
+        "bytes": 2871,
+        "sha256": "2b03219361de7ae19599baa09a718424d49b4d7fbd862f276407763196d8b175"
+      },
+      {
+        "path": "square-8-cell-symmetric.rhs",
+        "bytes": 4088,
+        "sha256": "1139069b9ecee8a4e8d7d09ddc96190f1fa594ad5a397dfe8008afc74a09403b"
+      },
+      {
+        "path": "square-8-cell-symmetric.solution",
+        "bytes": 4088,
+        "sha256": "b8afc8786b6fd213ecfbecc04ca7f32efcf5ec0f531e9e00ae14ca1229114320"
+      },
+      {
+        "path": "square-8-cell-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-cell-symmetric.wall-before-stress.csv",
+        "bytes": 10362,
+        "sha256": "a43158bb9d33ad2e9659becd6c79058130469ae496ac866c1e2f24723ad40e9b"
+      },
+      {
+        "path": "square-8-cell-symmetric.wall-recovery.csv",
+        "bytes": 13007,
+        "sha256": "9040c18d4ded939ebfc94e1caf1cad27aa1c1466f11293122cbcd2544d40f6bb"
+      },
+      {
+        "path": "square-8-cell-symmetric.wall-stress.json",
+        "bytes": 985,
+        "sha256": "6bc8aab44e9a6cf1d86056e881ebe497331cd86759fef445d06c2d62c65b29b3"
+      },
+      {
+        "path": "square-8-cell-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-gradient-cell.cells.csv",
+        "bytes": 38975,
+        "sha256": "c95d62245c54aa54fdc3c33ecd653ae7c2ad8792ced10e5ed2ae1da71ae31edd"
+      },
+      {
+        "path": "square-8-gradient-cell.entries",
+        "bytes": 331584,
+        "sha256": "b391f60d343e259511e553d752cc8ad665bd1e143a4cbb22468e62685f67487c"
+      },
+      {
+        "path": "square-8-gradient-cell.faces.csv",
+        "bytes": 21949,
+        "sha256": "55b5dc29ae9a9ee97f632c368ebe6d69ed813599b8fce09266b14e2e0761c8ae"
+      },
+      {
+        "path": "square-8-gradient-cell.result.json",
+        "bytes": 2866,
+        "sha256": "4e23cb7aacfce0ab50429f2b2ed836c0c928be610a49eaa9a459d019021c284f"
+      },
+      {
+        "path": "square-8-gradient-cell.rhs",
+        "bytes": 4088,
+        "sha256": "7a4c3543143ce2a631092e18115272a860de44ed92bad3d1256816e2c77d5b30"
+      },
+      {
+        "path": "square-8-gradient-cell.solution",
+        "bytes": 4088,
+        "sha256": "b8a6af8312798351cabe3d51b841a23d2a72fb8cc9023bde53929088b81320f0"
+      },
+      {
+        "path": "square-8-gradient-cell.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-gradient-cell.wall-before-stress.csv",
+        "bytes": 10592,
+        "sha256": "faa6cb639684fa5d268e71bc2363575b82fb1c017962b6fb16904cfcfe6503d7"
+      },
+      {
+        "path": "square-8-gradient-cell.wall-recovery.csv",
+        "bytes": 13222,
+        "sha256": "7018bd2e25a3d80f04d5f5eb1f70f82f35c301dbe1eb9c011bd7e32ce75b22ee"
+      },
+      {
+        "path": "square-8-gradient-cell.wall-stress.json",
+        "bytes": 978,
+        "sha256": "2b80ed8a083f52030c015380aac5ac3cdf06a4644d5be8f763eb25f3ffb0de39"
+      },
+      {
+        "path": "square-8-gradient-cell.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-gradient-lift.cells.csv",
+        "bytes": 38999,
+        "sha256": "4099faed55ccc914001c9fd4a0100d022985c078de270656cfca997543d0abb6"
+      },
+      {
+        "path": "square-8-gradient-lift.entries",
+        "bytes": 331584,
+        "sha256": "b391f60d343e259511e553d752cc8ad665bd1e143a4cbb22468e62685f67487c"
+      },
+      {
+        "path": "square-8-gradient-lift.faces.csv",
+        "bytes": 22044,
+        "sha256": "0b1cfdacabc955aabac85b0f8e5f976cd33ed5891d60a22f049f5cdfab72f9ee"
+      },
+      {
+        "path": "square-8-gradient-lift.result.json",
+        "bytes": 2988,
+        "sha256": "4044bfd13a515b5bde8d5f9d832a1bd0f941d8821de6f8f9fd555004963877c7"
+      },
+      {
+        "path": "square-8-gradient-lift.rhs",
+        "bytes": 4088,
+        "sha256": "24450402f8bec4a2d81605a82579cc2b97e808e22a917bcdeefb61196683047a"
+      },
+      {
+        "path": "square-8-gradient-lift.solution",
+        "bytes": 4088,
+        "sha256": "1157cc83455edea3f4a2039075b2ac8eb0f5de8003c5cde71c679ac61278ad22"
+      },
+      {
+        "path": "square-8-gradient-lift.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-gradient-lift.wall-before-stress.csv",
+        "bytes": 10611,
+        "sha256": "179801aa82d7528d5d1833ad23d26b75329d9e7bf7570cbd60d20dec9f6dc9e0"
+      },
+      {
+        "path": "square-8-gradient-lift.wall-recovery.csv",
+        "bytes": 13233,
+        "sha256": "07f2b393503708e1e6f2888387732def7d94c02c660ef2355f8a35e4044392b7"
+      },
+      {
+        "path": "square-8-gradient-lift.wall-stress.json",
+        "bytes": 978,
+        "sha256": "f5d39695e3d013b912df4a3301a7e0210a600139a41985a238e020ee4ec4287b"
+      },
+      {
+        "path": "square-8-gradient-lift.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-lift-laplace.cells.csv",
+        "bytes": 39048,
+        "sha256": "f06a0305c4eead5f96d2ca634e46fe5ee8fcfdb42e4ebd4ea66061e4211a71c6"
+      },
+      {
+        "path": "square-8-lift-laplace.entries",
+        "bytes": 293952,
+        "sha256": "40bbdda7d939ec083f91d8fd35c8fa8c6a85c55e815be10513766e4c65c21a5b"
+      },
+      {
+        "path": "square-8-lift-laplace.faces.csv",
+        "bytes": 22260,
+        "sha256": "be548d0f294b484e406d3de90d7098dd2975b8d444340d4fd528f0af6aa7d5c8"
+      },
+      {
+        "path": "square-8-lift-laplace.result.json",
+        "bytes": 2992,
+        "sha256": "1f4004ac65df6fda8bd9840abb18fcba349b6dfdb0b76d337d6947564c1b24e4"
+      },
+      {
+        "path": "square-8-lift-laplace.rhs",
+        "bytes": 4088,
+        "sha256": "17e4b137822f29437f71f030c132820542f0b687e4eb78a7c19daa62931b229a"
+      },
+      {
+        "path": "square-8-lift-laplace.solution",
+        "bytes": 4088,
+        "sha256": "a5879911853f4f2f76b0f6dfadcce5783e74d38b41918340f9dae230bc8182cf"
+      },
+      {
+        "path": "square-8-lift-laplace.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-lift-laplace.wall-before-stress.csv",
+        "bytes": 10455,
+        "sha256": "9f6e05673bd9701861b29f1ef826df0b3ff4b8e53d61ca57d3e5858552cf1608"
+      },
+      {
+        "path": "square-8-lift-laplace.wall-recovery.csv",
+        "bytes": 13129,
+        "sha256": "54246c9a9b076fec0bbf8ca18986d3a712ddfb031fbe0361e878200700da33b8"
+      },
+      {
+        "path": "square-8-lift-laplace.wall-stress.json",
+        "bytes": 986,
+        "sha256": "98bd3ece84850b30818fbb597e1d0bbfabab1cdda38bafe78ec005ba285df5d1"
+      },
+      {
+        "path": "square-8-lift-laplace.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-lift-symmetric.cells.csv",
+        "bytes": 38985,
+        "sha256": "4648a501889eb6ac53373ceab4c951d0dc87b31fb1b97361497b6a8d83831eb2"
+      },
+      {
+        "path": "square-8-lift-symmetric.entries",
+        "bytes": 331584,
+        "sha256": "b391f60d343e259511e553d752cc8ad665bd1e143a4cbb22468e62685f67487c"
+      },
+      {
+        "path": "square-8-lift-symmetric.faces.csv",
+        "bytes": 21895,
+        "sha256": "c8002092b67a19491909bb1f8e046475de41c60ee3470c15095606ccb376f278"
+      },
+      {
+        "path": "square-8-lift-symmetric.result.json",
+        "bytes": 2992,
+        "sha256": "384080ccfb05f5fd7bd7a8bcfd8f10e6997f7331f5289e47a58cae60c3d798ad"
+      },
+      {
+        "path": "square-8-lift-symmetric.rhs",
+        "bytes": 4088,
+        "sha256": "1617d139abbb19f721ac8b3c85f658ba15b7fd912656a148acc56f898d636320"
+      },
+      {
+        "path": "square-8-lift-symmetric.solution",
+        "bytes": 4088,
+        "sha256": "5eea4a103e1defae36f28c0cfeb88749218a958f136b27083dbc2ff24ec4036c"
+      },
+      {
+        "path": "square-8-lift-symmetric.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "square-8-lift-symmetric.wall-before-stress.csv",
+        "bytes": 10404,
+        "sha256": "79e44cca842e93d91833508ca557f03bfb19433f37013cf4e85e94980efe6bbe"
+      },
+      {
+        "path": "square-8-lift-symmetric.wall-recovery.csv",
+        "bytes": 13036,
+        "sha256": "ab62fe660d3870a939813d084938126dcd0480daf1b4a5484c348bd547a65295"
+      },
+      {
+        "path": "square-8-lift-symmetric.wall-stress.json",
+        "bytes": 981,
+        "sha256": "52d420b3868dff2d7864835b77c6371a9c3a18fc781c558b4d09b1c21b920cbe"
+      },
+      {
+        "path": "square-8-lift-symmetric.wall-stress.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "stress-recovery.json",
+        "bytes": 42232,
+        "sha256": "7d7bb3e80a7790e52cf4453c893dfdcb9b7057e2f1b9f237277388bbe6cbc8cf"
+      },
+      {
+        "path": "verified-summary.json",
+        "bytes": 1675,
+        "sha256": "a48482d0146e3cc4da893b287a9e9683f5289ce9cae9ab1010fbfeebb2baf718"
+      },
+      {
+        "path": "source/artifacts/current/native-laminar-wall-recovery.cpp",
+        "bytes": 12406,
+        "sha256": "0a44d7fbe7acbf92f36ede87786a349ea31fc01437d37f0908310e87e8240d52"
+      },
+      {
+        "path": "source/artifacts/current/native-laminar-wall-recovery.py",
+        "bytes": 4948,
+        "sha256": "c3694c542fda434ac77176708ede61aa309b64e9e332bcce26561fa3f94cd9ae"
+      },
+      {
+        "path": "source/artifacts/current/native-laminar-p1-stress.cpp",
+        "bytes": 21094,
+        "sha256": "dc3dbc6d369d36403072d273b86f20c797d21fe31767fade43eaa9927210f269"
+      },
+      {
+        "path": "source/artifacts/current/native-laminar-hybrid-stokes-p1.cpp",
+        "bytes": 22836,
+        "sha256": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11"
+      },
+      {
+        "path": "source/tests/flow_face_test.cpp",
+        "bytes": 37853,
+        "sha256": "c7364ab94d75949f29ae06db6013ebc5871e9f3818e410e0204cf14589a79b1c"
+      },
+      {
+        "path": "execution/cartmesh2d-wall-recovery",
+        "bytes": 292712,
+        "sha256": "0a6945be1035d814a9fc808a2473a4a2ea6660a811525638d89f9987fafb37ac"
+      },
+      {
+        "path": "execution/cartmesh2d-wall-stress",
+        "bytes": 292984,
+        "sha256": "bfa1bb48c86363ab44d21cf7d550cfa12d350ba1f8cbff0b513012d3846d4bb8"
+      },
+      {
+        "path": "execution/cartmesh2d-wall-recovery-before-stress.cpp",
+        "bytes": 11244,
+        "sha256": "aa7d6365127fbda5fbf21de129c1592284c2edf47e3f38d6c2ed08435e819c20"
+      },
+      {
+        "path": "execution/cartmesh2d-run-wall-recovery.py",
+        "bytes": 2161,
+        "sha256": "872b6079c382f1ce598880272374af0260a595bc25b0e34be115b544f3084895"
+      },
+      {
+        "path": "execution/cartmesh2d-run-wall-extra.py",
+        "bytes": 2798,
+        "sha256": "55a714243b3a4379cf7977318753388be11b71e03bfd79eb74655e86d771ba76"
+      },
+      {
+        "path": "execution/cartmesh2d-replay-wall-recovery.py",
+        "bytes": 1356,
+        "sha256": "389910bc58472ac7f1138f5e06069489a943fe62989a51f4e738b65a74694441"
+      },
+      {
+        "path": "execution/cartmesh2d-summarize-wall.py",
+        "bytes": 3603,
+        "sha256": "c31dba803c72f5e219a9bdd3d3a4cee8db845493f39f31a29fa563603e7f84ab"
+      },
+      {
+        "path": "execution/cartmesh2d-package-wall.py",
+        "bytes": 7736,
+        "sha256": "e526287fe5417866768e9a6c94821e728c4708b45f47be8edaaa55b965d04431"
+      }
+    ],
+    "everyMemberReadbackVerified": true
+  },
+  "validation": {
+    "nativeWerrorBuild": true,
+    "finiteCsvReadback": true,
+    "oldWallMetricsNumericallyIdenticalAfterAddingStressControl": true,
+    "singleControlFinalReproducerNumericallyIdentical": true,
+    "productionSuiteRerun": false,
+    "frontendAppCrossPlatform": false
+  }
+}

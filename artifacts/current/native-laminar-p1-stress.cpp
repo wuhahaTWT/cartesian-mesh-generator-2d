@@ -118,6 +118,7 @@ Fixture readFixture(const std::string& name,int n){
 std::string optionalMetric(double x,bool valid){if(!valid)return "null";std::ostringstream s;s<<std::setprecision(17)<<x;return s.str();}
 struct Entry {std::int64_t i,j;double value;};
 static_assert(sizeof(Entry)==24);
+#ifndef CARTMESH_P1_STRESS_NO_MAIN
 int main(int argc,char** argv)try{
     if(argc!=10)throw std::runtime_error("usage: p1-stress assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix");
     const std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[9];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double lambda=std::stod(argv[5]);bool lifted=std::string(argv[6])=="lift",symmetric=std::string(argv[7])=="symmetric";
@@ -174,3 +175,5 @@ int main(int argc,char** argv)try{
     std::cout<<std::setprecision(17)<<"{\"mode\":\""<<mode<<"\",\"cells\":"<<nc<<",\"faces\":"<<nf<<",\"unknowns\":"<<count<<",\"entries\":"<<nnz<<",\"area\":"<<area<<",\"traceResidual\":"<<trace<<",\"constraintResidual\":"<<constraint<<",\"loadIdentity\":"<<identity<<",\"condensedAsymmetry\":"<<symmetry<<",\"velocityRms\":"<<optionalMetric(std::sqrt(urms/area),problem!="cylinder")<<",\"pressureRms\":"<<optionalMetric(prms,problem!="cylinder")<<",\"maxSpeed\":"<<umax<<",\"pressureRange\":"<<pmax<<",\"maxDivergence\":"<<divmax<<",\"pressureWork\":"<<work<<",\"viscousEnergy\":"<<energy<<",\"forceWork\":"<<forceWork<<",\"boundaryWork\":"<<boundaryWork<<",\"energyBalance\":"<<energy+work-forceWork-boundaryWork<<",\"internalResidual\":"<<internalResidual<<",\"interiorFaceResidual\":"<<interiorResidual<<",\"innerBodyFx\":"<<wallFx<<",\"innerBodyFy\":"<<wallFy<<",\"stressBodyFx\":"<<stressFx<<",\"stressBodyFy\":"<<stressFy<<",\"tractionMomentDifferencePerLength\":"<<tractionDifference<<",\"wallNormalSpeed\":"<<wallNormal<<",\"seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+
+#endif

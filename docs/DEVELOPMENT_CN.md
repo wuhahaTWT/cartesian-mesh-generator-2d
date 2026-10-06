@@ -543,6 +543,16 @@ build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-1.so
 
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
+静止壁面恢复由 `artifacts/current/native-laminar-wall-recovery.cpp/.py` 复现；`native-laminar-p1-stress.cpp` 仅新增 `CARTMESH_P1_STRESS_NO_MAIN` 包含保护，原 CLI 和算子不变。新 C++ 直接复用 Element 的完整局部矩阵、体力和恢复状态，以边界行余量的常量/一次矩 `r0,r1` 定义 `t_h(s)=(r0+12*s*r1)/|F|`，`s∈[-1/2,1/2]`。所有面体力必须扣除；省略它们的负对照保留。解析静止无滑移且不可压时，法向黏性应力为零，因此研究压力迹取 `p_t=-n·t_h`。另独立保留 `p_sigma=p_t+c*n·G_h(u)·n`，完整对称/Laplacian 形式在 `ν=1` 下的 c 分别为2/1；该对照在本批非零流动中变差，不按案例选择较好定义。压力只去一个全域面积均值，牵引同步加该常数乘法向；墙面 RMS 按全部真实面长归一化，单位 `m²/s²`，Gauss点最大值不是连续最大值。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-p1-stress.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-p1-stress
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-wall-recovery.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-wall-recovery
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python3 artifacts/current/native-laminar-wall-recovery.py outputs/laminar-stability/wall-recovery-reproduction
+```
+
+需要当前原生库与 NumPy；Linux 使用相应编译器/既有库链接方式并省略 Accelerate。Python仅编排、读原生矩阵并做稠密线性代数，限制2300未知量，不另解一套流体方程；`--case ring-1-8-lift` 可只复现一个控制。已有案例前缀会拒绝覆盖，部分失败原样留存。C++ 的 `write-ring radial angular file` 建立半径0.5/1米、共享顶点身份一致的体贴合多边形圆环并通过原 `makeFvMesh2D`，它不是 Cartesian 网格生成器，也没有修补原曲壁几何。静水 `u=0,p=x+2y+x³+xy²` 在每个实际多边形上均是精确问题；面细化对照不是原圆环旋转流的资格。直接恢复接口为 `native-laminar-wall-recovery mesh n problem lambda lift|cell symmetric|laplace order existing_prefix`，读取同一原生 `.solution` 后输出 `.wall-recovery.csv`；只允许已声明的静止制造解，不能原样用作不同黏度、对流或开放出口的载荷后端。40项完整运行、追加恢复、源文件/二进制、矩阵、所有实际场和不利对照逐项压缩读回，索引为 `native-laminar-wall-recovery.json`，重现单控制与原结果完全一致。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。
