@@ -527,6 +527,18 @@ void totalInletAndImplicitChecks() {
         while(state.time<*ctl.endTime) {
             const auto next=solver.advance(state,ctl);
             require(next.maximumCellBalanceError<1e-12&&next.minimumPressure>0&&next.minimumDensity>0,"implicit stage conservation/positivity failed");
+            std::vector<double> spectral(mesh.cells.size());
+            for(std::size_t f=0;f<mesh.faces.size();++f) {
+                const auto& face=mesh.faces[f];
+                const double value=next.faceWaveSpeed[f]*std::hypot(face.areaVector.x,face.areaVector.y);
+                spectral[face.owner]+=value;if(face.neighbour)spectral[*face.neighbour]+=value;
+            }
+            double acoustic=0,combined=0;
+            for(std::size_t i=0;i<spectral.size();++i) {
+                acoustic=std::max(acoustic,next.step*spectral[i]/mesh.cells[i].area);
+                combined=std::max(combined,next.step*(spectral[i]/mesh.cells[i].area+next.cellHeatRate[i]+next.cellViscousRate[i]));
+            }
+            require(acoustic==next.acousticCourant&&combined==next.combinedCourant,"implicit Courant diagnostic differs from exported face maxima");
             if(state.steps==1) {
                 std::stringstream file;writeEulerCheckpoint2D(file,mesh,bc,gas,state,"implicit",{.02,.02});
                 const auto restored=readEulerCheckpoint2D(file,mesh,bc,gas,"implicit",{.02,.02});

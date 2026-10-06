@@ -279,9 +279,16 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_workspace_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_workspace COMMAND cartmesh2d_scalar_workspace_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_curved_heat
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/curved_heat_cli_test.py
+                ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+    set_tests_properties(cartmesh2d_curved_heat PROPERTIES TIMEOUT 90)
 
     add_executable(cartmesh2d_fv_tests tests/fv_test.cpp)
     add_executable(cartmesh2d_transport_precision_tests tests/transport_precision_test.cpp)
+    add_executable(cartmesh2d_curved_heat_benchmark tools/flow/curved_heat_benchmark.cpp)
+    target_link_libraries(cartmesh2d_curved_heat_benchmark PRIVATE cartmesh2d_fv)
+    cartmesh2d_enable_warnings(cartmesh2d_curved_heat_benchmark)
     target_link_libraries(cartmesh2d_transport_precision_tests PRIVATE cartmesh2d_fv)
     cartmesh2d_enable_warnings(cartmesh2d_transport_precision_tests)
     add_test(NAME cartmesh2d_transport_precision COMMAND cartmesh2d_transport_precision_tests)

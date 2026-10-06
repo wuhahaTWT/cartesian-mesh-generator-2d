@@ -466,16 +466,21 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
                 for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<4;++k)base[i][k]-=(1-gamma)*dt/mesh.cells[i].area*a.op.residual[i][k];
                 auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,heat,viscous,result);
                 combined=b.op;
+                std::fill(combined.spectral.begin(),combined.spectral.end(),0.);
                 for(std::size_t id=0;id<nf;++id) {
                     for(std::size_t k=0;k<4;++k)combined.faceFlux[id][k]=(1-gamma)*a.op.faceFlux[id][k]+gamma*b.op.faceFlux[id][k];
                     combined.heatFlux[id]=(1-gamma)*a.op.heatFlux[id]+gamma*b.op.heatFlux[id];
                     for(std::size_t k=0;k<3;++k)combined.viscousFlux[id][k]=(1-gamma)*a.op.viscousFlux[id][k]+gamma*b.op.viscousFlux[id][k];
                     combined.speed[id]=std::max(a.op.speed[id],b.op.speed[id]);
+                    // Match the exported per-face stage envelope, as for SSPRK2.
+                    const auto& face=mesh.faces[id];
+                    const double contribution=combined.speed[id]*std::hypot(face.areaVector.x,face.areaVector.y);
+                    combined.spectral[face.owner]+=contribution;
+                    if(face.neighbour)combined.spectral[*face.neighbour]+=contribution;
                     combined.fallback[id]=static_cast<unsigned char>(a.op.fallback[id]|(b.op.fallback[id]<<1));
                 }
                 for(std::size_t i=0;i<nc;++i) {
                     for(std::size_t k=0;k<4;++k)combined.residual[i][k]=(1-gamma)*a.op.residual[i][k]+gamma*b.op.residual[i][k];
-                    combined.spectral[i]=std::max(a.op.spectral[i],b.op.spectral[i]);
                     combined.heatRate[i]=std::max(a.op.heatRate[i],b.op.heatRate[i]);
                     combined.viscousRate[i]=std::max(a.op.viscousRate[i],b.op.viscousRate[i]);
                 }

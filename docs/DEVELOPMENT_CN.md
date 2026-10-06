@@ -206,6 +206,27 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 
 最后一条用短时功能测试物性，不是空气推荐值。精度脚本可能需数分钟，Windows 预算更长；日常只选相关项，完整范围与未验物理问题见当前状态。
 
+### 原生曲壁环域与圆柱空间研究
+
+构建 `cartmesh2d_curved_heat_benchmark`，使用 `tools/flow/run_curved_wall.py` 生成两个真实嵌套轮廓、原生共形 Cut-cell/Solver 拓扑。实验固定内/外半径 .5/1 m、壁温 2/2.2 K、k=.37 W/(m K)。耦合演化采用 γ=1.4、R=1 J/(kg K)、μ=.02 Pa s，从 ρ=1、p=2.1、u=v=0 的均匀初场推进；这是人工验证参数，不是空气推荐工况。
+
+解析稳态 `T(r)=2+.2 ln(r/.5)/ln(2)`。`trace` 以实际面心解析温度为壁值，`isothermal` 对内/外多边形分别给定常壁温，用其差异检查轮廓投影误差。原生基准通过单位扰动取得**同一个实际 Fourier 仿射算子**，由原生 GMRES 解其非对称线性系统；负对角或增长模态的系统即使求解收敛也不能取得稳定性资格。输出 `.matrix.csv` 允许对原生 Jacobian 作谱分析，该分析不重建 PDE。旧 ILU/Jacobi 前置正性限制与原二次算子的失败均保留在私密证据中。
+
+壁面参考热量按实际弦段的有向夹角精确积分 `-k B Δθ`，不把面心梯度乘长度作为精确积分。温度误差按真实面积加权、以壁温差 .2 K 归一化；壁面热流 L1 以全部边界解析热流绝对值总和归一化。近壁温度只统计实际贴壁单元。解析面积平均和谐均温度用原生 Gauss–Legendre/Duffy 积分，并将每个三角形分成四个重新积分来检查参考误差；这只是解析参考积分，不是数值通量审计。稳态可压恒压解的守恒密度是 `p/R * average(1/T)`，因此从守恒量得到的原始温度应与谐均参考比较，不能静默用质心点值冒充单元平均。
+
+默认实验只走线性壁面；`--include-quadratic` 是显式诊断选项，粗曲壁的原二次格式仍有已知增长模式。二次拟合的局部权重、删除边界样本、约束 owner、法向筛选等候选均未作为通用修复发布。`cartmesh2d_curved_heat` 回归针对这一个人工环域，要求细网格热流 L1 小于 2% 且明显改善粗网格，温度误差细化下降；这不是通用曲壁物理精度标准。代数残差与容差敏感性必须小于被测离散误差，沿用已有精度回归的隔离要求。此回归不把原二次格式列为合格。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_CHEMISTRY=OFF
+cmake --build build --parallel 4 --target cartmesh2d_cli cartmesh2d_euler_cli cartmesh2d_curved_heat_benchmark
+python3 tools/flow/run_curved_wall.py --output outputs/annulus-new
+python3 tools/flow/run_curved_wall.py --output outputs/annulus-quadratic-diagnostic --include-quadratic --skip-coupled
+ctest --test-dir build -R '^cartmesh2d_curved_heat$' --output-on-failure
+python3 tools/flow/run_compressible_external.py --output outputs/cylinder-new --segments 192 --far-spans 7.5 --wall-cells 16 --wall-gradient linear --end-time 2e-7 --max-step 4e-9 --max-seconds 900
+```
+
+圆柱空间序列保持 `--segments 192`，将实际近壁请求 `--wall-cells` 改为 48、96，并读取真实网格尺度而不是假定请求值产生连续细化；细网格时间对照用 `--max-step 2e-9`。轮廓对照独立改 `--segments 48`。几何门失败、预算耗尽、取消或高成本试算均保留为各自状态，不改写为物理失败或成功。不采用局部时间钟，不为研究变更默认算法或壁面格式。同步 `076bca9` 已发布的 SDIRK2 face-envelope **诊断**修复并加原生面汇总回归，不把该同步算作本轮新推进算法。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
