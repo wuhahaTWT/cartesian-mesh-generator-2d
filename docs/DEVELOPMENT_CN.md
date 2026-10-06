@@ -356,6 +356,20 @@ outputs/laminar-stability/coupling-energy/probe path/to/mesh.solver.cm2d 5
 
 指定同一网格追加 `minimum` 或 `midpoint` 可复算研究对照；支撑圈数仅限制探针成本，不是产品质量参数。结果见 `native-laminar-coupling-energy.json`，本批输入、矩阵计算程序和输出保存于其列出的忽略提交恢复包。负二次型只能用于形成机制假设，不能冒充全局失稳或选择物理解。
 
+`native-laminar-hybrid-stokes.cpp` 是可直接求解的最低阶单元/面混合 Stokes 研究原型。每格两个速度均值、每个共享面两个速度均值及每格一个压力均值；`B u` 使用原生向外面积向量，压力项为 `-Bᵀp`。黏性双线性式为 `ν|T|G:G + νΣ_F |F|/h_T |u_F-u_T-G(c_F-c_T)|²`，`G=Σ_F u_F⊗S_TF/|T|`，`h_T` 是多边形直径。它使用 Laplacian Stokes 形式，尚无非线性对流、时间推进或产品牵引出口。常体力加载利用散度保持重构的一阶矩 `∫_T Rv=Σ_F(c_F-c_T)(v_F·S_TF)`；这仅足以检查全局仿射压力，不等于已实现一般体力/对流所需的完整重构。设计参考 [Quiroz–Di Pietro HHO 方法](https://arxiv.org/html/2203.07180v3) 的面未知量、散度配对与载荷思路，不冒用该文完整算法及误差定理。
+
+```sh
+mkdir -p outputs/laminar-stability/hybrid-stokes
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
+  -I include artifacts/current/native-laminar-hybrid-stokes.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate \
+  -o outputs/laminar-stability/hybrid-stokes/probe
+outputs/laminar-stability/hybrid-stokes/probe outputs/laminar-stability/hybrid-stokes \
+  > outputs/laminar-stability/hybrid-stokes/results.jsonl
+```
+
+该目录参数可省略；提供时保存每次的原始单元/面 CSV。全部输入由原生多边形生成，通道制造解边界与单元量使用精确二次均值，压力只去全局加性规范；面积、实际面与原 Solver 门均保留。切割 8/12 档明确输出质量拒绝，其余求解错误直接非零退出。稠密部分主元消元的 1500 未知量限制仅控制研究成本，不是产品规模门；无新增精度阈值。JSON 中保存原始数值、单位、未验范围、源码与小型实际场归档哈希。当前原型尚未计算原 Re=20 圆柱/圆环，也未证明通道精度足够，不能自动接入默认。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh
