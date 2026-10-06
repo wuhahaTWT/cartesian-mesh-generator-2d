@@ -404,7 +404,9 @@ outputs/laminar-stability/hybrid-stokes-p1/probe sheared 8 vortex 8 \
 
 CLI 依次接受 `square|sheared|cut|split|tip`、分辨率、`couette|rotation|hydrostatic|poiseuille|vortex`、积分阶次（可省略，默认 8）、输出前缀（可省略）。实际 37 次控制清单、单位、原始数值与归档哈希在 `native-laminar-hybrid-stokes-p1.json`。多边形积分使用有向边与重心扇形的带符号 Duffy 积分；未改变真实几何。压力 RMS 是全 P1 场去全域规范后的积分误差；压力最大值仅在积分点采样，不能当作壁面连续峰值。CSV 记录规范基函数所需的真实中心、直径和二阶矩。稠密 2600 未知量上限只控制研究成本；大网格需要稀疏求解和消元，尚未宣称适用。
 
-非恒定体力的最低阶相容实验为 `native-laminar-hdiv-load.cpp`，直接复用 k=0 原型的黏性/压力配对。每个正重心扇形三角形取 `R(v)=a_j+b(x-c_T)`、`2b=D_T(v)`，约束所有外侧面通量和内部径向法向连续，以最小 `∫|R(v)-v_T|²` 选取剩余自由度。六点张量 Duffy 积分计算 `∫f·R(v)`；制造压力势为 `φ=x³+xy²`（参考单位见 JSON），幅值 0/1/10000 是比较控制，不是新验收阈值。端点只核对构造舍入误差，不焊接或修补几何；非正扇形显式拒绝。云端驱动 `native-laminar-hdiv-load.py` 负责构建、运行和字段比较，不重建原生方程；直接运行二进制需已存在的输出目录，会做126次小求解。`--audit mesh.solver.cm2d` 仅检查全部单元局部重构，不求解该网格上的流动。
+非恒定载荷研究入口 `native-laminar-hdiv-load.cpp/.py` 复用现有 `native-laminar-hybrid-stokes.cpp` 的几何夹具与稠密消元；后者仅新增 `CARTMESH_HYBRID_STOKES_NO_MAIN` 包含保护，原独立程序不变。局部扇形的每个三角形采用 `R(v)=a_j+b(x−c_T)`，`2b=D_T(v)`。外面法向矩和径向法向连续性作为约束，剩余环流最小化 `∫|R(v)−v_T|²`；不修焊几何，扇形非正或端点不能按构造舍入误差闭合则研究驱动显式拒绝。重构借鉴 [2203.07180v3](https://arxiv.org/abs/2203.07180v3) 的2.4/3.2节，实际实现是二维k=0局部约束问题，不宣称完整高阶/NS方法。6×6 Duffy Gauss积分用于所有载荷与精确单元均值；三次势梯度乘RT0为多项式精确积分。逐基函数核验 `∫grad(phi)·R(v)=sum(mean_F(phi) v_F·S)−mean_T(phi) B_T(v)`，共享面项装配抵消，因此同一固定边界下势载荷只改变离散压力。
+
+复现：`python3 artifacts/current/native-laminar-hdiv-load.py`；已有原始场的确定性汇总用 `--summarize`。C++以GCC13.3、`-Werror`构建（复用测试夹具的已知未用参数用`-Wno-unused-parameter`），输出252个小单元/面CSV、126次结果及两项原始大网格局部重构检查。Python只编排和按全部单元面积比较，压力只减全域面积均值。参考尺度L=1m、U=1m/s、ν=1m²/s；势为 `U²*((x/L)^3+(x/L)*(y/L)^2)`，叠加强度0/1/10000只是制造解参数，不是接受门。真实曲壁网格检查的梯度载荷恒等式系数单位m³/s²（每单位速度基），法向积分余量单位m；该多项式在大外域的幅值较大，绝对余量不直接用作跨网格门限。小求解稠密系统限制1500未知量，原17260/6606网格只做局部重构，未运行全局NS。保留低阶剪切涡压力慢收敛与cut8/12原门拒绝记录；没有采用小幅值场作为物理解。
 
 P1 原型新增 `square n noslip` 与 `sheared n noslip-sheared` 控制，几何/问题不匹配直接拒绝。令 `ξ=x-sy,η=y`，`s=0/0.7`，流函数 `ψ=64 g(ξ)g(η)`、`g(t)=t²(1-t)²`，速度为 `(∂yψ,-∂xψ)`，压力为 `sin(πξ)sin(πη)`，体力为 `-νΔu+∇p`；采用 1m、1m/s 参考单位和 `ν=1m²/s`。壁面上 g 与 g' 同时为零，故两阶面速度均直接设为解析零值。边界反力取本地刚度行与压力负转置的完整残差（含稳定项），按两个面矩重构 P1 牵引，并以去全域规范的压力比较解析物理应力。对这个静止无滑移、无散解析场，Laplacian 与对称应力牵引相同；不外推一般运动壁面。新增 `.walls.csv` 保存每面两分量反力系数；实际27份字段全部有限且已归档读回。复用上方编译命令后运行：
 
@@ -414,6 +416,19 @@ outputs/laminar-stability/hybrid-stokes-p1/probe sheared 8 noslip-sheared 8
 ```
 
 7 次静止壁面控制、3 次既有控制、三档误差及积分阶次对照见 `native-laminar-hybrid-stokes-p1-wall.json`。壁面牵引误差下降慢于内部速度；这是需要后续改进与验证的实际边界，不增加阈值、不升级默认。
+
+联合高阶研究入口 `native-laminar-p1-stress.cpp/.py` 包含 P1 原型（用 `CARTMESH_HYBRID_STOKES_P1_NO_MAIN` 保护独立 main），使用完整对称弱梯度应变与原 P2 一致稳定项。三角形 Piola RT1 通过局部约束最小化保持每个原子面两阶法向矩、内部径向法向连续和同一 P1 弱散度；只去掉一条冗余径向均值约束，再逐点核对该面。正重心扇形限制是当前研究支持范围，不替代产品 Solver 门。每格同时消去六个速度系数与两条压力斜率，形成8×8局部鞍点块；全局只保留内部面四个速度系数和每格压力均值。原生输出稀疏项/右端，Python仅做SciPy稀疏LU及代数修正，原生再恢复全部局部场与边界反力。
+
+云端已有原生库和 NumPy/SciPy，复现命令如下；Mac构建需用系统 `/usr/bin/clang++` 并增加 `-framework Accelerate`。驱动拒绝覆盖既有结果前缀，单元与面的CSV、矩阵、原始解及失败保留云端恢复包。单元列 `potential0/X/Y` 保存三次压力势的P1投影，用于叠加载荷后的去规范压力差比较。边界反力包含相容载荷在面试函数上的作用，不能仅用重构应力代替；二者均输出。
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter \
+  -I include artifacts/current/native-laminar-p1-stress.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-p1-stress
+python3 artifacts/current/native-laminar-p1-stress.py sheared 8 vortex 0 lift symmetric fresh-sheared8
+```
+
+原生参数为 `assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix`；文件网格时n忽略，cylinder控制要求显式Embedded/Domain边界标识。这个cylinder案例在整个外边界施加(1,0)、内壁零速度、ν=1且无对流，输出静态运动学压力；不等于原产品压力出口或Re20。CSV中 `traction_x/y` 与 `stress_x/y` 是积分力矩而非逐点应力；最大速度、压力范围及散度取积分采样点，尚非连续最大值。154011未知量的全局LU规模已显示成本问题，后续需解决可扩展预条件、兼容对流和原问题边界；不能仅凭小矩阵正性或有界幅值选取物理解。
 
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
