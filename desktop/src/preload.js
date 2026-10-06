@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('cartmesh', {
   pickGeometry: () => ipcRenderer.invoke('pick-geometry'),
   exportResult: () => ipcRenderer.invoke('export-result'),
   openProject: () => ipcRenderer.invoke('open-project'),
+  listRecoveries: () => ipcRenderer.invoke('list-recoveries'),
+  recoverProject: id => ipcRenderer.invoke('recover-project',id),
   cancel: () => ipcRenderer.invoke('cancel'),
   releasePreview: controls => ipcRenderer.invoke('release-preview', controls),
   exportPreviewData: () => ipcRenderer.invoke('export-preview-data'),

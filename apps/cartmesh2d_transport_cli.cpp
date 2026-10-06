@@ -189,7 +189,7 @@ int main(int argc,char**argv) {
         fv::ThermalTimeControls2D timeControls;bool adaptive=false,explicitMinDt=false;std::size_t completedSteps=0,rejectedAttempts=0;
         double startTime=0;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
-        bool explicitVelocityRelaxation=false;
+        bool explicitVelocityRelaxation=false,checkRestartOnly=false;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
         fv::ScalarTransportControls2D controls;controls.stopRequested=[]{return stopSignal!=0;};
         for(int i=1;i<argc;++i) {
@@ -213,6 +213,7 @@ int main(int argc,char**argv) {
                     "  --flow-convection upwind|limited-linear|face-limited-linear --pressure-preconditioner ic0|aggregation\n"
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
+                    "  --check-restart on: validate complete restart binding without advancing or writing outputs.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
                     "  --end-time T: joint CFL/retry controller; --dt is maximum step.\n"
                     "  --min-dt DT --max-courant C --max-step-retries N; --time-error on|off.\n"
@@ -229,6 +230,7 @@ int main(int argc,char**argv) {
             else if(arg=="--verification")verification=value;
             else if(arg=="--evolve-flow")evolve=value;
             else if(arg=="--restart")restart=value;
+            else if(arg=="--check-restart") {require(value=="on"||value=="off","invalid restart-check switch");checkRestartOnly=value=="on";}
             else if(arg=="--thermal-events")eventPath=value;
             else if(arg=="--flow-boundary")flowBoundaryPath=value;
             else if(arg=="--end-time") {timeControls.limits.targetTime=number(value);adaptive=true;}
@@ -310,6 +312,7 @@ int main(int argc,char**argv) {
         require(flowBoundaryPath.empty()||evolve=="custom","flow-boundary requires custom flow");
         require(evolve!="custom"||!flowBoundaryPath.empty(),"custom flow requires flow-boundary");
         require(restart.empty()||evolving,"joint restart requires evolving flow");
+        require(!checkRestartOnly||!restart.empty(),"restart check requires a joint checkpoint");
         require(verification.empty()?((!flowPath.empty()||evolving)&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
         require(!steadySine||dt==0,"sine verification is steady");
         require(verification!="decay"||dt>0,"decay verification needs dt");
@@ -376,12 +379,17 @@ int main(int argc,char**argv) {
                 state=fv::readThermalCheckpoint2D(in,mesh,flowControls,thermalSetup,controls);
             }
             acceptedTime=state.flow.time;startTime=acceptedTime;
-            if(adaptive) {
+            if(adaptive && !checkRestartOnly) {
                 timeControls.limits.maximumStep=dt;
                 if(!explicitMinDt)timeControls.limits.minimumStep=dt/1024;
                 fv::validateFlowTimeStepControls2D(timeControls.limits);
                 require(timeControls.limits.targetTime>acceptedTime,"end-time must exceed restart time");
             }
+        }
+        if(checkRestartOnly) {
+            std::cout<<std::setprecision(17)<<"{\"format\":\"cartmesh2d-thermal-restart-check-v1\",\"status\":\"valid\",\"time\":"
+                <<acceptedTime<<",\"cells\":"<<mesh.cells.size()<<",\"events\":"<<thermalSetup.events.size()<<"}\n";
+            return 0;
         }
         const auto parent=std::filesystem::path(prefix).parent_path();if(!parent.empty())std::filesystem::create_directories(parent);
         require(!evolving || !std::filesystem::exists(prefix+".thermal.checkpoint"),

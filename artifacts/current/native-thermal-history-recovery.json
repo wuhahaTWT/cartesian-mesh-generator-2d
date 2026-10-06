@@ -1,0 +1,245 @@
+{
+  "format": "cartmesh2d-thermal-history-recovery-evidence-v1",
+  "date": "2026-10-07",
+  "branch": "codex/transient-thermal-workflow",
+  "baseCommit": "e9127d2efae2c6ff80bee2772e834401e0413104",
+  "scope": "Continuous accepted thermal history, portable project lineage and native-validated interrupted joint-flow/temperature session recovery; no new physical qualification.",
+  "host": {
+    "system": "Darwin",
+    "architecture": "arm64",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  },
+  "sourceSha256": {
+    "apps/cartmesh2d_transport_cli.cpp": "62b7893ca9c782704070a64224abed1bfbf6c9e2614c7c82efb89b64f13955b5",
+    "desktop/src/core/process.js": "3e352df99ffc695396478cfb326cf763456deb28268a9c10a369507962a1675a",
+    "desktop/src/core/project.js": "3cdb6ac4bfb41a45e80666282c1c664ed38b9a08ba94b9903514a54831bde86d",
+    "desktop/src/core/thermal-job.js": "9b15657c96c247f887cccc0eed47437b757b5a170d56e42c919dded38cfa252d",
+    "desktop/src/core/thermal.js": "6e977e39972cd29cc0ea4b29dfaaa259c28000792da737da0f354aba459142d0",
+    "desktop/src/core/thermal-history.js": "5239eb92fa2538cebaa1c298baf1fbb350e2ff6726c023e7ed52a671ce3e8a70",
+    "desktop/src/core/recovery.js": "bbb23c7d4884fc8f5c24dbfac7a76057b6990fb79717a2c3d3d9be3e2984dafe",
+    "desktop/src/main.js": "6b9d8e95b13c91e6b020106e9344e5a73bcf5523c0bec56bcffa74dc999f6856",
+    "desktop/src/preload.js": "24185f816932dda001062f56d356cbc013b0bbb831ea2e58285fbd0a0e1ab417",
+    "desktop/src/renderer/app.js": "bf0a645cfaaf6fa5d5f3448a570ec1161ff11e0b174afb4305944fb3cb862120",
+    "desktop/src/renderer/index.html": "ba1dc787fb2b162b6245fae1ae4b9545d485ebcc862782296c5cb067e5124f66",
+    "desktop/src/renderer/style.css": "33e7c924c149f6a5119fcc1757473a360dc201019237529789953a2bef653bff",
+    "desktop/tests/project.test.js": "f286b1ba02ec34c788d37aaafc365119cd1206e0f50fb22f9636c299182f0818",
+    "desktop/tests/recovery.test.js": "ec472fda36671fd9e4d96a3ad0ffff41976c06208c5eb09adb80bf5cf672037f",
+    "desktop/tests/thermal-history.test.js": "1583e804eeaf491b55f5e8366780075363525e344bd15388881e5dbdf1dee7ae",
+    "tests/thermal_control_cli_test.py": "97ee7167a34ea3a3417e8fed433fb970e444229ad9770e23bdb23d67a05c57ab",
+    "CMakeLists.txt": "ca793f2ef9f766c77ad2e56e3061d89b69665449170f4bb3d2ea603df4688984",
+    "src/fv/Incompressible2D.cpp": "4d0f573df7fe232fc1596ad91911c9b1556203860482caddb07fdc78b9d0ccfc",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "26dc69ee421a6361d1071a21ce7ebd4eab7d4340cb24bb673ccf38d9c0f060f2",
+    "src/fv/FlowBoundaryIO2D.cpp": "42283949d9c795702560a6c754695530bebc346bcc7e911cff20cbceecd5f4de",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "ef14aa217350081192019c5fc52366981c28d2f8d67280994f7ddd98c6b244ad",
+    "src/fv/ThermalFlow2D.cpp": "318615b654119fec0e56a80326dba463d6b9b8f572e5601bbd83472efc22c295",
+    "include/cartmesh2d/fv/ThermalFlow2D.hpp": "31cae6381602ed1610f7fa8dd8608466301df129f21e3262638c18b9664b2330",
+    "src/fv/ScalarTransport2D.cpp": "3974d98f50d3332a1f4e4c88b16c2ba72017f528dbe2a1df9959f48498ccac5c",
+    "include/cartmesh2d/fv/ScalarTransport2D.hpp": "fe6fb1bd17545638d8e2a7c998f3937652cc18a5cd3e7fbc3225867a4f4ece3b"
+  },
+  "baselineNote": "Native build includes inherited uncommitted common cleanup and incompressible changes; hashes record actual tested sources. Those unrelated changes are not included in this increment.",
+  "runtimeSha256": "74bc55d9ee56bae80a9302873011f7b57c00c17dca00fd451445c6261a726794",
+  "buildRuntimeIdentical": true,
+  "continuousHistory": {
+    "sequence": [
+      0.5,
+      0.8,
+      0.85,
+      1.3
+    ],
+    "beforeReopen": {
+      "rows": 118,
+      "firstTime": 4.8828125e-05,
+      "lastTime": 1.3
+    },
+    "afterReopen": {
+      "rows": 123,
+      "firstTime": 4.8828125e-05,
+      "lastTime": 1.4
+    },
+    "checks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "continuousHistory": {
+        "rows": 118,
+        "firstTime": 4.8828125e-05,
+        "lastTime": 1.3,
+        "segments": 4
+      },
+      "finalTime": 1.3,
+      "eventsChecked": true,
+      "firstEventTimes": [
+        0.137,
+        0.243,
+        0.337
+      ]
+    },
+    "project": "outputs/thermal-history/project.zip",
+    "reopenedProject": "outputs/thermal-history/reopened.zip"
+  },
+  "crashRecovery": {
+    "marker": {
+      "pid": 73298,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-recovery/crash/mesh-PKrbgJ",
+      "displayedTime": 0.5,
+      "observedTime": 0.7178405737705597,
+      "recoverySession": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-recovery/store/session-YWDv0e"
+    },
+    "before": {
+      "recoveryNotice": "中断运行已找回 t=0.7803749249155975 s 的原生接受状态；场图保留上次完整结果。",
+      "cells": 1300,
+      "thermalTime": 0.5,
+      "thermalHistory": {
+        "rows": 105,
+        "firstTime": 4.8828125e-05,
+        "lastTime": 0.7803749249155975
+      },
+      "thermalRestart": 0.7803749249155975,
+      "fieldSha256": "916ffc6a376b41adf0dbce493b53229d6740125a06da6421f61b08809a5a4a2b"
+    },
+    "after": {
+      "thermalTime": 1.4,
+      "thermalRestart": 1.4,
+      "thermalHistory": {
+        "rows": 133,
+        "firstTime": 4.8828125e-05,
+        "lastTime": 1.4
+      }
+    },
+    "eventEditor": {
+      "rows": 7,
+      "locked": true
+    },
+    "nativeComparison": {
+      "format": "cartmesh2d-thermal-recovery-comparison-v1",
+      "completed": true,
+      "cells": 1300,
+      "displayedTimeBefore": 0.5,
+      "recoveredTime": 0.7803749249155975,
+      "finalTime": 1.4,
+      "events": 7,
+      "eventTimes": [
+        0.913,
+        1.137,
+        1.337
+      ],
+      "sourceCheckpointUnchanged": true,
+      "sourceManifestTime": 0.5,
+      "oldDisplayUnchanged": true,
+      "fieldSha256": "916ffc6a376b41adf0dbce493b53229d6740125a06da6421f61b08809a5a4a2b",
+      "inputSha256": "29b8986af0f47165f0ab4ec3b1d368a3a38a2182608e41b8dbdcb04fae56902e",
+      "history": {
+        "availableSteps": 133,
+        "segments": 3,
+        "gaps": [],
+        "firstTime": 4.8828125e-05,
+        "lastTime": 1.4
+      },
+      "files": [
+        {
+          "suffix": ".thermal.checkpoint",
+          "bytes": 593335,
+          "sha256": "b4df6da5c5f79cfd9cd75638d6415deb4c9577bef2bdf68402a00cee5448a61e",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 170263,
+          "sha256": "a38dd4e01e2dd96d6d1fd4fa4b4b89834db65cabcec365ed9d6ffa30d4d3b336",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 217070,
+          "sha256": "9c92f05dd6fa0b9bc528e09416e98c0507336ada0d12d762428e0b9b9233575c",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".heat-history.csv",
+          "bytes": 4976,
+          "sha256": "e31a86abb42c5f7711e935171734003a61a4a50b4b113cc481152cebb367cc93",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".thermal-history.csv",
+          "bytes": 4626,
+          "sha256": "7c23f8d814bd07d7b00687c0d6f2910dc95d01453815fe6413c8b890215f1d8e",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".boundary-heat-history.csv",
+          "bytes": 73,
+          "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "bytes": 3200,
+          "sha256": "a751eed56ec238beda339239653376d5c370e3b3fbfa9b99a338d8faf12c75ec",
+          "byteEqual": true
+        }
+      ]
+    },
+    "project": "outputs/thermal-recovery/restored.zip"
+  },
+  "desktopLayout": {
+    "interactionChecks": true,
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 200,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": true
+      },
+      "previewCells": 1300,
+      "exportedCells": 1300,
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    },
+    "screenshotsVisuallyInspected": [
+      "outputs/thermal-recovery/restored-dialog.png",
+      "outputs/thermal-recovery/restored.png",
+      "outputs/thermal-recovery/layout.png"
+    ]
+  },
+  "tests": {
+    "native": {
+      "passed": 3,
+      "failed": 0,
+      "log": "outputs/thermal-history/native-tests.log"
+    },
+    "frontend": {
+      "passed": 215,
+      "failed": 0,
+      "log": "outputs/thermal-history/frontend-final.log"
+    },
+    "negativeCases": [
+      "truncated native joint checkpoint rejected by read-only validation",
+      "overlapping or escaping history paths rejected",
+      "native recovery validation failure retains earlier accepted project",
+      "live parent or native child prevents copying and restoring",
+      "cancellation during native validation does not publish fallback"
+    ]
+  },
+  "rawFilesIndex": "outputs/thermal-recovery/files-sha256.json",
+  "reproductionScript": "outputs/thermal-recovery/compare-cli.cjs",
+  "limitations": [
+    "Interrupted standalone flow is not yet journaled; its continuous history/recovery remains pending.",
+    "No Windows/Linux, packaged App or power-loss durability verification for this increment.",
+    "CLI comparison uses the exact same recovered input and changed step control; changing a requested segment endpoint can change the accepted time grid.",
+    "This is workflow/state validation, not spatial convergence or external physical qualification.",
+    "Missing accepted-history tails are marked as gaps; earlier unavailable samples are never reconstructed.",
+    "Source sessions, failed output and restored copies are retained; no automatic deletion policy introduced."
+  ]
+}

@@ -21,6 +21,7 @@ const state = {
   thermal: null,
   thermalRestart: null,
   thermalHistory: [],
+  thermalHistoryInfo: null,
   // Hand-placed refinement regions, in body spans about the body centre.
   regions: [],
   frame: null
@@ -74,6 +75,7 @@ function setBusy(busy) {
   $('exportResult').disabled = busy;
   $('returnHome').disabled = busy;
   $('openProject').disabled = busy;
+  $('recoverProject').disabled = busy;
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
   updateFlowMode();
@@ -860,11 +862,11 @@ function applyProjectInputs(ui) {
   $('gapCells').disabled = !$('useGap').checked;
   updateControlMode();
 }
-async function openProject() {
+async function openProject(recoveryId=null) {
   if (state.busy) return null;
   setBusy(true);
   try {
-    const payload = await window.cartmesh.openProject();
+    const payload = typeof recoveryId==='string'?await window.cartmesh.recoverProject(recoveryId):await window.cartmesh.openProject();
     if (!payload) return null;
     const ui = payload.projectUi;
     selectMethod(payload.job.method);
@@ -892,13 +894,14 @@ async function openProject() {
     if (payload.flow) bindFlow(payload.flow);
     if (payload.euler) bindEuler(payload.euler);
     if (payload.thermal) bindThermal(payload.thermal);
+    if(payload.thermalTimeline)setThermalTimeline(payload.thermalTimeline);
     if (ui?.displayMode && [...$('displayMode').options].some(option => option.value === ui.displayMode && !option.hidden)) {
       $('displayMode').value = ui.displayMode;
       $('displayMode').dispatchEvent(new Event('change'));
     }
     renderRegions(); renderFlowBoundaries();
     const restart = state.thermalRestart || state.flowRestart || state.eulerRestart;
-    status('项目已打开', `${payload.projectLabel || '几何'} · 已恢复最终网格、设置和结果。` +
+    status(payload.recoveryNotice?'会话已恢复':'项目已打开', payload.recoveryNotice || `${payload.projectLabel || '几何'} · 已恢复最终网格、设置和结果。` +
       (restart ? ` 可从 t=${restart.time} s 继续；时间步和目标时间可调整。` : ''));
     return payload;
   } catch (error) {
@@ -907,6 +910,36 @@ async function openProject() {
     return null;
   } finally { setBusy(false); updateControlMode(); }
 }
+
+let recoveryChoices=[];
+function updateRecoveryChoice() {
+  const entry=recoveryChoices.find(item=>item.id===$('recoveryChoice').value);
+  $('restoreRecovery').disabled=!entry || entry.active;
+  $('recoveryDetail').textContent=!entry?'没有保留的会话。':entry.error?entry.error:
+    `${entry.label} · ${entry.updatedAt}${entry.thermalTime!==null?' · 保存时 t='+entry.thermalTime+' s':''}\n`+
+    (entry.active?'会话或原生程序仍在运行，结束后再恢复。':entry.interrupted?'存在中断的温度运行，将核对最新原生接受状态。':'可恢复已保存的网格、结果与续算状态。');
+}
+async function showRecovery() {
+  if(state.busy)return;
+  try {
+    recoveryChoices=await window.cartmesh.listRecoveries();$('recoveryChoice').replaceChildren();
+    for(const entry of recoveryChoices) {
+      const option=document.createElement('option');option.value=entry.id;
+      option.textContent=`${entry.label} · ${entry.updatedAt || '记录错误'}`;option.disabled=entry.active;
+      $('recoveryChoice').appendChild(option);
+    }
+    const available=recoveryChoices.find(entry=>!entry.active);if(available)$('recoveryChoice').value=available.id;
+    updateRecoveryChoice();$('recoveryDialog').showModal();
+  } catch(error){status('无法读取恢复会话',error.message);}
+}
+async function restoreRecovery() {
+  const id=$('recoveryChoice').value;if($('restoreRecovery').disabled)return null;
+  $('recoveryDialog').close();return openProject(id);
+}
+$('recoverProject').addEventListener('click',showRecovery);
+$('recoveryChoice').addEventListener('change',updateRecoveryChoice);
+$('closeRecovery').addEventListener('click',()=>$('recoveryDialog').close());
+$('restoreRecovery').addEventListener('click',restoreRecovery);
 
 async function generate() {
   if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
@@ -1195,7 +1228,7 @@ function renderThermalMonitor() {
   const data=rows.filter(row => Number.isFinite(row[metric]));
   if (!data.length) return;
   const stride=Math.max(1,Math.ceil(data.length/700));
-  const sampled=data.filter((_r,i)=>i%stride===0);
+  const sampled=data.filter((r,i)=>i%stride===0 || r.breakBefore || data[i+1]?.breakBefore);
   if (sampled.at(-1)!==data.at(-1)) sampled.push(data.at(-1));
   const t0=data[0].time,t1=data.at(-1).time;
   let lo=Infinity,hi=-Infinity;
@@ -1204,17 +1237,22 @@ function renderThermalMonitor() {
   const x=t=>94+592*(t-t0)/(t1-t0||1),y=v=>100-82*(v-lo)/(hi-lo);
   const add=(tag,attrs,text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));if(text!==undefined)el.textContent=text;svg.appendChild(el);};
   add('path',{d:'M94 12 V100 H690',fill:'none',stroke:'currentColor',opacity:.3});
-  add('path',{d:sampled.map((r,i)=>`${i?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
+  add('path',{d:sampled.map((r,i)=>`${i&&!r.breakBefore?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
   const last=sampled.at(-1);add('circle',{cx:x(last.time),cy:y(last[metric]),r:2.5,fill:'currentColor'});
   const digits=Math.min(12,Math.max(3,2+Math.ceil(Math.log10(Math.max(Math.abs(lo),Math.abs(hi))/(hi-lo)||1))));
   for(const [tx,ty,label]of [[90,20,hi.toPrecision(digits)],[90,101,lo.toPrecision(digits)],[135,122,`${t0.toPrecision(4)} s`],[675,122,`${t1.toPrecision(4)} s`]])
     add('text',{x:tx,y:ty,fill:'currentColor','text-anchor':'end','font-size':11},label);
-  $('thermalMonitorCaption').textContent=`已接受联合时间步 · 最新 ${last[metric].toPrecision(Math.max(5,digits))} · 曲线按需抽样显示，导出 CSV 保留本次全部步数。`;
+  const info=state.thermalHistoryInfo;
+  const missing=(info?.gaps?.length?` · ${info.gaps.length} 处历史缺失，曲线断开`: '')+
+    (info?.startTime>0?` · 已保存区间从 ${info.startTime.toPrecision(5)} s 开始`:'');
+  const fieldTime=state.thermal?.summary.time;
+  const field=fieldTime!==undefined&&fieldTime!==t1?` · 场图 t=${fieldTime.toPrecision(6)} s`:'';
+  $('thermalMonitorCaption').textContent=`连续接受历史 · ${info?.availableSteps ?? rows.length} 步 · 最新 t=${t1.toPrecision(6)} s${field}${missing} · 曲线按需抽样，项目保留各段全部 CSV。`;
 }
 const thermalPatches = ['wall', 'inlet', 'outlet', 'top', 'bottom'];
 const thermalPatchId = patch => `thermal${patch[0].toUpperCase()}${patch.slice(1)}`;
 function clearThermalBinding({ hidePanel = false } = {}) {
-  state.thermal = null; state.thermalHistory = [];
+  state.thermal = null; state.thermalHistory = []; state.thermalHistoryInfo=null;
   if (hidePanel) { state.thermalRestart = null; $('thermalResume').checked = false; $('thermalBlock').hidden = true; }
   view.setThermalFields(null);
   $('thermalResult').hidden = true; $('thermalResult').replaceChildren();
@@ -1309,14 +1347,19 @@ function validThermalInputs() {
 function boundedThermalHistory(rows) {
   const accepted = rows.filter(row => row.accepted !== false && Number.isFinite(row.time));
   const stride = Math.max(1, Math.ceil(accepted.length / 1400));
-  return accepted.filter((_row, i) => i % stride === 0 || i === accepted.length - 1);
+  return accepted.filter((row,i)=>i%stride===0 || i===accepted.length-1 || row.breakBefore || accepted[i+1]?.breakBefore);
+}
+function setThermalTimeline(timeline) {
+  state.thermalHistory=boundedThermalHistory(timeline.rows);
+  const {rows,...info}=timeline;state.thermalHistoryInfo=info;
+  renderThermalMonitor();
 }
 function bindThermal(payload) {
   view.setThermalFields(payload.fields.cells);
   state.thermal = payload; state.thermalHistory = boundedThermalHistory(payload.history || []);
   $('thermalOption').hidden = false; $('displayMode').value = 'temperature'; view.mode = 'temperature';
   $('canvasWrap').classList.remove('light'); view.draw(); renderLegend(state.mesh, state.levelBasis);
-  const summary = payload.summary, last = state.thermalHistory.at(-1);
+  const summary = payload.summary, last = payload.history?.at(-1);
   const container = $('thermalResult'); container.replaceChildren();
   const heading = document.createElement('div'); heading.className = 'flow-state';
   heading.textContent = `温度与流动已接受 t=${Number(summary.acceptedTime ?? summary.time).toPrecision(6)} s · 本次 ${summary.completedSteps ?? summary.steps} 步 · 单向恒物性输运`;
@@ -1334,12 +1377,19 @@ async function refreshThermalState(restoreResult = false) {
   const saved = await window.cartmesh.thermalState();
   state.thermalRestart = saved.restart;
   if (restoreResult && saved.thermal) bindThermal(saved.thermal);
+  if(saved.timeline)setThermalTimeline(saved.timeline);
   updateThermalMode(); return saved;
 }
 async function runThermal() {
   if (state.busy || !state.result || !state.mesh || !validThermalInputs()) return;
   const request = thermalRequest();
-  clearThermalBinding(); setBusy(true); $('runThermal').textContent = '正在推进…';
+  const previousHistory=request.resume?state.thermalHistory:[];
+  const info=request.resume?state.thermalHistoryInfo:null;
+  const start=request.resume?state.thermalRestart.time:0;
+  clearThermalBinding();
+  state.thermalHistory=previousHistory;
+  state.thermalHistoryInfo={...(info||{availableSteps:0,segments:0,gaps:[],startTime:start}),liveStartTime:start,liveStarted:false};
+  renderThermalMonitor();setBusy(true); $('runThermal').textContent = '正在推进…';
   status('温度与流动推进中', '只有流动和温度均收敛才接受时间步；可取消并从联合状态继续。');
   try {
     const payload = await window.cartmesh.runThermal(request);
@@ -1738,6 +1788,11 @@ window.cartmesh.onFlowProgress(progress => {
 });
 window.cartmesh.onThermalProgress(progress => {
   if (progress.type !== 'thermal-time-step' || progress.accepted === false) return;
+  const info=state.thermalHistoryInfo;
+  if(info) {
+    if(!info.liveStarted && state.thermalHistory.at(-1)?.time<info.liveStartTime)progress={...progress,breakBefore:true};
+    info.liveStarted=true;info.availableSteps++;info.endTime=progress.time;
+  }
   state.thermalHistory.push(progress);
   if (state.thermalHistory.length > 1400) state.thermalHistory = boundedThermalHistory(state.thermalHistory);
   renderThermalMonitor();
@@ -1755,7 +1810,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, openProject, projectControls, selectMethod, chooseGeometry, generate, runFlow, runThermal, setThermalEvents, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, openProject, showRecovery, restoreRecovery, projectControls, selectMethod, chooseGeometry, generate, runFlow, runThermal, setThermalEvents, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

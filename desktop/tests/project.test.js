@@ -126,3 +126,24 @@ test('relative output directories are portable before the original path disappea
   assert.equal(loaded.mesh.cells.length,1);
   assert.ok(loaded.result.openFoam.path.startsWith(f.session+path.sep));
 });
+
+test('portable project retains accepted history lineage and restart identity',async t=>{
+  const {checkpointDigest,readThermalTimeline}=require('../src/core/thermal-history');
+  const f=await fixture(t),history=[];
+  const header='step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant\n';
+  for(const [index,startTime,times] of [[1,0,[.01,.02]],[2,.02,[.03,.04]]]) {
+    const file=path.join(f.root,`run-${index}.csv`);
+    await fs.writeFile(file,header+times.map((time,i)=>`${i+1},${time},1,2,1e-10,1e-12,2,1e-10,300,0,.1\n`).join(''));
+    history.push({file,startTime,endTime:times.at(-1),request:REQUEST,complete:true});
+  }
+  const text='CARTMESH2D_THERMAL_CHECKPOINT 1\nCOUPLING new-time-flux-Euler-v1\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.04\nFLUX 4 0 0 0 0\n';
+  const file=path.join(f.root,'thermal.checkpoint');await fs.writeFile(file,text);
+  f.current.thermalRestart={path:file,sha256:checkpointDigest(text),metadata:{time:.04,request:REQUEST},history};
+  await writeProjectManifest(f.current,{});
+  const zip=path.join(f.temp,'history.zip');await zipDirectory(f.root,zip);await fs.rm(f.root,{recursive:true});
+  const loaded=await openProject(zip,f.session),timeline=await readThermalTimeline(loaded);
+  assert.deepEqual(timeline.rows.map(r=>r.time),[.01,.02,.03,.04]);
+  assert.ok(loaded.thermalRestart.history.every(h=>h.file.startsWith(f.session+path.sep)));
+  loaded.thermalRestart.sha256='0'.repeat(64);await writeProjectManifest(loaded,{});
+  await assert.rejects(readProject(loaded.outputDirectory),/身份不同/);
+});

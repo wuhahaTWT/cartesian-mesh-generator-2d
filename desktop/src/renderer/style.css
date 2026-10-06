@@ -555,3 +555,7 @@ html, body { height: 100%; }
 .thermal-event-row .event-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .thermal-event-row .event-header button { padding: 3px 8px; }
 .thermal-event-row label { min-width: 0; }
+
+#recoveryDialog { max-width: min(620px, 90vw); border: 1px solid var(--line); padding: 24px; background: var(--panel); color: var(--ink); }
+#recoveryDialog::backdrop { background: #0006; }
+#recoveryDetail { white-space: pre-line; }

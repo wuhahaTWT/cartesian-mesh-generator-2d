@@ -17,9 +17,17 @@
   </button>
   <button id="returnHome" class="home-button" type="button" title="清空预览，回到开始；本次结果仍可导出">回到开始</button>
   <button id="openProject" class="home-button" type="button">打开项目…</button>
+  <button id="recoverProject" class="home-button" type="button">恢复会话…</button>
   <span>CartMesh2D</span>
   <label class="theme-control">外观 <select id="appTheme" aria-label="界面主题"><option value="modern">现代简约</option><option value="duet">科研终端</option></select></label>
 </div>
+<dialog id="recoveryDialog">
+  <h2>恢复保留的会话</h2>
+  <p>选择先前的项目。将打开工作副本，原会话和诊断文件继续保留。</p>
+  <label class="field">会话<select id="recoveryChoice"></select></label>
+  <p id="recoveryDetail"></p>
+  <div class="pair"><button id="closeRecovery" type="button">取消</button><button id="restoreRecovery" type="button">恢复所选会话</button></div>
+</dialog>
 <main class="shell">
   <aside class="panel" id="settingsPanel">
     <header class="brand">

@@ -151,6 +151,25 @@ function thermalCheckpointTime(text, events=[]) {
   requireValue(/^FLUX \d+ .+$/m.test(parts[1]),'续算通量缺失。');
   return time;
 }
+// Read the native accepted-step stream. A crashed run may end in a partial
+// final line; completed projects still require the entire stream and endpoint.
+function readThermalHistory(text,input,startTime,endTime,{partial=false}={}) {
+  const r=validateThermalRequest(input);
+  const truncated=partial && !text.endsWith('\n');
+  if(truncated)text=text.slice(0,text.lastIndexOf('\n')+1);
+  if(partial && !text.trim())return {rows:[],truncated:true};
+  let previous=startTime;
+  const rows=csvRows(text,'step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant').map((row,i)=>{
+    requireValue(row.every(v=>v.trim()!==''&&Number.isFinite(Number(v))),'时间历史含非法值。');
+    const [step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant]=row.map(Number);
+    requireValue(step===i+1 && time>previous && time<=endTime,'时间历史次序错误。');
+    requireValue(r.mode==='adaptive' ? time-previous<=r.dt*(1+1e-9) : near(time,startTime+(i+1)*r.dt),'接受时钟或最大步长错误。');
+    previous=time;
+    return validateRow({step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant},r.tolerance);
+  });
+  if(!partial)requireValue(rows.length>0&&rows.at(-1).time===endTime,'时间历史未到已接受终点。');
+  return {rows,truncated};
+}
 function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,input,startTime=0) {
   const r=validateThermalRequest(input);
   requireValue(summary?.format==='cartmesh2d-scalar-transport-v1'&&summary.status==='converged'&&summary.converged===true&&summary.evolvingFlow===true,'不是完整同步热计算结果。');
@@ -189,15 +208,9 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
     min=Math.min(min,theta);max=Math.max(max,theta);heat+=area*theta;return{id,theta};
   });
   requireValue(near(min,summary.minValue)&&near(max,summary.maxValue),'温度范围不一致。');
-  const history=csvRows(historyText,'step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant').map((row,i)=>{
-    requireValue(row.every(v=>v.trim()!==''&&Number.isFinite(Number(v))),'时间历史含非法值。');
-    const [step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant]=row.map(Number);
-    requireValue(step===i+1&&(adaptive ? time>startTime && time<=t : near(time,startTime+(i+1)*r.dt)),'时间历史次序错误。');
-    return validateRow({step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant},r.tolerance);
-  });
+  const history=readThermalHistory(historyText,r,startTime,summary.time).rows;
   requireValue(history.length===(adaptive?summary.completedSteps:r.steps),'时间历史不完整。');
-  if(adaptive)for(let i=1;i<history.length;++i)requireValue(history[i].time>history[i-1].time&&history[i].time-history[i-1].time<=r.dt*(1+1e-9),'接受时钟或最大步长错误。');
   requireValue(near(history.at(-1).heatContent,heat)&&near(history.at(-1).globalBalance,summary.globalBalance)&&near(history.at(-1).scalarResidual,summary.residualNorm),'历史、场与摘要不一致。');
   return {summary:{...summary,dt:r.dt},fields:{cells},history,request:r};
 }
-module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput};
+module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,readThermalHistory,validateThermalOutput};

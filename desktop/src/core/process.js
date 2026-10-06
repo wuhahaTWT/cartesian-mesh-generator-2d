@@ -1,7 +1,7 @@
 'use strict';
 const { spawn } = require('node:child_process');
 
-function run(command, args, onLine = () => {}, signal, timeoutMs = 0, acceptedCodes = [0]) {
+function run(command, args, onLine = () => {}, signal, timeoutMs = 0, acceptedCodes = [0], options = {}) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new Error('操作已取消'));
     const child = spawn(command, args, { windowsHide: true });
@@ -15,6 +15,7 @@ function run(command, args, onLine = () => {}, signal, timeoutMs = 0, acceptedCo
     signal?.addEventListener('abort', cancel, { once: true });
     if (timeoutMs > 0) timeoutTimer = setTimeout(() => { timedOut = true; cancel(); }, timeoutMs);
     const cleanup = () => { clearTimeout(killTimer); clearTimeout(timeoutTimer); signal?.removeEventListener('abort', cancel); };
+    child.once('spawn',()=>{try {options.onSpawn?.(child.pid);}catch(error){child.kill('SIGKILL');cleanup();reject(error);}});
     let stdout = '';
     let stderr = '';
     let stdoutLine = '';

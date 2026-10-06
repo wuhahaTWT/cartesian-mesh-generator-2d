@@ -21,6 +21,11 @@ def main(a):
         assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
         return out
     continuous=invoke('continuous')
+    check=invoke('check-only',['--restart',continuous.with_suffix('.thermal.checkpoint'),'--check-restart','on'])
+    checked=json.loads((root/'check-only.log').read_text())
+    assert checked['status']=='valid' and checked['time']==6 and not check.with_suffix('.json').exists()
+    bad=root/'truncated.thermal.checkpoint';bad.write_text(continuous.with_suffix('.thermal.checkpoint').read_text()[:-12])
+    invoke('check-truncated',['--restart',bad,'--check-restart','on'],1)
     # Frozen transport must accept the custom-boundary checkpoint written by
     # this same native coupled run, including its exact carrier flux and clock.
     carrier=continuous.with_suffix('.carrier.checkpoint')
@@ -120,7 +125,7 @@ def main(a):
         assert replaced.with_suffix('.thermal.checkpoint').read_bytes()==saved
         assert recovery.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
         replaced_path_checked=True
-    report={'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+    report={'readOnlyNativeCheckpointValidation':True,'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
             'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
             'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
             'changedStepTime':meta['acceptedTime'],'replacedLiveOutputFailsClosedAndResumesIdentically':replaced_path_checked,

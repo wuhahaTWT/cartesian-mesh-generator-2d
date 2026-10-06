@@ -61,6 +61,16 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 真实 App 的跨进程项目验收入口：先正常运行并 `--export=/绝对路径/project.zip`，退出后使用 `--smoke=rectangle --open-project=/绝对路径/project.zip --out=/绝对路径/验收目录` 直接打开。可附加 `--project-resume=thermal --project-dt=.025 --project-end-time=1.4`；独立流动用 `--project-resume=flow --project-dt=.01 --project-steps=2`。支持已有 `--shot`、`--export`；不会先生成新网格。路径参数仅替代 smoke 文件对话框，正式操作通过顶部“打开项目”。原生终点回归在 `tests/thermal_flow_test.cpp`，前端文件恢复/取消检查在 `desktop/tests/project.test.js`、`archive.test.js` 和 `flow-checkpoint.test.js`。
 
+### 温度连续历史与会话恢复
+
+`core/thermal-history.js` 沿 `thermalRestart.history` 的真实运行区间读取原生接受 CSV，检查非重叠时钟和检查点终点；检查点 SHA256 绑定选入状态。`core/thermal.js` 共用接受步读取规则：完整段须达到其完整结果终点，失败/中断段可缺末尾未刷出的行，但已完整写出的坏行仍拒绝。缺少采样的区间返回显式 gaps，renderer 不跨缺口连线；旧项目只从与选中检查点路径相同的完整段建立历史。表格/场图仍来自各自完整结果，聚合历史不覆盖场的物理时钟。
+
+`core/recovery.js` 在应用数据目录 `recovery/session-*` 保留原项目清单与独立恢复记录。温度作业启动前保存已关闭文件的 SHA256 清单，再登记新运行目录；`core/process.js` 的 onSpawn 写入原生进程 PID。恢复时确认原 App/子进程已结束，复制工作目录后验证基线项目。对中断的新检查点，`checkThermalRestart` 调用 `cartmesh2d_transport_cli --check-restart on`，由既有原生完整读取器验证网格、边界、物性、方法和完整时间事件；之后才发布更新时钟和历史。取消、原生核对失败均不发布未经验证的新状态，源会话不改动。该只读选项需要原正常物理输入及 `--restart`；允许目标时间等于检查点时间，不产生输出文件。
+
+真实 App 强制退出验收使用独立恢复目录：在温度事件 smoke 参数后加 `--recovery-root=/绝对路径/store --thermal-crash-after=.7`。先完成 .5 s，再续算并在接收达到 .7 s 的接受进度时 SIGKILL **本次测试 App 自身**；原生程序可能多接受一步，以落盘检查点为准。用新进程 `--smoke=rectangle --recover-latest=true --recovery-root=/绝对路径/store --project-resume=thermal --project-dt=.025 --project-end-time=1.4 --thermal-events=true --out=/绝对路径/recovered --shot=/绝对路径/recovered.png --export=/绝对路径/recovered.zip`，通过真实恢复对话框、renderer、IPC 和原生程序继续。`--recover-latest` 与强制终止开关仅在 smoke 分支生效；正常 App 由用户选择“恢复会话”。
+
+历史/项目/进程存活/取消回归分别在 `desktop/tests/thermal-history.test.js`、`project.test.js`、`recovery.test.js`；只读原生核对与截断文件回归在 `tests/thermal_control_cli_test.py`。实际逐字节续算对照脚本、调用参数和源文件索引在 `outputs/thermal-recovery/`，旧的预算失败连续历史证据在 `outputs/thermal-history/`。当前中断登记只覆盖温度联算；独立流动、断电持久性和多平台另按当前状态维护。
+
 ### 桌面热时间事件
 
 `core/thermal.js` 归一化请求的 `events`，按绝对时刻和目标排序，拒绝同时间重复目标；源项记录 `{time,target:'source',kind:'source',value}`，边界记录 `{time,target,kind,value,inflowValue}`。目标为既有 wall/inlet/outlet/top/bottom，按当前工况与真实最终网格映射到 `face:ID`；没有对应面的目标明确失败，不按屏幕邻近猜测边界。桌面事件要求自动步长模式；空列表保留原有静态流程。

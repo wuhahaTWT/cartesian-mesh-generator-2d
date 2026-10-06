@@ -20,7 +20,9 @@ const { saveDirectoryArchive } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
-const { runThermalJob } = require('./core/thermal-job');
+const { runThermalJob,checkThermalRestart } = require('./core/thermal-job');
+const {readThermalTimeline}=require('./core/thermal-history');
+const {RecoveryStore}=require('./core/recovery');
 const { runEulerJob, importEulerRestart } = require('./core/euler-job');
 const { readCheckpointMetadata, readAcceptedCheckpointMetadata } = require('./core/flow-checkpoint');
 const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
@@ -31,6 +33,7 @@ const { parseCm2d, levelHistogram, embeddedBounds,
 
 let mainWindow;
 let sessionDirectory;
+let recoveryStore;
 let currentResult;
 let operation = null;
 const rasterSources = new Map();
@@ -39,7 +42,20 @@ const timingHistory = new Map();
 async function exclusive(work) {
   if (operation) throw new Error('已有操作正在进行，请等待或取消。');
   operation = new AbortController();
-  try { return await work(); } finally { operation = null; }
+  try { return await work(); } finally {
+    if(operation?.persistRecovery) {
+      try {await persistRecovery(operation.recoveryUi);}
+      catch(error) {mainWindow?.webContents.send('run-line','会话恢复点保存失败：'+error.message);}
+    }
+    operation = null;
+  }
+}
+async function persistRecovery(ui) {
+  if(!currentResult||currentResult.incomplete)return;
+  if(ui===undefined)ui=await mainWindow?.webContents.executeJavaScript('window.__projectControls?.() || null').catch(()=>null);
+  if(!ui)ui=currentResult.projectUi || null;
+  if(ui&&currentResult.thermalRestart)ui={...ui,inputs:{...ui.inputs,thermalResume:true,flowResume:false}};
+  await recoveryStore.checkpoint(currentResult,ui);
 }
 async function exportPackage(destination) {
   if (!currentResult) throw new Error('请先成功生成网格。');
@@ -187,7 +203,12 @@ async function createWindow() {
 }
 app.whenReady().then(async () => {
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
-  sessionDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'cartmesh2d-session-'));
+  const smokeMode=process.argv.some(arg=>arg.startsWith('--smoke='));
+  const smokeRecovery=smokeMode?process.argv.find(arg=>arg.startsWith('--recovery-root='))?.slice(16):null;
+  const recoveryBase=smokeRecovery || (smokeMode?await fs.mkdtemp(path.join(app.getPath('temp'),'cartmesh2d-recovery-test-')):path.join(app.getPath('userData'),'recovery'));
+  await fs.mkdir(recoveryBase,{recursive:true});
+  sessionDirectory = await fs.mkdtemp(path.join(recoveryBase,'session-'));
+  recoveryStore=new RecoveryStore(recoveryBase,sessionDirectory);
   const log = line => mainWindow?.webContents.send('run-line', line);
 
   ipcMain.handle('catalog', () => ({
@@ -256,7 +277,16 @@ app.whenReady().then(async () => {
     const restored = await openProject(file, testRoot || sessionDirectory, operation.signal);
     // Publishing is transactional; an invalid ZIP never replaces this binding.
     currentResult = restored;
-    return restored;
+    operation.persistRecovery=true;operation.recoveryUi=restored.projectUi;
+    return {...restored,thermalTimeline:await readThermalTimeline(restored)};
+  }));
+
+  ipcMain.handle('list-recoveries',()=>recoveryStore.list());
+  ipcMain.handle('recover-project',(_event,id)=>exclusive(async()=>{
+    const restored=await recoveryStore.restore(id,(currentResult,checkpoint,request,signal)=>
+      checkThermalRestart({currentResult,checkpoint,request,executable,runProcess,signal}),operation.signal);
+    currentResult=restored;
+    return {...restored,thermalTimeline:await readThermalTimeline(restored)};
   }));
 
   const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
@@ -495,7 +525,8 @@ app.whenReady().then(async () => {
     return currentResult.eulerRestart.metadata;
   }));
 
-  ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
+  ipcMain.handle('thermal-state', async () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null,
+    timeline:currentResult?await readThermalTimeline(currentResult):null}));
   // A smoke invocation can replace the file dialog, but still goes through the
   // real import handler. Normal renderer IPC cannot supply arbitrary paths.
   const smokeCheckpointPath = kind => process.argv.some(arg=>arg.startsWith('--smoke='))
@@ -516,9 +547,19 @@ app.whenReady().then(async () => {
   ipcMain.handle('run-thermal', (_event,request) => exclusive(async()=>{
     requireFluidMesh(currentResult);
     const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
+    await persistRecovery();operation.persistRecovery=true;
     log('正在同步推进原生流动与温度；温度不反馈物性或浮力。');
     return runThermalJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
-      onProgress:progress=>mainWindow.webContents.send('thermal-progress',progress),log});
+      onProgress:progress=>{
+        mainWindow.webContents.send('thermal-progress',progress);
+        const crash=process.argv.some(arg=>arg.startsWith('--smoke='))?process.argv.find(arg=>arg.startsWith('--thermal-crash-after='))?.slice(22):null;
+        if(crash!==null && crash!==undefined && progress.time>=Number(crash)) {
+          const marker=process.argv.find(arg=>arg.startsWith('--out='))?.slice(6);
+          if(marker)require('node:fs').writeFileSync(path.join(marker,'crash-marker.json'),JSON.stringify({pid:process.pid,outputDirectory:currentResult.outputDirectory,displayedTime:currentResult.thermal?.summary.time,observedTime:progress.time,recoverySession:sessionDirectory}));
+          process.kill(process.pid,'SIGKILL');
+        }
+      },log,
+      onPrepared:pending=>recoveryStore.beginThermal(currentResult,pending)});
   }));
 
   ipcMain.handle('read-raster', async (_event, sourcePath) => {
@@ -719,6 +760,7 @@ app.whenReady().then(async () => {
   }
 
   ipcMain.handle('generate', (_event, request) => exclusive(async () => {
+    operation.persistRecovery=true;
     if(request.method==='background') return generateOnce({...request,automatic:false,targetCells:undefined});
     operation.automatic = Boolean(request.automatic);
     const sample = SAMPLES.find(item => resourcePath('samples', item.file) === request.geometryPath);
@@ -853,13 +895,17 @@ async function runSmoke() {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  if (argument('open-project')) {
+  if (argument('open-project') || argument('recover-latest') === 'true') {
+    if(argument('recover-latest') === 'true') {
+      await mainWindow.webContents.executeJavaScript('window.__smoke.showRecovery()');
+      if(shot)await fs.writeFile(shot.replace(/\.png$/,'-dialog.png'),(await mainWindow.webContents.capturePage()).toPNG());
+    }
     const report = await mainWindow.webContents.executeJavaScript(`(async () => {
       const smoke=window.__smoke;
-      const restored=await smoke.openProject();
+      const restored=await (${JSON.stringify(argument('recover-latest') === 'true')}?smoke.restoreRecovery():smoke.openProject());
       if(!restored)throw new Error(document.getElementById('statusText').textContent);
-      const before={cells:smoke.state.mesh.cells.length,geometryPath:smoke.state.geometryPath,
-        flowTime:smoke.state.flow?.summary.acceptedTime,thermalTime:smoke.state.thermal?.summary.time,
+      const before={recoveryNotice:restored.recoveryNotice,cells:smoke.state.mesh.cells.length,geometryPath:smoke.state.geometryPath,
+        flowTime:smoke.state.flow?.summary.acceptedTime,thermalTime:smoke.state.thermal?.summary.time,thermalHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0]?.time,lastTime:smoke.state.thermalHistory.at(-1)?.time},
         flowRestart:smoke.state.flowRestart?.time,thermalRestart:smoke.state.thermalRestart?.time,
         controls:smoke.projectControls(),fields:smoke.state.thermal?.fields || smoke.state.flow?.fields};
       const kind=${JSON.stringify(argument('project-resume'))};
@@ -876,7 +922,7 @@ async function runSmoke() {
       }
       return {projectOpened:true,before,after:{flowTime:smoke.state.flow?.summary.acceptedTime,
         thermalTime:smoke.state.thermal?.summary.time,thermalRestart:smoke.state.thermalRestart?.time,
-        thermalSummary:smoke.state.thermal?.summary,thermalFiles:smoke.state.thermal?.files,
+        thermalSummary:smoke.state.thermal?.summary,thermalFiles:smoke.state.thermal?.files,thermalHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0]?.time,lastTime:smoke.state.thermalHistory.at(-1)?.time},
         controls:smoke.projectControls()},status:document.getElementById('statusTitle').textContent,
         detail:document.getElementById('statusText').textContent};
     })()`);
@@ -1283,9 +1329,14 @@ async function runSmoke() {
         if([...document.querySelectorAll('#thermalEvents input,#thermalEvents select,#thermalEvents button')].some(input=>!input.disabled))
           throw new Error('Resuming event law is not locked');
       }
+      if(${JSON.stringify(argument('thermal-crash-after') !== null)}) {
+        document.getElementById('flowEndTime').value='100';
+        await smoke.runThermal();throw new Error('Crash acceptance did not stop the App');
+      }
       document.getElementById('flowEndTime').value='.8';document.getElementById('flowDt').value='.05';
       await smoke.runThermal();
       if(smoke.state.thermal?.summary.time!==.8)throw new Error('Adaptive thermal restart failed');
+      if(smoke.state.thermalHistory.length!==first.history.length+smoke.state.thermal.history.length)throw new Error('Continued thermal history lost the first run');
       const complete=smoke.state.thermal;
       document.getElementById('flowEndTime').value='1.3';document.getElementById('flowMaxSteps').value='1';
       await smoke.runThermal();
@@ -1293,12 +1344,13 @@ async function runSmoke() {
       // result and its files rather than JavaScript object identity.
       if(JSON.stringify(smoke.state.thermal)!==JSON.stringify(complete) || !(smoke.state.thermalRestart?.time>.8))
         throw new Error('Adaptive failure did not retain displayed result and latest accepted restart');
+      if(smoke.state.thermalHistory.at(-1)?.time!==smoke.state.thermalRestart.time)throw new Error('Failed-run accepted history was lost');
       document.getElementById('flowMaxSteps').value='100000';await smoke.runThermal();
       if(smoke.state.thermal?.summary.time!==1.3)throw new Error('Resume after adaptive budget exhaustion failed');
       document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
       if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
       smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,firstTime:first.summary.time,changedStepResume:true,
-        failedBudgetRetained:true,resumeAfterFailure:true,finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
+        failedBudgetRetained:true,resumeAfterFailure:true,continuousHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0].time,lastTime:smoke.state.thermalHistory.at(-1).time,segments:smoke.state.thermalHistoryInfo.segments},finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}})) document.getElementById(id).value=value;
@@ -1461,7 +1513,7 @@ async function runSmoke() {
       throw new Error('App acceptance requires a converged flow; diagnostic output is retained.');
     console.log(JSON.stringify(report, null, 2));
       await mainWindow.webContents.executeJavaScript('window.__rasterSmoke.cancel()');
-      await fs.rm(sessionDirectory, { recursive: true, force: true });
+      if(!recoveryStore.records.size)await fs.rm(sessionDirectory, { recursive: true, force: true });
       app.exit(0); return;
     }
     if (report.welcomeOnly) {
@@ -1473,7 +1525,7 @@ async function runSmoke() {
       await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
       await new Promise(resolve => setTimeout(resolve, 1000));
       await fs.writeFile(argument('welcome-shot'), (await mainWindow.webContents.capturePage(undefined, { stayAwake: true })).toPNG());
-      await fs.rm(sessionDirectory, { recursive: true, force: true });
+      if(!recoveryStore.records.size)await fs.rm(sessionDirectory, { recursive: true, force: true });
       app.exit(0); return;
     }
     if(currentResult?.background) {
@@ -1656,7 +1708,7 @@ async function runSmoke() {
       console.log(`screenshot=${shot}`);
       await fs.writeFile(shot + '.json', JSON.stringify(report, null, 2));
     }
-    await fs.rm(sessionDirectory, { recursive: true, force: true });
+    if(!recoveryStore.records.size)await fs.rm(sessionDirectory, { recursive: true, force: true });
     app.exit(/失败/.test(report.status) ? 1 : 0);
   }).catch(error => {
     console.error(error);
@@ -1670,5 +1722,5 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   operation?.abort();
-  if (sessionDirectory) require('node:fs').rmSync(sessionDirectory, { recursive: true, force: true });
+  if (sessionDirectory && !recoveryStore?.records.size) require('node:fs').rmSync(sessionDirectory, { recursive: true, force: true });
 });
