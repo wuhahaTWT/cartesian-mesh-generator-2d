@@ -341,6 +341,21 @@ OPENBLAS_NUM_THREADS=1 python artifacts/current/native-laminar-pressure-energy.p
 
 前者实际重新求解两次；后者构建研究驱动、输出十个原生限制矩阵、三组完整差分功和线性压力补丁，并读取前者结果。输出位于两个对应 `outputs/cloud-laminar/` 子目录，摘要为 `artifacts/current/native-laminar-pressure-energy.json`。原始矩阵、每格功、两次消融的全部场/面/历史、源码与二进制哈希必须一并保留。当前证据只支持下一步联合设计压力力、质量通量稳定项与几何一致性，不允许静默选择支路。
 
+`native-laminar-coupling-energy.cpp` 对最畸变面附近的有限图支撑，用同一原生黏性面通量、保守压力梯度、速度面插值和黏性对角 `rAU` 构造局部 `S=C-DH A_patch⁻¹ G`；以主元消元求速度响应，再报告对称部最小特征值和原算子直接二次型。它使用欧氏归一化，黏性值单位为 `m²/s`、压力块为 `s`；不能和前述面积归一化速率直接比较。正方格/剪切格复用现有 `flow_face_test.cpp` 夹具。可选 `minimum` 只研究最小压力分解，`midpoint` 保留偏斜修正而把内部面插值权重设为 1/2；两者仅作用于探针，不修改产品。Mac 复现方式如下，Linux 按已有原生库链接方式省略 Accelerate；`-Wno-unused-parameter` 对应复用测试夹具已有的未使用形参。
+
+```sh
+mkdir -p outputs/laminar-stability/coupling-energy
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
+  -I include artifacts/current/native-laminar-coupling-energy.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate \
+  -o outputs/laminar-stability/coupling-energy/probe
+outputs/laminar-stability/coupling-energy/probe square 5
+outputs/laminar-stability/coupling-energy/probe shear 5
+outputs/laminar-stability/coupling-energy/probe path/to/mesh.solver.cm2d 5
+```
+
+指定同一网格追加 `minimum` 或 `midpoint` 可复算研究对照；支撑圈数仅限制探针成本，不是产品质量参数。结果见 `native-laminar-coupling-energy.json`，本批输入、矩阵计算程序和输出保存于其列出的忽略提交恢复包。负二次型只能用于形成机制假设，不能冒充全局失稳或选择物理解。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh
