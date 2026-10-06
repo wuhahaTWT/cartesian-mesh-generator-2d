@@ -1,0 +1,311 @@
+{
+  "schema": 1,
+  "sourceBase": "37d8bbade12d6caf5472a1aa6bc16c2fa8cb655e",
+  "sourceBaseTree": "d212321ff9fc7e436d814fdd8df371fe62ee98a7",
+  "scope": "Mechanism research; no change to product equations, defaults, gates, boundaries or candidate selection",
+  "environment": {
+    "platform": "Linux x86_64",
+    "compiler": "GCC 13.3.0"
+  },
+  "supportDefinition": "all embedded-wall cells plus complete graph rings; omitted perturbation DOFs are zero, physical cells and mesh are not removed",
+  "meshSha256": {
+    "bad": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+    "coarse": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+    "repaired": "290b2a2918ee956a998c881d5d6192983393b4a7025e8f63203f89f3479edc5d",
+    "fine": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280"
+  },
+  "spectra": {
+    "bad-symmetric-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/bad-symmetric-ring1.matrix.csv",
+      "matrixSha256": "43385f6d4cd50bff9f6035649493cd6432a164f15761cd86d1ec874fa718f21a",
+      "cellsSha256": "04387d0eb698251c91666e49368af811f11b1d7d275e2742151e9eb09725b0fd",
+      "supportCells": 288,
+      "dimension": 576,
+      "symmetricMinimum": -1431960.4956831064,
+      "symmetricMaximum": -302.2496671405424,
+      "eigenvalueMinimumRealPart": -1387453.436364487,
+      "eigenvalueMaximumRealPart": -307.02087113151947,
+      "criticalSymmetricEigenResidual": 1.275260270477158e-10,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "bad-symmetric-ring3": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/bad-symmetric-ring3.matrix.csv",
+      "matrixSha256": "74a7867973fb238d01b60ddd61449347c612d90a4c6e8d42b377c989feb85457",
+      "cellsSha256": "6750c24f1dc1b465a0b1c58d0ae371dde40661974f1e0bff9838e66e9e6d61b5",
+      "supportCells": 452,
+      "dimension": 904,
+      "symmetricMinimum": -1431960.4956831068,
+      "symmetricMaximum": -89.9753983588721,
+      "eigenvalueMinimumRealPart": -1387453.436364484,
+      "eigenvalueMaximumRealPart": -91.08683187218548,
+      "criticalSymmetricEigenResidual": 1.2943299000489362e-10,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "bad-laplacian-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/bad-laplacian-ring1.matrix.csv",
+      "matrixSha256": "8dc0ba841fb0e734f932f934379175e8a3e3d906c709b720da88f32d01bae97c",
+      "cellsSha256": "04387d0eb698251c91666e49368af811f11b1d7d275e2742151e9eb09725b0fd",
+      "supportCells": 288,
+      "dimension": 576,
+      "symmetricMinimum": -669416.507634286,
+      "symmetricMaximum": -287.274916627627,
+      "eigenvalueMinimumRealPart": -625899.359319523,
+      "eigenvalueMaximumRealPart": -288.3885140570875,
+      "criticalSymmetricEigenResidual": 8.636855103571362e-11,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "bad-orthogonal-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/bad-orthogonal-ring1.matrix.csv",
+      "matrixSha256": "c36bed39dbb531b60f0c1daac2ba7b410064eb06b6ef4fe7fbebc52af7edbaa7",
+      "cellsSha256": "04387d0eb698251c91666e49368af811f11b1d7d275e2742151e9eb09725b0fd",
+      "supportCells": 288,
+      "dimension": 576,
+      "symmetricMinimum": -702925.6836132073,
+      "symmetricMaximum": -280.14024348375926,
+      "eigenvalueMinimumRealPart": -702925.6836132106,
+      "eigenvalueMaximumRealPart": -280.1402434837707,
+      "criticalSymmetricEigenResidual": 1.613538541809531e-10,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "coarse-symmetric-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/coarse-symmetric-ring1.matrix.csv",
+      "matrixSha256": "1a4be0c273c5c8d35b10acb2d25c8bf2f0830942491fe39ad46892b0ee7ef669",
+      "cellsSha256": "16fb5b9777dd109c2e87d62b3bd2ccb3b98d1ab06365df79c14a33a18e5e9890",
+      "supportCells": 201,
+      "dimension": 402,
+      "symmetricMinimum": -300500.63561501587,
+      "symmetricMaximum": -86.1007236979461,
+      "eigenvalueMinimumRealPart": -246923.19504173027,
+      "eigenvalueMaximumRealPart": -87.90073978111026,
+      "criticalSymmetricEigenResidual": 4.413720608343465e-11,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "repaired-symmetric-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/repaired-symmetric-ring1.matrix.csv",
+      "matrixSha256": "b231e91e9ead01a26c1a220752ceb4c82e83beed6e22e37ea930586b92c9d542",
+      "cellsSha256": "23d963c536c59f799a37125accdb7c78ea2aee6cae91c208d8945d243a2efd9d",
+      "supportCells": 280,
+      "dimension": 560,
+      "symmetricMinimum": -1427295.292170393,
+      "symmetricMaximum": -301.6754475792766,
+      "eigenvalueMinimumRealPart": -1386787.0577778146,
+      "eigenvalueMaximumRealPart": -307.0398390007616,
+      "criticalSymmetricEigenResidual": 1.226497904875456e-10,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "fine-symmetric-ring1": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/fine-symmetric-ring1.matrix.csv",
+      "matrixSha256": "4b09249a945fd852c86b453492b296fe7ceeff05b5134f5477d6f9238900a2e0",
+      "cellsSha256": "eefe50d64fb497fee61070f6d0f5927b753d0aa05ff8e7bad205f1db302dd4b6",
+      "supportCells": 436,
+      "dimension": 872,
+      "symmetricMinimum": -27485002.75878364,
+      "symmetricMaximum": -513.1266213407118,
+      "eigenvalueMinimumRealPart": -26657647.198507443,
+      "eigenvalueMaximumRealPart": -1207.994792222611,
+      "criticalSymmetricEigenResidual": 6.326598837548416e-10,
+      "interpretation": "restricted viscous perturbation generator at nu=1 m2/s; eigenvalues in 1/s"
+    },
+    "bad-pressure-ring3": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/bad-pressure-ring3.matrix.csv",
+      "matrixSha256": "253ea5f7a201aa53904b6d0e267dd004afc5266af35c2394b12d773a37174dc3",
+      "cellsSha256": "6750c24f1dc1b465a0b1c58d0ae371dde40661974f1e0bff9838e66e9e6d61b5",
+      "supportCells": 452,
+      "dimension": 452,
+      "symmetricMinimum": -9104.559606988449,
+      "symmetricMaximum": 47925.73034730834,
+      "eigenvalueMinimumRealPart": -43.12048815227254,
+      "eigenvalueMaximumRealPart": 34324.25202871509,
+      "criticalSymmetricEigenResidual": 1.942938429683178e-11,
+      "interpretation": "restricted geometric pressure-flux block at uniform rAU=1 s, not full saddle Jacobian"
+    },
+    "coarse-pressure-ring3": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/coarse-pressure-ring3.matrix.csv",
+      "matrixSha256": "79e9edc2580ac6dc719af8e54a2e6109ff193a4166de410ecf50fb52eb10908e",
+      "cellsSha256": "919cd20fb84e2336286d6226bcf57c3ca1f2c5b2fe6a09a1aa737415d6151229",
+      "supportCells": 293,
+      "dimension": 293,
+      "symmetricMinimum": -3204.833793897212,
+      "symmetricMaximum": 48102.78863685819,
+      "eigenvalueMinimumRealPart": -38.822259104893746,
+      "eigenvalueMaximumRealPart": 46423.85164295199,
+      "criticalSymmetricEigenResidual": 1.4545821804903951e-11,
+      "interpretation": "restricted geometric pressure-flux block at uniform rAU=1 s, not full saddle Jacobian"
+    },
+    "repaired-pressure-ring3": {
+      "matrix": "outputs/cloud-laminar/viscous-energy/repaired-pressure-ring3.matrix.csv",
+      "matrixSha256": "db79eb96d572f3ebd9a45aa04445e4c196b8dacb5dcb2571d9cd4e2b229cd1c8",
+      "cellsSha256": "e91b18570adf4d91d597e9270fef51a2e7e7f17a0097b59f04288140902bd35f",
+      "supportCells": 444,
+      "dimension": 444,
+      "symmetricMinimum": -14850.292170706834,
+      "symmetricMaximum": 82771.16634860796,
+      "eigenvalueMinimumRealPart": -552.8526174187913,
+      "eigenvalueMaximumRealPart": 78836.64577934358,
+      "criticalSymmetricEigenResidual": 1.528364563670341e-11,
+      "interpretation": "restricted geometric pressure-flux block at uniform rAU=1 s, not full saddle Jacobian"
+    }
+  },
+  "powerComparisons": {
+    "bad-branches": {
+      "cells": 17260,
+      "differenceKineticEnergy_m4_s2": 0.6110250950720056,
+      "advectionPower_m4_s3": -9.559662196152571,
+      "viscousPower_m4_s3": -154.05753739888019,
+      "pressurePower_m4_s3": 163.61719959919762,
+      "powerClosure_m4_s3": 4.1648604565125424e-09,
+      "sumAbsoluteCellPowerClosure_m4_s3": 1.0423766922427149e-08,
+      "maximumCellPowerClosure_m4_s3": 1.543170480289291e-09,
+      "interpolatedDivergencePressurePower_m4_s3": -38.82385429989404,
+      "conservativeDivergencePressurePower_m4_s3": 6.739242887928494e-13,
+      "fluxDefectPressurePower_m4_s3": -38.82385429989471,
+      "pressureVelocityNonAdjointPower_m4_s3": 202.44105389909166,
+      "maximumInterpolatedDivergence_s1": 403.25070009697845,
+      "maximumConservativeDivergence_s1": 3.1405846867373684e-11,
+      "centralPressurePower_m4_s3": 37.56112141711244,
+      "distanceWeightPressurePower_m4_s3": 48.17496741287454,
+      "skewPressurePower_m4_s3": 70.8520017883792,
+      "boundaryExtrapolationPressurePower_m4_s3": 7.029108980831248,
+      "centralAdjointIdentityError_m4_s3": 2.0605739337042905e-13,
+      "rawSha256": {
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear.cells.csv": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear.faces.csv": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-short-nu01-from-nu1.cells.csv": "043cef843aa7191d89f4be0e67fdf5f634d202a3827f92eb545f1cf53194353d",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-short-nu01-from-nu1.faces.csv": "1bd13ccb7397d089de633bcb76aa90a4a92683d88a698a1fbfca8142c710b2bb"
+      }
+    },
+    "coarse-paths": {
+      "cells": 4716,
+      "differenceKineticEnergy_m4_s2": 4.4804429581525715e-15,
+      "advectionPower_m4_s3": -2.003844412787396e-16,
+      "viscousPower_m4_s3": -7.662875262734179e-17,
+      "pressurePower_m4_s3": -2.2109479823327066e-18,
+      "powerClosure_m4_s3": -2.792241418884141e-16,
+      "sumAbsoluteCellPowerClosure_m4_s3": 2.907071210883483e-16,
+      "maximumCellPowerClosure_m4_s3": 2.425654576436574e-18,
+      "interpolatedDivergencePressurePower_m4_s3": -2.67604884364887e-18,
+      "conservativeDivergencePressurePower_m4_s3": 1.3971936603180284e-22,
+      "fluxDefectPressurePower_m4_s3": -2.676188563014902e-18,
+      "pressureVelocityNonAdjointPower_m4_s3": 4.651008613161634e-19,
+      "maximumInterpolatedDivergence_s1": 3.886505601337793e-09,
+      "maximumConservativeDivergence_s1": 1.3924984307018697e-11,
+      "centralPressurePower_m4_s3": -2.4282062976521386e-18,
+      "distanceWeightPressurePower_m4_s3": 1.826045626197348e-19,
+      "skewPressurePower_m4_s3": 6.177153868439987e-20,
+      "boundaryExtrapolationPressurePower_m4_s3": -2.711750219487116e-20,
+      "centralAdjointIdentityError_m4_s3": 4.4296388720906425e-32,
+      "rawSha256": {
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear.cells.csv": "99f58d4124583ae3c7ba5875ae5e4a064a41e516ed4824c502f92cc864ec8d2e",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear.faces.csv": "194b253b824061b58bcb5e50dbdad155fdcde1af1bfc81b2da16664f90da767f",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-short-nu01-from-nu1.cells.csv": "553f7ae2427f5b36cc3a5fe084dba3b9d56cfef79700efd253d0af76b6820e24",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-short-nu01-from-nu1.faces.csv": "1c0ca7bf99b63907d8336716bfd29c21a127b5f63836789dd42ac961886c41e9"
+      }
+    },
+    "bad-anderson": {
+      "cells": 17260,
+      "differenceKineticEnergy_m4_s2": 2.5248562844227753,
+      "advectionPower_m4_s3": -20.9381802980901,
+      "viscousPower_m4_s3": -321.20565112357826,
+      "pressurePower_m4_s3": 342.14383144685974,
+      "powerClosure_m4_s3": 2.519135477996315e-08,
+      "sumAbsoluteCellPowerClosure_m4_s3": 4.0224877258927174e-08,
+      "maximumCellPowerClosure_m4_s3": 2.832585721534997e-09,
+      "interpolatedDivergencePressurePower_m4_s3": -83.93192048494926,
+      "conservativeDivergencePressurePower_m4_s3": 5.887412400976052e-13,
+      "fluxDefectPressurePower_m4_s3": -83.93192048494984,
+      "pressureVelocityNonAdjointPower_m4_s3": 426.075751931809,
+      "maximumInterpolatedDivergence_s1": 441.0821695738221,
+      "maximumConservativeDivergence_s1": 2.2322476843000136e-11,
+      "centralPressurePower_m4_s3": 77.39022861857244,
+      "distanceWeightPressurePower_m4_s3": 101.04108167527113,
+      "skewPressurePower_m4_s3": 148.95630058317357,
+      "boundaryExtrapolationPressurePower_m4_s3": 14.7562205698432,
+      "centralAdjointIdentityError_m4_s3": -9.947598300641403e-14,
+      "rawSha256": {
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-anderson-flat.cells.csv": "2f9d86d6d5b8843a56236b1a0db6fb7d4d7e5477752fab6d553e44411dc8ca14",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-anderson-flat.faces.csv": "d23faa15010307b5191dae67ee73679ad7af5c42a4ca56f97b1372511cd7e780",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-short-nu01-from-nu1.cells.csv": "043cef843aa7191d89f4be0e67fdf5f634d202a3827f92eb545f1cf53194353d",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-short-nu01-from-nu1.faces.csv": "1bd13ccb7397d089de633bcb76aa90a4a92683d88a698a1fbfca8142c710b2bb"
+      }
+    }
+  },
+  "affinePressurePatch": [
+    {
+      "axis": 0,
+      "productRms": 5.362785222730725e-16,
+      "productMax": 9.992007221626409e-14,
+      "centralRms": 0.04607714130797225,
+      "centralMax": 9.78454083030643
+    },
+    {
+      "axis": 1,
+      "productRms": 1.4124351826991756e-16,
+      "productMax": 7.61270070358791e-14,
+      "centralRms": 0.06385249056634422,
+      "centralMax": 9.784540830305488
+    }
+  ],
+  "centralPairAblation": {
+    "scope": "research ablation; sacrifices non-midpoint affine consistency; not product acceptance",
+    "binarySha256": "68f9fed341d26f7e3aeaa114e9dea826bd29a17d43cafbd43b261a8946c4a4d3",
+    "runs": [
+      {
+        "rawSha256": {
+          "outputs/cloud-laminar/pressure-pair-ablation/grid0.json": "05ba2e06803404d5f2f5a3f8863f9ae68d9794f7a6cf4600e814c062b42e4169",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid0.cells.csv": "11eadfdd1173faff12f5ffd9f290ec21a5e4a628b78d0532e89b19d5f2b40725",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid0.faces.csv": "eced714dfdcf3c932e02685b546a360ed05110c85a6d5f20415dc4da6401f89e",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid0.residuals.csv": "656a4b5efff3c7996f103ce2777d33ed3d1f4edd02192c7bde784940fdf5fb5b"
+        },
+        "exitCode": 0,
+        "seconds": 23.26719775299989,
+        "meshSha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+        "summary": {
+          "status": "converged",
+          "converged": true,
+          "cells": 4716,
+          "coupledEvaluations": 432,
+          "maximumSpeedRatio": 1.1651108070833864,
+          "pressureRangeRatio": 5.327503088501453,
+          "wallForceX": 2.1016888814701167,
+          "pressureForceX": 1.203676914580894,
+          "wallViscousForceX": 0.8980119668892217,
+          "globalRelativeImbalance": 1.3268519074788456e-16
+        }
+      },
+      {
+        "rawSha256": {
+          "outputs/cloud-laminar/pressure-pair-ablation/grid1.json": "be2fe500927d11a30ed6de80d8c6fc282c34991f8c092192e4a475038994d5e6",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid1.cells.csv": "d30d4b4cbca69f778d494a2a8d8602eb197298580edcc698fe704b119a4d8733",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid1.faces.csv": "a00e1ca640d959dfd02b4ac99395714096b6eced5f9051a74b9880f578c3c197",
+          "outputs/cloud-laminar/pressure-pair-ablation/grid1.residuals.csv": "f8f9d6ad509d5dd6c66f070f6ba0d911604495ed8696ad9fb0740686c87b6377"
+        },
+        "exitCode": 0,
+        "seconds": 277.1417337449998,
+        "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+        "summary": {
+          "status": "converged",
+          "converged": true,
+          "cells": 17260,
+          "coupledEvaluations": 898,
+          "maximumSpeedRatio": 2.9885266847657967,
+          "pressureRangeRatio": 365.0292252835074,
+          "wallForceX": 2.056587979076864,
+          "pressureForceX": -2.7071937223370726,
+          "wallViscousForceX": 4.7637817014139285,
+          "globalRelativeImbalance": 5.3493794759682844e-15
+        }
+      }
+    ]
+  },
+  "qualification": [
+    "Negative largest restricted viscous energy eigenvalues exclude compact perturbation viscous anti-dissipation on tested supports only, not whole-domain incompressible stability.",
+    "The pressure-flux block is not positive semidefinite on both abnormal and normal meshes; its extremal eigenvalue alone is not a quality gate.",
+    "Native same-equation branch differences close their complete cell momentum-power balance. Pressure power sustains the difference against viscous and convective removal; this is a numerical compatibility finding, not proof that either branch is the physical solution.",
+    "The central-pair ablation is deliberately not affine exact on unequal cut cells and cannot be promoted as a general fix even if field amplitudes improve.",
+    "No cells, local extrema, boundary atoms or solver gates were altered or hidden. No new macOS, frontend, Electron or packaged-app validation."
+  ],
+  "researchBinarySha256": {
+    "native-laminar-viscous-energy": "b3b9ca167c2ef5ad48479b5a19278cb64e2d6da1b2cdfd2d6758c764aebb9d70",
+    "native-laminar-branch-energy": "408bbd482113ed27702c549d7ae49e30cf70c9e6ad0ce3371c6787b4fd6ee3eb"
+  }
+}

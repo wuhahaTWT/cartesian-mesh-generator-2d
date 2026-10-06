@@ -330,6 +330,17 @@ outputs/cloud-laminar/accuracy-probe-anderson cavity 64 1e-8 face-limited-linear
 
 同一 17,260 格反例从平坦场启动 Anderson 则在 490 次后达到速度/压力范围比 `5.928/291.78`；从有界 `ν=1` 场启动也在 1,372 次后进入 `1.391/60.69` 的另一载荷抵消支路。平坦 Newton 与 Anderson 的全场速度 RMS 差为 `2.84e-2 Uref`，去规范压力 RMS 差为 `7.78e-2 Uref²`；两者合计 1,539 次，仍不能恢复或裁决有界支路。`native-laminar-branch-continuation.py` 对所有比较保留全单元面积权重和去规范压力差，并记录原始场哈希。该交叉检查只能生成“独立算法显著不一致”的分支风险证据，不能把任一路径静默指定为物理解。
 
+压力耦合机制实验由 `native-laminar-viscous-energy.cpp` 和 `native-laminar-branch-energy.cpp` 直接调用产品算子/读取产品共享面通量，`native-laminar-pressure-energy.py` 只做编排、原生矩阵特征分解和证据整理，不重建独立流体方程。黏性限制矩阵为 `M^(-1/2) K M^(-1/2)`，其中 K 是负的积分向外黏性通量，M 是真实单元面积；省略的扰动自由度设零，原物理单元没有删除。压力稳定块仅以 `rAU=1 s` 研究几何符号，不能冒充完整鞍点或时间稳定性分析。差分功使用两份同网格同目标原方程的完整场，单位是二维每单位密度的 `m⁴/s³`；压力常数通过原多边形闭合抵消，不删格或局部去均值。
+
+`native-laminar-pressure-pair-ablation.py` 在 `outputs/cloud-laminar/pressure-pair-ablation/` 临时生成一个原生对象和头文件覆盖，只把压力面值改为中点平均/未知边界 owner 值，把稳态 Rhie–Chow 中的速度面插值及松弛缺陷同步改为中点平均；其余组件链接当前原生库。该消融仅研究两个 external 稳态算例，未授予物理时间或其他工况资格。正常产品源码和二进制不改写。它没有同时保证稳定块正性和不等距几何的线性一致性，实际已由局部压力恶化和线性补丁失败否证，不能当作新格式。复现前需构建当前 `cartmesh2d_flow_cli` 目标：
+
+```sh
+python artifacts/current/native-laminar-pressure-pair-ablation.py
+OPENBLAS_NUM_THREADS=1 python artifacts/current/native-laminar-pressure-energy.py
+```
+
+前者实际重新求解两次；后者构建研究驱动、输出十个原生限制矩阵、三组完整差分功和线性压力补丁，并读取前者结果。输出位于两个对应 `outputs/cloud-laminar/` 子目录，摘要为 `artifacts/current/native-laminar-pressure-energy.json`。原始矩阵、每格功、两次消融的全部场/面/历史、源码与二进制哈希必须一并保留。当前证据只支持下一步联合设计压力力、质量通量稳定项与几何一致性，不允许静默选择支路。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh
