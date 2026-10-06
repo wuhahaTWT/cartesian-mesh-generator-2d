@@ -278,7 +278,30 @@ outputs/cloud-laminar/accuracy-probe-anderson manufactured 64 1e-6 \
 python3 artifacts/current/native-laminar-annulus-guide.py --run
 ```
 
-汇总和每份原生 cells/faces/residuals 哈希见 `native-laminar-guide-crosscase.json`。该驱动的 `--resume` 只用于云端中断后复用已完成的直接/引导场；正式从零复现用 `--run`。产品尚无分支证书 API，因此本批不声称旧工况、失败/取消或双候选恢复已经覆盖。
+汇总和每份原生 cells/faces/residuals 哈希见 `native-laminar-guide-crosscase.json`。该驱动的 `--resume` 只用于云端中断后复用已完成的直接/引导场；正式从零复现用 `--run`。
+
+### 显式分支证书事务
+
+`FlowBranchCertificate2D.hpp` 提供显式、固定物性 strict Newton 稳态 API，不挂入 `solveIncompressible2D` 默认。事务顺序固定为直接目标、`νguide=10νtarget` 且 `tolguide=sqrt(toltarget)` 的平坦引导、从引导场启动且恢复原黏度/原容差的目标；三阶段各自使用独立完整评估预算。调用方须显式给出两个正有限的无量纲 RMS 报告限值。比较覆盖全部最终单元，速度向量差按面积加权并除以 `Uref`，压力差先移除全域面积均值再除以 `Uref²`；只返回 `consistent` 分类，不返回“推荐”或“选中”候选。
+
+`Unconverged/Stopped/Failed` 同时记录发生阶段，后续阶段不会覆盖 `directTarget` 或已完成的 `guide`。证书自己的阶段取消会在进入阶段前和完整求解更新后检查；原 `FlowControls2D::stopRequested` 仍参与每一阶段，任一回调抛出的异常继续向调用方传播。归档固定写三条候选记录；存在的候选各用现有 `FlowState2D` checkpoint 保存 `u/v/p/flux`，另存完整评估数和 `converged/stopped`，没有共享“当前场”槽。读回同时绑定最终网格、显式边界、物性、对流格式、引导参数、阶段预算和调用方限值，重算一致/分歧结果；截断、尾随数据、负/非有限差值、缺候选或阶段矛盾均拒绝。旧 v1–v4 flow checkpoint 读取器和非定常恢复格式没有修改。
+
+真实反例复现：
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Iinclude \
+  artifacts/current/native-laminar-branch-certificate.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a \
+  -o outputs/cloud-laminar/branch-certificate
+outputs/cloud-laminar/branch-certificate \
+  outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d \
+  outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.external.boundaries \
+  outputs/cloud-laminar/cylinder-joint/product-branch-certificate
+ctest --test-dir build -R '^cartmesh2d_flow_(branch_certificate|boundary|checkpoint|initialization)$' \
+  --output-on-failure
+```
+
+该 17,260 格运行以调用方显式 `1e-4/1e-4` 归一化 RMS 限值演示风险分类：直接目标、引导和引导终档为 `792/398/565` 次，目标间速度/去规范压力 RMS 差 `0.013484/0.070339`，因此归档为 `completed` 且 `consistent=false`。这两个报告限值不是新增 CFD 门；真实结论仍是“发现两个严格目标解，不能自动裁决”。18,229,452 字节最终证书写后用同一产品读取器恢复三候选；格式加强前的首次真实运行另名保留，仅作历史，不作为最终读回证据。命令、原始摘要、归档/网格/边界/源码哈希及单元失败、取消、损坏覆盖见 `native-laminar-branch-certificate.json`。
 
 独立算法交叉检查保持目标方程、网格和全部最终严格门不变，只把显式稳态加速器切换为既有 Anderson。正常 4,716 格圆柱直接运行 276 次，与 Newton 场的速度/去规范压力面积 RMS 差为 `1.30e-8 Uref/1.76e-9 Uref²`；直通道 64 档和 Re=100 方腔 64 档分别用下列命令运行 123/1,145 次，并与 Newton 场保持约 `1e-6` 或更小的全场差异：
 

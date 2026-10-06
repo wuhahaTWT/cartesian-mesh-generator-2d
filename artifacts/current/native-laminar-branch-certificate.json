@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "scope": "Explicit product API transaction for high-viscosity branch comparison; no default, equation, mesh, quality-gate or candidate-selection change.",
+  "environment": {
+    "kernel": "Linux 6.18.44 x86_64",
+    "compiler": "g++ 13.3.0",
+    "sourceBase": "c6e61afd4d9cbd22f7a596b8042a8acf160d7a66",
+    "sourceBaseTree": "23600b12e69993276f56b783d257009d6783e571"
+  },
+  "api": {
+    "entry": "certifyIncompressibleBranch2D",
+    "stages": [
+      "direct-target",
+      "guide",
+      "guided-target"
+    ],
+    "guideRule": {
+      "viscosityMultiplier": 10.0,
+      "toleranceExponent": 0.5,
+      "finalEquationAndTolerance": "original target"
+    },
+    "classification": {
+      "quantities": [
+        "all-cell area-weighted velocity-vector RMS divided by Uref",
+        "all-cell area-weighted gauge-removed pressure RMS divided by Uref^2"
+      ],
+      "limits": "positive finite caller inputs; not solver or physics acceptance thresholds",
+      "selection": "none; both target candidates remain distinct"
+    },
+    "transaction": {
+      "unconvergedOrStoppedStage": "returned explicitly with every earlier candidate retained",
+      "callbackExceptions": "propagate",
+      "archive": "versioned header plus a separate existing FlowState2D checkpoint for each present candidate",
+      "archiveValidation": [
+        "mesh, boundary and physical configuration",
+        "guide rule and independent stage budgets",
+        "caller comparison limits",
+        "stage, converged/stopped flags and candidate presence",
+        "recomputed consistency classification",
+        "finite nonnegative differences",
+        "truncation and trailing data"
+      ]
+    }
+  },
+  "retainedCounterexample": {
+    "mesh": {
+      "path": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+      "sha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+      "cells": 17260
+    },
+    "boundary": {
+      "path": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.external.boundaries",
+      "sha256": "cbd937dad29c61d73fe5739683d9697038705506e355a6b35bdcd958f0cde9b6",
+      "boundaryFaces": 716
+    },
+    "target": {
+      "nu_m2_s": 0.1,
+      "referenceSpeed_m_s": 1.0,
+      "tolerance": 1e-6,
+      "method": "newton-krylov",
+      "convection": "face-limited-linear"
+    },
+    "callerReportingLimits": {
+      "velocityRmsOverUref": 0.0001,
+      "pressureRmsOverUref2": 0.0001,
+      "purpose": "exercise explicit risk classification; not an acceptance threshold"
+    },
+    "outcome": "completed-divergent",
+    "difference": {
+      "velocityRmsOverUref": 0.013484417986923378,
+      "maximumVelocityDifferenceOverUref": 5.462877065625375,
+      "pressureRmsOverUref2": 0.07033853538290753,
+      "maximumGaugeRemovedPressureDifferenceOverUref2": 181.8123392265225
+    },
+    "candidates": {
+      "directTarget": {
+        "converged": true,
+        "coupledEvaluations": 792,
+        "solveSeconds": 247.408389291,
+        "globalRelativeImbalance": 3.1556058579193323e-14,
+        "maximumSpeedRatio": 5.489758778977997,
+        "pressureRangeRatio": 265.8513226234988,
+        "pressureForceX": -13.256639947308127,
+        "viscousForceX": 15.263727603189151,
+        "totalForceX": 2.007087655881025
+      },
+      "guide": {
+        "converged": true,
+        "coupledEvaluations": 398,
+        "solveSeconds": 125.775625481,
+        "maximumSpeedRatio": 1.1032447009500321,
+        "pressureRangeRatio": 5.222825317870924
+      },
+      "guidedTarget": {
+        "converged": true,
+        "coupledEvaluations": 565,
+        "solveSeconds": 172.939801978,
+        "globalRelativeImbalance": 5.3155312130223955e-15,
+        "maximumSpeedRatio": 1.1645096643177273,
+        "pressureRangeRatio": 1.7974637522429011,
+        "pressureForceX": 1.15801228530414,
+        "viscousForceX": 0.9061506137328743,
+        "totalForceX": 2.064162899037014
+      }
+    },
+    "archive": {
+      "path": "outputs/cloud-laminar/cylinder-joint/product-branch-certificate.certificate",
+      "bytes": 18229452,
+      "sha256": "cdaea6e10f067f884811cdb96abaf7503fa61054fe9a48d5343e8487d9182322",
+      "readback": "classification and all three candidates accepted by the final reader"
+    },
+    "rawSummary": {
+      "path": "outputs/cloud-laminar/cylinder-joint/product-branch-certificate.json",
+      "bytes": 1499,
+      "sha256": "14124feb70285a429ca83155ee9f404e0657632f13c9e70b7cd83d0b4301c50a"
+    },
+    "historicalArchive": {
+      "note": "First real run used the earlier archive header; retained only as format history and not cited as final readback.",
+      "path": "outputs/cloud-laminar/cylinder-joint/product-branch-certificate-format1.certificate",
+      "sha256": "312667eb38be5dfb3eeb7c553ea55671d4c9c082e611383a2fc07a9b2bb674b1"
+    }
+  },
+  "verification": {
+    "nativeTests": {
+      "command": "ctest --test-dir build -R '^cartmesh2d_flow_(branch_certificate|boundary|checkpoint|initialization)$' --output-on-failure",
+      "passed": 4,
+      "total": 4,
+      "branchTestCoverage": [
+        "consistent complete transaction",
+        "caller-declared divergent complete transaction without selection",
+        "guide budget failure retains direct target",
+        "guided-target budget failure retains direct and guide",
+        "stage cancellation retains and archives only direct target",
+        "callback exception propagation",
+        "three-candidate exact field and work-count readback",
+        "different caller limits rejected",
+        "truncated archive rejected"
+      ]
+    },
+    "fullNativeTests": {
+      "command": "ctest --test-dir build --output-on-failure",
+      "passed": 101,
+      "total": 101,
+      "elapsedSeconds": 51.57
+    },
+    "sourceSha256": {
+      "include/cartmesh2d/fv/FlowBranchCertificate2D.hpp": "4566c489213961bf86a5a8652eb02bc0847383d6901d0a1259d48dfc0f45a22b",
+      "src/fv/FlowBranchCertificate2D.cpp": "8f84e094114accd6034bf50e3994485ab363abb8bc697d68c2a6999bbaa5818e",
+      "tests/flow_branch_certificate_test.cpp": "c44fda634a181f5d1529f43749516d0375bfa7f6c1b7f7ebe938212197fd1cb2",
+      "artifacts/current/native-laminar-branch-certificate.cpp": "a0d7b4a846a8fceb1345d1469660d3c3f6779c7a440cf917b66591e5b6204d65"
+    }
+  },
+  "limits": [
+    "The API is explicit native C++ only; CLI and desktop do not expose it yet.",
+    "A divergent certificate reports risk and preserves both candidates but cannot decide which branch is physical.",
+    "General curved-wall local pressure and prescribed-trace corner point values remain unqualified.",
+    "This batch did not verify a physical-display desktop session, macOS or a packaged application."
+  ]
+}

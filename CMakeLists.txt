@@ -95,7 +95,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowNewtonKrylov2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowNewtonKrylov2D.cpp src/fv/FlowBranchCertificate2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 if(APPLE)
     target_link_libraries(cartmesh2d_fv PUBLIC "-framework Accelerate")
@@ -327,6 +327,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_flow_boundary_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_boundary COMMAND cartmesh2d_flow_boundary_tests)
     set_tests_properties(cartmesh2d_flow_boundary PROPERTIES TIMEOUT 60)
+    add_executable(cartmesh2d_flow_branch_certificate_tests tests/flow_branch_certificate_test.cpp)
+    target_link_libraries(cartmesh2d_flow_branch_certificate_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_flow_branch_certificate COMMAND cartmesh2d_flow_branch_certificate_tests)
+    set_tests_properties(cartmesh2d_flow_branch_certificate PROPERTIES TIMEOUT 60)
     add_test(NAME cartmesh2d_transient_flow_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
