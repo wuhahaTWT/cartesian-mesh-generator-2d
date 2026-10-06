@@ -33,7 +33,7 @@ def main():
     parser.add_argument('problem')
     parser.add_argument('viscosity', type=float)
     parser.add_argument('equation', choices=['ns', 'stokes'])
-    parser.add_argument('boundary', choices=['closed', 'open', 'traction', 'pseudo-traction', 'normal-stress'])
+    parser.add_argument('boundary', choices=['closed', 'open', 'pressure', 'traction', 'pseudo-traction', 'normal-stress'])
     parser.add_argument('output', type=Path)
     parser.add_argument('--backend', choices=['ilu0', 'ic0', 'jacobi', 'dense-reference'], default='ilu0')
     parser.add_argument('--transport', type=Path, default=root / 'build/native-laminar-p1-transport')

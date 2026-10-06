@@ -8,41 +8,38 @@
 
 enum class OutletForm { ExactTraction, PseudoTraction, NormalStress };
 template<OutletForm form> struct ExplicitOpenBoundary : StandardOseenBoundary {
-    static bool isOpen(const std::string& name){
+    static int model(const std::string& name){
         const std::string expected=form==OutletForm::ExactTraction?"traction":form==OutletForm::PseudoTraction?"pseudo-traction":"normal-stress";
         if(name!=expected)throw std::runtime_error("outlet operator/policy mismatch");
-        return true;
+        return form==OutletForm::PseudoTraction?2:1;
     }
-    static bool allows(const std::string&,bool){return true;}
-    static int kind(const Face& face,bool open,const std::string& problem){
-        const int result=boundaryKind(face,open);
+    static bool allows(const std::string&,int){return true;}
+    static int kind(const Face& face,int outletModel,const std::string& problem){
+        const int result=boundaryKind(face,outletModel,problem);
         // Channel controls prescribe full analytic velocity on the other
         // boundaries; the cylinder keeps its original horizontal symmetry.
         return result==2&&problem!="cylinder"?0:result;
     }
 };
 template<OutletForm form> struct OpenTransport : Transport {
-    Mat outletMatrix;Vec outletLoad;
-    OpenTransport(const Fixture& f,int t,const std::string& problem,double nu,bool nonlinear,bool open,int order,const Vec& previous):
-        Transport(f,t,problem,nu,nonlinear,open,order,previous),outletMatrix(2*e.a.m,2*e.a.m),outletLoad(2*e.a.m){
+    OpenTransport(const Fixture& f,int t,const std::string& problem,double nu,bool nonlinear,int outletModel,int order,const Vec& previous):
+        Transport(f,t,problem,nu,nonlinear,outletModel,order,previous){
         const auto& a=e.a;const int m=a.m;
         for(std::size_t l=0;l<f.mesh.cells[t].faces.size();++l){const auto& face=f.mesh.faces[f.mesh.cells[t].faces[l]];
-            if(face.neighbour||boundaryKind(face,open)!=1)continue;
+            if(face.neighbour||boundaryKind(face,outletModel,problem)!=1)continue;
             const auto S=face.areaVector;
             for(auto [z,w]:gauss(order)){const double s=z-.5;Point2D p{face.centre.x-s*S.y,face.centre.y+s*S.x};
-                const auto exact=problem=="cylinder"?Exact{}:exactAt(p,problem);const auto phi=a.basis.phi(p);
+                const auto exact=problem=="cylinder"?Exact{}:exactAt(p,problem);
                 Vector2D traction{-exact.p*S.x,-exact.p*S.y};
                 if constexpr(form==OutletForm::ExactTraction){const auto gu=exact.gradient[0],gv=exact.gradient[1];
                     traction.x+=nu*(2*gu.x*S.x+(gu.y+gv.x)*S.y);traction.y+=nu*((gu.y+gv.x)*S.x+2*gv.y*S.y);}
                 for(int c=0;c<2;++c)for(int k=0;k<2;++k){const int row=c*m+3+2*l+k;const double test=w*(k?s:1);
                     outletLoad[row]+=test*(c?traction.y:traction.x);
-                    if constexpr(form==OutletForm::PseudoTraction){
-                        for(int component=0;component<2;++component)for(int j=0;j<m;++j){double derivative=0;
-                            for(int b=0;b<3;++b)derivative+=phi[b]*(c?a.gy(b,j):a.gx(b,j));
-                            outletMatrix(row,component*m+j)-=test*nu*(component?S.y:S.x)*derivative;}
-                    }}
+                }
             }}
-        for(int i=0;i<2*m;++i){e.rhs[i]+=outletLoad[i];for(int j=0;j<2*m;++j)e.matrix(i,j)+=outletMatrix(i,j);}
+        // The shared Oseen operator already assembled the implicit G^T term
+        // for model 2. Add only the prescribed load here, exactly once.
+        for(int i=0;i<2*m;++i)e.rhs[i]+=outletLoad[i];
         // Only retained face-test rows changed. Interior block, interior-to-
         // trace block and interior RHS are unchanged, so their elimination
         // already computed by Transport remains exact for this operator.

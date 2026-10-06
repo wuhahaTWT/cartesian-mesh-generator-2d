@@ -153,6 +153,8 @@ Exact exactAt(Point2D p,const std::string& problem) {
     if(problem=="rotation")return {{-p.y,p.x},{0,0},0,{{{0,-1},{1,0}}}};
     if(problem=="hydrostatic")return {{0,0},{1,2},p.x+2*p.y};
     if(problem=="poiseuille")return {{4*p.y*(1-p.y),0},{0,0},-8*p.x,{{{0,4-8*p.y},{0,0}}}};
+    // Same velocity/gradient, with the static-pressure reference p=0 at x=1.
+    if(problem=="outlet-poiseuille")return {{4*p.y*(1-p.y),0},{0,0},8*(1-p.x),{{{0,4-8*p.y},{0,0}}}};
     if(problem=="vortex") {
         const double pi=std::acos(-1.),sx=std::sin(pi*p.x),sy=std::sin(pi*p.y),cx=std::cos(pi*p.x),cy=std::cos(pi*p.y);
         const Vector2D u{sx*cy,-cx*sy};

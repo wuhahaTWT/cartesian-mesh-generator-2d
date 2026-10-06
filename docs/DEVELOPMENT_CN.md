@@ -600,6 +600,17 @@ Mac使用 `/usr/bin/clang++` 并加 `-framework Accelerate`；还需前述块求
 
 控制为 `u=(4y(1-y),0), p=-8x, f=(8ν-8,0)`，因此ν=1 Stokes无体力，ν=.1 NS明确有 `f=(-7.2,0)`；Couette为 `u=(y,0),p=0,f=0`，静水为 `u=0,p=x+2y,f=(1,2)`。解析数据补全了Couette、旋转和通道的速度梯度，用于真实边界应力；原速度/体力/压力值保持。不同边界条件的解都可能严格收敛，`normal-stress` 对原通道剖面的差值属于模型对照，不叫作离散失败。规则格P2势速度和压力的特殊再现不能扩大到RT1输运速度或非正交格；非正交三档的三类场误差、一次更紧迭代对照、原默认状态逐字节读回与完整成本见 `native-laminar-open-boundary.json`。收紧控制沿用U=L=1、压力U²归一化，仅用于分离迭代误差；未新增物理验收阈值。原曲壁NS、回流、旧出口离散兼容性与产品接入仍需继续验证。
 
+云端 `pressure` 研究模式现与 `pseudo-traction` 共用模型2的转置梯度算子，前者仅允许圆柱或 `outlet-poiseuille` 开口控制；原 `open` 总应力出口保持。`outlet-poiseuille` 为 `u=(4y(1-y),0), p=8(1-x), f=(8ν-8,0)`，解析梯度已补全；云端ν=1控制无体力。使用同一原生后端复现零参考控制：
+
+```sh
+python3 artifacts/current/native-laminar-oseen-block.py square 8 outlet-poiseuille 1 ns pressure outputs/pressure-outlet-control --transport build/native-laminar-p1-transport --block build/native-laminar-block-precondition --fields build/native-laminar-state-compare
+```
+
+旧产品的 `viscousFaceGradient` 在自由出口先去掉法向梯度分量，再由 `symmetricViscousCorrection` 组装转置项；新研究模式使用完整弱梯度。`pressure` 名称保留云端复现接口，不代表分别强制全部速度法向导数与压力迹，亦不代表复制旧单元中心模板。模型2的出口矩阵在基础Oseen对象中只组装一次，显式入口只追加规定牵引载荷；能量与全局力预算使用同一已记录边界项。
+
+`native-laminar-product-wall-profile.cpp` 在同一固定多边形的两份研究场之间逐段覆盖全部原壁面，原 `wallPressureDifferenceRms` 和 `pA0/pB0` 仍是去全域均值后的历史量；新增 `wallPressureAbsoluteDifferenceRms`、绝对压力CSV列及两种端点最大差。固定压力出口必须看绝对量，不能只看去均值量。P1差在每个重叠区间内是仿射函数，故端点最大值是该区间精确极值；`MaxAtQuadrature` 旧字段仍保留原采样含义。调用为 `wall-profile meshA nA stateA meshB nB stateB new-output.csv`，覆盖不一致或已有输出明确拒绝；不同真实曲线/折线不能用此固定几何读取器声称网格差。历史云端数据与合并后的读取语义分开保存在 `native-laminar-product-outlet.json`，Mac小场对照在 `native-laminar-open-boundary.json` 的 `mergedCloudIntegration`。
+
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。
