@@ -93,6 +93,18 @@ python3 tools/thermal/workflow.py --case cylinder --level 4 --dt .05 --end .3 --
 
 改成 `--flux-correction unrestricted` 并更换输出目录获得同控制基线。原云端零流速失败输入从已逐项验证的恢复归档取回；本轮完整命令在 `outputs/bounded-transport/*.command.json`，输入 SHA256、数值结果、适用范围见 `artifacts/current/native-thermal-bounded.json`。该零流速研究只比较原生输出，未恢复独立 Python 方程审计链。真实 App 入口追加 `--thermal-flux-correction=bounded`，例如 `--smoke=rectangle --target-cells=1000 --thermal-adaptive=true`；项目重开沿用前节入口。相对输出目录现在在保存时转换包内引用，原失败 ZIP 仍保留。
 
+### 有界圆柱长期响应复现
+
+原生同控制长时对照沿用前述云端恢复归档中的 `outputs/thermal/qualified/cylinder-{coarse,fine}/` 网格、原始热/流边界和事件文件，使用保存的命令，仅更换二进制/路径及 `--flux-correction`。`outputs/bounded-long/run.py` 串行运行两种方法，`outputs/bounded-long-time/run.py` 对细档有界方法将最大 dt 连续减半；活动输出在独立临时目录，进程关闭后保留并导入工作区。输入、二进制、命令及闭合输出哈希均在 `artifacts/current/native-thermal-bounded-long.json`，不覆盖原云端场。
+
+重新生成同类代表例可用既有入口（新输出目录）：
+
+```sh
+python3 tools/thermal/workflow.py --case cylinder --level 5 --end 25 --dt .1 --diffusivity .05 --nu .1 --speed .2 --error --flux-correction bounded --isolate-live-output --output outputs/cylinder-bounded-25s
+```
+
+将 level 改为 4 比较粗网格，将方法改为 unrestricted 比较旧方法；最大 dt 改为 .05/.025 做时间敏感性，并分别使用新输出目录。新生成网格应核对实际格数及输入哈希，不能冒充原归档的完全相同输入。`outputs/bounded-long/analyze.py` 只读取原生接受 CSV/单元场，计算热增量、积分已输出的壁面通量/预算缺陷及同网格场差，并画科学图；未重建独立 Python 方程审计链。最大 dt 对照仍有 CFL/误差控制，不等同于均匀固定时间网格；曲壁网格和早期前沿精度限制在当前状态集中记录。
+
 ## 云端联合温度时间控制
 
 本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。
