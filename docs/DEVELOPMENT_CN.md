@@ -373,6 +373,16 @@ build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries ou
 
 包装脚本沿用云端归档内的 outputs/recomputed-heated-smooth 和 outputs/curved-cylinder/N48-W16 输入位置；直接原生调用可使用恢复后的实际路径。半步比较要求两份 summary 都完成且物理终点一致，并首先核对每轮三方案的真实接受时间序列。近壁单元依据原边界文件的 no-slip-wall 面 owner 选取，不从零通量阈值猜测壁面。没有跨网格/连续介质参考时，方法间差异只能报告差异，不能称为精度改进。
 
+### 低雷诺数圆柱参照输入
+
+`tools/flow/prepare_cylinder_reference.py` 只运行已有原生网格生成器和 `--export-boundaries`，不启动长期流动。固定 γ=1.4、R=287.05、T=300 K、μ=1.846e−5、k=.025758750694444447，与现有扩散研究 driver 一致；由 U=M√(γRT)、ρ=Re μ/(UD)、p=ρRT 绑定物理量。直径 .1 mm 时 Re=100、M=.1 对应 U≈34.7219 m/s、ρ≈.531653 kg/m³、p≈45783.3 Pa。指定远域请求不等于 NASA 的 200D 圆形外域，需读取实际网格并另验域尺寸。
+
+    python3 tools/flow/prepare_cylinder_reference.py --output outputs/cylinder-reference-new --reynolds 100 --mach .1 --segments 192 --phase 0 --wall-cells 48 --far-spans 15.5
+
+`case.json` 保存实际原生命令、输入/二进制哈希、真实分辨率与质量报告，以及后续 Corrected+diagonal 的 `nativeFlowCommand` 和环境。其默认 200D/U 终点与 .02D/U 最大步只是研究请求，尚未验证为可用配置；目前短步存在预算拒绝，应先用云端观察实际成本，再决定长期算法或工况。续算使用新输出前缀并追加旧检查点，保留原轨迹。相位 .17 的质量失败仍是待解决问题。
+
+频率由升力或偏离尾迹中心的速度获取，不能把阻力的双倍频率当作脱落频率。壁面力使用原生唯一共享动量通量，Cd/Cl 按 .5ρU²D 归一化；研究 driver 的 boundary-history.csv 逐壁面、逐接受步保存 RK 平均通量。后处理只能读取这些原生数据。必须明确舍弃的启动时间、连续周期统计、实际时间网格与空间/时间/外域变化，并区分低速实验关联、有限 Mach 模型差异及独立数值比较。当前未设置自动物理通过门。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
