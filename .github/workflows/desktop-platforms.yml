@@ -2,6 +2,12 @@ name: desktop-platforms
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Validation scope for this run
+        type: choice
+        options: [full, compressible]
+        default: full
   push:
     branches: [main]
     paths: ['desktop/**', 'src/**', 'include/**', 'apps/**', 'tests/**', 'tools/verification/**', 'CMakeLists.txt', '.github/workflows/desktop-platforms.yml']
@@ -52,24 +58,35 @@ jobs:
       - name: Build host native tools and stage runtime
         run: npm --prefix desktop run build:native
       - name: Build all native tests
+        if: inputs.scope != 'compressible'
         run: cmake --build build --config Release --parallel 2
+      - name: Build compressible native tests
+        if: inputs.scope == 'compressible'
+        run: >-
+          cmake --build build --config Release --parallel 2 --target
+          cartmesh2d_euler_tests cartmesh2d_euler_hybrid_tests cartmesh2d_euler_preconditioner_tests
+          cartmesh2d_compressible_laminar_tests cartmesh2d_compressible_couette_benchmark cartmesh2d_wall_gradient_tests
       - name: Desktop tests
         run: npm --prefix desktop test
       - name: Package host desktop
         run: npm --prefix desktop run pack:${{ matrix.platform }}
       - name: Windows packaged application smoke
         if: runner.os == 'Windows'
-        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/win-unpacked/CartMesh2D.exe --out outputs/platform-smoke
+        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/win-unpacked/CartMesh2D.exe --out outputs/platform-smoke --scope=${{ inputs.scope || 'full' }}
       - name: Linux packaged application smoke
         if: runner.os == 'Linux'
         # Only the isolated CI smoke disables Chromium sandboxing; shipped launchers do not.
-        run: xvfb-run -a python tools/verification/desktop_platform_smoke.py --app desktop/dist/linux-unpacked/cartmesh2d-desktop --out outputs/platform-smoke --electron-arg=--no-sandbox --electron-arg=--disable-gpu
+        run: xvfb-run -a python tools/verification/desktop_platform_smoke.py --app desktop/dist/linux-unpacked/cartmesh2d-desktop --out outputs/platform-smoke --scope=${{ inputs.scope || 'full' }} --electron-arg=--no-sandbox --electron-arg=--disable-gpu
       - name: macOS packaged application smoke
         if: runner.os == 'macOS'
-        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D --out outputs/platform-smoke
+        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D --out outputs/platform-smoke --scope=${{ inputs.scope || 'full' }}
       # Catch packaged-App/path failures before the long precision studies.
       - name: Native tests
+        if: inputs.scope != 'compressible'
         run: ctest --test-dir build -C Release --output-on-failure
+      - name: Compressible native tests
+        if: inputs.scope == 'compressible'
+        run: ctest --test-dir build -C Release --output-on-failure -R "^(cartmesh2d_euler_(core|hybrid|preconditioner)|cartmesh2d_compressible_(laminar|cloud_cli|couette_reference)|cartmesh2d_wall_gradient)$"
       - name: Upload validation evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -79,6 +96,8 @@ jobs:
             outputs/platform-smoke/summary.json
             outputs/platform-smoke/**/*.log
             outputs/platform-smoke/**/*.png
+            outputs/platform-smoke/**/app.png.json
+            outputs/platform-smoke/**/command.json
             outputs/platform-smoke/**/reader.json
             outputs/platform-smoke/**/euler-audit.json
             build/Testing/Temporary/LastTest.log

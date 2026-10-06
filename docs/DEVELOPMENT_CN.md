@@ -64,7 +64,14 @@ npm --prefix desktop run pack:mac
 
 包输出到 `desktop/dist/`。打包入口统一检查实际 Mach-O/PE/ELF、架构及 runtime，拒绝跨系统混装；Windows 使用静态 CRT 和 UTF-8 路径 manifest，macOS 检查动态库。ZIP 使用流式 yazl，不依赖外部压缩命令。
 
-三平台 CI 保留构建、原生测试、前端测试和打包；额外的打包 App 审计脚本已移除。真实 App 交互按交付目标手动检查。
+三平台 CI 保留构建、原生测试、前端测试和打包。desktop-platforms 的手动输入 scope 默认 full；可压交付可选择 compressible，构建相关目标、运行七项原生 CTest 和现有前端测试，并通过三个独立打包进程验证控制、载入及续算。实际操作系统文件对话框仍须交互检查。
+
+    gh workflow run desktop-platforms.yml --ref codex/compressible-app-controls -f scope=compressible
+    python3 tools/verification/desktop_platform_smoke.py --scope=compressible --app PATH_TO_PACKAGED_EXECUTABLE --out outputs/platform-smoke-new
+
+compressible 输出目录必须全新；Linux CI 使用 xvfb-run 并仅为该隔离 smoke 传 --no-sandbox/--disable-gpu。第一进程实际生成 108 格矩形并运行总状态入口、压力出口、隐式失败续算、阶段显式控制与三门稳态；从其真实输出复制一份清单，将状态设为 running 并移除完成哈希/时间，模拟尚未最终写入的清单。后两个新进程经 renderer 按钮、IPC、原生只读检查及原生续算，验证物理参数锁定、终点、独立续算的检查点字节一致和源文件不变。测试路径由显式 --smoke 的主进程一次性注入，普通会话仍使用文件对话框；此夹具不是整 App 崩溃的实测。Python 只编排进程、读回原生/App 结果并检查 ZIP/字节，不另解方程。
+
+原生 cloud_cli 回归区分 POSIX 的 SIGTERM 清理与 Windows TerminateProcess 硬终止；两者都须由原生读取器确认最后接受步，再与连续运行比较同一物理终点。Windows 不要求硬终止后生成不存在的最终摘要。
 
 单例桌面调试（先准备 runtime）：
 

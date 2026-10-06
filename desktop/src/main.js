@@ -32,6 +32,7 @@ let mainWindow;
 let sessionDirectory;
 let currentResult;
 let operation = null;
+let smokeEulerCheckpointPath = null;
 const rasterSources = new Map();
 const rasterImports = new Map();
 const timingHistory = new Map();
@@ -468,7 +469,10 @@ app.whenReady().then(async () => {
   }));
   ipcMain.handle('pick-euler-checkpoint',()=>exclusive(async()=>{
     requireFluidMesh(currentResult);
-    const selected=await dialog.showOpenDialog(mainWindow,{title:'选择 Euler 结果目录中的 desktop-state.json',filters:[{name:'Euler 续算清单',extensions:['json']}],properties:['openFile']});
+    // The packaged-process smoke supplies one explicit fixture path. Normal
+    // sessions always use the native picker; the renderer cannot supply a path.
+    const fixture=smokeEulerCheckpointPath;smokeEulerCheckpointPath=null;
+    const selected=fixture?{canceled:false,filePaths:[fixture]}:await dialog.showOpenDialog(mainWindow,{title:'选择 Euler 结果目录中的 desktop-state.json',filters:[{name:'Euler 续算清单',extensions:['json']}],properties:['openFile']});
     if(selected.canceled)return null;
     const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
     currentResult.eulerRestart=await importEulerRestart(selected.filePaths[0],mesh,currentResult.cm2dPath,{executable,runProcess,signal:operation.signal});
@@ -796,6 +800,7 @@ async function runSmoke() {
   const outputDirectory = argument('out') || '';
   const method = argument('method') || 'cutcell';
   const shot = argument('shot');
+  if(argument('euler-reopen-manifest'))smokeEulerCheckpointPath=path.resolve(argument('euler-reopen-manifest'));
   // Optional physical sizing for repeatable large-mesh smoke runs. These
   // populate the real form after loading the geometry, through its events.
   const sizingInputs = Object.fromEntries([
@@ -1197,10 +1202,32 @@ async function runSmoke() {
       if(steady?.summary.status!=='steady_converged'||!(steady.summary.time<2)||steady.summary.targetReached||!smoke.state.eulerHistory.length)throw new Error('Early steady completion or final progress missing: '+el('statusText').textContent);
       if(!el('eulerResult').innerText.includes('稳态停止要求')||el('eulerSteadyFields').hidden||!el('eulerEndTimeLabel').textContent.includes('上限'))throw new Error('Steady result is mislabeled as a time endpoint');
       smoke.state.eulerSmoke={scope:'Generated rectangle; UI/protocol checks, no physical qualification',implicitReservoirReachedNative:true,
+        reopenSeedManifest:first.manifest,reopenSeedTime:first.summary.time,
         physicalRestartLocked:true,failedBudgetPreservedComplete:true,acceptedAfterBudget:accepted,implicitResumeChecked:true,
         integratorChangeClearedStaleResult:true,stageGuardedReachedNative:true,initialPerturbationReachedNative:true,
         steadyThreeGatesChecked:true,steadyTime:steady.summary.time,earlySteadyProgress:true};
       el('displayMode').value='euler-p';change('displayMode');el('eulerMode').scrollIntoView({block:'start'});
+    }
+    if (${JSON.stringify(Boolean(argument('euler-reopen-manifest')))}) {
+      const el=id=>document.getElementById(id);
+      el('pickEulerCheckpoint').click();
+      const deadline=Date.now()+30000;
+      while(smoke.state.busy&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,20));
+      if(smoke.state.busy)throw new Error('Reopened checkpoint selection timed out');
+      const saved=smoke.state.eulerRestart,info=el('eulerRestartInfo').textContent;
+      if(!saved?.unfinished||saved.steps<=0||!el('eulerResume').checked||smoke.state.euler)throw new Error('Unfinished checkpoint was not restored as an incomplete accepted state: '+el('statusText').textContent);
+      if(!info.includes('原运行没有完成记录'))throw new Error('Unfinished state label is absent');
+      const restored=smoke.eulerRequest();
+      for(const key of ${JSON.stringify(require('./core/euler').PHYSICAL)})if(restored[key]!==saved.request[key])throw new Error('Reopened physical control differs: '+key);
+      for(const id of ['eulerCase','eulerDensity','eulerGamma','eulerGasConstant','eulerOutletPressure','eulerInletModel','eulerInletTotalPressure','eulerInletTotalTemperature'])if(!el(id).disabled)throw new Error('Reopened physical control is editable: '+id);
+      const end=Number(${JSON.stringify(argument('euler-reopen-end')||'.4')});
+      if(!(end>saved.time))throw new Error('Reopened run needs a later endpoint');
+      el('eulerEndTime').value=String(end);await smoke.runEuler();
+      if(smoke.state.euler?.summary.time!==end||!smoke.state.euler.summary.targetReached)throw new Error('Reopened run did not reach its physical endpoint: '+el('statusText').textContent);
+      smoke.state.eulerSmoke={scope:'Fresh packaged process, injected file selection, real renderer/IPC/native validation and continuation; native file dialog and physical accuracy not qualified',
+        reopenedManifest:true,unfinishedLabelChecked:true,physicalControlsRestoredAndLocked:true,sourceTime:saved.time,sourceSteps:saved.steps,
+        sourceCheckpointSha256:saved.sha256,resumedTargetReached:true,importedIncompleteInfo:info};
+      el('displayMode').value='euler-p';el('displayMode').dispatchEvent(new Event('change'));el('eulerBlock').scrollIntoView({block:'start'});
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;

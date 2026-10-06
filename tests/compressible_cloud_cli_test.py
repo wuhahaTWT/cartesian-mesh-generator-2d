@@ -75,9 +75,22 @@ with tempfile.TemporaryDirectory(prefix="cartmesh-cloud-") as folder:
     assert '"type":"euler-step"' in line
     process.send_signal(signal.SIGTERM)
     process.communicate(timeout=30)
-    assert process.returncode == 2
-    cancelled = json.loads((root/"cancelled.json").read_text())
-    assert cancelled["status"] == "cancelled" and cancelled["steps"] > 0
-    run("cancel-resumed", ["--restart", str(root/"cancelled.checkpoint")])
-    assert (root/"full.checkpoint").read_bytes() == (root/"cancel-resumed.checkpoint").read_bytes()
+    if sys.platform == "win32":
+        # Windows TerminateProcess cannot call the C++ SIGTERM handler. Its
+        # last atomic checkpoint survives; a final summary is not promised.
+        assert process.returncode != 0
+    else:
+        assert process.returncode == 2
+        cancelled = json.loads((root/"cancelled.json").read_text())
+        assert cancelled["status"] == "cancelled" and cancelled["steps"] > 0
+    inspection = subprocess.run([*common, "--inspect-restart", str(root/"cancelled.checkpoint")],
+                                check=True, capture_output=True, text=True, timeout=30)
+    saved = json.loads(inspection.stdout)
+    assert saved["steps"] > 0 and saved["time"] > 0
+    # The child may accept more steps before its parent is scheduled again.
+    # Compare at one later physical endpoint, not an assumed cancellation step.
+    end = saved["time"] + 1e-7
+    run("cancel-full", ["--end-time", str(end)])
+    run("cancel-resumed", ["--restart", str(root/"cancelled.checkpoint"), "--end-time", str(end)])
+    assert (root/"cancel-full.checkpoint").read_bytes() == (root/"cancel-resumed.checkpoint").read_bytes()
 print("native generated-grid cloud semantics passed")

@@ -10,25 +10,111 @@ import subprocess
 import sys
 import zipfile
 
-from check_background_grid import audit as audit_background
-from verify_euler import audit as audit_euler
-
 ROOT = Path(__file__).resolve().parents[2]
+
+def compressible_controls(args, output, workspace, env):
+    """Check actual packaged processes and saved bytes, without another PDE audit."""
+    results = []
+    summary = {'scope': 'packaged compressible control/reopen protocol; no physical qualification or native file-dialog coverage',
+               'platform': sys.platform, 'cases': results, 'status': 'running'}
+    def save():
+        (output/'summary.json').write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding='utf-8')
+    def digest(file):
+        return hashlib.sha256(file.read_bytes()).hexdigest()
+    def launch(name, extra):
+        target = workspace/name; target.mkdir()
+        screenshot = target/'app.png'; archive = target/'result.zip'
+        command = [str(args.app.resolve()), *args.electron_arg, '--smoke=rectangle', '--method=cutcell', '--control=manual',
+                   '--wall-relative-size=.25', '--background-relative-size=.25', '--reference-length=1',
+                   '--band-cells=1', '--padding-relative-size=.25', '--out='+str(target/'cases'),
+                   '--shot='+str(screenshot), '--export='+str(archive), *extra]
+        (target/'command.json').write_text(json.dumps(command, indent=2, ensure_ascii=False), encoding='utf-8')
+        with (target/'app.log').open('w', encoding='utf-8') as log:
+            completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=240)
+        if completed.returncode:
+            raise RuntimeError(f'{name}: App failed; see {target/"app.log"}')
+        ui = json.loads(Path(str(screenshot)+'.json').read_text(encoding='utf-8'))
+        assert ui['bundledChineseFontLoaded'] and ui['euler'], 'packaged renderer result missing'
+        unpacked = target/'unpacked'
+        with zipfile.ZipFile(archive) as package:
+            assert package.testzip() is None
+            package.extractall(unpacked)
+        meshes = list(unpacked.rglob('*.solver.cm2d'))
+        assert len(meshes) == 1, 'expected one final rectangle solver mesh'
+        mesh = meshes[0]; euler = ui['euler']
+        assert euler['fieldCells'] == euler['summary']['cells'] == ui['layout']['previewCells']
+        assert next(unpacked.rglob('euler-preview.png')).read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
+        manifest = mesh.parent/euler['manifest']; record = json.loads(manifest.read_text(encoding='utf-8'))
+        checkpoint = manifest.parent/'euler.checkpoint'
+        assert record['status'] == 'complete' and record['acceptedTime'] == euler['summary']['time']
+        assert digest(checkpoint) == record['checkpointSha256']
+        results.append({'case': name, 'cells': euler['summary']['cells'], 'checks': euler['checks'],
+                        'meshSha256': digest(mesh), 'checkpointSha256': digest(checkpoint), 'archiveSha256': digest(archive),
+                        'acceptedTime': record['acceptedTime']})
+        save()
+        return ui, mesh, checkpoint
+    save()
+    try:
+        ui, mesh, _ = launch('controls', ['--euler-controls=true'])
+        checks = ui['euler']['checks']
+        for key in ['implicitReservoirReachedNative', 'physicalRestartLocked', 'failedBudgetPreservedComplete',
+                    'implicitResumeChecked', 'integratorChangeClearedStaleResult', 'stageGuardedReachedNative',
+                    'initialPerturbationReachedNative', 'steadyThreeGatesChecked', 'earlySteadyProgress']:
+            assert checks[key] is True, key
+        seed_manifest = mesh.parent/checks['reopenSeedManifest']
+        seed = json.loads(seed_manifest.read_text(encoding='utf-8'))
+        seed_checkpoint = seed_manifest.parent/'euler.checkpoint'
+        assert seed['status'] == 'complete' and seed['acceptedTime'] == checks['reopenSeedTime']
+        assert digest(seed_checkpoint) == seed['checkpointSha256']
+        fixture = workspace/'unfinished-state'; fixture.mkdir()
+        shutil.copyfile(seed_checkpoint, fixture/'euler.checkpoint')
+        unfinished = dict(seed, status='running')
+        del unfinished['checkpointSha256']; del unfinished['acceptedTime']
+        fixture_manifest = fixture/'desktop-state.json'
+        fixture_manifest.write_text(json.dumps(unfinished, indent=2), encoding='utf-8')
+        original_manifest_sha = digest(fixture_manifest); original_state_sha = digest(fixture/'euler.checkpoint')
+        summary['unfinishedFixture'] = 'Copied real completed native field with an unfinalized manifest; this is not a simulated whole-App crash.'
+        target_time = 2*seed['acceptedTime']
+        options = ['--euler-reopen-manifest='+str(fixture_manifest), '--euler-reopen-end='+str(target_time)]
+        reopened = []
+        for name in ['reopen', 'reopen-repeat']:
+            restored, regenerated_mesh, checkpoint = launch(name, options)
+            check = restored['euler']['checks']
+            for key in ['reopenedManifest', 'unfinishedLabelChecked', 'physicalControlsRestoredAndLocked', 'resumedTargetReached']:
+                assert check[key] is True, key
+            assert check['sourceTime'] == seed['acceptedTime'] and check['sourceCheckpointSha256'] == original_state_sha
+            assert mesh.read_bytes() == regenerated_mesh.read_bytes(), 'regenerated mesh differs in fresh App process'
+            assert restored['euler']['summary']['time'] == target_time
+            reopened.append(checkpoint)
+        assert reopened[0].read_bytes() == reopened[1].read_bytes(), 'independent fresh-process resumes differ'
+        assert digest(fixture_manifest) == original_manifest_sha and digest(fixture/'euler.checkpoint') == original_state_sha
+        summary.update(status='passed', independentResumeCheckpointsIdentical=True, sourceFilesUnchanged=True)
+        save()
+    except Exception as error:
+        summary.update(status='failed', error=str(error)); save(); raise
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--app', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--electron-arg', action='append', default=[])
+    parser.add_argument('--scope', choices=['full', 'compressible'], default='full')
     args = parser.parse_args()
     output = args.out.resolve()
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=args.scope != 'compressible')
     results = []
     # Exercise UTF-8 plus spaces through Node, native argv/filesystem and ZIP.
     workspace = output / '中文 路径'
     workspace.mkdir(exist_ok=True)
     temporary = workspace / 'temp'; temporary.mkdir(exist_ok=True)
     env = dict(os.environ, TEMP=str(temporary), TMP=str(temporary), TMPDIR=str(temporary))
+    if args.scope == 'compressible':
+        compressible_controls(args, output, workspace, env)
+        return
+    # Retained legacy full-scope readers are not invoked by the compressible
+    # protocol lane, whose field validation stays in the native/App pathway.
+    from check_background_grid import audit as audit_background
+    from verify_euler import audit as audit_euler
     cases = [('png', 'raster-input-L.png', 'cutcell', 'circle'),
              ('jpg', 'raster-input-L.jpg', 'cutcell', 'circle'),
              ('hybrid', None, 'hybrid', 'circle'),
