@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "scope": "Research-only joint face metric/pressure/divergence prototype. Not Re20 or a product default.",
+  "formula": "H_i=R_i R_i^T/V_i + tr(R_i R_i^T/V_i)/2 * (I-N_i(N_i^T N_i)^-1 N_i^T); N_i^T R_i=V_i I; B=signed incidence.",
+  "units": "q integral velocity normal: m^2/s; H dimensionless in 2D; 0.5 q^T H q: m^4/s^2. Projection step is unit 1 s; pressure multiplier m^2/s^2. Manufactured diffusion uses unit response 1 s, pressure amplitude 1 m^2/s^2.",
+  "limits": "Projection norm is face-Hodge kinetic energy, not proof for the existing collocated momentum norm. No convection, no-slip tangential stress or physical-time integration is included. Pressure manufactured Dirichlet traces do not represent the cylinder flow boundary conditions.",
+  "buildCommand": [
+    "g++",
+    "-std=c++20",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-Iinclude",
+    "artifacts/current/native-laminar-face-hodge.cpp",
+    "build/libcartmesh2d_fv.a",
+    "build/libcartmesh2d.a",
+    "-o",
+    "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge"
+  ],
+  "binarySha256": "9b6b960b594c96f1db45c8946c26aa695a6e908c87f31000ac5302f38ed7332c",
+  "sourceSha256": "14582d6c8ceba8c81b39d4847835b2c20c092bc51822bffb8f42fc53bc2b6b3c",
+  "runs": [
+    {
+      "cells": 64,
+      "faces": 144,
+      "area": 1,
+      "triplets": 1024,
+      "relativeMomentIdentityMax": 6.661338147750939e-16,
+      "constantFluxConsistencyMax": 5.551115123125783e-17,
+      "minimumLocalCholeskyPivot": 0.4885346298590489,
+      "label": "skew8",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "skew:8",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/skew8"
+      ],
+      "poissonUnknowns": 208,
+      "poissonFactorSeconds": 0.0009856340002443176,
+      "factorNonzeros": 3848,
+      "affine": {
+        "pressureRms": 1.1775693440128312e-16,
+        "pressureMax": 4.440892098500626e-16,
+        "fluxHodgeRms": 1.507337613307632e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "maximumCellDivergenceResidual": 1.7763568394002505e-15
+      },
+      "nonlinear": {
+        "pressureRms": 0.006936857649176686,
+        "pressureMax": 0.011541330939102146,
+        "fluxHodgeRms": 0.025048481428474427,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 3.552713678800502e-15
+      },
+      "projection": {
+        "seconds": 0.0004927210002279026,
+        "energyBefore": 0.4234225305640996,
+        "energyAfter": 0.06947043807552095,
+        "removedEnergy": 0.35395209248857873,
+        "energyIdentityError": -5.551115123125783e-17,
+        "pressureWork": -1.743440973720462e-18,
+        "maximumDivergence": 8.881784197001252e-16,
+        "algebraicMaxResidual": 8.326672684688674e-17,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.015448216000550019,
+      "outputHashes": {
+        "skew8.cells.csv": "6d8d9c1b013cae7496702d41a70647f979b136ada7423283de758b0c66fe9baa",
+        "skew8.fields.npz": "6e582e342bc223c856694a76f041d6ae7f3e61ce45917306305d06c2a0c618db",
+        "skew8.native.json": "081ccd3afae4d50100b8756e8b100105fe569d576d6aa8c64e71d235b0f17dd5",
+        "skew8.faces.csv": "e936134080a157624ada4b279cae4bd36d8650b279e4fdbdde3397b9bf2fece6",
+        "skew8.hodge.csv": "db45e16f415591e4b7065cf98519b9719eccbd7c5a5aac6027c23cd20e579538"
+      }
+    },
+    {
+      "cells": 256,
+      "faces": 544,
+      "area": 1,
+      "triplets": 4096,
+      "relativeMomentIdentityMax": 2.6645352591003757e-15,
+      "constantFluxConsistencyMax": 8.673617379884035e-17,
+      "minimumLocalCholeskyPivot": 0.4885346298590473,
+      "label": "skew16",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "skew:16",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/skew16"
+      ],
+      "poissonUnknowns": 800,
+      "poissonFactorSeconds": 0.001841161000811553,
+      "factorNonzeros": 33140,
+      "affine": {
+        "pressureRms": 1.6184142622847344e-16,
+        "pressureMax": 4.440892098500626e-16,
+        "fluxHodgeRms": 1.9246594359379885e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "maximumCellDivergenceResidual": 4.440892098500626e-15
+      },
+      "nonlinear": {
+        "pressureRms": 0.0017295578942664775,
+        "pressureMax": 0.0029238178316260965,
+        "fluxHodgeRms": 0.006994273469362885,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 1.2434497875801753e-14
+      },
+      "projection": {
+        "seconds": 0.0016853570004968788,
+        "energyBefore": 0.47567213190343394,
+        "energyAfter": 0.06976087091288655,
+        "removedEnergy": 0.4059112609905473,
+        "energyIdentityError": 1.1102230246251565e-16,
+        "pressureWork": 2.9203351061379434e-18,
+        "maximumDivergence": 1.7763568394002505e-15,
+        "algebraicMaxResidual": 1.6306400674181987e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.02472281800055498,
+      "outputHashes": {
+        "skew16.faces.csv": "d076c62b263d9850d1b264e3d3e1e6c29946ba3f04b45474a91b4f4b330b564a",
+        "skew16.native.json": "2d3941f1bc68c5fc28474d101eaf72c095ebd311fc72223ba5f27c32f66b5514",
+        "skew16.cells.csv": "7e6fd0e5f4bf23d920d33acf492ce9b15fd6380bba8a15897a1d634296fb166a",
+        "skew16.hodge.csv": "6ff339ede9f83b7e66ae429391730f219e58d8d2bec4abbe6d4dff72af391d3c",
+        "skew16.fields.npz": "cdc683894cc9c2588e45d6d22c19bcc2ca47fb78c5e6bdb24a9efd2a29cb94fe"
+      }
+    },
+    {
+      "cells": 1024,
+      "faces": 2112,
+      "area": 1,
+      "triplets": 16384,
+      "relativeMomentIdentityMax": 3.552713678800501e-15,
+      "constantFluxConsistencyMax": 5.551115123125783e-17,
+      "minimumLocalCholeskyPivot": 0.488534629859047,
+      "label": "skew32",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "skew:32",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/skew32"
+      ],
+      "poissonUnknowns": 3136,
+      "poissonFactorSeconds": 0.010085322000122687,
+      "factorNonzeros": 234921,
+      "affine": {
+        "pressureRms": 1.6711069443220838e-16,
+        "pressureMax": 8.881784197001252e-16,
+        "fluxHodgeRms": 3.441067435204694e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "maximumCellDivergenceResidual": 8.881784197001252e-15
+      },
+      "nonlinear": {
+        "pressureRms": 0.00043236859628293853,
+        "pressureMax": 0.0007333346984044198,
+        "fluxHodgeRms": 0.0019052290093542052,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 2.7977620220553945e-14
+      },
+      "projection": {
+        "seconds": 0.009515685000224039,
+        "energyBefore": 0.5012068770717981,
+        "energyAfter": 0.0690816880839852,
+        "removedEnergy": 0.4321251889878128,
+        "energyIdentityError": 1.1102230246251565e-16,
+        "pressureWork": 2.7459345400553795e-18,
+        "maximumDivergence": 7.105427357601002e-15,
+        "algebraicMaxResidual": 1.7433970933566911e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.08279627100000653,
+      "outputHashes": {
+        "skew32.cells.csv": "e0e57df42464df3a91c5744028ec58665453d5239aaf7dcb70d16ee0e212c882",
+        "skew32.fields.npz": "ce5e7899c2a9be5017c6f1309aaade4eecad80a72b07225e96a9e45f70bd0022",
+        "skew32.native.json": "95423cf8ef408bfae51513245b1ea443c7ad59d6491c7402e1110881bd0c72fa",
+        "skew32.faces.csv": "7bf8afd7843792a227073514d4eb73caba024f477888422497ec2052ed936024",
+        "skew32.hodge.csv": "8925f00759deac262a250aea27083ed399169aea7c665e1163085ff88c818a85"
+      }
+    },
+    {
+      "cells": 4716,
+      "faces": 9632,
+      "area": 6720.859668843036,
+      "triplets": 75592,
+      "relativeMomentIdentityMax": 7.283063041541027e-14,
+      "constantFluxConsistencyMax": 3.969047313034935e-15,
+      "minimumLocalCholeskyPivot": 0.0399527047666359,
+      "label": "cylinder4716",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/cylinder4716"
+      ],
+      "meshSha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+      "poissonUnknowns": 14348,
+      "poissonFactorSeconds": 0.07265073799953825,
+      "factorNonzeros": 714419,
+      "affine": {
+        "pressureRms": 1.9521093245326443e-15,
+        "pressureMax": 7.105427357601002e-15,
+        "fluxHodgeRms": 1.0016294258526738e-15,
+        "algebraicMaxResidual": 7.105427357601002e-15,
+        "maximumCellDivergenceResidual": 6.718578432806071e-14
+      },
+      "nonlinear": {
+        "pressureRms": 9.095443026822012e-05,
+        "pressureMax": 0.00026013553157877567,
+        "fluxHodgeRms": 7.074553482999648e-06,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 5.976283479105861e-17
+      },
+      "projection": {
+        "seconds": 0.091071813999406,
+        "energyBefore": 3308.624297861471,
+        "energyAfter": 1710.7872883092573,
+        "removedEnergy": 1597.8370095522132,
+        "energyIdentityError": 4.547473508864641e-13,
+        "pressureWork": 2.6285342486006114e-15,
+        "maximumDivergence": 5.816221323057096e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.4571142639997561,
+      "outputHashes": {
+        "cylinder4716.native.json": "bae80a6f5b5d49d96c43a1a4e67f57c3150946ad3b7574aacdc3b3f8acbc24e0",
+        "cylinder4716.faces.csv": "5c656967c2a74622342c61014a64173814ff53b95abe5abc01acca2768bb40d9",
+        "cylinder4716.fields.npz": "e5455621e57c630c6784343194d1d77c71a144a6b8b887f151085ab90e5e59bd",
+        "cylinder4716.cells.csv": "047e03bf0ffbb01f1052b191266da8b16132338be9ad93696dedfba707ac6098",
+        "cylinder4716.hodge.csv": "d9fb20ee3907b5770e2a83439e25c11ee2a891246626f05d8d017f0200b1f250"
+      }
+    },
+    {
+      "cells": 17260,
+      "faces": 34904,
+      "area": 6720.859668843033,
+      "triplets": 276972,
+      "relativeMomentIdentityMax": 7.005507285384738e-14,
+      "constantFluxConsistencyMax": 1.3739009929736312e-15,
+      "minimumLocalCholeskyPivot": 0.022980669301794432,
+      "label": "cylinder17260",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/cylinder17260"
+      ],
+      "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+      "poissonUnknowns": 52164,
+      "poissonFactorSeconds": 0.614211221000005,
+      "factorNonzeros": 3789399,
+      "affine": {
+        "pressureRms": 2.556768932370574e-15,
+        "pressureMax": 7.105427357601002e-15,
+        "fluxHodgeRms": 1.8802542506707244e-15,
+        "algebraicMaxResidual": 7.105427357601002e-15,
+        "maximumCellDivergenceResidual": 9.379493154860724e-14
+      },
+      "nonlinear": {
+        "pressureRms": 2.380711495914605e-05,
+        "pressureMax": 6.844333026101435e-05,
+        "fluxHodgeRms": 1.8987011830919589e-06,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 1.9260587564723263e-16
+      },
+      "projection": {
+        "seconds": 0.591035713000565,
+        "energyBefore": 3334.0927913923388,
+        "energyAfter": 736.9402362113085,
+        "removedEnergy": 2597.1525551810296,
+        "energyIdentityError": 4.547473508864641e-13,
+        "pressureWork": -7.315576310722565e-16,
+        "maximumDivergence": 1.2552217180923222e-13,
+        "algebraicMaxResidual": 2.220446049250313e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 2.3016729199998736,
+      "outputHashes": {
+        "cylinder17260.native.json": "505beca114fdcd417c26d0c380d1ceae30837d959d1f77ddd4744d014b221bac",
+        "cylinder17260.fields.npz": "14ec599f02cd2eb4553d0d5e3fa783c1d344487e7b0396cf5e45fdaf99c8af7e",
+        "cylinder17260.cells.csv": "f4e9586236c26958f8951d763ff1a7b4c3d2e032f7b6dfd972c39b8d81ace8ee",
+        "cylinder17260.hodge.csv": "155de481618c13f7c82e96acd695fd9d25f9bb7682eb52029e2da1a27eef1ae4",
+        "cylinder17260.faces.csv": "12f073d4cebaf6b3982243f7610c9d085086c201be1957d3fc00b95d58ad181d"
+      }
+    },
+    {
+      "cells": 66912,
+      "faces": 134548,
+      "area": 6720.8596688430625,
+      "triplets": 1072312,
+      "relativeMomentIdentityMax": 1.6009416015094757e-13,
+      "constantFluxConsistencyMax": 4.371503159461554e-16,
+      "minimumLocalCholeskyPivot": 0.04693354753140163,
+      "label": "cylinder66912",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "outputs/cloud-laminar/cylinder-joint/far-20.solver.cm2d",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/cylinder66912"
+      ],
+      "meshSha256": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280",
+      "poissonUnknowns": 201460,
+      "poissonFactorSeconds": 5.631307571999969,
+      "factorNonzeros": 19631012,
+      "affine": {
+        "pressureRms": 4.174114480480026e-15,
+        "pressureMax": 1.4210854715202004e-14,
+        "fluxHodgeRms": 3.630425823071295e-15,
+        "algebraicMaxResidual": 7.105427357601002e-15,
+        "maximumCellDivergenceResidual": 2.5589101982949147e-13
+      },
+      "nonlinear": {
+        "pressureRms": 5.996228657958758e-06,
+        "pressureMax": 1.5007642420683531e-05,
+        "fluxHodgeRms": 6.904802622139235e-07,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 4.910018271425814e-16
+      },
+      "projection": {
+        "seconds": 5.90192877499976,
+        "energyBefore": 3347.338045937301,
+        "energyAfter": 637.6544045356038,
+        "removedEnergy": 2709.683641401694,
+        "energyIdentityError": 3.183231456205249e-12,
+        "pressureWork": 1.0673454251396295e-15,
+        "maximumDivergence": 5.691781238935875e-13,
+        "algebraicMaxResidual": 2.0122792321330962e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 15.794905744000062,
+      "outputHashes": {
+        "cylinder66912.cells.csv": "bc00e538a6e1f9efe1cc5191f096557096171883053d56c7792022e39f29607d",
+        "cylinder66912.hodge.csv": "4bbb4440bf9207369e04e5fe0320b01c9b21ed9abe8c0e94db3b7c9ea450a868",
+        "cylinder66912.fields.npz": "cf7a45ba8f0018866ae8f713ea3e9bea661bc7d0d1b9f894948c5f93f6fb7111",
+        "cylinder66912.native.json": "52c0482f2957012987680342c62bf31a6ea8159dbd6b97ffa1c42f884d88b451",
+        "cylinder66912.faces.csv": "73dacb2b6c09e0603d987e7392eae4307b6b07b96e2ec117184feb8def1d67fc"
+      }
+    },
+    {
+      "cells": 576,
+      "faces": 1304,
+      "area": 2.3552483677160594,
+      "triplets": 9252,
+      "relativeMomentIdentityMax": 1.9118972419556067e-14,
+      "constantFluxConsistencyMax": 3.5388358909926865e-16,
+      "minimumLocalCholeskyPivot": 0.06184754594906844,
+      "label": "annulus576",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "outputs/cloud-laminar/annulus-joint-5.solver.cm2d",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/annulus576"
+      ],
+      "meshSha256": "4bb003fb53e02b2ef1499e44efb057ad927cbc3095e5934e4f2baa03d6e3cb0b",
+      "poissonUnknowns": 1880,
+      "poissonFactorSeconds": 0.0036710550002680975,
+      "factorNonzeros": 55781,
+      "affine": {
+        "pressureRms": 1.0600176343040125e-16,
+        "pressureMax": 4.440892098500626e-16,
+        "fluxHodgeRms": 1.5009581824336992e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "maximumCellDivergenceResidual": 3.4835992451290103e-14
+      },
+      "nonlinear": {
+        "pressureRms": 0.0004224075711683276,
+        "pressureMax": 0.00196646950909235,
+        "fluxHodgeRms": 0.011155718981207766,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 5.30105423248282e-14
+      },
+      "projection": {
+        "seconds": 0.0032937269998001284,
+        "energyBefore": 1.2455125412369354,
+        "energyAfter": 0.1075545432985018,
+        "removedEnergy": 1.1379579979384333,
+        "energyIdentityError": 2.220446049250313e-16,
+        "pressureWork": 1.8924045196485314e-17,
+        "maximumDivergence": 3.153296164615843e-15,
+        "algebraicMaxResidual": 1.457167719820518e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.05185895399972651,
+      "outputHashes": {
+        "annulus576.cells.csv": "cce574cf7fb2b047bc03803e5cfb3fb93df36c573d4e1ab62d2b951886f1cec5",
+        "annulus576.hodge.csv": "ac64edbc7847f8d4a4dad304c64b20ae54b66e58e3ca86424ccf495763ea4267",
+        "annulus576.faces.csv": "c1d2060842a67eb3a2ee667f0bb5bb7329fced33af7f2813ecd65513a09c44fa",
+        "annulus576.fields.npz": "7c8bb5848b63434faaf180f90f6377bf17177c4dcfaabd12b8a992766308135b",
+        "annulus576.native.json": "2e79a0f0c019cea06ce97c420a1cc903502858c3d5f6d3b0f933c5a137871fb4"
+      }
+    },
+    {
+      "cells": 6606,
+      "faces": 13910,
+      "area": 2.3561353508581275,
+      "triplets": 106318,
+      "relativeMomentIdentityMax": 2.8324189325002773e-13,
+      "constantFluxConsistencyMax": 6.826136877968736e-16,
+      "minimumLocalCholeskyPivot": 0.0188960626541137,
+      "label": "annulus6606",
+      "command": [
+        "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-face-hodge",
+        "outputs/cloud-laminar/annulus-joint-7.solver.cm2d",
+        "/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/face-hodge/annulus6606"
+      ],
+      "meshSha256": "ffa1e0945ed36c3e543d6e1d5edf767dfccdc219a4b9e2387c69f7041b8c5160",
+      "poissonUnknowns": 20516,
+      "poissonFactorSeconds": 0.09639438099929976,
+      "factorNonzeros": 1656419,
+      "affine": {
+        "pressureRms": 1.0367437779927564e-16,
+        "pressureMax": 8.881784197001252e-16,
+        "fluxHodgeRms": 3.736331801821253e-15,
+        "algebraicMaxResidual": 4.440892098500626e-16,
+        "maximumCellDivergenceResidual": 8.722998456781236e-13
+      },
+      "nonlinear": {
+        "pressureRms": 2.378883423387059e-05,
+        "pressureMax": 0.00011268086951299328,
+        "fluxHodgeRms": 0.0011260903849096423,
+        "algebraicMaxResidual": 1.1102230246251565e-16,
+        "maximumCellDivergenceResidual": 4.4875533779523934e-13
+      },
+      "projection": {
+        "seconds": 0.10410794299968984,
+        "energyBefore": 1.2346585380540365,
+        "energyAfter": 0.10478521264895035,
+        "removedEnergy": 1.1298733254050861,
+        "energyIdentityError": 0.0,
+        "pressureWork": -1.0114415956225528e-17,
+        "maximumDivergence": 1.1915189413691447e-13,
+        "algebraicMaxResidual": 1.8041124150158794e-16,
+        "boundaryNormalFluxMax": 0.0
+      },
+      "seconds": 0.6158773489996747,
+      "outputHashes": {
+        "annulus6606.fields.npz": "ce5d0f67493fe36b43d2bd94a93fbbd2c2e4c1ece5602b7121388e3a749bc448",
+        "annulus6606.hodge.csv": "cd9e7e1896223677d2b2a5a6ddcb0956ca138cdc8d18f594c9dd9cd654adf123",
+        "annulus6606.faces.csv": "9de244a0ef3d9cb5bf27f08d0ebabf7c2c336e46f54285ba04902fff0efe5310",
+        "annulus6606.cells.csv": "2967acecf5a2509a48a8d62b2529d58b8e718b8452133971b84fac5827da690f",
+        "annulus6606.native.json": "eaab0dba25cae544dd3b794fa6b60046fd7993486b70c39e7fc05545acd38cc6"
+      }
+    }
+  ],
+  "driverSha256": "ca5849dd922278c02211d3d640b145971566c5d3667cdd099b078af488c02aa2",
+  "productLibraryHashes": {
+    "build/libcartmesh2d_fv.a": "79bf363b29db639cb3306b4919cedcb456f9a142fa6fe97989e20e8a757496bc",
+    "build/libcartmesh2d.a": "eecf3e9caea367627a98f4c6d6678cd0c75df90b40a86b69bc95ffd266cf6226"
+  },
+  "acceptedBranchControl": {
+    "conclusion": "Both conservative accepted face fluxes remain unchanged to their residual scale. Projection alone cannot repair or select the collocated nonlinear branch; a compatible momentum/viscous/convection discretization is still required.",
+    "runs": [
+      {
+        "input": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear.faces.csv",
+        "sha256": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        "originalMaxDivergence": 4.182106851179642e-11,
+        "fluxCorrectionHodgeRms": 1.0679642664973321e-14,
+        "maximumFluxCorrection": 1.705548496360124e-13,
+        "fixedBoundaryFluxCorrectionMax": 0.0,
+        "projectedMaxDivergence": 1.0296605395265079e-10,
+        "netBoundaryFlux": -6.602713748097872e-13,
+        "gaugeCellArea": 0.006412506103515625,
+        "note": "Fixed boundary net-flux roundoff is left in the gauge cell, not discarded; all-cell divergence includes it.",
+        "outputSha256": "436cd3851de33ec6def77fc11784177bc2f68e44f6d88e37a79a8fd8bd93db81"
+      },
+      {
+        "input": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-short-nu01-from-nu1.faces.csv",
+        "sha256": "1bd13ccb7397d089de633bcb76aa90a4a92683d88a698a1fbfca8142c710b2bb",
+        "originalMaxDivergence": 1.1008803321487713e-11,
+        "fluxCorrectionHodgeRms": 2.2426942302630634e-14,
+        "maximumFluxCorrection": 3.3552325403069717e-13,
+        "fixedBoundaryFluxCorrectionMax": 0.0,
+        "projectedMaxDivergence": 2.0540080285048836e-10,
+        "netBoundaryFlux": -1.3171332126925577e-12,
+        "gaugeCellArea": 0.006412506103515625,
+        "note": "Fixed boundary net-flux roundoff is left in the gauge cell, not discarded; all-cell divergence includes it.",
+        "outputSha256": "d755f22ece6a651f6e1fb4eec6493679f551611c335f89a76a695d82424455b0"
+      }
+    ]
+  }
+}
