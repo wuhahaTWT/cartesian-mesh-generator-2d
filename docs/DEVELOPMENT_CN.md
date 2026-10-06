@@ -129,6 +129,31 @@ python3 tools/thermal/workflow.py --case cylinder --level 5 --end 25 --dt .1 --d
 
 将 level 改为 4 比较粗网格，将方法改为 unrestricted 比较旧方法；最大 dt 改为 .05/.025 做时间敏感性，并分别使用新输出目录。新生成网格应核对实际格数及输入哈希，不能冒充原归档的完全相同输入。`outputs/bounded-long/analyze.py` 只读取原生接受 CSV/单元场，计算热增量、积分已输出的壁面通量/预算缺陷及同网格场差，并画科学图；未重建独立 Python 方程审计链。最大 dt 对照仍有 CFL/误差控制，不等同于均匀固定时间网格；曲壁网格和早期前沿精度限制在当前状态集中记录。
 
+### 曲壁温度空间对照
+
+原生手动入口 `tests/thermal_spatial_probe.cpp` / `cartmesh2d_thermal_spatial_probe` 在开启 `CARTMESH2D_BUILD_TESTS` 的常规 build 中构建；它需要显式提供最终 Solver 网格，不作为无输入 CTest。使用现有 `readCm2dTopology`、`makeFvMesh2D`、标量算子/求解器及 ILU0，原残差门不变。Python 仅编排原生调用、读取真实 CSV 和画图，不重建独立方程审计链。
+
+解析参照都使用 D=.05 m²/s、零载流速度、无体积源、真实多边形边界的时刻值。稳态 `T=300 K+(1 K)·log(r/1 m)`，奇点置于原点所在固体孔洞内；非定常 `T=300 K+(1 K)·(.1 s/τ)·exp(−r²/(4Dτ))`，`τ=.1 s+t`，从 t=0 推至 .2 s。这是 [Stanford 热方程讲义 §2.4.2 式 (2.21)](https://web.stanford.edu/class/math220b/handouts/heateqn.pdf) 的二维热核经平移与缩放所得。边界离散值取面中心，参考热流则对实际每条直边积分：log(r) 用带方向端点极角，热核用切向高斯的 erf 积分，不把真实 64 边形换成圆。
+
+单元误差为相对解析质心值的面积加权 L2（K）和最大误差（K）。`centroidHeatDifference=Σ area·(T−Texact,centroid)`，单位 K·m²，不是解析连续体体积分。总壁热流相对误差分母为 `|ΣQexact|`，局部 L1 为 `Σ|Q−Qexact|/Σ|Qexact|`，最坏通量密度误差为 `max(|Q−Qexact|/faceLength)`（K·m/s）。所有通量均向流体域外为正；乘 rho·cp 才成为单位深度的物理热流。稳态 `ΣQexact=2πD·(1 K)` 的检查只确认参考孔洞与浮点求和，额度 `128·eps·壁面数·|2πD·(1 K)|` 不是 PDE 精度阈值。探针的温度范围诊断包含解析初值；初值不作为物理续算检查点。
+
+下面使用随源码保留的同一 64 点原始几何夹具，另建输出目录，生成 level 6 网格并运行两个原生参照；改为 level 4/5/7 得到另外三档，需更换输出前缀。
+
+```sh
+cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCARTMESH2D_BUILD_TESTS=ON
+cmake --build build --target cartmesh2d_cli cartmesh2d_thermal_spatial_probe --parallel 2
+mkdir -p outputs/thermal-spatial-rerun
+build/cartmesh2d_cli tests/fixtures/thermal_cylinder64.xy outputs/thermal-spatial-rerun/mesh 6 3 .1 exterior outputs/thermal-spatial-rerun/openfoam 6 0
+build/cartmesh2d_thermal_spatial_probe outputs/thermal-spatial-rerun/mesh.solver.cm2d outputs/thermal-spatial-rerun/harmonic harmonic
+build/cartmesh2d_thermal_spatial_probe outputs/thermal-spatial-rerun/mesh.solver.cm2d outputs/thermal-spatial-rerun/pulse pulse 400 bounded
+```
+
+pulse 的步数 200/400/800 对应 dt=.001/.0005/.00025 s，模式为 unrestricted 或 bounded；harmonic 为原有稳态 unrestricted。标准输出是指标 JSON，输出前缀旁保存单元、壁面和接受历史 CSV。`operatorOnExact` 是原算子作用在解析场，`quadraticFitOnExact` 只是既有二次拟合诊断，`solvedFlux` 才是实际求解后的热流；不得混为方法收益。失败明确返回非零，保留已经写出的诊断。
+
+三档有流长期工况沿用上一节原始归档的粗/细输入；新增 level 6 保持同几何与物性，按实际最终面导出边界，将上下外域面设为对称 farfield，再写定温壁面/入口和零外热流。入口 .2 m/s、ν=.1、D=.05，7.13 s 壁温 301→300 K、14.23 s 回到 301 K，最大 dt=.05 s、有界与联合时间误差控制开启，终点 25 s。完整 argv、输入和原生 CSV 在 `outputs/thermal-spatial/{coarse,fine,finer}-dt005/`；`run.py`、`run-probes.py` 记录执行方式，所有额外解析调用也各有 command.json。复算请使用新目录，不覆盖原接受场/检查点。
+
+`outputs/thermal-spatial/analyze.py` 读取上述输出，比较同网格减半时间步与切换方法的末态、相邻网格总量，生成 `artifacts/current/native-thermal-spatial.json/.png` 和本地逐文件哈希。`attempt-direct/`、`attempt-stabilized/` 与对应 harmonic 失败目录保留两种未采用的边界二次修正；旧 `wall_probe.cpp` 和 `cartmesh2d_thermal_wall_probe` 是失败研究版本，不能当作当前支持入口。生产 ScalarTransport/WallGradient 已按 `quadratic-decision.json` 的哈希恢复。当前结果与局部壁热流限制集中在状态文档；本增量不改默认算法。
+
 ## 云端联合温度时间控制
 
 本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。
