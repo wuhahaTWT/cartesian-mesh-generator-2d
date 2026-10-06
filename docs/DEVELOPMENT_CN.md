@@ -404,6 +404,17 @@ outputs/laminar-stability/hybrid-stokes-p1/probe sheared 8 vortex 8 \
 
 CLI 依次接受 `square|sheared|cut|split|tip`、分辨率、`couette|rotation|hydrostatic|poiseuille|vortex`、积分阶次（可省略，默认 8）、输出前缀（可省略）。实际 37 次控制清单、单位、原始数值与归档哈希在 `native-laminar-hybrid-stokes-p1.json`。多边形积分使用有向边与重心扇形的带符号 Duffy 积分；未改变真实几何。压力 RMS 是全 P1 场去全域规范后的积分误差；压力最大值仅在积分点采样，不能当作壁面连续峰值。CSV 记录规范基函数所需的真实中心、直径和二阶矩。稠密 2600 未知量上限只控制研究成本；大网格需要稀疏求解和消元，尚未宣称适用。
 
+非恒定体力的最低阶相容实验为 `native-laminar-hdiv-load.cpp`，直接复用 k=0 原型的黏性/压力配对。每个正重心扇形三角形取 `R(v)=a_j+b(x-c_T)`、`2b=D_T(v)`，约束所有外侧面通量和内部径向法向连续，以最小 `∫|R(v)-v_T|²` 选取剩余自由度。六点张量 Duffy 积分计算 `∫f·R(v)`；制造压力势为 `φ=x³+xy²`（参考单位见 JSON），幅值 0/1/10000 是比较控制，不是新验收阈值。端点只核对构造舍入误差，不焊接或修补几何；非正扇形显式拒绝。云端驱动 `native-laminar-hdiv-load.py` 负责构建、运行和字段比较，不重建原生方程；直接运行二进制需已存在的输出目录，会做126次小求解。`--audit mesh.solver.cm2d` 仅检查全部单元局部重构，不求解该网格上的流动。
+
+P1 原型新增 `square n noslip` 与 `sheared n noslip-sheared` 控制，几何/问题不匹配直接拒绝。令 `ξ=x-sy,η=y`，`s=0/0.7`，流函数 `ψ=64 g(ξ)g(η)`、`g(t)=t²(1-t)²`，速度为 `(∂yψ,-∂xψ)`，压力为 `sin(πξ)sin(πη)`，体力为 `-νΔu+∇p`；采用 1m、1m/s 参考单位和 `ν=1m²/s`。壁面上 g 与 g' 同时为零，故两阶面速度均直接设为解析零值。边界反力取本地刚度行与压力负转置的完整残差（含稳定项），按两个面矩重构 P1 牵引，并以去全域规范的压力比较解析物理应力。对这个静止无滑移、无散解析场，Laplacian 与对称应力牵引相同；不外推一般运动壁面。新增 `.walls.csv` 保存每面两分量反力系数；实际27份字段全部有限且已归档读回。复用上方编译命令后运行：
+
+```sh
+outputs/laminar-stability/hybrid-stokes-p1/probe square 8 noslip 8
+outputs/laminar-stability/hybrid-stokes-p1/probe sheared 8 noslip-sheared 8
+```
+
+7 次静止壁面控制、3 次既有控制、三档误差及积分阶次对照见 `native-laminar-hybrid-stokes-p1-wall.json`。壁面牵引误差下降慢于内部速度；这是需要后续改进与验证的实际边界，不增加阈值、不升级默认。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh

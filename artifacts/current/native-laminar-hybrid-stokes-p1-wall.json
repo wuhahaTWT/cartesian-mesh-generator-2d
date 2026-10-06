@@ -1,0 +1,498 @@
+{
+  "schema_version": 1,
+  "status": "stationary no-slip Stokes manufactured-flow research; not product or curved-wall qualification",
+  "base_commit": "a4bc02f9089f681b530175aa0d9f0a5d86f8bbf3",
+  "source": {
+    "path": "artifacts/current/native-laminar-hybrid-stokes-p1.cpp",
+    "sha256": "baabaa18a25c98775f6250f116b9b365c9df9d2e1ea055a2061223fc09daeffc",
+    "binary_sha256": "8f62ed554e7c307e2b05afe3d9c5374eec0069f920280683f48d771e6f171e6f"
+  },
+  "platform": "macOS arm64; Apple clang 21.0.0, /usr/bin/clang++, C++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+  "method": {
+    "discretisation": "Existing P1 cell/face velocity and pressure, P2 potential, Laplacian Stokes, ordinary cell L2 force, B/-B^T, unchanged geometry and Solver gate. Only analytic fixture and native boundary residual output added.",
+    "reference_scales": "Lref=1 m,Uref=1 m/s,nu=1 m^2/s,density-normalised pressure. xi=x/Lref-s*y/Lref,eta=y/Lref; s=0 or0.7.",
+    "analytic_solution": "g(t)=t^2(1-t)^2; psi=64*Uref*Lref*g(xi)*g(eta); u=(partial_y psi,-partial_x psi),p=Uref^2*sin(pi*xi)*sin(pi*eta); f=-nu*Laplacian(u)+grad(p).",
+    "boundary": "All four physical walls are stationary, exact velocity prescribed identically zero for both face modes. g and its first derivative vanish at both ends. Wrong square/shear geometry pairing explicitly rejected.",
+    "traction": "For each boundary face and velocity component, moments are the assembled local stiffness row times u minus B^T row times gauge-corrected pressure. Includes stabilisation. Reconstruct P1 traction as (r0+12*s_face*r1)/face_length. It is the native conservative variational traction, not a raw velocity-gradient trace.",
+    "traction_reference": "Physical sigma*n=[nu*(grad(u)+grad(u)^T)-p*I]*n. For the analytic divergence-free stationary no-slip solution, transpose-gradient traction vanishes, so physical and Laplacian tractions agree. Does not assert equivalence for general moving boundaries or nonzero discrete divergence.",
+    "momentum_balance": "Norm of sum over all outer-face reaction integrals plus integral over all cells of f; every wall and cell included. No new acceptance tolerance.",
+    "units": "velocity RMS and wall velocity m/s; pressure and traction RMS m^2/s^2; integrated 2D momentum balance m^3/s^2; divergence s^-1; pressure work m^4/s^3; sampled maxima only, not continuous maxima.",
+    "cost_scope": "10 native small solves, including assembly and field output; no claim of full-flow or exclusive-machine speedup."
+  },
+  "outcome": {
+    "completed_solves": 10,
+    "stationary_wall_solves": 7,
+    "native_seconds": 0.300141374,
+    "maximum_wall_velocity": 0,
+    "maximum_weak_divergence": 1.1398981952697192e-13,
+    "maximum_momentum_balance_norm": 2.5827318370495815e-14,
+    "observed_refinement_orders": {
+      "square": {
+        "reconstructed_velocity_rms": [
+          2.305757016053936,
+          2.6988829721164045
+        ],
+        "pressure_rms": [
+          0.7655220295570392,
+          1.9531782737392758
+        ],
+        "wall_traction_rms": [
+          1.384840273619583,
+          1.4869753359981581
+        ]
+      },
+      "sheared": {
+        "reconstructed_velocity_rms": [
+          1.7616843022685174,
+          2.540149646352472
+        ],
+        "pressure_rms": [
+          0.41483649027765473,
+          1.7607774129611908
+        ],
+        "wall_traction_rms": [
+          1.302284267160332,
+          1.3523023690454758
+        ]
+      }
+    },
+    "quadrature_8_to_12_max_raw_coefficient_difference": {
+      "cells": 7.260858581048524e-14,
+      "faces": 8.604228440844963e-15,
+      "walls": 3.2862601528904634e-14
+    },
+    "existing_controls": [
+      {
+        "label": "square4-hydrostatic-q8",
+        "all_numerical_scalars_exactly_unchanged": true
+      },
+      {
+        "label": "square4-poiseuille-q8",
+        "all_numerical_scalars_exactly_unchanged": true
+      },
+      {
+        "label": "sheared8-vortex-q8",
+        "all_numerical_scalars_exactly_unchanged": true
+      }
+    ],
+    "wrong_domain_rejection": {
+      "returncode": 1,
+      "stderr": "stationary manufacture requires its matching square/sheared domain\n"
+    }
+  },
+  "unresolved": [
+    "Wall traction improves at about order1.35-1.49 on the last pair, below the interior velocity rate; no wall-accuracy qualification.",
+    "Straight-wall manufactured closed flow only; no stationary curved obstacle, corner singularity, cylinder Re20, convection, outlet traction, variable viscosity or physical time integration.",
+    "Ordinary force loading remains; full high-order pressure-robust reconstruction is separate cloud work.",
+    "The P2 potential is not asserted pointwise divergence-free; algebraic convergence and conservative reaction do not establish physical accuracy.",
+    "Dense research cap remains; no large-system solver, product/default or App change."
+  ],
+  "runs": [
+    {
+      "mesh": "square",
+      "n": 2,
+      "problem": "noslip",
+      "quadrature_order": 8,
+      "cells": 4,
+      "unknowns": 51,
+      "cell_mean_velocity_rms": 0.04740256769179757,
+      "reconstructed_velocity_rms": 0.1386259116245579,
+      "pressure_rms": 0.47522440320604603,
+      "pressure_max_at_quadrature": 1.4612542383082285,
+      "weak_divergence_max_at_vertices": 1.0425562743452372e-15,
+      "mean_flux_divergence_max": 2.3108699787924046e-16,
+      "pressure_work": -1.5523314129445134e-16,
+      "linear_residual_max": 1.7096899737172258e-15,
+      "area": 1.0000000000000047,
+      "wall_traction_rms": 2.0597067202837307,
+      "wall_traction_max_at_quadrature": 2.9070957887490834,
+      "wall_length": 4,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 2.808666774861361e-15,
+      "seconds": 0.001085833,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "square",
+        "2",
+        "noslip",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/square2-noslip-q8"
+      ],
+      "label": "square2-noslip-q8",
+      "fieldHashes": {
+        "square2-noslip-q8.faces.csv": "9fbb4fa46bee1af297ffe01da46b17b62f15c9d62a6753310087a86701f830b1",
+        "square2-noslip-q8.walls.csv": "64b55e9e8ab6a772b8e0b38dad71c38081c584de3c871885970bcea3e33a8160",
+        "square2-noslip-q8.cells.csv": "25351f473515528087610cd0e47c03e4acd181a4024b9581c1f031b23445179c"
+      }
+    },
+    {
+      "mesh": "square",
+      "n": 4,
+      "problem": "noslip",
+      "quadrature_order": 8,
+      "cells": 16,
+      "unknowns": 239,
+      "cell_mean_velocity_rms": 0.014338527118321169,
+      "reconstructed_velocity_rms": 0.02803770039202018,
+      "pressure_rms": 0.2795462306742193,
+      "pressure_max_at_quadrature": 1.0672355440103378,
+      "weak_divergence_max_at_vertices": 9.997515340399037e-15,
+      "mean_flux_divergence_max": 3.941531203541991e-15,
+      "pressure_work": -1.2220712505092026e-17,
+      "linear_residual_max": 3.359807182917615e-15,
+      "area": 1.0000000000000029,
+      "wall_traction_rms": 0.7887273930241635,
+      "wall_traction_max_at_quadrature": 1.2798566568100747,
+      "wall_length": 4,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 9.88645071006903e-15,
+      "seconds": 0.002763083,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "square",
+        "4",
+        "noslip",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/square4-noslip-q8"
+      ],
+      "label": "square4-noslip-q8",
+      "fieldHashes": {
+        "square4-noslip-q8.faces.csv": "43ab555e21d302ec67612cf1c09257f5c2f818714497ccfb65db6548f240c18c",
+        "square4-noslip-q8.walls.csv": "734a5910776f273d96fae2cfc084628cd2ea90d1725587b4a59c0ee34e9c17b0",
+        "square4-noslip-q8.cells.csv": "e85629d904eeb715ed47594eb489c1163864dffa0ed0a2dec151a7094c48b6b7"
+      }
+    },
+    {
+      "mesh": "square",
+      "n": 8,
+      "problem": "noslip",
+      "quadrature_order": 8,
+      "cells": 64,
+      "unknowns": 1023,
+      "cell_mean_velocity_rms": 0.0024485902433213262,
+      "reconstructed_velocity_rms": 0.0043181493718328695,
+      "pressure_rms": 0.0721918869347913,
+      "pressure_max_at_quadrature": 0.33951586510765797,
+      "weak_divergence_max_at_vertices": 4.267992519904428e-14,
+      "mean_flux_divergence_max": 1.87839937790919e-14,
+      "pressure_work": 3.590701765223099e-17,
+      "linear_residual_max": 6.387699432718882e-15,
+      "area": 0.9999999999999367,
+      "wall_traction_rms": 0.28138616820147827,
+      "wall_traction_max_at_quadrature": 0.5279308112284204,
+      "wall_length": 4,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 2.5827318370495815e-14,
+      "seconds": 0.095955667,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "square",
+        "8",
+        "noslip",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/square8-noslip-q8"
+      ],
+      "label": "square8-noslip-q8",
+      "fieldHashes": {
+        "square8-noslip-q8.faces.csv": "87ac3320aa0ef52c20d40447f2c9c0a52521c1d8702c24aa64b4685fc7e4c200",
+        "square8-noslip-q8.cells.csv": "dae899b285eaf3d394e75622f9ac714b33493a2abb5a769905d38da3b741e7a7",
+        "square8-noslip-q8.walls.csv": "bcafc949dda5673bc034ce3c11f0ad8438125efca3a0a01bb075d777243462eb"
+      }
+    },
+    {
+      "mesh": "sheared",
+      "n": 2,
+      "problem": "noslip-sheared",
+      "quadrature_order": 8,
+      "cells": 4,
+      "unknowns": 51,
+      "cell_mean_velocity_rms": 0.05426205950329725,
+      "reconstructed_velocity_rms": 0.16083148174315942,
+      "pressure_rms": 0.7474205912659299,
+      "pressure_max_at_quadrature": 2.2071749091133785,
+      "weak_divergence_max_at_vertices": 4.373882171801714e-15,
+      "mean_flux_divergence_max": 1.1195036874785655e-15,
+      "pressure_work": 1.2723843121723356e-16,
+      "linear_residual_max": 2.1834338640756496e-15,
+      "area": 1.0000000000000049,
+      "wall_traction_rms": 3.127217787318289,
+      "wall_traction_max_at_quadrature": 6.206593860482466,
+      "wall_length": 4.441311123146741,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 7.871042780410268e-15,
+      "seconds": 0.000566291,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "sheared",
+        "2",
+        "noslip-sheared",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/sheared2-noslip-sheared-q8"
+      ],
+      "label": "sheared2-noslip-sheared-q8",
+      "fieldHashes": {
+        "sheared2-noslip-sheared-q8.cells.csv": "c684131505a0b6b57d7be0550affb22b374cd289ad1c1260338d1a2e486d6a67",
+        "sheared2-noslip-sheared-q8.walls.csv": "b8cc79b4c128c572e3e32e10772c889f74a3c96e40823db18d3aa214acc6353b",
+        "sheared2-noslip-sheared-q8.faces.csv": "905f63c64beaebc5d4acbf951fadf07c21174b85db44a61c6239f31299f70e1f"
+      }
+    },
+    {
+      "mesh": "sheared",
+      "n": 4,
+      "problem": "noslip-sheared",
+      "quadrature_order": 8,
+      "cells": 16,
+      "unknowns": 239,
+      "cell_mean_velocity_rms": 0.027042316924531604,
+      "reconstructed_velocity_rms": 0.04742979474822276,
+      "pressure_rms": 0.5606435518138314,
+      "pressure_max_at_quadrature": 2.584010992062987,
+      "weak_divergence_max_at_vertices": 1.3696376442517075e-14,
+      "mean_flux_divergence_max": 4.952422752640916e-15,
+      "pressure_work": -2.7532658632506603e-16,
+      "linear_residual_max": 3.1086244689504383e-15,
+      "area": 1.0000000000000029,
+      "wall_traction_rms": 1.2680357572586396,
+      "wall_traction_max_at_quadrature": 2.641503719774568,
+      "wall_length": 4.44131112314674,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 6.334355064991693e-15,
+      "seconds": 0.002892709,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/sheared4-noslip-sheared-q8"
+      ],
+      "label": "sheared4-noslip-sheared-q8",
+      "fieldHashes": {
+        "sheared4-noslip-sheared-q8.faces.csv": "e4cd58a13eda1ff427c30135f3de21e990f2fe617a9d8b587ac5633303bd2fc0",
+        "sheared4-noslip-sheared-q8.walls.csv": "85ad0d0a60bba38ea91085a28ef3df5abffaf21c7a5b90887acd60fd7ea7c033",
+        "sheared4-noslip-sheared-q8.cells.csv": "8e5e46317a4723c1469cfcab56eb106823c8fb1cde52eeeefef7735fbac47bcb"
+      }
+    },
+    {
+      "mesh": "sheared",
+      "n": 8,
+      "problem": "noslip-sheared",
+      "quadrature_order": 8,
+      "cells": 64,
+      "unknowns": 1023,
+      "cell_mean_velocity_rms": 0.005506856063463409,
+      "reconstructed_velocity_rms": 0.008154362391758551,
+      "pressure_rms": 0.1654398069092205,
+      "pressure_max_at_quadrature": 0.8036918594217882,
+      "weak_divergence_max_at_vertices": 1.1398981952697192e-13,
+      "mean_flux_divergence_max": 4.9787768562502986e-14,
+      "pressure_work": -8.845717167199445e-16,
+      "linear_residual_max": 1.0654156999692944e-14,
+      "area": 0.9999999999999367,
+      "wall_traction_rms": 0.49664712306416736,
+      "wall_traction_max_at_quadrature": 1.543727708183625,
+      "wall_length": 4.44131112314674,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 9.550751645343966e-15,
+      "seconds": 0.094866375,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/sheared8-noslip-sheared-q8"
+      ],
+      "label": "sheared8-noslip-sheared-q8",
+      "fieldHashes": {
+        "sheared8-noslip-sheared-q8.cells.csv": "98720cbc07b5037e55603f4cba679c99267db89d3d29348330bef7dbb4dda90f",
+        "sheared8-noslip-sheared-q8.walls.csv": "ec3f4d84fc56100e51672eabfe417e3fa9cea91a846d61da72804d9fc1fc68ff",
+        "sheared8-noslip-sheared-q8.faces.csv": "66bf56a7debef055bd0a809d58b0a58abf16c899b88636af94f5e2646898931d"
+      }
+    },
+    {
+      "mesh": "sheared",
+      "n": 4,
+      "problem": "noslip-sheared",
+      "quadrature_order": 12,
+      "cells": 16,
+      "unknowns": 239,
+      "cell_mean_velocity_rms": 0.02704231692453134,
+      "reconstructed_velocity_rms": 0.04742979474822292,
+      "pressure_rms": 0.5606435518138292,
+      "pressure_max_at_quadrature": 2.642988203031833,
+      "weak_divergence_max_at_vertices": 1.5810855730697763e-14,
+      "mean_flux_divergence_max": 2.6609777026743033e-15,
+      "pressure_work": -6.617660003549585e-17,
+      "linear_residual_max": 5.162537064506978e-15,
+      "area": 0.9999999999999973,
+      "wall_traction_rms": 1.268035757258641,
+      "wall_traction_max_at_quadrature": 2.7294093633350616,
+      "wall_length": 4.44131112314674,
+      "wall_velocity_max": 0,
+      "global_momentum_balance_norm": 9.276218992633175e-15,
+      "seconds": 0.003235333,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        "12",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/sheared4-noslip-sheared-q12"
+      ],
+      "label": "sheared4-noslip-sheared-q12",
+      "fieldHashes": {
+        "sheared4-noslip-sheared-q12.faces.csv": "e2cd36711e4c09a2af4cba086d41ebf63da0276b19eb255d5f55c0b3711c8499",
+        "sheared4-noslip-sheared-q12.cells.csv": "345c3697a6f4a5f2315f3962305ddde47d54fea86c88fa4507e451ab675a7b9d",
+        "sheared4-noslip-sheared-q12.walls.csv": "b70d1e773bf57c791f19d9fb7d30dfc6c79be431be10a72a19a466939bd2b318"
+      }
+    },
+    {
+      "mesh": "square",
+      "n": 4,
+      "problem": "hydrostatic",
+      "quadrature_order": 8,
+      "cells": 16,
+      "unknowns": 239,
+      "cell_mean_velocity_rms": 8.16458719474464e-17,
+      "reconstructed_velocity_rms": 9.45537702494717e-17,
+      "pressure_rms": 1.9948262700728803e-14,
+      "pressure_max_at_quadrature": 2.1760371282653068e-14,
+      "weak_divergence_max_at_vertices": 2.109458973221963e-15,
+      "mean_flux_divergence_max": 1.1454690569871578e-15,
+      "pressure_work": 1.164718141856483e-16,
+      "linear_residual_max": 1.7888816497189628e-16,
+      "area": 1.0000000000000029,
+      "seconds": 0.002416375,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "square",
+        "4",
+        "hydrostatic",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/square4-hydrostatic-q8"
+      ],
+      "label": "square4-hydrostatic-q8",
+      "fieldHashes": {
+        "square4-hydrostatic-q8.cells.csv": "f366457211cf7f8f467997bd02557e28af688c7493c12a9a93a8b0385a1b7267",
+        "square4-hydrostatic-q8.faces.csv": "84012dad150ba93583befa82c56912b047e7fdfca705f587655f74b653919bf0"
+      }
+    },
+    {
+      "mesh": "square",
+      "n": 4,
+      "problem": "poiseuille",
+      "quadrature_order": 8,
+      "cells": 16,
+      "unknowns": 239,
+      "cell_mean_velocity_rms": 7.538620098739765e-16,
+      "reconstructed_velocity_rms": 7.381035442798573e-16,
+      "pressure_rms": 7.693231208364598e-14,
+      "pressure_max_at_quadrature": 1.127986593019159e-13,
+      "weak_divergence_max_at_vertices": 1.2272169938510848e-14,
+      "mean_flux_divergence_max": 5.3013149425851225e-15,
+      "pressure_work": 9.742347224336353e-16,
+      "linear_residual_max": 4.9960036108132044e-15,
+      "area": 1.0000000000000029,
+      "seconds": 0.002221833,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "square",
+        "4",
+        "poiseuille",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/square4-poiseuille-q8"
+      ],
+      "label": "square4-poiseuille-q8",
+      "fieldHashes": {
+        "square4-poiseuille-q8.faces.csv": "a98d71d18180962417315346db333544b884234b9d0d64ffa0cc95e56d739da7",
+        "square4-poiseuille-q8.cells.csv": "0de3ff9a870fda628654bd0c44b30f0a8486c169870dfc482b08f227b7e9b4fc"
+      }
+    },
+    {
+      "mesh": "sheared",
+      "n": 8,
+      "problem": "vortex",
+      "quadrature_order": 8,
+      "cells": 64,
+      "unknowns": 1023,
+      "cell_mean_velocity_rms": 0.00048185859062985903,
+      "reconstructed_velocity_rms": 0.0016125043403493985,
+      "pressure_rms": 0.014984168055558121,
+      "pressure_max_at_quadrature": 0.07900951794023012,
+      "weak_divergence_max_at_vertices": 8.354652908164311e-14,
+      "mean_flux_divergence_max": 3.3783971632406166e-14,
+      "pressure_work": 1.660160980642941e-16,
+      "linear_residual_max": 1.440464843760134e-14,
+      "area": 0.9999999999999367,
+      "seconds": 0.094137875,
+      "command": [
+        "/tmp/cartmesh2d-p1-wall-probe",
+        "sheared",
+        "8",
+        "vortex",
+        "8",
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/hybrid-stokes-p1-wall/sheared8-vortex-q8"
+      ],
+      "label": "sheared8-vortex-q8",
+      "fieldHashes": {
+        "sheared8-vortex-q8.cells.csv": "863a2770c3c4d5957d69fb1f3387c73e9946069fa8c0cc0a5667e6afd079c1b3",
+        "sheared8-vortex-q8.faces.csv": "049c12f3d484528532797a3b757c0e807da3acc1979f61fe6ba3a93b44c88bd6"
+      }
+    }
+  ],
+  "raw_evidence": {
+    "archive": "outputs/laminar-stability/hybrid-stokes-p1-wall/native-hybrid-stokes-p1-wall-research.tar.gz",
+    "bytes": 195059,
+    "sha256": "a62b2ba21d919a964e48afe881acd6b37587045c0d4471433d1413ea0c896654",
+    "members": 42,
+    "readback": "Every member byte count and SHA256 checked; all27 CSV files read, all values finite.",
+    "field_bytes": 237723,
+    "all_field_hashes": {
+      "sheared2-noslip-sheared-q8.cells.csv": "c684131505a0b6b57d7be0550affb22b374cd289ad1c1260338d1a2e486d6a67",
+      "sheared2-noslip-sheared-q8.faces.csv": "905f63c64beaebc5d4acbf951fadf07c21174b85db44a61c6239f31299f70e1f",
+      "sheared2-noslip-sheared-q8.walls.csv": "b8cc79b4c128c572e3e32e10772c889f74a3c96e40823db18d3aa214acc6353b",
+      "sheared4-noslip-sheared-q12.cells.csv": "345c3697a6f4a5f2315f3962305ddde47d54fea86c88fa4507e451ab675a7b9d",
+      "sheared4-noslip-sheared-q12.faces.csv": "e2cd36711e4c09a2af4cba086d41ebf63da0276b19eb255d5f55c0b3711c8499",
+      "sheared4-noslip-sheared-q12.walls.csv": "b70d1e773bf57c791f19d9fb7d30dfc6c79be431be10a72a19a466939bd2b318",
+      "sheared4-noslip-sheared-q8.cells.csv": "8e5e46317a4723c1469cfcab56eb106823c8fb1cde52eeeefef7735fbac47bcb",
+      "sheared4-noslip-sheared-q8.faces.csv": "e4cd58a13eda1ff427c30135f3de21e990f2fe617a9d8b587ac5633303bd2fc0",
+      "sheared4-noslip-sheared-q8.walls.csv": "85ad0d0a60bba38ea91085a28ef3df5abffaf21c7a5b90887acd60fd7ea7c033",
+      "sheared8-noslip-sheared-q8.cells.csv": "98720cbc07b5037e55603f4cba679c99267db89d3d29348330bef7dbb4dda90f",
+      "sheared8-noslip-sheared-q8.faces.csv": "66bf56a7debef055bd0a809d58b0a58abf16c899b88636af94f5e2646898931d",
+      "sheared8-noslip-sheared-q8.walls.csv": "ec3f4d84fc56100e51672eabfe417e3fa9cea91a846d61da72804d9fc1fc68ff",
+      "sheared8-vortex-q8.cells.csv": "863a2770c3c4d5957d69fb1f3387c73e9946069fa8c0cc0a5667e6afd079c1b3",
+      "sheared8-vortex-q8.faces.csv": "049c12f3d484528532797a3b757c0e807da3acc1979f61fe6ba3a93b44c88bd6",
+      "square2-noslip-q8.cells.csv": "25351f473515528087610cd0e47c03e4acd181a4024b9581c1f031b23445179c",
+      "square2-noslip-q8.faces.csv": "9fbb4fa46bee1af297ffe01da46b17b62f15c9d62a6753310087a86701f830b1",
+      "square2-noslip-q8.walls.csv": "64b55e9e8ab6a772b8e0b38dad71c38081c584de3c871885970bcea3e33a8160",
+      "square4-hydrostatic-q8.cells.csv": "f366457211cf7f8f467997bd02557e28af688c7493c12a9a93a8b0385a1b7267",
+      "square4-hydrostatic-q8.faces.csv": "84012dad150ba93583befa82c56912b047e7fdfca705f587655f74b653919bf0",
+      "square4-noslip-q8.cells.csv": "e85629d904eeb715ed47594eb489c1163864dffa0ed0a2dec151a7094c48b6b7",
+      "square4-noslip-q8.faces.csv": "43ab555e21d302ec67612cf1c09257f5c2f818714497ccfb65db6548f240c18c",
+      "square4-noslip-q8.walls.csv": "734a5910776f273d96fae2cfc084628cd2ea90d1725587b4a59c0ee34e9c17b0",
+      "square4-poiseuille-q8.cells.csv": "0de3ff9a870fda628654bd0c44b30f0a8486c169870dfc482b08f227b7e9b4fc",
+      "square4-poiseuille-q8.faces.csv": "a98d71d18180962417315346db333544b884234b9d0d64ffa0cc95e56d739da7",
+      "square8-noslip-q8.cells.csv": "dae899b285eaf3d394e75622f9ac714b33493a2abb5a769905d38da3b741e7a7",
+      "square8-noslip-q8.faces.csv": "87ac3320aa0ef52c20d40447f2c9c0a52521c1d8702c24aa64b4685fc7e4c200",
+      "square8-noslip-q8.walls.csv": "bcafc949dda5673bc034ce3c11f0ad8438125efca3a0a01bb075d777243462eb"
+    },
+    "duplicate_cleanup": {
+      "removed_field_files": 27,
+      "removed_regenerable_binary": "/tmp/cartmesh2d-p1-wall-probe",
+      "removed_bytes": 470691,
+      "archive_readback_before_cleanup": true,
+      "removed_paths_absent": true
+    }
+  },
+  "reproduction": {
+    "build": "/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-hybrid-stokes-p1.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o outputs/laminar-stability/hybrid-stokes-p1-wall/probe",
+    "runs": "square/sheared with noslip/noslip-sheared respectively, n=2,4,8 q=8; sheared n4 q12; output directory must exist. Commands and all raw fields retained above."
+  },
+  "cloud_source_sync": {
+    "commit": "a4bc02f9089f681b530175aa0d9f0a5d86f8bbf3",
+    "rt0_source_hashes_match_record": true,
+    "mac_system_clang_werror_build": "passed; no local repeat of126 solves or real large-mesh reconstruction checks",
+    "driver_syntax": "passed"
+  }
+}
