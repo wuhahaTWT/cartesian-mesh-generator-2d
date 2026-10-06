@@ -79,17 +79,19 @@ ${euler ? `## 可压 Euler 结果
 
 最后完整可压场：t=${euler.summary.time} s，本次${euler.summary.acceptedSteps}个接受步。先看 **euler-preview.png**。
 
+完成条件：${euler.summary.steadyConverged ? `已满足所选稳态停止要求；参考时间 ${euler.summary.steadyScaleSeconds} s，归一化停止要求 ${euler.summary.steadyTolerance}，残差/场变化率/边界输出变化率分别为 ${euler.summary.steadyResidual} / ${euler.summary.steadyChangeRate} / ${euler.summary.steadyOutputChangeRate}。这不是物理误差或网格无关性证明。` : '已到达所选物理时间；不表示稳态。'}
+
 当前完整结果清单：${euler.manifest}
 
 - euler.cells.csv / euler.fields.json / euler.vtk：密度kg/m³、绝对压力Pa、速度m/s、温度K、Mach数；rhoE为总能量密度J/m³。
-- euler.faces.csv：实际面上质量、两分量动量和总能量通量，按owner外向、每单位厚度；heatFlux 为 Fourier 导热 W/m，convectiveEnergy 为对流能量，两者之和为总能量通量。
-- euler.history.csv：每个已接受时间步的物理时间、声学/导热组合 CFL、密度/压力下限、质量、能量与向外净热量率 boundaryHeat（W/m）。
+- euler.faces.csv：实际面上质量、两分量动量和总能量通量，按owner外向、每单位厚度；总能量通量为 convectiveEnergy、Fourier 导热 heatFlux 及黏性功 viscousWork 之和（W/m）。
+- euler.history.csv：每个已接受时间步的物理时间、声学/导热/黏性组合 Courant 数、密度/压力下限、质量、能量与向外净热量率 boundaryHeat（W/m）。隐式 Courant 数为诊断，不受显式 CFL 上限限制；物理时间精度仍需时间步细化。
 - desktop-state.json + euler.checkpoint：恢复相同网格后可在App中载入的续算清单与状态；两文件需要保留在同一目录。
-- euler-run-* 各自独立；只有 desktop-state.json 中 complete 是到达目标时间的完整结果。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
+- euler-run-* 各自独立；desktop-state.json 中 complete 表示所选瞬态终点或稳态停止要求已满足。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
 
 本次格式：${euler.summary.method}。理想气体层流模型，动力黏度 μ=${euler.summary.dynamicViscosity??0} Pa·s，壁面模型 ${euler.summary.wallModel??'slip'}。HLLC 使用多维压力感知的 HLLE 混合保护；正性回退和退阶计数保存在摘要与历史中。本次导热系数 k=${euler.summary.thermalConductivity??0} W/(m·K)，热壁为 ${euler.summary.wallThermal??'insulated'}，边界值 ${euler.summary.wallValue??0}（定温 K，向外热流 W/m²，负值加热）。导热进入总能量并反馈压力与流动；开边界默认零 Fourier 通量，仍可通过对流携带能量。黏性采用 Stokes 假设的 Newtonian 应力，同时计入总能量机械功。开边界取零黏性牵引；未包含湍流、变物性或固体共轭导热。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
 ` : ''}
-**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体无黏工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
+**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体工况及所选输运模型。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }
 

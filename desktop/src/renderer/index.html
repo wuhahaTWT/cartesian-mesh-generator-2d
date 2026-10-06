@@ -373,11 +373,11 @@
     <section class="block flow-block" id="eulerBlock" hidden>
       <h2><span>7</span>可压流动（试验）</h2>
       <p class="note">独立理想气体总能量模型；可选常物性层流黏性和导热，以及一阶或二阶格式。零黏度关闭黏性；尚未包含湍流、变物性或固体共轭导热。</p>
-      <label class="field">工况<select id="eulerCase"><option value="sod">矩形冲击管（Sod）</option><option value="external">物体外流（特征远场）</option><option value="uniform">均匀流（无物面）</option><option value="sealed">封闭全部边界（壁面）</option></select></label>
+      <label class="field">工况<select id="eulerCase"><option value="sod">矩形冲击管（Sod）</option><option value="channel">X 方向通道（压力出口）</option><option value="external">物体外流（特征远场）</option><option value="uniform">均匀流（无物面）</option><option value="sealed">封闭全部边界（壁面）</option></select></label>
       <p id="eulerScope" class="note"></p>
       <div class="pair">
         <label class="field">通量格式<select id="eulerFluxScheme"><option value="rusanov">Rusanov（原方案）</option><option value="hllc">HLLC（激波保护）</option></select></label>
-        <label class="field">精度格式<select id="eulerOrder"><option value="1">一阶</option><option value="2">二阶（受限线性 / RK2）</option></select></label>
+        <label class="field">空间精度格式<select id="eulerOrder"><option value="1">一阶</option><option value="2">二阶（受限线性）</option></select></label>
       </div>
       <p class="note">二阶格式改善光滑区分辨率；激波附近自动限制斜率。HLLC 使用压力感知激波保护；正性回退次数随结果报告。</p>
       <div class="pair">
@@ -387,6 +387,16 @@
       <div class="pair">
         <label class="field">速度 X（m/s）<input id="eulerU" type="number" step="any" value="0"></label>
         <label class="field">速度 Y（m/s）<input id="eulerV" type="number" step="any" value="0"></label>
+      </div>
+      <div id="eulerChannelFields" hidden>
+        <label class="field">出口绝对静压（Pa）<input id="eulerOutletPressure" type="number" min="0.000000000001" step="any" value="101325"></label>
+        <label class="field">入口条件<select id="eulerInletModel"><option value="characteristic">参考状态特征入口</option><option value="total">总状态特征入口</option></select></label>
+        <label class="toggle"><input id="eulerReservoir" type="checkbox">单独指定储气总压与总温</label>
+        <div class="pair" id="eulerReservoirFields" hidden>
+          <label class="field">储气总压（Pa）<input id="eulerInletTotalPressure" type="number" min="0.000000000001" step="any" value="104190.2"></label>
+          <label class="field">储气总温（K）<input id="eulerInletTotalTemperature" type="number" min="0.000000000001" step="any" value="302.4"></label>
+        </div>
+        <p class="hint">通道入口、出口须位于最左、最右的竖直端面；初始速度沿正 X 方向。总状态入口从内部解确定剩余特征量；未单独指定储气条件时，由参考状态推导。出口回流或堵塞会明确失败并保留已接受状态。</p>
       </div>
       <div class="pair">
         <label class="field">比热比 γ<input id="eulerGamma" type="number" min="1.000001" step="any" value="1.4"></label>
@@ -402,17 +412,30 @@
       <p class="note">导热会反馈到压力和流动。热流以向流体外为正，负值表示加热；开口边界采用零导热通量，能量随流动进出。</p>
       <label class="field" id="eulerSplitField">隔膜位置（长度比例）<input id="eulerSplit" type="number" min="0.000001" max="0.999999" step="any" value="0.5"></label>
       <div class="pair">
-        <label class="field">目标物理时间（s）<input id="eulerEndTime" type="number" min="0.000000000001" step="any" value="0.0005"></label>
-        <label class="field">声学/导热/黏性组合 CFL 上限<input id="eulerCfl" type="number" min="0.000001" max="0.45" step="any" value="0.4"></label>
+        <label class="field">求解目标<select id="eulerMode"><option value="transient">推进到指定物理时间</option><option value="steady">达到稳态停止要求</option></select></label>
+        <label class="field">时间推进<select id="eulerIntegrator"><option value="explicit">显式</option><option value="sdirk2">隐式 SDIRK2</option></select></label>
+      </div>
+      <div id="eulerSteadyFields" hidden>
+        <div class="pair">
+          <label class="field">稳态参考时间（s）<input id="eulerSteadyScale" type="number" min="0.000000000000000001" step="any" value="0"></label>
+          <label class="field">无量纲停止要求<input id="eulerSteadyTolerance" type="number" min="0.000000000000000001" step="any" value="0.00001"></label>
+        </div>
+        <p class="hint">初次切换时按几何长度和参考速度填入参考时间，可按用途修改。残差、每参考时间的场变化及边界输出变化须同时满足要求；达到积分时间上限仍未收敛会返回失败。这些要求不等同于物理误差。</p>
+      </div>
+      <div class="pair">
+        <label class="field"><span id="eulerEndTimeLabel">目标物理时间（s）</span><input id="eulerEndTime" type="number" min="0.000000000001" step="any" value="0.0005"></label>
+        <label class="field">显式组合 CFL 上限<input id="eulerCfl" type="number" min="0.000001" max="0.45" step="any" value="0.4"></label>
       </div>
       <details id="eulerAdvanced"><summary>时间步与计算预算</summary>
+        <label class="field">显式步长控制<select id="eulerTimeStepControl"><option value="legacy">原控制</option><option value="stage-guarded">阶段保护</option></select></label>
         <div class="pair">
           <label class="field">最大步长（s）<input id="eulerMaximumStep" type="number" min="0.00000000000001" step="any" value="0.001"></label>
           <label class="field">最小步长（s）<input id="eulerMinimumStep" type="number" min="0.000000000000000001" step="any" value="0.00000000000001"></label>
         </div>
         <label class="field">本次最大接受步数<input id="eulerMaximumSteps" type="number" min="1" max="1000000" step="1" value="100000"></label>
         <label class="field">本次时间预算（s）<input id="eulerMaximumSeconds" type="number" min="1" max="3600" step="1" value="180"></label>
-        <p class="note">按声学、导热与黏性组合限制自动缩步；小 Cut-cell 可能显著限制步长。目标时间表示演化终点，不表示达到稳态。</p>
+        <label class="field">初始压力相对扰动幅值<input id="eulerInitialPressurePerturbation" type="number" min="-0.999999" max="0.999999" step="any" value="0"></label>
+        <p class="note" id="eulerTimeHint">显式按声学、导热与黏性组合限制自动缩步；小 Cut-cell 可能显著限制步长。</p>
       </details>
       <label class="toggle"><input id="eulerResume" type="checkbox" disabled>从已接受的可压状态继续</label>
       <button id="pickEulerCheckpoint" class="wide">载入可压续算清单…</button>

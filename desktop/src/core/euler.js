@@ -1,18 +1,32 @@
 'use strict';
 const SUFFIXES=['.json','.fields.json','.cells.csv','.faces.csv','.history.csv','.vtk','.checkpoint','.boundaries'];
-const PHYSICAL=['case','density','u','v','pressure','gamma','gasConstant','split','thermalConductivity','wallThermal','wallValue','dynamicViscosity','wallModel'];
+const PHYSICAL=['case','density','u','v','pressure','gamma','gasConstant','split','thermalConductivity','wallThermal','wallValue','dynamicViscosity','wallModel','outletPressure','inletModel','inletTotalPressure','inletTotalTemperature','initialPressurePerturbation'];
 const NUMERICAL=['endTime','maximumStep','minimumStep','cfl','maximumSteps','maximumSeconds'];
+const METHODS=['fluxScheme','order','wallGradient','integrator','timeStepControl','mode','steadyScale','steadyTolerance'];
 const requireValue=(ok,message)=>{if(!ok)throw new Error(`可压 Euler：${message}`);};
 const finite=(v,name)=>{requireValue(typeof v==='number'&&Number.isFinite(v),`${name} 必须是有限数。`);return v;};
 const near=(a,b)=>Math.abs(a-b)<=2e-12+2e-10*Math.max(Math.abs(a),Math.abs(b));
 function validateEulerRequest(input) {
   requireValue(input&&typeof input==='object'&&!Array.isArray(input),'缺少配置。');
-  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,'fluxScheme','order','wallGradient','resume'].includes(k)),'存在未知配置。');
-  requireValue(['sod','external','uniform','sealed'].includes(input.case),'未知工况。');
+  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,...METHODS,'resume'].includes(k)),'存在未知配置。');
+  requireValue(['sod','external','uniform','sealed','channel'].includes(input.case),'未知工况。');
   const r={case:input.case,fluxScheme:input.fluxScheme??'rusanov',order:input.order??1,wallGradient:input.wallGradient??'linear',thermalConductivity:input.thermalConductivity??0,wallThermal:input.wallThermal??'insulated',wallValue:input.wallValue??0,dynamicViscosity:input.dynamicViscosity??0,wallModel:input.wallModel??'slip'};
+  Object.assign(r,{integrator:input.integrator??'explicit',timeStepControl:input.timeStepControl??'legacy',mode:input.mode??'transient',steadyScale:input.steadyScale??0,steadyTolerance:input.steadyTolerance??1e-5,
+    outletPressure:input.outletPressure??null,inletModel:input.inletModel??'characteristic',inletTotalPressure:input.inletTotalPressure??null,inletTotalTemperature:input.inletTotalTemperature??null,initialPressurePerturbation:input.initialPressurePerturbation??0});
+  requireValue(['explicit','sdirk2'].includes(r.integrator)&&['legacy','stage-guarded'].includes(r.timeStepControl),'时间推进控制无效。');
+  requireValue(['transient','steady'].includes(r.mode),'求解模式无效。');
+  finite(r.steadyScale,'稳态参考时间');finite(r.steadyTolerance,'稳态停止要求');
+  requireValue(r.steadyScale>=0&&r.steadyTolerance>0&&(r.mode!=='steady'||r.steadyScale>0),'稳态模式需要正参考时间和停止要求。');
   requireValue(['rusanov','hllc'].includes(r.fluxScheme)&&[1,2].includes(r.order),'通量格式或精度阶数无效。');
   requireValue(['linear','quadratic'].includes(r.wallGradient),'壁面梯度格式无效。');
-  for(const k of [...PHYSICAL.slice(1).filter(k=>!['thermalConductivity','wallThermal','wallValue','dynamicViscosity','wallModel'].includes(k)),...NUMERICAL])r[k]=finite(input[k],k);
+  for(const k of ['density','u','v','pressure','gamma','gasConstant','split',...NUMERICAL])r[k]=finite(input[k],k);
+  requireValue(['characteristic','total'].includes(r.inletModel),'入口模型无效。');
+  if(r.case==='channel') {
+    requireValue(finite(r.outletPressure,'出口绝对压力')>0&&r.u>0&&r.v===0,'通道需要正出口绝对压力和正 X 方向初始速度，Y 速度为零。');
+  } else requireValue(r.outletPressure===null&&r.inletModel==='characteristic','入口/出口条件只适用于通道。');
+  requireValue((r.inletTotalPressure===null)===(r.inletTotalTemperature===null),'储气总压和总温须同时给出。');
+  if(r.inletTotalPressure!==null)requireValue(r.case==='channel'&&r.inletModel==='total'&&finite(r.inletTotalPressure,'储气总压')>0&&finite(r.inletTotalTemperature,'储气总温')>0,'储气总条件需要通道总状态入口及正绝对值。');
+  requireValue(Math.abs(finite(r.initialPressurePerturbation,'初始压力扰动'))<1,'初始压力相对扰动须在 -1 与 1 之间。');
   finite(r.dynamicViscosity,'动力黏度');requireValue(r.dynamicViscosity>=0&&['slip','no-slip'].includes(r.wallModel),'动力黏度或壁面模型无效。');
   requireValue(r.wallModel==='slip'||(r.dynamicViscosity>0&&r.case!=='uniform'),'无滑移壁需要正动力黏度及有壁面工况。');
   finite(r.thermalConductivity,'导热系数');finite(r.wallValue,'热边界值');
@@ -33,6 +47,9 @@ function buildEulerInvocation(mesh,prefix,input,restart=null) {
   const r=validateEulerRequest(input);requireValue(typeof mesh==='string'&&mesh.endsWith('.solver.cm2d')&&!mesh.endsWith('.failed.solver.cm2d'),'需要最终求解网格。');
   requireValue(!r.resume||restart,'没有可用的已接受状态。');
   const args=['--mesh',mesh,'--output',prefix,'--case',r.case,'--flux',r.fluxScheme,'--order',String(r.order),'--wall-thermal',r.wallThermal,'--wall-model',r.wallModel,'--wall-gradient',r.wallGradient];
+  args.push('--integrator',r.integrator,'--time-step-control',r.timeStepControl,'--mode',r.mode,'--steady-scale',String(r.steadyScale),'--steady-tolerance',String(r.steadyTolerance),'--initial-pressure-perturbation',String(r.initialPressurePerturbation));
+  if(r.case==='channel')args.push('--outlet-pressure',String(r.outletPressure),'--inlet-model',r.inletModel);
+  if(r.inletTotalPressure!==null)args.push('--inlet-total-pressure',String(r.inletTotalPressure),'--inlet-total-temperature',String(r.inletTotalTemperature));
   for(const [key,flag] of Object.entries({dynamicViscosity:'viscosity',thermalConductivity:'conductivity',wallValue:'wall-value',density:'density',u:'u',v:'v',pressure:'pressure',gamma:'gamma',gasConstant:'gas-r',split:'split',endTime:'end-time',maximumStep:'max-step',minimumStep:'min-step',cfl:'cfl',maximumSteps:'max-steps',maximumSeconds:'max-seconds'}))args.push('--'+flag,String(r[key]));
   if(r.resume)args.push('--restart',restart);
   return {request:r,executable:'cartmesh2d_euler_cli',args};
@@ -70,14 +87,15 @@ function eulerCheckpoint(text,mesh,input) {
   const cells=lines.slice(index+1,-1).map(line=>line.split(' ').map(Number));cells.forEach(q=>conservativePrimitive(q,r.gamma));
   return {time,steps,cells,mechanicalWalls,temperatureWalls};
 }
-function parseEulerProgress(line) {
+function parseEulerProgress(line,{integrator='explicit',cfl=.45}={}) {
   let r;try{r=JSON.parse(line);}catch{return null;}
   if(r?.type!=='euler-step')return null;
   for(const k of ['step','time','acousticCourant','minimumDensity','minimumPressure','mass','totalEnergy'])finite(r[k],k);
-  requireValue(Number.isSafeInteger(r.step)&&r.step>0&&r.time>0&&r.acousticCourant>0&&r.acousticCourant<=.45*(1+1e-12)&&r.minimumDensity>0&&r.minimumPressure>0,'进度状态无效。');
+  const implicit=integrator==='sdirk2';
+  requireValue(Number.isSafeInteger(r.step)&&r.step>0&&r.time>0&&r.acousticCourant>0&&(implicit||r.acousticCourant<=cfl*(1+1e-12))&&r.minimumDensity>0&&r.minimumPressure>0,'进度状态无效。');
   if(r.thermalCourant!==undefined||r.combinedCourant!==undefined) {
     finite(r.thermalCourant,'导热 CFL');finite(r.combinedCourant,'组合 CFL');
-    requireValue(r.thermalCourant>=0&&r.combinedCourant>=Math.max(r.thermalCourant,r.acousticCourant)-2e-15&&r.combinedCourant<=.45*(1+1e-12),'进度导热 CFL 无效。');
+    requireValue(r.thermalCourant>=0&&r.combinedCourant>=Math.max(r.thermalCourant,r.acousticCourant)-2e-15&&(implicit||r.combinedCourant<=cfl*(1+1e-12)),'进度导热 CFL 无效。');
   }
   if(r.viscousCourant!==undefined)requireValue(finite(r.viscousCourant,'黏性 CFL')>=0&&r.viscousCourant<=r.combinedCourant,'进度黏性 CFL 无效。');
   return r;
@@ -98,9 +116,15 @@ function cellGeometry(mesh,cell) {
   requireValue(twiceArea>0,'非正面积。');return {area:twiceArea/2,x:o[0]+x/(3*twiceArea),y:o[1]+y/(3*twiceArea)};
 }
 function validateEulerOutput(summary,fields,cellsText,facesText,historyText,checkpointText,mesh,input,startTime=0) {
-  const r=validateEulerRequest(input),s=summary;
-  const method=(r.order===1?'first-order ':'limited-linear ')+(r.fluxScheme==='hllc'?'HLLC-HLLE':'Rusanov')+(r.order===1?' / forward Euler':' / SSPRK2');
+  const r=validateEulerRequest(input),s=summary,implicit=r.integrator==='sdirk2',stages=implicit?2:r.order;
+  const method=(implicit?'limited/constant ':r.order===1?'first-order ':'limited-linear ')+(r.fluxScheme==='hllc'?'HLLC-HLLE':'Rusanov')+(implicit?' / SDIRK2 Newton-GMRES':r.order===1?' / forward Euler':' / SSPRK2');
   requireValue(s?.solver==='native 2D ideal-gas Euler'&&s.method===method&&(s.fluxScheme??'rusanov')===r.fluxScheme&&(s.order??1)===r.order,'求解模型或数值格式不匹配。');
+  requireValue((s.integrator??'explicit')===r.integrator&&(s.timeStepControl??'legacy')===r.timeStepControl&&(s.temporalOrder??r.order)===stages,'时间推进格式与请求不同。');
+  requireValue((s.mode??'transient')===r.mode,'求解模式与请求不同。');
+  requireValue((s.outletPressure??null)===r.outletPressure,'出口压力与请求不同。');
+  if(r.case==='channel'||r.initialPressurePerturbation!==0||s.inletModel!==undefined) {
+    requireValue(s.inletModel===r.inletModel&&(s.inletTotalPressure??null)===r.inletTotalPressure&&(s.inletTotalTemperature??null)===r.inletTotalTemperature&&(s.initialPressurePerturbation??0)===r.initialPressurePerturbation,'入口或初始扰动与请求不同。');
+  }
   requireValue((s.wallGradient??'linear')===r.wallGradient,'壁面梯度格式与请求不同。');
   if(s.wallGradient!==undefined)for(const key of ['quadraticHeatWalls','quadraticViscousWalls'])requireValue(Number.isSafeInteger(s[key])&&s[key]>=0&&s[key]<=s.faces&&(r.wallGradient==='quadratic'||s[key]===0),'二次壁面数量诊断无效。');
   const modern=s.fluxScheme!==undefined,thermal=s.thermalConductivity!==undefined,viscous=s.dynamicViscosity!==undefined;
@@ -114,9 +138,14 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
   }
   const count=(value,name)=>{requireValue(Number.isSafeInteger(value)&&value>=0,`${name} 计数无效。`);return value;};
   for(const key of ['hllcFallbackEvaluations','lastHllcFallbackEvaluations','reconstructionFallbackCells','lastReconstructionFallbackCells'])if(modern)count(s[key],key);
-  requireValue(s.status==='target_reached'&&s.targetReached===true&&s.failure==='','未到达目标物理时间。');
+  if(r.mode==='steady') {
+    requireValue(s.status==='steady_converged'&&s.steadyConverged===true&&s.targetReached===false&&s.failure==='','未达到稳态停止要求。');
+    requireValue(s.steadyScaleSeconds===r.steadyScale&&s.steadyTolerance===r.steadyTolerance,'稳态尺度或停止要求与请求不同。');
+    for(const key of ['steadyResidual','steadyChangeRate','steadyOutputChangeRate'])requireValue(finite(s[key],key)>=0&&s[key]<=r.steadyTolerance,'稳态残差、场变化或边界输出变化未通过。');
+    requireValue(finite(s.time,'接受时间')>startTime&&s.time<=r.endTime,'稳态接受时间超出积分范围。');
+  } else requireValue(s.status==='target_reached'&&s.targetReached===true&&s.failure===''&&s.time===r.endTime,'未到达目标物理时间。');
   requireValue(s.cells===mesh.cells.length&&s.faces===mesh.edges.length&&s.case===r.case,'网格或工况不匹配。');
-  for(const [key,value] of Object.entries({gamma:r.gamma,gasConstant:r.gasConstant,split:r.split,requestedEndTime:r.endTime,time:r.endTime,initialTime:startTime,cflLimit:r.cfl,maximumStep:r.maximumStep,minimumStep:r.minimumStep,maximumSteps:r.maximumSteps,maximumSeconds:r.maximumSeconds}))requireValue(s[key]===value,`${key} 与请求不同。`);
+  for(const [key,value] of Object.entries({gamma:r.gamma,gasConstant:r.gasConstant,split:r.split,requestedEndTime:r.endTime,initialTime:startTime,cflLimit:r.cfl,maximumStep:r.maximumStep,minimumStep:r.minimumStep,maximumSteps:r.maximumSteps,maximumSeconds:r.maximumSeconds}))requireValue(s[key]===value,`${key} 与请求不同。`);
   for(const [key,value] of Object.entries({rho:r.density,u:r.u,v:r.v,p:r.pressure}))requireValue(s.referenceState?.[key]===value,'参考状态与请求不同。');
   requireValue(Number.isSafeInteger(s.acceptedSteps)&&s.acceptedSteps>0&&s.acceptedSteps<=r.maximumSteps&&Number.isSafeInteger(s.steps)&&s.steps>=s.acceptedSteps&&s.lastStep>0,'接受时间步无效。');
   finite(s.lastStep,'最后时间步');
@@ -145,7 +174,7 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
   let lastFallback=0,boundaryHeat=0,boundaryViscousWork=0;
   faceRows.forEach((row,i)=>{
     const mask=count(Number(row.hllcFallbackStages??(modern?NaN:0)),'通量回退');
-    requireValue(mask<=(r.order===1?1:3)&&(r.fluxScheme==='hllc'||mask===0),'通量回退阶段错误。');
+    requireValue(mask<=(stages===1?1:3)&&(r.fluxScheme==='hllc'||mask===0),'通量回退阶段错误。');
     if(Number(row.partner)<0||i<Number(row.partner))lastFallback+=(mask&1)+((mask>>1)&1);
     const e=mesh.edges[i];requireValue(Number(row.face)===i&&Number(row.owner)===e.owner&&Number(row.neighbour)===e.neighbour,'面关联不匹配。');
     const vertices=mesh.cells[e.owner].vertices,local=vertices.indexOf(e.a);requireValue(local>=0,'owner 面端点缺失。');
@@ -180,14 +209,14 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
       maximumCellBalanceRelative=Math.max(maximumCellBalanceRelative,Math.abs(error)/(scale||1));
     }
   }
-  requireValue(maximumCellBalanceRelative<1e-12&&acousticCourant<=r.cfl*(1+1e-12),'最后时间步的守恒或声学 CFL 不通过。');
-  requireValue(combinedCourant<=r.cfl*(1+1e-12),'声学/导热/黏性组合 CFL 超限。');
+  requireValue(maximumCellBalanceRelative<1e-12&&(implicit||acousticCourant<=r.cfl*(1+1e-12)),'最后时间步的守恒或声学 CFL 不通过。');
+  requireValue(implicit||combinedCourant<=r.cfl*(1+1e-12),'声学/导热/黏性组合 CFL 超限。');
   if(viscous)requireValue(near(s.viscousCourant,viscousCourant)&&near(s.boundaryViscousWork,boundaryViscousWork),'黏性 CFL 或壁面功摘要错误。');
-  if(thermal)requireValue(near(s.thermalCourant,thermalCourant)&&near(s.combinedCourant,combinedCourant)&&near(s.boundaryHeat,boundaryHeat),'导热步长或边界热量摘要错误。');
+  if(thermal)requireValue(near(s.thermalCourant,thermalCourant)&&near(s.combinedCourant,combinedCourant)&&near(s.boundaryHeat,boundaryHeat),'声学/导热/黏性 CFL 或边界热量摘要错误。');
   const history=rows(historyText,['step','time','dt','acousticCourant','minimumDensity','minimumPressure','mass','totalEnergy']).map(row=>Object.fromEntries(Object.keys(row).map(k=>[k,finite(Number(row[k]),k)])));
   requireValue(history.length===s.acceptedSteps,'时间历史不完整。');let time=startTime,step=s.steps-s.acceptedSteps,previousIntegral=null,historyMaximumEnergyBalanceRelative=0;
   for(const row of history) {
-    requireValue(row.step===++step&&row.time>time&&near(row.time-time,row.dt)&&row.dt>0&&row.acousticCourant<=r.cfl*(1+1e-12)&&row.minimumDensity>0&&row.minimumPressure>0,'时间历史不满足接受条件。');
+    requireValue(row.step===++step&&row.time>time&&near(row.time-time,row.dt)&&row.dt>0&&(implicit||row.acousticCourant<=r.cfl*(1+1e-12))&&row.minimumDensity>0&&row.minimumPressure>0,'时间历史不满足接受条件。');
     if(thermal&&r.case==='sealed')requireValue(row.boundaryMass===0&&near(row.boundaryEnergy,row.boundaryHeat+(row.boundaryViscousWork??0)),'封闭历史的总能量通量与壁面热流不匹配。');
     if(previousIntegral)for(const [key,flux] of [['mass','boundaryMass'],['totalEnergy','boundaryEnergy']]) {
       const transfer=row.dt*row[flux],before=previousIntegral[key],after=row[key];
@@ -197,7 +226,7 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
     }
     if(viscous)requireValue(row.viscousCourant>=0&&row.viscousCourant<=row.combinedCourant,'历史黏性 CFL 无效。');
     previousIntegral=row;
-    if(thermal)requireValue(row.thermalCourant>=0&&row.combinedCourant>=row.thermalCourant&&row.combinedCourant<=r.cfl*(1+1e-12),'历史组合 CFL 无效。');time=row.time;
+    if(thermal)requireValue(row.thermalCourant>=0&&row.combinedCourant>=row.thermalCourant&&(implicit||row.combinedCourant<=r.cfl*(1+1e-12)),'历史组合 CFL 无效。');time=row.time;
   }
   requireValue(time===s.time,'历史终点不匹配。');
   for(const [k,key] of ['mass','momentumX','momentumY','totalEnergy'].entries())requireValue(near(history.at(-1)[key],current.reduce((sum,q,i)=>sum+areas[i]*q[k],0)),'历史终态积分不匹配。');
@@ -210,7 +239,7 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
     for(const row of history)requireValue(row.minimumContactRestoration>=0&&row.minimumContactRestoration<=1,'历史激波保护权重无效。');
     requireValue(history.reduce((value,row)=>Math.min(value,row.minimumContactRestoration),1)===s.minimumContactRestoration&&history.at(-1).minimumContactRestoration===s.lastMinimumContactRestoration,'历史激波保护权重不匹配。');
   }
-  if(modern)for(const [key,lastKey,limit] of [['hllcFallbackEvaluations','lastHllcFallbackEvaluations',s.faces*r.order],['reconstructionFallbackCells','lastReconstructionFallbackCells',s.cells*r.order]]) {
+  if(modern)for(const [key,lastKey,limit] of [['hllcFallbackEvaluations','lastHllcFallbackEvaluations',s.faces*stages],['reconstructionFallbackCells','lastReconstructionFallbackCells',s.cells*stages]]) {
     const total=history.reduce((sum,row)=>{const value=count(row[key],key);requireValue(value<=limit,'回退计数超出网格范围。');return sum+value;},0);
     requireValue(total===s[key]&&history.at(-1)[key]===s[lastKey],'历史回退计数不匹配。');
   }

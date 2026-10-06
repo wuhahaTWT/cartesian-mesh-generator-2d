@@ -1289,20 +1289,41 @@ async function loadFlowCase() {
 }
 const EULER_CONTROLS={dynamicViscosity:'eulerViscosity',thermalConductivity:'eulerConductivity',wallValue:'eulerWallValue',density:'eulerDensity',u:'eulerU',v:'eulerV',pressure:'eulerPressure',gamma:'eulerGamma',gasConstant:'eulerGasConstant',split:'eulerSplit',endTime:'eulerEndTime',maximumStep:'eulerMaximumStep',minimumStep:'eulerMinimumStep',cfl:'eulerCfl',maximumSteps:'eulerMaximumSteps',maximumSeconds:'eulerMaximumSeconds'};
 const EULER_PHYSICAL=['dynamicViscosity','thermalConductivity','wallValue','density','u','v','pressure','gamma','gasConstant','split'];
+Object.assign(EULER_CONTROLS,{outletPressure:'eulerOutletPressure',inletTotalPressure:'eulerInletTotalPressure',inletTotalTemperature:'eulerInletTotalTemperature',initialPressurePerturbation:'eulerInitialPressurePerturbation',steadyScale:'eulerSteadyScale',steadyTolerance:'eulerSteadyTolerance'});
+EULER_PHYSICAL.push('outletPressure','inletTotalPressure','inletTotalTemperature','initialPressurePerturbation');
+const EULER_SELECTS={integrator:'eulerIntegrator',timeStepControl:'eulerTimeStepControl',mode:'eulerMode',inletModel:'eulerInletModel'};
 const EULER_OPTIONS=['eulerDensityOption','eulerPressureOption','eulerTemperatureOption','eulerMachOption','eulerSpeedOption'];
 function eulerRequest() {
   const request={case:$('eulerCase').value,resume:$('eulerResume').checked,fluxScheme:$('eulerFluxScheme').value,order:Number($('eulerOrder').value),wallThermal:$('eulerWallThermal').value,wallModel:$('eulerWallModel').value,wallGradient:$('eulerWallGradient').value};
   for(const [key,id] of Object.entries(EULER_CONTROLS))request[key]=Number($(id).value);
+  for(const [key,id] of Object.entries(EULER_SELECTS))request[key]=$(id).value;
+  if(request.case!=='channel'){request.outletPressure=null;request.inletModel='characteristic';}
+  if(request.inletModel!=='total'||!$('eulerReservoir').checked){request.inletTotalPressure=null;request.inletTotalTemperature=null;}
+  if(request.mode!=='steady')request.steadyScale=0;
   if(request.case!=='sod')request.split=.5;
   if(request.wallThermal==='insulated')request.wallValue=0;
   return request;
 }
 function updateEulerControls() {
   const restart=state.eulerRestart;if(!restart)$('eulerResume').checked=false;
-  const resuming=Boolean(restart&&$('eulerResume').checked),sod=$('eulerCase').value==='sod';
+  const resuming=Boolean(restart&&$('eulerResume').checked),sod=$('eulerCase').value==='sod',channel=$('eulerCase').value==='channel',implicit=$('eulerIntegrator').value==='sdirk2',steady=$('eulerMode').value==='steady';
   $('eulerResume').disabled=Boolean(state.busy||!restart);$('eulerCase').disabled=Boolean(state.busy||resuming);
   for(const [key,id] of Object.entries(EULER_CONTROLS))$(id).disabled=Boolean(state.busy||(resuming&&EULER_PHYSICAL.includes(key))||(sod&&['u','v'].includes(key)));
   if(sod){$('eulerU').value=0;$('eulerV').value=0;}
+  if(channel){$('eulerV').value=0;$('eulerV').disabled=true;}
+  $('eulerChannelFields').hidden=!channel;
+  $('eulerOutletPressure').disabled=Boolean(state.busy||resuming||!channel);
+  $('eulerInletModel').disabled=Boolean(state.busy||resuming||!channel);
+  const total=channel&&$('eulerInletModel').value==='total',reservoir=total&&$('eulerReservoir').checked;
+  $('eulerReservoir').disabled=Boolean(state.busy||resuming||!total);
+  $('eulerReservoirFields').hidden=!reservoir;
+  for(const id of ['eulerInletTotalPressure','eulerInletTotalTemperature'])$(id).disabled=Boolean(state.busy||resuming||!reservoir);
+  $('eulerSteadyFields').hidden=!steady;
+  for(const id of ['eulerSteadyScale','eulerSteadyTolerance'])$(id).disabled=Boolean(state.busy||!steady);
+  for(const id of ['eulerIntegrator','eulerMode'])$(id).disabled=Boolean(state.busy);
+  $('eulerCfl').disabled=Boolean(state.busy||implicit);$('eulerTimeStepControl').disabled=Boolean(state.busy||implicit);
+  $('eulerEndTimeLabel').textContent=steady?'稳态积分时间上限（s）':'目标物理时间（s）';
+  $('eulerTimeHint').textContent=implicit?'隐式直接使用最大物理步长，失败时整体缩步。组合 Courant 数作为诊断，不受显式 CFL 上限限制；仍须用时间步细化检查精度。':'显式按声学、导热与黏性组合限制自动缩步；阶段保护减少部分无效重算，小 Cut-cell 仍可能限制步长。';
   $('eulerSplitField').hidden=!sod;
   const conduction=Number($('eulerConductivity').value)>0,hasWall=$('eulerCase').value!=='uniform';
   const viscous=Number($('eulerViscosity').value)>0;
@@ -1320,7 +1341,9 @@ function updateEulerControls() {
   $('runEuler').disabled=Boolean(state.busy||!state.result||$('eulerBlock').hidden);
   if(!state.busy)$('runEuler').textContent=resuming?'继续可压计算':'启动可压计算';
   $('eulerScope').textContent=sod?'仅限轴对齐矩形。左侧使用下方密度和压力，右侧分别为其0.125倍、0.1倍；初始速度为零，上下壁面、左右透射；壁面条件在下方选择。':$('eulerCase').value==='external'?'下方为初始场与远场状态。物面采用下方机械及热条件，外域施加特征远场并取零黏性牵引；边界层分辨率需要单独验证。':$('eulerCase').value==='sealed'?'下方为初始场；所有物面与外边界均为固定壁，采用下方机械及热条件。封闭系统只通过设定的壁面导热交换能量。':'无物面的均匀初始场，所有外边界施加相同特征远场。';
+  if(channel)$('eulerScope').textContent='下方指定初始场与入口参考状态；左右端面分别为特征入口和静压出口，其余边界采用所选壁面条件。开边界采用零黏性牵引与零导热通量。';
   $('eulerRestartInfo').textContent=restart?`可续算到 t=${restart.time.toPrecision(6)} s 的已接受状态（${restart.steps}步）。物理参数锁定，目标时间需更晚；取消续算则从初始场重新计算。`:'每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。';
+  if(restart?.steps===0)$('eulerRestartInfo').textContent='仅保存了初始状态，尚未接受任何时间步。可以保留物理参数重新尝试推进；这不是完成计算的检查点。';
 }
 function applyEulerRestart() {
   if($('eulerResume').checked&&state.eulerRestart) {
@@ -1328,6 +1351,9 @@ function applyEulerRestart() {
     for(const key of EULER_PHYSICAL)$(EULER_CONTROLS[key]).value=request[key]??0;
     $('eulerWallThermal').value=request.wallThermal??'insulated';$('eulerWallModel').value=request.wallModel??'slip';
     $('eulerFluxScheme').value=request.fluxScheme??'rusanov';$('eulerOrder').value=String(request.order??1);$('eulerWallGradient').value=request.wallGradient??'linear';
+    for(const [key,id] of Object.entries(EULER_SELECTS))$(id).value=request[key]??({integrator:'explicit',timeStepControl:'legacy',mode:'transient',inletModel:'characteristic'}[key]);
+    for(const key of ['maximumStep','minimumStep','cfl','steadyScale','steadyTolerance'])if(request[key]!==undefined)$(EULER_CONTROLS[key]).value=String(request[key]);
+    $('eulerReservoir').checked=request.inletTotalPressure!=null;
   }
   updateEulerControls();
 }
@@ -1358,12 +1384,13 @@ function bindEuler(payload) {
   for(const id of EULER_OPTIONS)$(id).hidden=false;
   $('displayMode').value='euler-rho';view.mode='euler-rho';view.draw();renderLegend(state.mesh,state.levelBasis);
   const container=$('eulerResult');container.replaceChildren();container.hidden=false;
-  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · ${payload.request.fluxScheme==='hllc'?'HLLC/HLLE':'Rusanov'} / ${payload.request.order===2?'二阶':'一阶'} · ${payload.request.dynamicViscosity>0?'黏性层流':'无黏'} · ${payload.request.wallGradient==='quadratic'?'二次壁面梯度':'线性壁面梯度'}`;container.appendChild(title);
+  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压流动 · ${payload.summary.steadyConverged?'稳态停止要求已满足':'已到达目标时间'} · t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · ${payload.request.integrator==='sdirk2'?'隐式 SDIRK2':'显式'} · ${payload.request.fluxScheme==='hllc'?'HLLC/HLLE':'Rusanov'} / 空间${payload.request.order===2?'二阶':'一阶'} · ${payload.request.dynamicViscosity>0?'黏性层流':'无黏'} · ${payload.request.wallGradient==='quadratic'?'二次壁面梯度':'线性壁面梯度'}`;container.appendChild(title);
   const last=payload.history.at(-1),lines=[`最小密度 ${last.minimumDensity.toPrecision(6)} kg/m³；最小绝对压力 ${last.minimumPressure.toPrecision(6)} Pa`,
     `最后步声学 CFL ${payload.audit.acousticCourant.toPrecision(4)}；逐格守恒相对误差 ${payload.audit.maximumCellBalanceRelative.toExponential(2)}`,
     `动力黏度 ${payload.request.dynamicViscosity??0} Pa·s；壁面 ${payload.request.wallModel==='no-slip'?'无滑移':'自由滑移'}；导热系数 ${payload.request.thermalConductivity??0} W/m/K；最后步组合 CFL ${(payload.audit.combinedCourant??payload.audit.acousticCourant).toPrecision(4)}；向外净热流 ${(payload.audit.boundaryHeat??0).toPrecision(6)} W/m`,
     `本次 HLLC 通量回退 ${payload.summary.hllcFallbackEvaluations??0} 次；重构退阶 ${payload.summary.reconstructionFallbackCells??0} 个单元阶段`,
-    '到达目标时间不代表稳态或任意工况精度合格；黏性功与导热通过总能量耦合；未包含湍流或固体共轭传热。'];
+    '瞬态终点和稳态数值停止均不能单独证明物理精度；黏性功与导热通过总能量耦合；未包含湍流或固体共轭传热。'];
+  if(payload.summary.steadyConverged)lines.push(`稳态残差 ${payload.summary.steadyResidual.toExponential(3)}；场变化率 ${payload.summary.steadyChangeRate.toExponential(3)}；边界输出变化率 ${payload.summary.steadyOutputChangeRate.toExponential(3)}；参考时间 ${payload.request.steadyScale} s，停止要求 ${payload.request.steadyTolerance}。`);
   for(const line of lines){const p=document.createElement('p');p.className='note';p.textContent=line;container.appendChild(p);}renderEulerMonitor();
 }
 async function refreshEulerState(show=false) {
@@ -1373,10 +1400,10 @@ async function refreshEulerState(show=false) {
 async function runEuler() {
   if(state.busy||!state.result||!state.mesh)return;
   for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))if(!input.disabled&&(!input.value.trim()||!input.checkValidity())){input.reportValidity();status('可压参数需要调整','检查气体、时间和计算预算。');return;}
-  const request=eulerRequest();clearEulerBinding();setBusy(true);$('runEuler').textContent='可压推进中…';status('可压 Euler 推进中','显式声学时间步；取消后保留已接受状态。');
+  const request=eulerRequest();clearEulerBinding();setBusy(true);$('runEuler').textContent='可压推进中…';status('可压流动推进中',`${request.integrator==='sdirk2'?'隐式统一物理步长':'显式组合 CFL 控制'}；取消后保留已接受状态。`);
   try {
     const payload=await window.cartmesh.runEuler(request);bindEuler(payload);await refreshEulerState();$('eulerResume').checked=true;
-    status('可压时间推进完成',`t=${payload.summary.time.toPrecision(6)} s；可查看密度、绝对压力、温度、Mach数和速度，并导出实际场。`);
+    status(payload.summary.steadyConverged?'可压稳态停止要求已满足':'可压时间推进完成',`t=${payload.summary.time.toPrecision(6)} s；可查看密度、绝对压力、温度、Mach数和速度，并导出实际场。`);
   }catch(error) {
     const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
     const saved=await refreshEulerState(true).catch(()=>null);$('eulerResume').checked=Boolean(saved?.restart);
@@ -1387,7 +1414,15 @@ $('runEuler').addEventListener('click',runEuler);
 $('eulerResume').addEventListener('change',applyEulerRestart);
 $('eulerCase').addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
 $('eulerMonitorMetric').addEventListener('change',renderEulerMonitor);
-for(const id of ['eulerFluxScheme','eulerOrder','eulerWallThermal','eulerWallModel','eulerWallGradient'])$(id).addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
+for(const id of ['eulerFluxScheme','eulerOrder','eulerWallThermal','eulerWallModel','eulerWallGradient',...Object.values(EULER_SELECTS),'eulerReservoir'])$(id).addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
+$('eulerIntegrator').addEventListener('change',()=>{if($('eulerIntegrator').value==='sdirk2')$('eulerAdvanced').open=true;});
+$('eulerMode').addEventListener('change',()=>{
+  if($('eulerMode').value!=='steady'||Number($('eulerSteadyScale').value)>0||!state.mesh)return;
+  let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;
+  for(const [x,y] of state.mesh.vertices){xmin=Math.min(xmin,x);xmax=Math.max(xmax,x);ymin=Math.min(ymin,y);ymax=Math.max(ymax,y);}
+  const speed=Math.hypot(Number($('eulerU').value),Number($('eulerV').value))||Math.sqrt(Number($('eulerGamma').value)*Number($('eulerPressure').value)/Number($('eulerDensity').value));
+  const scale=Math.max(xmax-xmin,ymax-ymin)/speed;if(Number.isFinite(scale)&&scale>0)$('eulerSteadyScale').value=String(scale);
+});
 for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
 $('pickEulerCheckpoint').addEventListener('click',async()=>{
   if(state.busy||!state.result)return;setBusy(true);

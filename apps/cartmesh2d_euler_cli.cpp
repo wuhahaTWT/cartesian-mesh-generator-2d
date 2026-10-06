@@ -335,14 +335,15 @@ int main(int argc,char** argv) {
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
             history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<','<<last->viscousCourant<<','<<last->boundaryViscousWork<<','<<last->cflRejectedCandidates<<','<<last->spatialEvaluations<<'\n';
-            if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime) {
+            const bool steadyConverged=mode=="steady"&&previousDiagnostics&&steadyResidual<=steadyTolerance&&steadyChange<=steadyTolerance&&steadyOutputChange<=steadyTolerance;
+            if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime||steadyConverged) {
                 save();history.flush();
                 std::cout<<std::setprecision(17)<<"{\"type\":\"euler-step\",\"step\":"<<state.steps<<",\"time\":"<<state.time
                     <<",\"acousticCourant\":"<<last->acousticCourant<<",\"thermalCourant\":"<<last->thermalCourant<<",\"viscousCourant\":"<<last->viscousCourant<<",\"combinedCourant\":"<<last->combinedCourant<<",\"minimumDensity\":"<<last->minimumDensity
                     <<",\"minimumPressure\":"<<last->minimumPressure<<",\"mass\":"<<last->afterIntegral[0]
                     <<",\"totalEnergy\":"<<last->afterIntegral[3]<<"}\n"<<std::flush;
             }
-            if(mode=="steady"&&previousDiagnostics&&steadyResidual<=steadyTolerance&&steadyChange<=steadyTolerance&&steadyOutputChange<=steadyTolerance){status="steady_converged";break;}
+            if(steadyConverged){status="steady_converged";break;}
         }
         if(mode=="steady"&&status!="steady_converged"){status="failed";failure="steady integration horizon exhausted without residual, field and boundary-output convergence";}
     }catch(const std::exception& e){status=stopped?"cancelled":"failed";failure=e.what();}
@@ -402,6 +403,11 @@ int main(int argc,char** argv) {
         <<",\"viscousDiscretization\":\"Newtonian Stokes / corrected velocity gradient / full momentum block row norm\""
         <<",\"case\":"<<quote(problem)<<",\"outletPressure\":";
     if(outletPressure)summary<<*outletPressure;else summary<<"null";
+    summary<<",\"inletModel\":"<<quote(inletModel)<<",\"inletTotalPressure\":";
+    if(inletTotalPressure)summary<<*inletTotalPressure;else summary<<"null";
+    summary<<",\"inletTotalTemperature\":";
+    if(inletTotalTemperature)summary<<*inletTotalTemperature;else summary<<"null";
+    summary<<",\"initialPressurePerturbation\":"<<initialPressurePerturbation;
     summary<<",\"finalResidualRatePerSecond\":";if(finalResidualRate)summary<<*finalResidualRate;else summary<<"null";
     summary<<",\"residualDiagnosticFailure\":"<<quote(residualFailure)
         <<",\"mode\":"<<quote(mode)<<",\"steadyConverged\":"<<(status=="steady_converged"?"true":"false")<<",\"steadyResidual\":"<<steadyResidual<<",\"steadyChangeRate\":"<<steadyChange<<",\"steadyOutputChangeRate\":"<<steadyOutputChange<<",\"steadyScaleSeconds\":"<<steadyScale<<",\"steadyTolerance\":"<<steadyTolerance

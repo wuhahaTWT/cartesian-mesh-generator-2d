@@ -24,7 +24,8 @@ async function runEulerJob({currentResult,mesh,request,executable,runProcess,sig
   const normalized=validateEulerRequest(request),selected=normalized.resume?currentResult.eulerRestart:null;
   if(normalized.resume&&!selected)throw new Error('没有可用的可压续算状态。');
   if(selected) {
-    for(const key of PHYSICAL)if(normalized[key]!==selected.metadata.request[key])throw new Error('续算须保持原工况、气体与物理参数；可改目标时间与数值控制。');
+    const original=validateEulerRequest(selected.metadata.request);
+    for(const key of PHYSICAL)if(normalized[key]!==original[key])throw new Error('续算须保持原工况、气体与物理参数；可改目标时间与数值控制。');
     if(normalized.endTime<=selected.metadata.time)throw new Error('目标时间须晚于已接受时间。');
   }
   const meshSha256=hash(await fs.readFile(currentResult.cm2dPath));
@@ -43,11 +44,11 @@ async function runEulerJob({currentResult,mesh,request,executable,runProcess,sig
     const invocation=buildEulerInvocation(currentResult.cm2dPath,prefix,normalized,restart);
     const result=await runProcess(executable(invocation.executable),invocation.args,(line,isError)=>{
       let progress=null;
-      if(!isError)try{progress=parseEulerProgress(line);}catch(e){log(e.message);}
+      if(!isError)try{progress=parseEulerProgress(line,normalized);}catch(e){log(e.message);}
       if(progress)onProgress(progress);else log(line);
     },signal,0,[0,2]);
     signal.throwIfAborted();
-    if(result.code!==0)throw new Error(result.stderr?.trim()||'Euler 未到达目标时间。');
+    if(result.code!==0)throw new Error(result.stderr?.trim()||'Euler 未满足指定的瞬态终点或稳态停止要求。');
     await Promise.all(SUFFIXES.map(suffix=>fs.stat(prefix+suffix)));
     const files=await Promise.all(['.json','.fields.json','.cells.csv','.faces.csv','.history.csv','.checkpoint'].map(suffix=>fs.readFile(prefix+suffix,'utf8')));
     const validated=validateEulerOutput(JSON.parse(files[0]),JSON.parse(files[1]),...files.slice(2),mesh,normalized,startTime);

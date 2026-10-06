@@ -6,6 +6,8 @@ const {parseCm2d}=require('../src/core/cm2d');
 const {validateEulerRequest,buildEulerInvocation,validateEulerOutput,parseEulerProgress,eulerCheckpoint}=require('../src/core/euler');
 const {runEulerJob,importEulerRestart}=require('../src/core/euler-job');
 const mesh=parseCm2d(fixture.mesh),request=fixture.request;
+const controlsFixture=require('./fixtures/euler-controls.json').cases;
+function checkControls(sample,files=sample.files,request=sample.request){return validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],parseCm2d(sample.mesh),request);}
 function validate(files=fixture.files,override=request){return validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],mesh,override);}
 test('Euler accepts real independently audited native fields and rejects stale/tampered output',()=>{
   assert.equal(fixture.independentAudit.valid,true);const result=validate();assert.equal(result.summary.time,.02);assert.ok(result.audit.maximumCellBalanceRelative<1e-12);
@@ -20,7 +22,7 @@ test('Euler accepts real independently audited native fields and rejects stale/t
   assert.throws(()=>validate({...fixture.files,'.history.csv':fixture.files['.history.csv'].trim().split('\n').slice(0,-1).join('\n')}),/历史/);
 });
 test('Euler requests and progress keep physical types and units separate',()=>{
-  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,wallGradient:'linear',thermalConductivity:0,wallThermal:'insulated',wallValue:0,dynamicViscosity:0,wallModel:'slip'});
+  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,wallGradient:'linear',thermalConductivity:0,wallThermal:'insulated',wallValue:0,dynamicViscosity:0,wallModel:'slip',integrator:'explicit',timeStepControl:'legacy',mode:'transient',steadyScale:0,steadyTolerance:1e-5,outletPressure:null,inletModel:'characteristic',inletTotalPressure:null,inletTotalTemperature:null,initialPressurePerturbation:0});
   for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'},{fluxScheme:'roe'},{order:3},{order:'2'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
   const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',request);assert.equal(command.executable,'cartmesh2d_euler_cli');assert.ok(command.args.includes('--gas-r'));
   assert.throws(()=>buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',{...request,resume:true}),/状态/);
@@ -150,4 +152,55 @@ test('quadratic wall recovery binds numerical control and actual prescribed wall
   // Physical states remain restart-compatible when the numerical wall stencil
   // is changed explicitly; the output must still declare the method it used.
   assert.equal(eulerCheckpoint(sample.files['.checkpoint'],m,{...r,wallGradient:'linear'}).time,r.endTime);
+});
+
+test('native implicit fields pass at large Courant numbers while conservation remains required',()=>{
+  for(const name of ['implicit-uniform','implicit-viscous']) {
+    const sample=controlsFixture[name],result=checkControls(sample);
+    assert.ok(result.audit.combinedCourant>sample.request.cfl);
+    assert.equal(result.summary.temporalOrder,2);
+    assert.throws(()=>checkControls(sample,sample.files,{...sample.request,integrator:'explicit'}),/格式/);
+    const fields=JSON.parse(sample.files['.fields.json']);fields.cells[0].rhoE+=1;
+    assert.throws(()=>checkControls(sample,{...sample.files,'.fields.json':JSON.stringify(fields)}),/显示/);
+    const summary={...result.summary,combinedCourant:result.summary.combinedCourant+1};
+    assert.throws(()=>checkControls(sample,{...sample.files,'.json':JSON.stringify(summary)}),/摘要/);
+    const progress={type:'euler-step',step:1,time:.2,acousticCourant:2,thermalCourant:.3,viscousCourant:.1,combinedCourant:2.4,minimumDensity:1,minimumPressure:1,mass:1,totalEnergy:3};
+    assert.deepEqual(parseEulerProgress(JSON.stringify(progress),sample.request),progress);
+    assert.throws(()=>parseEulerProgress(JSON.stringify(progress)),/进度/);
+    assert.throws(()=>parseEulerProgress(JSON.stringify({...progress,minimumPressure:0}),sample.request),/进度/);
+  }
+});
+
+test('steady completion requires every normalized gate and remains distinct from a time endpoint',()=>{
+  const sample=controlsFixture['steady-uniform'],result=checkControls(sample);
+  assert.ok(result.summary.time<sample.request.endTime);
+  assert.equal(result.summary.targetReached,false);
+  const guide=require('../src/core/export-guide').exportGuide({result:{counts:{cells:4}},euler:result});
+  assert.match(guide,/已满足所选稳态停止要求/);assert.match(guide,/归一化停止要求/);assert.match(guide,/viscousWork/);
+  for(const extra of [{status:'target_reached'},{steadyConverged:false},{steadyResidual:.1},{steadyChangeRate:.1},{steadyOutputChangeRate:.1},{steadyScaleSeconds:2},{time:0}]) {
+    assert.throws(()=>checkControls(sample,{...sample.files,'.json':JSON.stringify({...result.summary,...extra})}),/稳态|接受时间/);
+  }
+  assert.throws(()=>validateEulerRequest({...sample.request,steadyScale:0}),/参考时间/);
+  assert.throws(()=>checkControls(sample,sample.files,{...sample.request,mode:'transient'}),/模式/);
+});
+
+test('channel controls reach native flags and imported restart binds outlet and reservoir physics',async()=>{
+  const sample=controlsFixture['total-channel'],m=parseCm2d(sample.mesh),r=sample.request;
+  const result=checkControls(sample);assert.equal(result.summary.inletTotalPressure,1.03);
+  const args=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',r).args;
+  for(const [flag,value] of [['--case','channel'],['--outlet-pressure','1'],['--inlet-model','total'],['--inlet-total-pressure','1.03'],['--inlet-total-temperature','1.01'],['--integrator','sdirk2']])assert.equal(args[args.indexOf(flag)+1],value);
+  for(const extra of [{outletPressure:0},{inletTotalTemperature:null},{inletModel:'characteristic'},{v:.1},{u:0}])assert.throws(()=>validateEulerRequest({...r,...extra}));
+  for(const extra of [{outletPressure:1.1},{inletTotalPressure:1.04},{initialPressurePerturbation:.01}])assert.throws(()=>checkControls(sample,sample.files,{...r,...extra}),/请求不同/);
+  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'cm2d-euler-channel-'));
+  try {
+    const meshPath=path.join(directory,'mesh.solver.cm2d');await fs.writeFile(meshPath,sample.mesh);
+    const currentResult={cm2dPath:meshPath,outputDirectory:directory};let calls=0;
+    const runner=async(_exe,args)=>{calls++;const prefix=args[args.indexOf('--output')+1];await Promise.all(Object.entries(sample.files).map(([suffix,text])=>fs.writeFile(prefix+suffix,text)));return {code:0,stderr:''};};
+    const common={currentResult,mesh:m,executable:x=>x,runProcess:runner,signal:new AbortController().signal};
+    const complete=await runEulerJob({...common,request:r});
+    const imported=await importEulerRestart(path.join(directory,complete.manifest),m,meshPath);
+    assert.equal(imported.metadata.request.inletTotalTemperature,1.01);
+    for(const extra of [{outletPressure:1.1},{inletTotalPressure:1.04},{inletTotalTemperature:1.02},{inletModel:'characteristic',inletTotalPressure:null,inletTotalTemperature:null},{initialPressurePerturbation:.01}])await assert.rejects(()=>runEulerJob({...common,request:{...r,resume:true,endTime:.08,...extra}}),/物理参数/);
+    assert.equal(calls,1);assert.equal(currentResult.euler,complete);
+  } finally {await fs.rm(directory,{recursive:true,force:true});}
 });

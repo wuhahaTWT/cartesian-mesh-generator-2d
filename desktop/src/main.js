@@ -1163,6 +1163,45 @@ async function runSmoke() {
       document.getElementById('eulerBlock').scrollIntoView({block:'start'});
       smoke.state.eulerSmoke={wallGradient:first.summary.wallGradient,wallGradientControlsReachedNative:true,wallGradientChangeClearedStaleResult:true,dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
+    if (${JSON.stringify(argument('euler-controls') === 'true')}) {
+      const el=id=>document.getElementById(id),change=id=>el(id).dispatchEvent(new Event('change'));
+      el('eulerResume').checked=false;change('eulerResume');
+      for(const [id,value] of Object.entries({eulerCase:'channel',eulerDensity:'1',eulerPressure:'1',eulerU:'.2',eulerV:'0',
+        eulerGamma:'1.4',eulerGasConstant:'1',eulerViscosity:'0',eulerConductivity:'0',eulerWallModel:'slip',eulerWallThermal:'insulated',
+        eulerFluxScheme:'hllc',eulerOrder:'2',eulerIntegrator:'sdirk2',eulerMode:'transient',eulerOutletPressure:'1',eulerInletModel:'total',
+        eulerInletTotalPressure:'1.03',eulerInletTotalTemperature:'1.01',eulerInitialPressurePerturbation:'0',
+        eulerMaximumStep:'.1',eulerMinimumStep:'1e-14',eulerCfl:'.4',eulerMaximumSteps:'10000',eulerMaximumSeconds:'120',eulerEndTime:'.2'}))el(id).value=value;
+      el('eulerReservoir').checked=true;change('eulerCase');change('eulerIntegrator');
+      if(el('eulerChannelFields').hidden||el('eulerReservoirFields').hidden||!el('eulerCfl').disabled)throw new Error('Implicit channel controls are not available');
+      await smoke.runEuler();
+      const first=smoke.state.euler;
+      if(first?.summary.time!==.2||first.summary.integrator!=='sdirk2'||first.summary.inletTotalPressure!==1.03||first.summary.inletTotalTemperature!==1.01)throw new Error('Implicit reservoir calculation did not reach renderer: '+el('statusText').textContent);
+      const locked=['eulerOutletPressure','eulerInletModel','eulerReservoir','eulerInletTotalPressure','eulerInletTotalTemperature','eulerInitialPressurePerturbation'];
+      if(!locked.every(id=>el(id).disabled))throw new Error('Restart reservoir physics is editable');
+      el('eulerMaximumSteps').value='1';el('eulerEndTime').value='.8';await smoke.runEuler();
+      const accepted=smoke.state.eulerRestart?.time;
+      if(smoke.state.euler?.manifest!==first.manifest||JSON.stringify(smoke.state.euler.fields)!==JSON.stringify(first.fields)||!(accepted>.2&&accepted<.8))throw new Error('Implicit budget failure lost accepted state or previous complete fields');
+      el('eulerMaximumSteps').value='10000';el('eulerEndTime').value=String(accepted+.2);await smoke.runEuler();
+      if(smoke.state.euler?.summary.time!==accepted+.2)throw new Error('Implicit continuation missed its physical endpoint');
+      el('eulerIntegrator').value='explicit';change('eulerIntegrator');
+      if(smoke.state.euler||el('eulerCfl').disabled||el('eulerTimeStepControl').disabled)throw new Error('Changing integrator retained stale fields or disabled explicit controls');
+      el('eulerResume').checked=false;change('eulerResume');
+      el('eulerTimeStepControl').value='stage-guarded';change('eulerTimeStepControl');
+      el('eulerInitialPressurePerturbation').value='.001';el('eulerEndTime').value='.05';await smoke.runEuler();
+      if(smoke.state.euler?.summary.time!==.05||smoke.state.euler.summary.integrator!=='explicit'||smoke.state.euler.summary.timeStepControl!=='stage-guarded'||smoke.state.euler.summary.initialPressurePerturbation!==.001)throw new Error('Stage-guarded controls did not reach the native solver');
+      el('eulerResume').checked=false;change('eulerResume');
+      el('eulerReservoir').checked=false;change('eulerReservoir');el('eulerInitialPressurePerturbation').value='0';
+      el('eulerIntegrator').value='sdirk2';change('eulerIntegrator');el('eulerMode').value='steady';change('eulerMode');
+      el('eulerSteadyScale').value='1';el('eulerSteadyTolerance').value='1e-5';el('eulerEndTime').value='2';await smoke.runEuler();
+      const steady=smoke.state.euler;
+      if(steady?.summary.status!=='steady_converged'||!(steady.summary.time<2)||steady.summary.targetReached||!smoke.state.eulerHistory.length)throw new Error('Early steady completion or final progress missing: '+el('statusText').textContent);
+      if(!el('eulerResult').innerText.includes('稳态停止要求')||el('eulerSteadyFields').hidden||!el('eulerEndTimeLabel').textContent.includes('上限'))throw new Error('Steady result is mislabeled as a time endpoint');
+      smoke.state.eulerSmoke={scope:'Generated rectangle; UI/protocol checks, no physical qualification',implicitReservoirReachedNative:true,
+        physicalRestartLocked:true,failedBudgetPreservedComplete:true,acceptedAfterBudget:accepted,implicitResumeChecked:true,
+        integratorChangeClearedStaleResult:true,stageGuardedReachedNative:true,initialPerturbationReachedNative:true,
+        steadyThreeGatesChecked:true,steadyTime:steady.summary.time,earlySteadyProgress:true};
+      el('displayMode').value='euler-p';change('displayMode');el('eulerMode').scrollIntoView({block:'start'});
+    }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();

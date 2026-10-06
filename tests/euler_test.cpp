@@ -527,6 +527,21 @@ void totalInletAndImplicitChecks() {
         while(state.time<*ctl.endTime) {
             const auto next=solver.advance(state,ctl);
             require(next.maximumCellBalanceError<1e-12&&next.minimumPressure>0&&next.minimumDensity>0,"implicit stage conservation/positivity failed");
+            // The exported face envelope must reproduce the reported Courant
+            // diagnostics. This checks roundoff, not a flow-accuracy target.
+            std::vector<double> spectral(mesh.cells.size(),0.);
+            for(std::size_t id=0;id<mesh.faces.size();++id) {
+                const auto& face=mesh.faces[id];
+                const double rate=next.faceWaveSpeed[id]*std::hypot(face.areaVector.x,face.areaVector.y);
+                spectral[face.owner]+=rate;if(face.neighbour)spectral[*face.neighbour]+=rate;
+            }
+            double acoustic=0,combined=0;
+            for(std::size_t i=0;i<mesh.cells.size();++i) {
+                acoustic=std::max(acoustic,next.step*spectral[i]/mesh.cells[i].area);
+                combined=std::max(combined,next.step*(spectral[i]/mesh.cells[i].area+next.cellHeatRate[i]+next.cellViscousRate[i]));
+            }
+            const double roundoff=16*std::numeric_limits<double>::epsilon();
+            require(std::abs(acoustic-next.acousticCourant)<=roundoff*acoustic&&std::abs(combined-next.combinedCourant)<=roundoff*combined,"implicit face/summary Courant diagnostics disagree");
             if(state.steps==1) {
                 std::stringstream file;writeEulerCheckpoint2D(file,mesh,bc,gas,state,"implicit",{.02,.02});
                 const auto restored=readEulerCheckpoint2D(file,mesh,bc,gas,"implicit",{.02,.02});
