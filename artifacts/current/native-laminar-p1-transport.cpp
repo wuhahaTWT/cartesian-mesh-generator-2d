@@ -68,4 +68,6 @@ struct Transport : Oseen {
         }return result;
     }
 };
+#ifndef CARTMESH_P1_TRANSPORT_NO_MAIN
 int main(int argc,char** argv){return runOseen<Transport>(argc,argv);}
+#endif

@@ -83,14 +83,24 @@ struct Oseen {
                 for(int c=0;c<2;++c){double u=0,uf=v[c*m+3+2*l]+s*v[c*m+4+2*l];for(int j=0;j<3;++j)u+=phi[j]*v[c*m+j];result+=.5*w*(std::abs(flux)*(u-uf)*(u-uf)+(boundaryKind(face,open)==1?1:-1)*flux*uf*uf);}}}return result;
     }
 };
-template<class Operator> int runOseen(int argc,char** argv)try{
+// Boundary selection is separate from the shared native volume/face operator.
+// The default policy preserves all historical closed and cylinder controls.
+struct StandardOseenBoundary {
+    static bool isOpen(const std::string& name){
+        if(name!="closed"&&name!="open")throw std::runtime_error("invalid research boundary");
+        return name=="open";
+    }
+    static bool allows(const std::string& problem,bool open){return !open||problem=="cylinder";}
+    static int kind(const Face& face,bool open,const std::string&){return boundaryKind(face,open);}
+};
+template<class Operator,class Boundary=StandardOseenBoundary> int runOseen(int argc,char** argv)try{
     if(argc!=11)throw std::runtime_error("usage: p1-oseen assemble|recover|check mesh n noslip|noslip-sheared|cylinder nu stokes|ns closed|open order previous.state|zero prefix");
-    std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[10];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double nu=std::stod(argv[5]);bool nonlinear=std::string(argv[6])=="ns",open=std::string(argv[7])=="open";
-    if((mode!="assemble"&&mode!="recover"&&mode!="check")||!(nu>0)||order<4||order>12||(std::string(argv[6])!="ns"&&std::string(argv[6])!="stokes")||(std::string(argv[7])!="open"&&std::string(argv[7])!="closed"))throw std::runtime_error("invalid research options");
-    if((problem=="noslip"&&name!="square")||(problem=="noslip-sheared"&&name!="sheared")||(problem!="noslip"&&problem!="noslip-sheared"&&problem!="cylinder"&&problem!="couette"&&problem!="hydrostatic"&&problem!="poiseuille"&&problem!="rotation")||(open&&problem!="cylinder"))throw std::runtime_error("unsupported manufactured/boundary pairing");
+    std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[10];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double nu=std::stod(argv[5]);bool nonlinear=std::string(argv[6])=="ns",open=Boundary::isOpen(argv[7]);
+    if((mode!="assemble"&&mode!="recover"&&mode!="check")||!std::isfinite(nu)||!(nu>0)||order<4||order>12||(std::string(argv[6])!="ns"&&std::string(argv[6])!="stokes"))throw std::runtime_error("invalid research options");
+    if((problem=="noslip"&&name!="square")||(problem=="noslip-sheared"&&name!="sheared")||(problem!="noslip"&&problem!="noslip-sheared"&&problem!="cylinder"&&problem!="couette"&&problem!="hydrostatic"&&problem!="poiseuille"&&problem!="rotation")||!Boundary::allows(problem,open))throw std::runtime_error("unsupported manufactured/boundary pairing");
     auto start=std::chrono::steady_clock::now();auto f=readFixture(name,n);const auto& mesh=f.mesh;int nc=int(mesh.cells.size()),nf=int(mesh.faces.size()),raw=4*nf+nc,count=0;Vec previous=readState(argv[9],f),outState(previous.size()),zero(previous.size());
     std::vector<int> map(raw,-1);Vec known(raw);int outlets=0;
-    for(int i=0;i<nf;++i){const auto& face=mesh.faces[i];int kind=boundaryKind(face,open);outlets+=kind==1;
+    for(int i=0;i<nf;++i){const auto& face=mesh.faces[i];int kind=Boundary::kind(face,open,problem);outlets+=kind==1;
         for(int c=0;c<2;++c)for(int j=0;j<2;++j)if(face.neighbour||kind==1||(kind==2&&c==0))map[4*i+2*c+j]=count++;
         if(!face.neighbour&&problem=="cylinder"&&face.patch==BoundaryPatch2D::DomainBoundary&&kind==0)known[4*i]=1.;
         if(!face.neighbour&&problem!="cylinder"&&problem!="noslip"&&problem!="noslip-sheared")for(auto [z,w]:gauss(order)){double ss=z-.5;auto S=face.areaVector;auto u=exactAt({face.centre.x-ss*S.y,face.centre.y+ss*S.x},problem).u;
@@ -105,7 +115,7 @@ template<class Operator> int runOseen(int argc,char** argv)try{
         else{for(int i=0;i<4*nf;++i)known[i]=previous[9*nc+i];for(int t=0;t<nc;++t)known[4*nf+t]=previous[9*t+6];}
         cells.open(prefix+"."+mode+".cells.csv.tmp");cells<<std::setprecision(17)<<"cell,x,y,area,u0,uX,uY,v0,vX,vY,p0,pX,pY\n";
     }
-    Vec reaction(4*nf),viscousReaction(4*nf),convectionReaction(4*nf),stressReaction(4*nf),exactReaction(4*nf);double area=0,urms=0,prms=0,gauge=0,pressureWork=0,visc=0,conv=0,identity=0,force=0,maxdiv=0,maxspeed=0,pmin=1e300,pmax=-1e300,internal=0,trace=0,delta=0,rtRms=0,rtMax=0,pVertexMin=1e300,pVertexMax=-1e300;
+    Vec appliedTraction(4*nf),reaction(4*nf),viscousReaction(4*nf),convectionReaction(4*nf),stressReaction(4*nf),exactReaction(4*nf);double prescribedTractionWork=0,outletGradientWork=0,bodyForceX=0,bodyForceY=0,area=0,urms=0,prms=0,gauge=0,pressureWork=0,visc=0,conv=0,identity=0,force=0,maxdiv=0,maxspeed=0,pmin=1e300,pmax=-1e300,internal=0,trace=0,delta=0,rtRms=0,rtMax=0,pVertexMin=1e300,pVertexMax=-1e300;
     for(int t=0;t<nc;++t){Operator o(f,t,problem,nu,nonlinear,open,order,nonlinear?previous:zero);auto& e=o.e;const auto& a=e.a;int m=a.m;area+=mesh.cells[t].area;trace=std::max(trace,o.lift.traceResidual);
         std::vector<int> ids;for(int j:e.outside)if(j==2*m)ids.push_back(4*nf+t);else{int c=j/m,k=j%m;ids.push_back(4*int(mesh.cells[t].faces[(k-3)/2])+2*c+(k-3)%2);}
         if(mode=="assemble"){auto [k,b]=e.condensed();for(std::size_t i=0;i<ids.size();++i){int row=map[ids[i]];if(row<0)continue;rhs[row]+=b[i];for(std::size_t j=0;j<ids.size();++j){int col=map[ids[j]];double v=k(int(i),int(j));if(col<0)rhs[row]-=v*known[ids[j]];else if(v!=0){Entry z{row,col,v};entries.write(reinterpret_cast<char*>(&z),sizeof z);++nnz;}}}}
@@ -120,6 +130,19 @@ template<class Operator> int runOseen(int argc,char** argv)try{
             }
             identity+=o.energyIdentity(v);
             for(int i=0;i<2*m;++i){force+=v[i]*e.rhs[i];for(int j=0;j<2*m;++j){conv+=v[i]*o.convection(i,j)*v[j];visc+=v[i]*(e.matrix(i,j)-o.convection(i,j))*v[j];}for(int p=0;p<3;++p)pressureWork+=v[i]*e.matrix(i,2*m+p)*v[2*m+p];}
+            // Separate volume forcing, applied traction and the implicit
+            // transpose-gradient outlet term from bulk viscous dissipation.
+            // Optional outlet rows do not alter interior static condensation.
+            for(int c=0;c<2;++c){double total=e.rhs[c*m];for(std::size_t l=0;l<mesh.cells[t].faces.size();++l)total+=e.rhs[c*m+3+2*l];
+                if constexpr(requires {o.outletLoad;o.outletMatrix;}){
+                    total-=o.outletLoad[c*m];for(std::size_t l=0;l<mesh.cells[t].faces.size();++l)total-=o.outletLoad[c*m+3+2*l];}
+                (c?bodyForceY:bodyForceX)+=total;}
+            if constexpr(requires {o.outletLoad;o.outletMatrix;}){
+                for(int i=0;i<2*m;++i){const double load=v[i]*o.outletLoad[i];force-=load;prescribedTractionWork+=load;
+                    double correction=0;for(int j=0;j<2*m;++j)correction+=o.outletMatrix(i,j)*v[j];
+                    visc-=v[i]*correction;outletGradientWork-=v[i]*correction;
+                    const int c=i/m,k=i%m;if(k>=3){const int id=4*int(mesh.cells[t].faces[(k-3)/2])+2*c+(k-3)%2;appliedTraction[id]+=o.outletLoad[i]-correction;}
+                }}
             for(int i=0;i<2*m+3;++i){double r=-e.rhs[i];for(int j=0;j<2*m+3;++j)r+=e.matrix(i,j)*v[j];if(std::find(e.inside.begin(),e.inside.end(),i)!=e.inside.end())internal=std::max(internal,std::abs(r));else if(i<2*m){int c=i/m,j=i%m;int id=4*int(mesh.cells[t].faces[(j-3)/2])+2*c+(j-3)%2;reaction[id]+=r;
                     for(int l=0;l<2*m;++l){viscousReaction[id]+=(e.matrix(i,l)-o.convection(i,l))*v[l];convectionReaction[id]+=o.convection(i,l)*v[l];}}}
             for(std::size_t l=0;l<mesh.cells[t].faces.size();++l){int id=int(mesh.cells[t].faces[l]);const auto& face=mesh.faces[id];if(face.neighbour)continue;
@@ -136,16 +159,16 @@ template<class Operator> int runOseen(int argc,char** argv)try{
     }
     double boundary=0,faceResidual=0,wallFx=0,wallFy=0,wallNormal=0,wallPressureFx=0,wallPressureFy=0,wallViscousFx=0,wallConvectionFx=0,wallStressFx=0,wallStressFy=0,wallTractionDifference=0,massFlux=0,momentumX=0,momentumY=0,tractionX=0,tractionY=0,fluxWork=0,allFluxWork=0,tractionError=0,boundaryLength=0;
     if(mode=="assemble"){entries.close();std::ofstream out(prefix+".rhs.tmp",std::ios::binary);out.write(reinterpret_cast<char*>(rhs.data()),rhs.size()*sizeof(double));out.close();if(!entries||!out)throw std::runtime_error("matrix write failed");std::filesystem::rename(prefix+".entries.tmp",prefix+".entries");std::filesystem::rename(prefix+".rhs.tmp",prefix+".rhs");}
-    else{faces.open(prefix+"."+mode+".faces.csv.tmp");faces<<std::setprecision(17)<<"face,x,y,Sx,Sy,owner,neighbour,u0,us,v0,vs,reactionX,reactionY\n";
+    else{faces.open(prefix+"."+mode+".faces.csv.tmp");faces<<std::setprecision(17)<<"face,x,y,Sx,Sy,owner,neighbour,u0,us,v0,vs,reactionX,reactionY,appliedTractionX,appliedTractionXs,appliedTractionY,appliedTractionYs\n";
         for(int i=0;i<nf;++i){const auto& face=mesh.faces[i];faces<<i<<','<<face.centre.x<<','<<face.centre.y<<','<<face.areaVector.x<<','<<face.areaVector.y<<','<<face.owner<<','<<(face.neighbour?int(*face.neighbour):-1);
-            for(int j=0;j<4;++j){outState[9*nc+4*i+j]=known[4*i+j];faces<<','<<known[4*i+j];if(map[4*i+j]>=0)faceResidual=std::max(faceResidual,std::abs(reaction[4*i+j]));else boundary+=known[4*i+j]*reaction[4*i+j];}faces<<','<<reaction[4*i]<<','<<reaction[4*i+2]<<'\n';
+            for(int j=0;j<4;++j){outState[9*nc+4*i+j]=known[4*i+j];faces<<','<<known[4*i+j];if(map[4*i+j]>=0)faceResidual=std::max(faceResidual,std::abs(reaction[4*i+j]));else boundary+=known[4*i+j]*reaction[4*i+j];}faces<<','<<reaction[4*i]<<','<<reaction[4*i+2];for(int j=0;j<4;++j)faces<<','<<appliedTraction[4*i+j];faces<<'\n';
             if(!face.neighbour){
                 if(problem=="noslip"||problem=="noslip-sheared"){double length=std::hypot(face.areaVector.x,face.areaVector.y);boundaryLength+=length;
-                    for(int c=0;c<2;++c)for(int j=0;j<2;++j){double exact=exactReaction[4*i+2*c+j]-(j?0:gauge/area*(c?face.areaVector.y:face.areaVector.x));double error=reaction[4*i+2*c+j]-exact;tractionError+=(j?12:1)*error*error/length;}}
-                tractionX+=reaction[4*i];tractionY+=reaction[4*i+2];
+                    for(int c=0;c<2;++c)for(int j=0;j<2;++j){double exact=exactReaction[4*i+2*c+j]-(j||open?0:gauge/area*(c?face.areaVector.y:face.areaVector.x));double error=reaction[4*i+2*c+j]+appliedTraction[4*i+2*c+j]-exact;tractionError+=(j?12:1)*error*error/length;}}
+                tractionX+=reaction[4*i]+appliedTraction[4*i];tractionY+=reaction[4*i+2]+appliedTraction[4*i+2];
                 for(auto [z,w]:gauss(order)){double ss=z-.5;Vector2D u{known[4*i]+ss*known[4*i+1],known[4*i+2]+ss*known[4*i+3]};double mass=dot(u,face.areaVector),flux=nonlinear?((previous[9*nc+4*i]+ss*previous[9*nc+4*i+1])*face.areaVector.x+(previous[9*nc+4*i+2]+ss*previous[9*nc+4*i+3])*face.areaVector.y):0;
                     massFlux+=w*mass;momentumX+=w*flux*u.x;momentumY+=w*flux*u.y;allFluxWork+=w*flux*dot(u,u);
-                    if(nonlinear&&boundaryKind(face,open)!=1){tractionX+=w*flux*u.x;tractionY+=w*flux*u.y;fluxWork+=w*flux*dot(u,u);}
+                    if(nonlinear&&Boundary::kind(face,open,problem)!=1){tractionX+=w*flux*u.x;tractionY+=w*flux*u.y;fluxWork+=w*flux*dot(u,u);}
                     if(face.patch==BoundaryPatch2D::EmbeddedBoundary){int t=int(face.owner);Basis b{mesh.cells[t].centre,f.diameter[t],{}};auto phi=b.phi({face.centre.x-ss*face.areaVector.y,face.centre.y+ss*face.areaVector.x});double p=0;for(int j=0;j<3;++j)p+=phi[j]*outState[9*t+6+j];wallPressureFx+=w*p*face.areaVector.x;wallPressureFy+=w*p*face.areaVector.y;}
                 }
             }
@@ -156,11 +179,11 @@ template<class Operator> int runOseen(int argc,char** argv)try{
         writeState(prefix+"."+mode+".state",f,outState);cells.close();faces.close();if(!cells||!faces)throw std::runtime_error("field write failed");std::filesystem::rename(prefix+"."+mode+".cells.csv.tmp",prefix+"."+mode+".cells.csv");std::filesystem::rename(prefix+"."+mode+".faces.csv.tmp",prefix+"."+mode+".faces.csv");
     }
     if(mode!="assemble"&&problem!="cylinder"){
-        gauge/=area;prms=0;
+        gauge=open?0:gauge/area;prms=0;
         for(int t=0;t<nc;++t){Basis b{mesh.cells[t].centre,f.diameter[t],{}};
             for(auto q:cellQuadrature(mesh,t,order)){auto phi=b.phi(q.p);double pressure=0;for(int j=0;j<3;++j)pressure+=phi[j]*outState[9*t+6+j];double error=pressure-exactAt(q.p,problem).p-gauge;prms+=q.w*error*error;}}
     }
-    std::cout<<std::setprecision(17)<<"{\"mode\":\""<<mode<<"\",\"cells\":"<<nc<<",\"faces\":"<<nf<<",\"unknowns\":"<<count<<",\"entries\":"<<nnz<<",\"area\":"<<area<<",\"nu\":"<<nu<<",\"velocityRms\":"<<optionalMetric(std::sqrt(urms/area),problem!="cylinder")<<",\"pressureRms\":"<<optionalMetric(std::sqrt(prms/area),problem!="cylinder")<<",\"maxSpeed\":"<<maxspeed<<",\"pressureRange\":"<<(mode=="assemble"?0:pVertexMax-pVertexMin)<<",\"quadraturePressureRange\":"<<(mode=="assemble"?0:pmax-pmin)<<",\"rt1VelocityRms\":"<<optionalMetric(std::sqrt(rtRms/area),problem!="cylinder")<<",\"rt1SampledMaxSpeed\":"<<rtMax<<",\"maxDivergence\":"<<maxdiv<<",\"pressureWork\":"<<pressureWork<<",\"viscousEnergy\":"<<visc<<",\"convectionEnergy\":"<<conv<<",\"convectionIdentity\":"<<identity<<",\"convectionIdentityError\":"<<conv-identity<<",\"forceWork\":"<<force<<",\"boundaryWork\":"<<boundary<<",\"energyBalance\":"<<visc+conv+pressureWork-force-boundary<<",\"internalResidual\":"<<internal<<",\"freeFaceResidual\":"<<faceResidual<<",\"wallFx\":"<<wallFx<<",\"wallFy\":"<<wallFy<<",\"wallPressureFx\":"<<wallPressureFx<<",\"wallViscousAndStabilizationFx\":"<<wallViscousFx<<",\"wallConvectionReconstructionFx\":"<<wallConvectionFx<<",\"stressBodyFx\":"<<wallStressFx<<",\"stressBodyFy\":"<<wallStressFy<<",\"wallTractionMomentDifferencePerLength\":"<<wallTractionDifference<<",\"wallPressureFy\":"<<wallPressureFy<<",\"netBoundaryMassFlux\":"<<massFlux<<",\"boundaryMomentumFluxX\":"<<momentumX<<",\"boundaryMomentumFluxY\":"<<momentumY<<",\"boundaryTractionX\":"<<tractionX<<",\"boundaryTractionY\":"<<tractionY<<",\"globalMomentumBalanceX\":"<<optionalMetric(tractionX-(nonlinear?momentumX:0),problem=="cylinder")<<",\"globalMomentumBalanceY\":"<<optionalMetric(tractionY-(nonlinear?momentumY:0),problem=="cylinder")<<",\"physicalConvectionEnergy\":"<<conv+fluxWork<<",\"physicalBoundaryTractionWork\":"<<boundary+fluxWork<<",\"upwindDissipationPlusDivergenceWork\":"<<conv+fluxWork-.5*allFluxWork<<",\"manufacturedTractionMomentRms\":"<<optionalMetric(std::sqrt(tractionError/std::max(boundaryLength,1e-300)),problem=="noslip"||problem=="noslip-sheared")<<",\"wallNormal\":"<<wallNormal<<",\"stateCoefficientChange\":"<<delta<<",\"rtTraceResidual\":"<<trace<<",\"seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<"}\n";return 0;
+    std::cout<<std::setprecision(17)<<"{\"mode\":\""<<mode<<"\",\"cells\":"<<nc<<",\"faces\":"<<nf<<",\"unknowns\":"<<count<<",\"entries\":"<<nnz<<",\"area\":"<<area<<",\"boundaryPolicy\":\""<<argv[7]<<"\",\"nu\":"<<nu<<",\"velocityRms\":"<<optionalMetric(std::sqrt(urms/area),problem!="cylinder")<<",\"pressureRms\":"<<optionalMetric(std::sqrt(prms/area),problem!="cylinder")<<",\"maxSpeed\":"<<maxspeed<<",\"pressureRange\":"<<(mode=="assemble"?0:pVertexMax-pVertexMin)<<",\"quadraturePressureRange\":"<<(mode=="assemble"?0:pmax-pmin)<<",\"rt1VelocityRms\":"<<optionalMetric(std::sqrt(rtRms/area),problem!="cylinder")<<",\"rt1SampledMaxSpeed\":"<<rtMax<<",\"maxDivergence\":"<<maxdiv<<",\"pressureWork\":"<<pressureWork<<",\"viscousEnergy\":"<<visc<<",\"convectionEnergy\":"<<conv<<",\"convectionIdentity\":"<<identity<<",\"convectionIdentityError\":"<<conv-identity<<",\"forceWork\":"<<force<<",\"boundaryWork\":"<<boundary<<",\"prescribedTractionWork\":"<<prescribedTractionWork<<",\"outletGradientWork\":"<<outletGradientWork<<",\"energyBalance\":"<<visc+conv+pressureWork-force-boundary-prescribedTractionWork-outletGradientWork<<",\"internalResidual\":"<<internal<<",\"freeFaceResidual\":"<<faceResidual<<",\"wallFx\":"<<wallFx<<",\"wallFy\":"<<wallFy<<",\"wallPressureFx\":"<<wallPressureFx<<",\"wallViscousAndStabilizationFx\":"<<wallViscousFx<<",\"wallConvectionReconstructionFx\":"<<wallConvectionFx<<",\"stressBodyFx\":"<<wallStressFx<<",\"stressBodyFy\":"<<wallStressFy<<",\"wallTractionMomentDifferencePerLength\":"<<wallTractionDifference<<",\"wallPressureFy\":"<<wallPressureFy<<",\"netBoundaryMassFlux\":"<<massFlux<<",\"boundaryMomentumFluxX\":"<<momentumX<<",\"boundaryMomentumFluxY\":"<<momentumY<<",\"volumeForceX\":"<<bodyForceX<<",\"volumeForceY\":"<<bodyForceY<<",\"boundaryTractionX\":"<<tractionX<<",\"boundaryTractionY\":"<<tractionY<<",\"globalMomentumBalanceX\":"<<tractionX+bodyForceX-(nonlinear?momentumX:0)<<",\"globalMomentumBalanceY\":"<<tractionY+bodyForceY-(nonlinear?momentumY:0)<<",\"physicalConvectionEnergy\":"<<conv+fluxWork<<",\"physicalBoundaryTractionWork\":"<<boundary+fluxWork+prescribedTractionWork+outletGradientWork<<",\"upwindDissipationPlusDivergenceWork\":"<<conv+fluxWork-.5*allFluxWork<<",\"manufacturedTractionMomentRms\":"<<optionalMetric(std::sqrt(tractionError/std::max(boundaryLength,1e-300)),problem=="noslip"||problem=="noslip-sheared")<<",\"wallNormal\":"<<wallNormal<<",\"stateCoefficientChange\":"<<delta<<",\"rtTraceResidual\":"<<trace<<",\"seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<"}\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 
 #ifndef CARTMESH_P1_OSEEN_NO_MAIN

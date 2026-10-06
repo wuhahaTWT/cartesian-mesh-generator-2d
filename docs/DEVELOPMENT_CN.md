@@ -575,6 +575,31 @@ Mac用 `/usr/bin/clang++` 并加 `-framework Accelerate`。可显式传 `--trans
 
 `native-laminar-state-compare geometry mesh n prefix` 从相同原生几何导出单元面积；`compare mesh n first.state second.state` 使用原生状态读取及多项式积分给出P1速度/压力RMS、面速度端点最大差。闭域压力同时报告绝对差及一次全域规范校正后的差；自然出口必须看绝对差。它不计算第二套PDE，也不把P1单元场与P2势速度或RT1输运速度混为同一指标。4个冻结矩阵、6个完整NS控制、4个失败对照和复现命令见 `native-laminar-oseen-block.json`；归档保留每个迭代和输入，8档均匀出口没有障碍物，不能用 `cylinder` 问题名宣称圆柱资格。原Re20大矩阵、内存与完整稀疏LU成本尚待云端验证。
 
+### 显式开放牵引与伪牵引研究
+
+`native-laminar-open-boundary.cpp` 复用同一 `Transport` 和凝聚/恢复驱动，通过独立边界策略选择已知速度自由度，不复制体积方程。压力为运动学静压，`G_ij=∂u_i/∂x_j`、`sigma=ν(G+Gᵀ)-pI`。三种显式模式如下：
+
+| 模式 | 所解的连续边界条件与数据 |
+| --- | --- |
+| `traction` | `sigma n=t_D`；制造解提供完整精确牵引，cylinder控制提供零牵引。 |
+| `pseudo-traction` | `(νG-pI)n=-p_D n`；在对称应力形式中把 `νGᵀn` 作为未知速度的隐式边界项，给定压力载荷 `-p_D n`。 |
+| `normal-stress` | `sigma n=-p_D n`；不施加切向牵引，是不同的物理边界条件。 |
+
+伪牵引不等同于同时独立强制压力值与全部速度法向导数；它对平行充分发展流相容，但不能据此宣称与旧单元中心出口模板等价。转置梯度项的连续推导和梯度约定见 [FEniCSx边界牵引说明](https://jsdokken.com/dolfinx-tutorial/chapter2/navierstokes.html)。在单元内仍使用原完整对称黏性、守恒压力耦合、RT1载荷/输运及原子面；只修改保留面测试行，所以内部块、内部到面块和内部右端均不变，既有局部凝聚仍适用。已有默认 `closed/open` 调用继续使用原策略，三种新模式须显式选取。
+
+当前研究选择器识别轴对齐右出口；制造解其余外边界给定完整解析速度，cylinder保留水平对称边。没有增加产品的通用命名patch API，也没有迁移旧工况。`forceWork` 是体力功，`prescribedTractionWork/outletGradientWork` 单列给定牵引与隐式梯度项功，`viscousEnergy` 保留体内黏性和稳定项；能量平衡包含上述所有项。CSV的 `appliedTractionX/Xs/Y/Ys` 是四个积分面矩，不能当作逐点应力；边界总牵引还包含原动量反力与必要的对流通量。开放制造解的 `pressureRms` 使用绝对压力，闭域仍只消除一次全域规范。
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-open-boundary.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-open-boundary
+mkdir -p outputs/laminar-stability
+build/native-laminar-open-boundary write-warped 8 outputs/laminar-stability/open-warped8.solver.cm2d
+python3 artifacts/current/native-laminar-oseen-block.py outputs/laminar-stability/open-warped8.solver.cm2d 0 poiseuille 0.1 ns pseudo-traction outputs/laminar-stability/open-pseudo8 --transport build/native-laminar-open-boundary
+```
+
+Mac使用 `/usr/bin/clang++` 并加 `-framework Accelerate`；还需前述块求解器和原生字段工具。临时网格/求解输出拒绝重复目录；更换路径复现。`write-warped` 只创建有界研究网格：固定单位方域，内部共享节点按 `X=x+.09sin(2πx)sin(2πy)`、`Y=y+.06sin(πx)sin(2πy)` 变换，边界精确保留，通过原 `fromPolygons/makeFvMesh2D`；它不是对原XY几何的平滑或Cartesian Cut-cell替代。
+
+控制为 `u=(4y(1-y),0), p=-8x, f=(8ν-8,0)`，因此ν=1 Stokes无体力，ν=.1 NS明确有 `f=(-7.2,0)`；Couette为 `u=(y,0),p=0,f=0`，静水为 `u=0,p=x+2y,f=(1,2)`。解析数据补全了Couette、旋转和通道的速度梯度，用于真实边界应力；原速度/体力/压力值保持。不同边界条件的解都可能严格收敛，`normal-stress` 对原通道剖面的差值属于模型对照，不叫作离散失败。规则格P2势速度和压力的特殊再现不能扩大到RT1输运速度或非正交格；非正交三档的三类场误差、一次更紧迭代对照、原默认状态逐字节读回与完整成本见 `native-laminar-open-boundary.json`。收紧控制沿用U=L=1、压力U²归一化，仅用于分离迭代误差；未新增物理验收阈值。原曲壁NS、回流、旧出口离散兼容性与产品接入仍需继续验证。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。

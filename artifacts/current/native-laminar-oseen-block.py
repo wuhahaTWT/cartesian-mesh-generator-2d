@@ -33,7 +33,7 @@ def main():
     parser.add_argument('problem')
     parser.add_argument('viscosity', type=float)
     parser.add_argument('equation', choices=['ns', 'stokes'])
-    parser.add_argument('boundary', choices=['closed', 'open'])
+    parser.add_argument('boundary', choices=['closed', 'open', 'traction', 'pseudo-traction', 'normal-stress'])
     parser.add_argument('output', type=Path)
     parser.add_argument('--backend', choices=['ilu0', 'ic0', 'jacobi', 'dense-reference'], default='ilu0')
     parser.add_argument('--transport', type=Path, default=root / 'build/native-laminar-p1-transport')
@@ -88,7 +88,7 @@ def main():
             binaries['block'] = args.block
         record['nativeBinaries'] = {k: {'path': str(v), 'sha256': sha(v)} for k, v in binaries.items()}
         sources = ['native-laminar-oseen-block.py', 'native-laminar-block-precondition.cpp',
-                   'native-laminar-state-compare.cpp', 'native-laminar-p1-transport.cpp',
+                   'native-laminar-state-compare.cpp', 'native-laminar-open-boundary.cpp', 'native-laminar-p1-transport.cpp',
                    'native-laminar-p1-oseen.cpp', 'native-laminar-p1-stress.cpp',
                    'native-laminar-hybrid-stokes-p1.cpp']
         record['sourceSha256'] = {f: sha(root / 'artifacts/current' / f) for f in sources}
@@ -138,7 +138,7 @@ def main():
                     code = 0 if ok else 2
                 else:
                     command = [args.block, prefix, str(geometry) + '.cells.csv', args.backend,
-                               'outlet' if args.boundary == 'open' else 'gauge', prefix,
+                               'gauge' if args.boundary == 'closed' else 'outlet', prefix,
                                str(args.linear_tolerance), str(args.restarts), str(args.viscosity)]
                     result = subprocess.run([str(x) for x in command], text=True, capture_output=True)
                     err.write(result.stderr)

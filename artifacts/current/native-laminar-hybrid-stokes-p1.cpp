@@ -149,10 +149,10 @@ struct Basis {
 
 struct Exact {Vector2D u,f;double p;std::array<Vector2D,2> gradient{};};
 Exact exactAt(Point2D p,const std::string& problem) {
-    if(problem=="couette")return {{p.y,0},{0,0},0};
-    if(problem=="rotation")return {{-p.y,p.x},{0,0},0};
+    if(problem=="couette")return {{p.y,0},{0,0},0,{{{0,1},{0,0}}}};
+    if(problem=="rotation")return {{-p.y,p.x},{0,0},0,{{{0,-1},{1,0}}}};
     if(problem=="hydrostatic")return {{0,0},{1,2},p.x+2*p.y};
-    if(problem=="poiseuille")return {{4*p.y*(1-p.y),0},{0,0},-8*p.x};
+    if(problem=="poiseuille")return {{4*p.y*(1-p.y),0},{0,0},-8*p.x,{{{0,4-8*p.y},{0,0}}}};
     if(problem=="vortex") {
         const double pi=std::acos(-1.),sx=std::sin(pi*p.x),sy=std::sin(pi*p.y),cx=std::cos(pi*p.x),cy=std::cos(pi*p.y);
         const Vector2D u{sx*cy,-cx*sy};
