@@ -269,6 +269,21 @@ python3 tools/flow/run_curved_wall.py --output outputs/annulus-face-candidate --
 
 下一研究采用 [Droniou–Eymard–Gallouët–Herbin 的 hybrid/mimetic 结构](https://arxiv.org/pdf/0812.2097)评估通用修复：真实面共享 trace 与单元值共同构成局部梯度能量及一致残差的正权平方和，再从同一双线性形式导出面热流和守恒方程。研究先检查几何矩恒等式、正法向距离、代数能量结构及实际误差，再考虑与可压守恒变量/黏性总能量的耦合和完整成本。此路线尚未实现为已验证的可压交付；线性能量稳定不自动保证点正性、最大值原理或任意曲壁精度。不再以调整距离权重或剪裁温度消除单例失败。
 
+### Hybrid 黏性局部能量块
+
+`HybridViscousCell2D` 是供后续完整可压耦合使用的原生局部算法部件，不切换现有 Euler/ViscousStress/App 路径。输入来自 `makeFvMesh2D` 的真实单元，附加检查法向距离为正、法向闭合以及 `Σ S⊗(x_face−x_cell)=V I`。身份与面积不重构、不合并或删除坏格。几何恒等式使用 1024 个 double epsilon 乘实际面数的舍入预算，分别按累计真实长度/矩尺度归一化，不能解释为物理误差容差。
+
+对面与单元速度差 δu，令 `g=Σ S δu/V`、`r=δu−g·(x_face−x_cell)`。局部双线性形式采用恒 μ 的二维速度场、三维分子气体 Stokes 2/3 系数；其二次型为 `μV[(u_x−v_y)²+(u_y+v_x)²+(u_x+v_y)²/3]+μΣ(|S|/d)|r|²`。局部牵引矩阵以对称条目装配，稳定项来自同一残差形式。机械能通量使用同一真实面 trace 速度，因此局部总能量输入减动量产生的动能输入等于这个非负耗散。刚体转动属于局部矩阵核，不能把它当作正定矩阵直接求逆。
+
+必须由全局面 trace 方程使内部牵引反号相等，才能将这些局部通量用于守恒推进。当前仅仿射一致场的内部通量自动匹配，任意 trace 还没有全局求解。本部件没有宣称离散 Korn 不等式、点正性、时间精度、工程成本或完整可压能量耦合通过。
+
+```sh
+cmake --build build --parallel 4 --target cartmesh2d_hybrid_viscous_cell_tests
+ctest --test-dir build -R '^cartmesh2d_hybrid_viscous_cell$' --output-on-failure
+```
+
+测试直接扰动每个 trace 分量比对实际牵引、检查对称矩阵二次型/平方和/机械功三者一致、刚体运动和仿射应力、旋转与 SI 缩放、非法几何/物性/非有限输入。沿用 4096 个 double epsilon 的代数预算；常规长宽比另保留直接通量门，极端薄长输入按真实局部矩阵对绝对速度采样舍入的放大归一化，并输出未归一化误差。该测试不模拟真实曲壁流动。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
