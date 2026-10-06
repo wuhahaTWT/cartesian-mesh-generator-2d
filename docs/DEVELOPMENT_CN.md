@@ -61,6 +61,28 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 真实 App 的跨进程项目验收入口：先正常运行并 `--export=/绝对路径/project.zip`，退出后使用 `--smoke=rectangle --open-project=/绝对路径/project.zip --out=/绝对路径/验收目录` 直接打开。可附加 `--project-resume=thermal --project-dt=.025 --project-end-time=1.4`；独立流动用 `--project-resume=flow --project-dt=.01 --project-steps=2`。支持已有 `--shot`、`--export`；不会先生成新网格。路径参数仅替代 smoke 文件对话框，正式操作通过顶部“打开项目”。原生终点回归在 `tests/thermal_flow_test.cpp`，前端文件恢复/取消检查在 `desktop/tests/project.test.js`、`archive.test.js` 和 `flow-checkpoint.test.js`。
 
+## 非定常守恒有界温度修正
+
+入口为 `ScalarTransportControls2D::fluxCorrection`、`ScalarTransport2D.cpp` 和 CLI `--flux-correction bounded|unrestricted`。默认 `unrestricted` 保持原有离散。`bounded` 当前要求非空上一物理层和正 dt；稳态调用明确失败。支持 Upwind/LimitedLinearUpwind、逐面正扩散率和非负隐式损失。算法背景可参阅 [Lipnikov、Svyatskiy、Vassilevski 对非正交网格离散最大值原理的讨论](https://dodo.inm.ras.ru/research/_media/lip-svy-vas-12.pdf)；本仓库采用下述隐式行余量构造，资格依据是原生算例。
+
+记低阶 BE 矩阵为 `Aii Ti - Σ cij Tj = bi`，`cij≥0`，来自 TPFA 扩散和一阶迎风；高阶面修正 `Ff` 包含非正交扩散及对流重构。每格 `mi=Vi/dt`、`si=Vi*sinkRate`、`ri=Σ outward volumeFlux`，`Qi=source*Vi-Σ prescribed outward diffusiveFlux*faceLength`。比较值为 `(mi*Told+Qi)/(mi+si+ri)`；分母必须正，仍检查真实载流器连续性。全局 L/U 包含所有上一层、定温/流入值和比较值，因此真实加热/冷却或指定热流可以超出旧场极值。实现使用差值形式减轻 300 K 背景抵消。
+
+在当前非线性迭代场上，正/负修正可用余量分别为 `Bi+=Aii*U-bi-Σ cij*Tj` 和 `Bi-=bi+Σ cij*Tj-Aii*L`。按 owner 的 `-Ff`、neighbour 的 `+Ff` 累计正/负修正总量 Pi±，令 `Ri±=min(1,max(0,Bi±)/Pi±)`，Pi± 为零时取一。每个面取两端对应符号系数的较小值，同时缩放该面的两种修正。指定 Neumann 热流、源项和损失不缩放，每面仍只有一份守恒通量；接受场不裁剪。
+
+固定点的最大值判断：若最高格超出 U 且 Bi+≥0，受限右端直接要求该格≤U；若 Bi+<0，正修正为零，正比较锚和低阶矩阵又排除超过所有比较数据的全局最高值。最低值对称。该论证针对收敛离散方程，不保证任意中间候选或非线性迭代次数。返回场必须同时满足原有总残差、逐格失衡与有界偏差检查；后者直接使用已有 `cellTolerance`（温度时单位 K，默认 1e-9），不新增物理精度阈值。每步继承上一场后，求解容差可以累积；实际 100 步约 4e-9 K 的下界漂移单独报告。
+
+`evaluateScalarTransport2D` 使用完全相同的受限面通量，在给定场重新检查守恒；不能以低阶线性候选收敛代替最终非线性方程。JSON 新增方法、受限面数、最小系数、比较上下界和最终超界量。当前算法依赖本步质量与比较界，整步/两半步缺陷也包含限制器响应。限制器未启动的光滑区保持原重构；现有混合边界线性场和正弦空间/时间收敛例通过，尚不宣称任意非正交网格上的线性保持、唯一性或全程误差上界。
+
+有界联合状态采用 thermal checkpoint **v4**：`THERMAL_CONFIG` 增加 `bounded`，`CONTROLLER_PRESENT 0|1` 显式区分固定与自动步，自动控制签名为 11 个数（末项为本方法标识），始终保存 EVENTS。旧方法继续写原 v1/v2/v3 和 10 项签名；新旧方法互相续算明确拒绝。在内存中改方法时重置控制建议。桌面请求、项目清单、结果验证和恢复控件共同绑定此选项；旧项目缺少字段时按 `unrestricted` 恢复。
+
+```sh
+cmake --build build --parallel 4 --target cartmesh2d_scalar_transport_tests cartmesh2d_scalar_workspace_tests cartmesh2d_thermal_flow_tests cartmesh2d_transport_cli
+ctest --test-dir build --output-on-failure -R '^cartmesh2d_(scalar_transport|scalar_workspace|thermal_flow|thermal_control_cli|thermal_flow_cli)$'
+python3 tools/thermal/workflow.py --case cylinder --level 4 --dt .05 --end .3 --diffusivity .05 --speed .2 --no-events --flux-correction bounded --output outputs/bounded-cylinder
+```
+
+改成 `--flux-correction unrestricted` 并更换输出目录获得同控制基线。原云端零流速失败输入从已逐项验证的恢复归档取回；本轮完整命令在 `outputs/bounded-transport/*.command.json`，输入 SHA256、数值结果、适用范围见 `artifacts/current/native-thermal-bounded.json`。该零流速研究只比较原生输出，未恢复独立 Python 方程审计链。真实 App 入口追加 `--thermal-flux-correction=bounded`，例如 `--smoke=rectangle --target-cells=1000 --thermal-adaptive=true`；项目重开沿用前节入口。相对输出目录现在在保存时转换包内引用，原失败 ZIP 仍保留。
+
 ## 云端联合温度时间控制
 
 本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。

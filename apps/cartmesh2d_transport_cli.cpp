@@ -188,6 +188,7 @@ int main(int argc,char**argv) {
                     "BC.csv: face,type,value,inflowValue; every boundary face, type=value|flux.\n"
                     "flux is outward -D grad(s).n per length; negative carrier flux requires inflow value.\n"
                     "--diffusivity .01 --source 0 --initial 0 --convection upwind|limited-linear\n"
+                    "--flux-correction unrestricted|bounded: conservative BE bound preservation; default unrestricted.\n"
                     "--face-diffusivity D.csv: face,diffusivity; every face once, finite positive values.\n"
                     "  Prescribed face coefficients, frozen carrier only; no evolving/restart/verification mixing.\n"
                     "--dt DT --steps N: backward Euler on FROZEN carrier flux (not coupled evolving flow).\n"
@@ -266,11 +267,15 @@ int main(int argc,char**argv) {
             } else if(arg=="--convection") {
                 require(value=="upwind"||value=="limited-linear","unknown convection scheme");
                 controls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+            } else if(arg=="--flux-correction") {
+                require(value=="unrestricted"||value=="bounded","unknown scalar flux correction");
+                controls.fluxCorrection=value=="bounded"?fv::ScalarFluxCorrection2D::Bounded:fv::ScalarFluxCorrection2D::Unrestricted;
             } else throw std::runtime_error("unknown option: "+arg);
         }
         require(!meshPath.empty()&&!prefix.empty(),"--mesh and --output required");
         require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final solver mesh");
         require(dt>=0&&diffusivity>0&&(dt>0||steps==1),"invalid time settings or diffusivity");
+        require(controls.fluxCorrection!=fv::ScalarFluxCorrection2D::Bounded || dt>0,"bounded flux correction requires transient dt");
         require(verification.empty()||verification=="sine"||verification=="variable-sine"||verification=="decay"||verification=="thermal-vortex","unknown verification");
         const bool steadySine=verification=="sine"||verification=="variable-sine";
         if(verification=="thermal-vortex") {
@@ -520,6 +525,10 @@ int main(int argc,char**argv) {
             <<",\n\"globalBalance\":"<<result.globalBalance<<",\n\"maxCarrierImbalance\":"<<result.maxCarrierImbalance
             <<",\n\"minValue\":"<<result.minValue<<",\n\"maxValue\":"<<result.maxValue<<",\n\"maxCourant\":"<<result.maxCourant<<",\n\"l2Error\":";
         if(!verification.empty())json<<std::sqrt(error2/area);else json<<"null";
+        json<<",\n\"fluxCorrection\":"<<quote(controls.fluxCorrection==fv::ScalarFluxCorrection2D::Bounded?"bounded":"unrestricted")
+            <<",\n\"limitedFaces\":"<<result.limitedFaces<<",\n\"minimumFluxCorrection\":"<<result.minimumFluxCorrection
+            <<",\n\"maxBoundViolation\":"<<result.maxBoundViolation;
+        if(result.lowerBound)json<<",\n\"lowerBound\":"<<*result.lowerBound<<",\n\"upperBound\":"<<*result.upperBound;
         if(!p.faceDiffusivity.empty())json<<",\n\"diffusivityModel\":\"face-values\",\n\"diffusivityFile\":"<<quote(diffusivityPath);
         json<<",\n\"nativeTopologyRevalidated\":true,\n\"solverQualityPassed\":true,\n\"externalCheckMesh\":\"not run\"\n}\n";
         cells.close();faces.close();vtk.close();history.close();json.close();

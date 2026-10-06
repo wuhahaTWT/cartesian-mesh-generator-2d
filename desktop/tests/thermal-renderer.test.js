@@ -69,11 +69,11 @@ test('thermal export uses saved backend fields when renderer has been cleared', 
 
 test('thermal resume deselects flow resume, restores thermal physics and preserves editable time controls', () => {
   const {context, elements, counts} = controls();
-  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection','thermalWallKind','thermalWallValue','thermalWallInflow']) elements[id] = {value:''};
+  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection','thermalFluxCorrection','thermalWallKind','thermalWallValue','thermalWallInflow']) elements[id] = {value:''};
   elements.flowDt = {value:'0.005'}; elements.flowSteps = {value:'7'};
   elements.thermalResume.checked = true;
   context.thermalPatches = ['wall']; context.thermalPatchId = ()=>'thermalWall';
-  context.state.thermalRestart = {request:{case:'external',nu:.02,speed:1,convection:'upwind',diffusivity:.1,initial:300,source:2,scalarConvection:'limited-linear',boundaries:{wall:{kind:'value',value:350,inflowValue:300}}}};
+  context.state.thermalRestart = {request:{case:'external',nu:.02,speed:1,convection:'upwind',diffusivity:.1,initial:300,source:2,scalarConvection:'limited-linear',fluxCorrection:'bounded',boundaries:{wall:{kind:'value',value:350,inflowValue:300}}}};
   vm.runInContext(functionSource('applyThermalRestartControls'), context);
   context.applyThermalRestartControls();
   assert.equal(elements.flowResume.checked, false);
@@ -81,6 +81,7 @@ test('thermal resume deselects flow resume, restores thermal physics and preserv
   assert.equal(elements.flowNu.value, .02);
   assert.equal(elements.thermalDiffusivity.value, .1);
   assert.equal(elements.thermalWallValue.value, 350);
+  assert.equal(elements.thermalFluxCorrection.value, 'bounded');
   assert.equal(elements.flowDt.value, '0.005');
   assert.equal(elements.flowSteps.value, '7');
   assert.deepEqual(counts, {flow:1,thermal:1});
@@ -88,7 +89,7 @@ test('thermal resume deselects flow resume, restores thermal physics and preserv
 
 test('loading a thermal restart clears a locked vortex and preserves supported adaptive controls', () => {
   const {context, elements} = controls();
-  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection']) elements[id] = {value:''};
+  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection','thermalFluxCorrection']) elements[id] = {value:''};
   elements.flowMode.value = 'adaptive';
   elements.flowInitialVortex.checked = true;
   elements.thermalResume.checked = true;
@@ -98,6 +99,7 @@ test('loading a thermal restart clears a locked vortex and preserves supported a
     diffusivity:.1,initial:300,source:2,scalarConvection:'upwind',boundaries:{}}};
   vm.runInContext(functionSource('applyThermalRestartControls'), context);
   context.applyThermalRestartControls();
+  assert.equal(elements.thermalFluxCorrection.value, 'unrestricted', 'legacy restart keeps its original flux operator');
   assert.equal(elements.flowInitialVortex.checked, false, 'restart uses its saved flow, without a fresh vortex');
   assert.equal(elements.flowMode.value, 'adaptive');
   assert.equal(elements.flowResume.checked, false);

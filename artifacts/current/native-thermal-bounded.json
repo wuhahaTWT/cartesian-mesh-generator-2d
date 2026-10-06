@@ -1,0 +1,270 @@
+{
+  "format": "cartmesh2d-bounded-transient-evidence-v1",
+  "date": "2026-10-07",
+  "branch": "codex/transient-thermal-workflow",
+  "baseCommit": "510d496ae0c2e2ddd93ab899dc177ab921eba64d",
+  "scope": "Native 2D incompressible laminar flow and constant-property one-way passive temperature. Optional conservative nonlinear BE flux correction; original default retained.",
+  "sourceSha256": {
+    "include/cartmesh2d/fv/ScalarTransport2D.hpp": "fe6fb1bd17545638d8e2a7c998f3937652cc18a5cd3e7fbc3225867a4f4ece3b",
+    "src/fv/ScalarTransport2D.cpp": "3974d98f50d3332a1f4e4c88b16c2ba72017f528dbe2a1df9959f48498ccac5c",
+    "include/cartmesh2d/fv/ThermalCheckpoint2D.hpp": "579a04379564783e5c9a79d2ea42e6e16176e7b0d1e923ccd82e504a70ad60b1",
+    "src/fv/ThermalFlow2D.cpp": "318615b654119fec0e56a80326dba463d6b9b8f572e5601bbd83472efc22c295",
+    "apps/cartmesh2d_transport_cli.cpp": "9c16be602541d2a2b85404d8062ab5154339f5e8b7cc6c229da6da1f03f6218a",
+    "tests/scalar_transport_test.cpp": "f1ddd1d2ba53d593ac0fea9ebe43a9f4dddd59c4810590555e873e09da4f63ff",
+    "tests/thermal_flow_test.cpp": "2baa78911e926e0fa02e5bd57040918f302295c2c641b7eb3b66cb0f354d7c3a",
+    "desktop/src/core/thermal.js": "98f7695bf3ce25c55bd7b067d3f70044addbc5e484da127e43f6e97c284c74d1",
+    "desktop/src/core/thermal-job.js": "ada2111c9954b2feaac5b0a7ff296487c5eed7032a3607c078afc6061edd973d",
+    "desktop/src/core/project.js": "a39398e44ba7989d8368badb4d29f003bf65bf1c814f7baeb3c84a93302d5a6e",
+    "desktop/src/main.js": "98a075ebc1e556ac4d2476d6ff575fb519cbac31d1289dfd4757d3e058f727fe",
+    "desktop/src/renderer/app.js": "6ec1ab9bb3c79bcd8355bb72b4fb4774f55aabb6a90202ee24b256e03705aec9",
+    "desktop/src/renderer/index.html": "5a087cee6145694b2ef5941af841727ccd80b1eb984b045f3c23fa252e74059a",
+    "src/fv/Incompressible2D.cpp": "4d0f573df7fe232fc1596ad91911c9b1556203860482caddb07fdc78b9d0ccfc",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "26dc69ee421a6361d1071a21ce7ebd4eab7d4340cb24bb673ccf38d9c0f060f2",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "ef14aa217350081192019c5fc52366981c28d2f8d67280994f7ddd98c6b244ad",
+    "src/fv/FlowBoundaryIO2D.cpp": "42283949d9c795702560a6c754695530bebc346bcc7e911cff20cbceecd5f4de",
+    "CMakeLists.txt": "ca793f2ef9f766c77ad2e56e3061d89b69665449170f4bb3d2ea603df4688984"
+  },
+  "host": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "compiler": "/usr/bin/clang++"
+  },
+  "runtimeSha256": "23c81b28d83771ade666ff96c1326c4a810af2bdba9255b012218f051b05160e",
+  "buildRuntimeIdentical": true,
+  "zeroFlowFailure": {
+    "description": "Same archived 312-cell cylinder inputs as cloud diagnostic, initial 300 K, hot wall 301 K, D=.05 m2/s, BE dt=.0001 s to .01 s. Maximum undershoot is read from full accepted history.",
+    "runs": [
+      {
+        "mode": "unrestricted",
+        "seconds": 0.4862059160077479,
+        "cells": 312,
+        "time": 0.01,
+        "minValue": 299.97109090874653,
+        "maxValue": 300.7691301444455,
+        "globalBalance": -1.0232773717255839e-07,
+        "limitedFaces": 0,
+        "minimumFluxCorrection": 1,
+        "maxBoundViolation": 0,
+        "heatGain": 0.010983769643730086,
+        "trajectoryMinimum": 299.9689639281695,
+        "trajectoryMaximum": 300.7691301444455,
+        "integratedReportedBalance": -5.074175585151335e-10,
+        "maxCarrierFlux": 0.0,
+        "command": "outputs/bounded-transport/cylinder-zero-coupled-unrestricted.command.json"
+      },
+      {
+        "mode": "bounded",
+        "seconds": 0.5156934170227032,
+        "cells": 312,
+        "time": 0.01,
+        "minValue": 299.9999999964076,
+        "maxValue": 300.7634329340076,
+        "globalBalance": -1.033234606762079e-07,
+        "limitedFaces": 41,
+        "minimumFluxCorrection": 3.6400896354691084e-07,
+        "maxBoundViolation": 2.8421709430404007e-13,
+        "heatGain": 0.011361169501445919,
+        "trajectoryMinimum": 299.9999999964076,
+        "trajectoryMaximum": 300.7634329340076,
+        "integratedReportedBalance": -4.5492528154556005e-10,
+        "maxCarrierFlux": 0.0,
+        "command": "outputs/bounded-transport/cylinder-zero-coupled-bounded.command.json"
+      }
+    ],
+    "physicalTime": 0.01,
+    "stepCount": 100,
+    "heatGainRelativeChange": 0.034359775373772994,
+    "thresholdExplanation": "Final nonlinear field also satisfies existing cellTolerance=1e-9 K against per-step source/BC comparison bounds; no new physical accuracy threshold. Prior-step tolerance drift accumulates and is reported."
+  },
+  "shortCoupledCylinder": [
+    {
+      "mesh": "coarse",
+      "mode": "unrestricted",
+      "seconds": 3.917807207995793,
+      "exitCode": 0,
+      "trajectoryMinimum": 299.9966980777816,
+      "trajectoryMaximum": 300.9164235946388,
+      "maximumBalance": 3.9672105045518435e-09,
+      "cells": 312,
+      "acceptedTime": 0.3,
+      "steps": 11,
+      "rejectedAttempts": 2
+    },
+    {
+      "mesh": "coarse",
+      "mode": "bounded",
+      "seconds": 3.937064208002994,
+      "exitCode": 0,
+      "trajectoryMinimum": 299.99999999999955,
+      "trajectoryMaximum": 300.91643374139335,
+      "maximumBalance": 3.98324795369831e-09,
+      "cells": 312,
+      "acceptedTime": 0.3,
+      "steps": 11,
+      "rejectedAttempts": 2
+    },
+    {
+      "mesh": "fine",
+      "mode": "unrestricted",
+      "seconds": 3.24285054198117,
+      "exitCode": 0,
+      "trajectoryMinimum": 299.9999999999987,
+      "trajectoryMaximum": 300.9158508172197,
+      "maximumBalance": 7.116871703072292e-09,
+      "cells": 1072,
+      "acceptedTime": 0.3,
+      "steps": 8,
+      "rejectedAttempts": 1
+    },
+    {
+      "mesh": "fine",
+      "mode": "bounded",
+      "seconds": 3.2827782499953173,
+      "exitCode": 0,
+      "trajectoryMinimum": 299.9999999999988,
+      "trajectoryMaximum": 300.915850817218,
+      "maximumBalance": 7.116867484224798e-09,
+      "cells": 1072,
+      "acceptedTime": 0.3,
+      "steps": 8,
+      "rejectedAttempts": 1
+    }
+  ],
+  "nativeAccuracy": {
+    "mixedAffine": "5x4 sheared mesh, mixed temperature/flux boundaries, BE dt=.0001,.1,10; error <5e-8 K using original affine regression tolerance",
+    "smoothSpatial": {
+      "description": "One BE step dt=.1 from exact steady manufactured sine field on shear=.6 grid; D=.08, no advection",
+      "grid": [
+        8,
+        16,
+        32
+      ],
+      "L2ErrorK": [
+        0.00557695,
+        0.00157118,
+        0.0004082
+      ],
+      "limitedFaces": [
+        0,
+        0,
+        0
+      ]
+    },
+    "timeRefinement": {
+      "description": "Fixed 16x16 grid, sine diffusion to t=.5; both modes produce same reported errors, consistent with first-order BE",
+      "steps": [
+        5,
+        10,
+        20
+      ],
+      "L2ErrorK": [
+        0.0256942,
+        0.0135112,
+        0.00709047
+      ]
+    },
+    "additionalChecks": [
+      "hot and cold fronts",
+      "upwind and limited-linear advection",
+      "prescribed variable face diffusivity",
+      "signed sources and implicit loss",
+      "specified Neumann heating unchanged",
+      "fresh and reused workspace identical",
+      "supplied-field constitutive reevaluation",
+      "fixed/adaptive checkpoint, event, rollback and cancellation tests"
+    ]
+  },
+  "restart": {
+    "continuousVsCrossProcessRestart": {
+      ".thermal.checkpoint": true,
+      ".cells.csv": true,
+      ".faces.csv": true
+    },
+    "format": "CARTMESH2D_THERMAL_CHECKPOINT 4",
+    "wrongModeRejected": true,
+    "inputCheckpointUnchanged": true,
+    "checkpointSha256": "405ecf09867961b5506e47d3998b53b18b4770ebd580b8b638767e0d1eba9bda"
+  },
+  "desktop": {
+    "cells": 1300,
+    "mode": "bounded",
+    "initialSequenceFinalTime": 1.3,
+    "checks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "finalTime": 1.3
+    },
+    "reopenedFrom": 1.3,
+    "reopenedTo": 1.4,
+    "packageReadback": {
+      "cells": 1300,
+      "fluxCorrection": "bounded",
+      "acceptedTime": 1.3,
+      "restartTime": 1.3,
+      "rawFilesRevalidated": true
+    },
+    "relativeOutputBug": {
+      "fixedIn": "510d496",
+      "failureArchive": "outputs/bounded-transport/bounded-project.zip",
+      "failureLog": "outputs/bounded-transport/app-reopen.log",
+      "repairedByProductWriter": "outputs/bounded-transport/bounded-project-repaired.zip",
+      "freshFinalArchive": "outputs/bounded-transport/bounded-project-final.zip"
+    },
+    "evidence": [
+      "outputs/bounded-transport/app-final.png.json",
+      "outputs/bounded-transport/app-reopen-fixed.png.json"
+    ],
+    "reopenedMode": "bounded"
+  },
+  "validation": {
+    "nativeAndCli": {
+      "passed": 5,
+      "failed": 0,
+      "log": "outputs/bounded-transport/native-regression.log"
+    },
+    "frontend": {
+      "passed": 204,
+      "failed": 0,
+      "log": "outputs/bounded-transport/frontend-final.log"
+    },
+    "actualMacApp": true,
+    "newPackagedApp": false,
+    "newWindowsLinuxApp": false
+  },
+  "inputsSha256": {
+    "zero.carrier.checkpoint": "7ab93fa839b63906627afb8ea5d007f1b70d1c8005ef8cb7fa8de896915ff32c",
+    "cloud-diagnostic.json": "562b16208a048bbeaff0a52b96d702d48cc3188600a2661b7a28de45a813c472",
+    "fine.flow.boundaries": "859247bde003725906d144cdc15d9e0597714f711259c39fc234e84b4d0e6ec9",
+    "coarse.flow.boundaries": "998fe0e529626d34dc6b9136d2f077644d5b6627d5b79f1befe14b1203b240a6",
+    "coarse.thermal.csv": "44629a857af31287f8e74aa0b05007330b8c1f344a7165f79619d230a8ce9045",
+    "fine.solver.cm2d": "e5057c10ec21669962aa814a5373521903a015fcd6f443cd2456265b48ceb218",
+    "fine.thermal.csv": "880867c8f8da54dfd6cdd6650ad58a1a332a3d14cbd92b6d431135fdf9d8f503",
+    "coarse.solver.cm2d": "839b46d8249f75db707381ebeb2e481bae5886fa5e228f5ddc0ca8ae9d941b89",
+    "zero-flow.boundaries": "466e3b01e955a9bf3125f625a2efa9aa68ef0fe38dded917bce510545060d939"
+  },
+  "outputSha256": {
+    "outputs/bounded-transport/native-regression.log": "db31d81810af89e35d792422d75da9d13775ef8def471255979d4b0877da41cf",
+    "outputs/bounded-transport/frontend-final.log": "bfeb6c0bb1ba2714acfe77b639fca42fd89af0537772bf2a1a1bfd8fb4c74880",
+    "outputs/bounded-transport/app-final.png.json": "defc15875992938295c370b840b5f0ec82e4a7cef915a762b36c079da4c753cd",
+    "outputs/bounded-transport/app-reopen-fixed.png.json": "cae53c0daef33fd622bd550b7174081d20899106edbf095f2ef0934a664b5178",
+    "outputs/bounded-transport/bounded-project.zip": "f0a77524c45194a4e34d834a512562ee97d1c320529f261b065e9e9a59d5e58b",
+    "outputs/bounded-transport/bounded-project-repaired.zip": "253477635c529962ef3be565bab715e367fe04c3b215bcb50216ef3cdab467c4",
+    "outputs/bounded-transport/bounded-project-final.zip": "eaaf25c8a086613c247f363fa5c26d15377a354ff77f05239138843f0f4d7bd0",
+    "outputs/bounded-transport/reopened-project.zip": "78c27db485677609ea508c4d00f91d1a106a15824ff60da5c55ea4fe34e50fd8",
+    "artifacts/current/native-thermal-bounded.png": "5384959f53491d1b5e7ae0ee6bfed3d3d79bc892b329744b2d4bea68ec72d620",
+    "artifacts/current/native-thermal-bounded-app.png": "46c826a0646bd5ca24e981b98290a8d9352940c11286f2b42b5604d6d4748d06"
+  },
+  "limitations": [
+    "New mode remains opt-in until longer representative thermal-response, heat-flux and grid/time comparisons justify the default.",
+    "Limiter changes the sharp-front heat response; removing undershoot is not proof of wall heat-flux accuracy.",
+    "Smooth spatial and temporal evidence does not establish general linearity preservation, nonlinear iteration convergence or a global time-error bound.",
+    "Per-step comparison bounds include physical sources/loss/Neumann data and previous extrema; small iterative errors can accumulate.",
+    "Existing frozen-carrier CLI reader rejects named-boundary flow checkpoint v4; coupled thermal restart works. Reproduction retained.",
+    "No new automatic crash recovery, cross-run display history or desktop event-law support in this increment."
+  ],
+  "workingTreeContext": "Build includes pre-existing flow research and validation-chain cleanup; only this increment is staged. File hashes bind the numerical sources actually used."
+}

@@ -75,9 +75,12 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
     auto limits=c.limits;
     for (const auto& event:setup.events)
         if (event.time>previous.flow.time) {limits.targetTime=std::min(limits.targetTime,event.time);break;}
-    const std::vector<double> signature={c.limits.maximumStep,c.limits.minimumStep,c.limits.maximumCourant,
+    std::vector<double> signature={c.limits.maximumStep,c.limits.minimumStep,c.limits.maximumCourant,
         c.estimateError?1.:0.,c.temperatureScale,c.velocityScale,c.relativeTolerance,
         c.temperatureAbsoluteTolerance,c.velocityAbsoluteTolerance,fc.velocityRelaxation};
+    // Preserve legacy unrestricted signatures/checkpoints byte-for-byte. The
+    // bounded operator has a distinct signature, including in-memory restarts.
+    if(sc.fluxCorrection==ScalarFluxCorrection2D::Bounded)signature.push_back(1.);
     const bool reuse=previous.controller && previous.controller->controls==signature;
     auto predictionLimits=limits;
     if(reuse) {

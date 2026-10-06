@@ -1248,7 +1248,7 @@ async function runSmoke() {
         flowPressurePreconditioner:'ic0',flowOutletBackflow:'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
         flowMinDt:'.000001',flowMaxCourant:'1',flowMaxRetries:'18',flowMaxSteps:'100000',
         thermalDiffusivity:'.1',thermalInitial:'300',thermalTopValue:'301',thermalBottomValue:'300',
-        thermalTemperatureScale:'1',thermalTimeRtol:'.01'}))document.getElementById(id).value=value;
+        thermalTemperatureScale:'1',thermalTimeRtol:'.01',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}}))document.getElementById(id).value=value;
       document.getElementById('thermalTopKind').value='value';document.getElementById('thermalBottomKind').value='value';
       document.getElementById('thermalTimeError').checked=true;
       document.getElementById('flowMode').dispatchEvent(new Event('change'));
@@ -1275,7 +1275,7 @@ async function runSmoke() {
         failedBudgetRetained:true,resumeAfterFailure:true,finalTime:1.3};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
-      for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
+      for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}})) document.getElementById(id).value=value;
       await smoke.runThermal();
       if(!smoke.state.thermal || smoke.state.thermal.summary.time!==.1)throw new Error('Thermal result did not reach renderer');
       if(smoke.state.thermal.summary.outletBackflow!==${JSON.stringify(argument('outlet-backflow') || 'reject')})
@@ -1314,7 +1314,7 @@ async function runSmoke() {
         throw new Error('Imported thermal checkpoint cannot be resumed from the desktop');
       if(document.getElementById('flowMode').value!=='adaptive' || document.getElementById('flowInitialVortex').checked)
         throw new Error('Thermal import retained incompatible standalone initialization');
-      for(const id of ['flowNu','thermalDiffusivity','thermalWallValue'])
+      for(const id of ['flowNu','thermalDiffusivity','thermalWallValue','thermalFluxCorrection'])
         if(!document.getElementById(id).disabled) throw new Error('Thermal restart physics is not locked: '+id);
       document.getElementById('flowMode').value='transient';document.getElementById('flowMode').dispatchEvent(new Event('change'));
       const dt=Number(${JSON.stringify(argument('flow-dt') || '.025')});
@@ -1468,6 +1468,10 @@ async function runSmoke() {
       await mainWindow.webContents.executeJavaScript("document.getElementById('flowTimeline').scrollIntoView({block:'nearest'}); document.getElementById('flowMode').scrollIntoView({block:'start'});");
       await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
       await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    if (argument('thermal-flux-correction')) {
+      await mainWindow.webContents.executeJavaScript("document.getElementById('thermalFluxCorrection').scrollIntoView({block:'center'});");
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     if (argument('mesh-shot')) await fs.writeFile(argument('mesh-shot'), (await mainWindow.webContents.capturePage()).toPNG());
     if (argument('home-check')) {

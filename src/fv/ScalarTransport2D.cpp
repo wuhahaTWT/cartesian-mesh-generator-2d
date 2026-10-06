@@ -148,6 +148,10 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const bool transient=!previous.empty();
     require(std::isfinite(timeStep) && (transient?(previous.size()==n&&timeStep>0):timeStep==0),
         "Scalar transport invalid previous state or time step");
+    require(c.fluxCorrection==ScalarFluxCorrection2D::Unrestricted || c.fluxCorrection==ScalarFluxCorrection2D::Bounded,
+        "Scalar transport invalid flux correction");
+    const bool bounded=c.fluxCorrection==ScalarFluxCorrection2D::Bounded;
+    require(!bounded || transient,"Bounded scalar flux correction requires backward Euler history");
     for (double v:previous) finite(v);
     for (double q:p.volumeFlux) finite(q);
     std::vector<ScalarBoundary2D> bc(nf);
@@ -246,6 +250,51 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const double scale=detail::linearNorm(base);
     const double stop=finite(c.absoluteTolerance+c.relativeTolerance*scale);
     Values extra(nf),residual(n);
+    Values upperSlack(bounded?n:0),lowerSlack(bounded?n:0);
+    Values positive(bounded?n:0),negative(bounded?n:0),allowPositive(bounded?n:0),allowNegative(bounded?n:0);
+    Values diffCorrections(bounded?nf:0),advCorrections(bounded?nf:0),upwinds(bounded?nf:0);
+    if(bounded) {
+        Values netSource=r.sourceIntegrals;
+        double lower=*std::min_element(previous.begin(),previous.end());
+        double upper=*std::max_element(previous.begin(),previous.end());
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& f=mesh.faces[id];if(f.neighbour)continue;
+            if(fixed[id] || p.volumeFlux[id]<0) {
+                lower=std::min(lower,boundaryValues[id]);upper=std::max(upper,boundaryValues[id]);
+            }
+            if(!fixed[id])netSource[f.owner]-=finite(bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y));
+        }
+        // A constant comparison state must bound each implicit source/loss
+        // update. Prescribed Neumann heat enters as a real source, not a cap
+        // at the old extrema. Retain the measured carrier divergence in this
+        // comparison: continuity is tolerated, never assumed exactly zero.
+        for(std::size_t i=0;i<n;++i) {
+            const double mass=mesh.cells[i].area/timeStep;
+            const double loss=p.sinkRate.empty()?0:p.sinkRate[i]*mesh.cells[i].area;
+            const double anchor=finite(mass+loss+carrier[i]);
+            require(anchor>0,"Bounded scalar transport requires positive transient comparison anchor");
+            const double comparison=finite(previous[i]+(netSource[i]-(loss+carrier[i])*previous[i])/anchor);
+            lower=std::min(lower,comparison);upper=std::max(upper,comparison);
+        }
+        r.lowerBound=lower;r.upperBound=upper;
+        for(std::size_t i=0;i<n;++i) {
+            const double mass=mesh.cells[i].area/timeStep;
+            const double loss=p.sinkRate.empty()?0:p.sinkRate[i]*mesh.cells[i].area;
+            upperSlack[i]=finite(mass*(upper-previous[i])+(loss+carrier[i])*upper-netSource[i]);
+            lowerSlack[i]=finite(mass*(previous[i]-lower)-(loss+carrier[i])*lower+netSource[i]);
+        }
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& f=mesh.faces[id];if(f.neighbour)continue;
+            const auto i=f.owner;const double q=p.volumeFlux[id];
+            if(fixed[id]) {
+                const double d=faceDiffusivity(p,id)*f.transmissibility;
+                upperSlack[i]+=d*(upper-bc[id].value);lowerSlack[i]+=d*(bc[id].value-lower);
+            }
+            if(q<0) {
+                upperSlack[i]-=q*(upper-boundaryValues[id]);lowerSlack[i]-=q*(boundaryValues[id]-lower);
+            }
+        }
+    }
     if(c.profile) {r.performance.calls=1;r.performance.setupSeconds=seconds(start);}
     const auto faceFluxes=[&]() {
         const auto phaseStart=c.profile?Clock::now():Clock::time_point{};
@@ -272,6 +321,50 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
                 ?bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y)
                 :diffusivity*f.transmissibility*(r.values[i]-(f.neighbour?r.values[*f.neighbour]:bc[id].value))+diffCorrection);
             extra[id]=finite(diffCorrection+q*(advected-upwind));
+            if(bounded) {
+                diffCorrections[id]=diffCorrection;advCorrections[id]=q*(advected-upwind);upwinds[id]=upwind;
+            }
+        }
+        if(bounded) {
+            std::fill(positive.begin(),positive.end(),0.);std::fill(negative.begin(),negative.end(),0.);
+            allowPositive=upperSlack;allowNegative=lowerSlack;
+            const auto accumulate=[&](std::size_t i,double contribution) {
+                positive[i]+=std::max(contribution,0.);negative[i]+=std::max(-contribution,0.);
+            };
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& f=mesh.faces[id];const auto i=f.owner;
+                accumulate(i,-extra[id]);
+                if(!f.neighbour)continue;
+                const auto j=*f.neighbour;accumulate(j,extra[id]);
+                const double q=p.volumeFlux[id],d=faceDiffusivity(p,id)*f.transmissibility;
+                const double ij=d+std::max(-q,0.),ji=d+std::max(q,0.);
+                allowPositive[i]+=ij*(*r.upperBound-r.values[j]);
+                allowPositive[j]+=ji*(*r.upperBound-r.values[i]);
+                allowNegative[i]+=ij*(r.values[j]-*r.lowerBound);
+                allowNegative[j]+=ji*(r.values[i]-*r.lowerBound);
+            }
+            for(std::size_t i=0;i<n;++i) {
+                allowPositive[i]=positive[i]>0?std::clamp(finite(allowPositive[i])/finite(positive[i]),0.,1.):1.;
+                allowNegative[i]=negative[i]>0?std::clamp(finite(allowNegative[i])/finite(negative[i]),0.,1.):1.;
+            }
+            r.minimumFluxCorrection=1;r.limitedFaces=0;
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& f=mesh.faces[id];const auto i=f.owner;
+                double factor=extra[id]>0?allowNegative[i]:(extra[id]<0?allowPositive[i]:1.);
+                if(f.neighbour && extra[id]!=0)factor=std::min(factor,extra[id]>0?allowPositive[*f.neighbour]:allowNegative[*f.neighbour]);
+                r.minimumFluxCorrection=std::min(r.minimumFluxCorrection,factor);
+                if(factor<1)++r.limitedFaces;
+                // One factor and one flux per face: owner/neighbour always
+                // receive equal and opposite corrections. Never clip a field,
+                // prescribed heat flux, physical source or loss term.
+                r.advectiveFlux[id]=finite(p.volumeFlux[id]*upwinds[id]+factor*advCorrections[id]);
+                r.diffusiveFlux[id]=finite(!f.neighbour&&!fixed[id]
+                    ?bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y)
+                    :faceDiffusivity(p,id)*f.transmissibility*(r.values[i]-(f.neighbour?r.values[*f.neighbour]:bc[id].value))+factor*diffCorrections[id]);
+                extra[id]*=factor;
+            }
+            r.maxBoundViolation=0;
+            for(double v:r.values)r.maxBoundViolation=std::max({r.maxBoundViolation,*r.lowerBound-v,v-*r.upperBound});
         }
         if(c.profile)r.performance.faceFluxSeconds+=seconds(phaseStart);
     };
@@ -329,7 +422,10 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         r.boundaryFlux=finite(r.boundaryFlux);
         r.globalBalance=finite(r.temporalIntegral+r.boundaryFlux-r.sourceIntegral);
         if (!p.sinkRate.empty()) r.globalBalance=finite(r.globalBalance+r.sinkIntegral);
-        if (norm<=stop && maxScaled<=c.cellTolerance) {
+        // The same user-specified scalar-unit tolerance applies to the final
+        // bound check. Iterative candidates may leave the interval; only the
+        // returned, independently balanced field can be accepted.
+        if (norm<=stop && maxScaled<=c.cellTolerance && (!bounded || r.maxBoundViolation<=c.cellTolerance)) {
             double magnitude=0;
             for(double value:r.values)magnitude=std::max(magnitude,std::abs(value));
             if(c.cellTolerance<16*std::numeric_limits<double>::epsilon()*magnitude) {

@@ -24,6 +24,10 @@ private:
 };
 enum class ScalarBoundaryKind2D { Value, DiffusiveFlux };
 enum class ScalarPreconditioner2D { Jacobi, ILU0 };
+// Conservative nonlinear correction limiting for backward Euler. Bounds include
+// previous values, prescribed inflow/value data, source, loss and Neumann flux.
+// Unrestricted retains the original nonorthogonal diffusion/reconstruction.
+enum class ScalarFluxCorrection2D { Unrestricted, Bounded };
 struct ScalarBoundary2D {
     ScalarBoundaryKind2D kind = ScalarBoundaryKind2D::Value;
     // Value: scalar at face. DiffusiveFlux: outward -D grad(s).n per unit length.
@@ -63,6 +67,7 @@ struct ScalarTransportControls2D {
     std::function<bool()> stopRequested;
     bool profile = false; // diagnostic only; no numerical effect
     ScalarPreconditioner2D preconditioner = ScalarPreconditioner2D::Jacobi;
+    ScalarFluxCorrection2D fluxCorrection = ScalarFluxCorrection2D::Unrestricted;
 };
 struct ScalarTransportIteration2D {
     std::size_t iteration = 0, linearIterations = 0;
@@ -96,6 +101,10 @@ struct ScalarTransportResult2D {
     double maxCarrierImbalance = 0, minValue = 0, maxValue = 0, maxCourant = 0;
     std::vector<double> sinkIntegrals;
     double sinkIntegral = 0;
+    // Final nonlinear operator diagnostics; empty bounds in unrestricted mode.
+    std::optional<double> lowerBound, upperBound;
+    double minimumFluxCorrection = 1, maxBoundViolation = 0;
+    std::size_t limitedFaces = 0;
 };
 // Conservative transport on a validated final mesh. No clipping or hidden sinks.
 // Empty previous means steady; otherwise backward Euler with dt>0. Callbacks are

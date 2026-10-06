@@ -11,6 +11,8 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
   if(normalized.resume&&!selected)throw new Error('没有可用的联合续算状态。');
   const boundary=thermalBoundaryCsv(mesh,normalized);
   if(selected) {
+    if(normalized.fluxCorrection!==(selected.metadata.request.fluxCorrection ?? 'unrestricted'))
+      throw new Error('联合续算必须保持温度通量修正。');
     for(const key of ['case','nu','speed','convection','outletBackflow','diffusivity','source','scalarConvection','boundaries'])
       if(JSON.stringify(normalized[key])!==JSON.stringify(selected.metadata.request[key]))
         throw new Error('联合续算必须保持工况、物性、温度源、边界和对流格式。');

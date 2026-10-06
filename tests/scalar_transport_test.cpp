@@ -66,11 +66,11 @@ TopologyMesh2D fromPolygons(const std::vector<Polygon2D>& polygons) {
     return result;
 }
 
-TopologyMesh2D grid(int nx, int ny, bool skew = false) {
+TopologyMesh2D grid(int nx, int ny, bool skew = false, double shear = .2) {
     auto point = [=](int i, int j) {
         const double x = static_cast<double>(i) / nx;
         const double y = static_cast<double>(j) / ny;
-        return Point2D{x + (skew ? .2 * y : 0.), y};
+        return Point2D{x + (skew ? shear * y : 0.), y};
     };
     std::vector<Polygon2D> polygons;
     for (int j = 0; j < ny; ++j) {
@@ -237,7 +237,7 @@ void manufacturedRefinement() {
     }
 }
 
-void transientSineTimeRefinement() {
+void transientSineTimeRefinement(bool bounded=false) {
     const auto mesh = fvGrid(16, 16);
     constexpr double diffusivity = .2;
     const auto exact = [](Point2D p, double time) {
@@ -251,13 +251,15 @@ void transientSineTimeRefinement() {
     problem.boundary = [](std::size_t, const Face&) { return valueBoundary(0.); };
     std::vector<double> previous;
     for (const auto& cell : mesh.cells) previous.push_back(exact(cell.centre, 0.));
+    ScalarTransportControls2D controls;
+    if(bounded)controls.fluxCorrection=ScalarFluxCorrection2D::Bounded;
     auto errorAt = [&](int steps) {
         const double finalTime = .5;
         const double dt = finalTime / static_cast<double>(steps);
         auto state = previous;
         ScalarTransportResult2D result;
         for (int step = 0; step < steps; ++step) {
-            result = solveScalarTransport2D(mesh, problem, {}, state, dt);
+            result = solveScalarTransport2D(mesh, problem, controls, state, dt);
             check(result.converged, "transient sine step converges");
             state = result.values;
         }
@@ -794,16 +796,138 @@ void variableFaceDiffusivityManufacturedSkewAffine() {
     check(std::abs(result.globalBalance) < 2e-8,
           "variable-D skew affine flux balance closes");
 }
+
+void boundedNonorthogonalHotStart() {
+    // The hot patch is aligned with neither diffusion stencil direction on
+    // this sheared mesh. An unrestricted deferred correction creates new extrema.
+    const auto mesh=makeFvMesh2D(grid(12,8,true,1.1));
+    ScalarTransportProblem2D p;p.diffusivity=.1;
+    p.volumeFlux.assign(mesh.faces.size(),0.);p.source=[](Point2D){return 0.;};
+    p.boundary=[](std::size_t,const Face& f){return valueBoundary(f.centre.y<.01 && f.centre.x<.5?301.:300.);};
+    const std::vector<double> previous(mesh.cells.size(),300.);
+    ScalarTransportControls2D c;c.maxCorrections=2000;
+    const auto unrestricted=solveScalarTransport2D(mesh,p,c,previous,.01);
+    c.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+    const auto bounded=solveScalarTransport2D(mesh,p,c,previous,.01);
+    ScalarTransportWorkspace2D workspace;
+    const auto cached=solveScalarTransport2D(mesh,p,c,previous,.01,&workspace);
+    const auto reused=solveScalarTransport2D(mesh,p,c,previous,.01,&workspace);
+    check(cached.values==bounded.values && reused.diffusiveFlux==bounded.diffusiveFlux,
+          "bounded flux operator is identical with fresh and reused workspace");
+    std::cout<<"skew hot start: unrestricted="<<unrestricted.minValue<<" bounded="<<bounded.minValue
+             <<" limited="<<bounded.limitedFaces<<" iterations="<<bounded.history.size()<<'\n';
+    check(unrestricted.converged && unrestricted.minValue<300.-1e-4,
+          "minimal skew hot-start case reproduces unrestricted undershoot");
+    check(bounded.converged && bounded.minValue>=300.-c.cellTolerance && bounded.maxValue<=301.+c.cellTolerance,
+          "bounded nonorthogonal hot start converges inside data bounds");
+    check(bounded.limitedFaces>0 && bounded.minimumFluxCorrection<1,"limiter participates in repaired hot start");
+    check(std::abs(bounded.globalBalance)<1e-7,"bounded hot start conserves integrated heat");
+    const auto evaluated=evaluateScalarTransport2D(mesh,p,bounded.values,c,previous,.01);
+    check(evaluated.converged && evaluated.advectiveFlux==bounded.advectiveFlux && evaluated.diffusiveFlux==bounded.diffusiveFlux,
+          "bounded evaluation rebuilds the same constitutive operator and acceptance");
+    // Cooling is symmetric; limiting must not hide positive overshoot either.
+    p.boundary=[](std::size_t,const Face& f){return valueBoundary(f.centre.y<.01 && f.centre.x<.5?299.:300.);};
+    const auto cooling=solveScalarTransport2D(mesh,p,c,previous,.01);
+    check(cooling.converged && cooling.minValue>=299.-c.cellTolerance && cooling.maxValue<=300.+c.cellTolerance,
+          "bounded nonorthogonal cold start has no new extrema");
+    for(auto scheme:{ConvectionScheme2D::Upwind,ConvectionScheme2D::LimitedLinearUpwind}) {
+        c.convection=scheme;
+        for(std::size_t id=0;id<mesh.faces.size();++id)p.volumeFlux[id]=faceNormalFlux(mesh.faces[id],{.7,-.3});
+        p.faceDiffusivity.resize(mesh.faces.size());
+        for(std::size_t id=0;id<mesh.faces.size();++id)p.faceDiffusivity[id]=.1*(1+mesh.faces[id].centre.y);
+        auto state=previous;
+        for(int step=0;step<8;++step) {
+            const auto r=solveScalarTransport2D(mesh,p,c,state,.1);
+            check(r.converged && r.minValue>=299.-8*c.cellTolerance && r.maxValue<=300.+8*c.cellTolerance,
+                  "bounded transient front supports both advection schemes and variable face diffusion");
+            state=r.values;
+        }
+    }
+    c.maxCorrections=1;
+    const auto incomplete=solveScalarTransport2D(mesh,p,c,previous,.1);
+    check(!incomplete.converged,"bounded candidates still require nonlinear balance convergence");
+    rejects([&]{(void)solveScalarTransport2D(mesh,p,c);},"requires backward Euler history",
+            "bounded transient scheme rejects unsupported steady use explicitly");
+}
+
+void boundedAffineAndPhysicalSources() {
+    const auto mesh=makeFvMesh2D(grid(5,4,true,.7));
+    ScalarTransportProblem2D p;p.diffusivity=.7;p.volumeFlux.assign(mesh.faces.size(),0.);
+    p.source=[](Point2D){return 0.;};
+    const auto exact=[](Point2D x){return 300.+1.3*x.x-.6*x.y;};
+    p.boundary=[&](std::size_t,const Face& f) {
+        if(f.centre.x<.3 || f.centre.y>.8)return valueBoundary(exact(f.centre));
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,
+            -.7*(1.3*f.areaVector.x-.6*f.areaVector.y)/std::hypot(f.areaVector.x,f.areaVector.y),{}};
+    };
+    std::vector<double> previous;
+    for(const auto& cell:mesh.cells)previous.push_back(exact(cell.centre));
+    ScalarTransportControls2D c;c.fluxCorrection=ScalarFluxCorrection2D::Bounded;c.cellTolerance=1e-10;
+    for(double dt:{.0001,.1,10.}) {
+        const auto r=solveScalarTransport2D(mesh,p,c,previous,dt);
+        check(r.converged,"bounded affine mixed-boundary diffusion converges");
+        for(std::size_t i=0;i<previous.size();++i)check(std::abs(r.values[i]-previous[i])<5e-8,
+            "bounded flux correction preserves affine diffusion on a skew mesh");
+    }
+    p.boundary=[](std::size_t,const Face&){return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,0.,{}};};
+    previous.assign(mesh.cells.size(),3.);p.sinkRate.assign(mesh.cells.size(),.7);
+    for(double source:{2.,-2.}) {
+        p.source=[=](Point2D){return source;};
+        const auto r=solveScalarTransport2D(mesh,p,c,previous,10.);
+        const double expected=(3.+10.*source)/(1.+10.*.7);
+        check(r.converged,"bounded source/loss transient converges for signed scalar");
+        for(double value:r.values)check(std::abs(value-expected)<2e-8,"bounded scheme keeps actual implicit heat source and loss");
+        check(std::abs(r.globalBalance)<2e-8,"bounded source/loss budget closes");
+    }
+    // A prescribed inward flux genuinely heats above all old values. It must
+    // change the comparison bound and remain exactly the specified face flux.
+    const auto one=fvGrid(1,1);p.volumeFlux.assign(one.faces.size(),0.);p.sinkRate.clear();
+    p.source=[](Point2D){return 0.;};
+    p.boundary=[](std::size_t,const Face& f){return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,f.centre.x<.1?-2.:0.,{}};};
+    const auto heated=solveScalarTransport2D(one,p,c,{300.},.1);
+    check(heated.converged && std::abs(heated.values[0]-300.2)<2e-8,"prescribed inward heat flux may raise the old maximum");
+    for(std::size_t id=0;id<one.faces.size();++id)check(heated.diffusiveFlux[id]==(one.faces[id].centre.x<.1?-2.:0.),
+        "limiter never changes specified Neumann flux");
+}
+
+void boundedSmoothSpatialRefinement() {
+    // Smooth, time-independent manufactured solution on a sheared physical
+    // domain. One BE step from its sampled exact field isolates spatial error.
+    constexpr double shear=.6,pi=std::numbers::pi,D=.08;
+    const auto exact=[](Point2D p){return 300.+std::sin(pi*(p.x-shear*p.y))*std::sin(pi*p.y);};
+    std::vector<double> errors;
+    for(int n:{8,16,32}) {
+        const auto mesh=makeFvMesh2D(grid(n,n,true,shear));
+        ScalarTransportProblem2D p;p.diffusivity=D;p.volumeFlux.assign(mesh.faces.size(),0.);
+        p.source=[](Point2D x) {
+            const double a=pi*(x.x-shear*x.y),b=pi*x.y;
+            return D*pi*pi*((2+shear*shear)*std::sin(a)*std::sin(b)+2*shear*std::cos(a)*std::cos(b));
+        };
+        p.boundary=[&](std::size_t,const Face& f){return valueBoundary(exact(f.centre));};
+        std::vector<double> previous;for(const auto& cell:mesh.cells)previous.push_back(exact(cell.centre));
+        ScalarTransportControls2D c;c.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+        const auto r=solveScalarTransport2D(mesh,p,c,previous,.1);
+        check(r.converged,"bounded smooth skew diffusion converges");
+        double error=0.;for(std::size_t i=0;i<previous.size();++i)error+=mesh.cells[i].area*std::pow(r.values[i]-previous[i],2);
+        errors.push_back(std::sqrt(error));
+        std::cout<<"bounded smooth spatial "<<n<<": L2="<<errors.back()<<" limited="<<r.limitedFaces<<'\n';
+    }
+    check(errors[0]/errors[1]>3. && errors[1]/errors[2]>3.,"bounded smooth diffusion retains approximately second-order spatial refinement");
+}
+
 }
 
 int main() {
     try {
+        boundedNonorthogonalHotStart();
+        boundedAffineAndPhysicalSources();
+        boundedSmoothSpatialRefinement();
         affineMixedDiffusion();
         insulatingTransientSource();
         constantCarrierPreservesConstant();
         boundedUpwindFront();
         manufacturedRefinement();
-        transientSineTimeRefinement();
+        transientSineTimeRefinement();transientSineTimeRefinement(true);
         invalidInputs();
         uniformFaceDiffusivityIsIdentical();
         variableFaceDiffusivityConservesHarmonicInterface();

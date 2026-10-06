@@ -19,9 +19,10 @@ function validateThermalRequest(input) {
   // flow is configured at 1e-6. A smaller user tolerance also applies here.
   flow.tolerance = Math.min(flow.tolerance, 1e-8);
   const r = { ...flow, diffusivity:finite(input.diffusivity,'热扩散率'), initial:finite(input.initial,'初温'),
-    source:finite(input.source,'温度源'), scalarConvection:input.scalarConvection, boundaries:{} };
+    source:finite(input.source,'温度源'), scalarConvection:input.scalarConvection, fluxCorrection:input.fluxCorrection ?? 'unrestricted', boundaries:{} };
   requireValue(r.diffusivity>0 && r.initial>=0,'热扩散率须为正、初温不得低于 0 K。');
   requireValue(['upwind','limited-linear'].includes(r.scalarConvection),'未知温度对流格式。');
+  requireValue(['unrestricted','bounded'].includes(r.fluxCorrection),'未知温度通量修正。');
   for (const group of GROUPS) {
     const b=input.boundaries?.[group];
     requireValue(b && ['value','flux'].includes(b.kind),`${group} 边界类型无效。`);
@@ -66,7 +67,7 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
     '--flow-tolerance',String(r.tolerance),
     '--flow-convection',r.convection,'--pressure-preconditioner',r.pressurePreconditioner,'--outlet-backflow',r.outletBackflow,
     '--diffusivity',String(r.diffusivity),'--source',String(r.source),'--initial',String(r.initial),
-    '--convection',r.scalarConvection,'--dt',String(r.dt)];
+    '--convection',r.scalarConvection,'--flux-correction',r.fluxCorrection,'--dt',String(r.dt)];
   if(r.mode==='adaptive')args.push('--end-time',String(r.endTime),'--min-dt',String(r.minDt),
     '--max-courant',String(r.maxCourant),'--max-step-retries',String(r.maxRetries),'--max-time-steps',String(r.maxSteps),
     '--time-error',r.timeError?'on':'off','--temperature-scale',String(r.temperatureScale),
@@ -98,8 +99,9 @@ function thermalCheckpointTime(text) {
   // Native text streams use CRLF on Windows; line endings are not part of the
   // physical checkpoint identity. Keep the same version and field checks.
   text=text.replace(/\r\n/g,'\n');
-  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT [13]\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
-  if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 3'))requireValue(/^EVENTS 0$/m.test(text),'包含时间事件的状态须用原完整 CLI 配置续算。');
+  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT [134]\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
+  if(/^CARTMESH2D_THERMAL_CHECKPOINT [34]\n/.test(text))requireValue(/^EVENTS 0$/m.test(text),'包含时间事件的状态须用原完整 CLI 配置续算。');
+  if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'))requireValue(/^THERMAL_CONFIG \S+ (?:upwind|limited-linear) bounded$/m.test(text)&&/^CONTROLLER_PRESENT [01]$/m.test(text),'有界温度状态配置缺失。');
   const parts=text.split('\nFLOW\n');
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
   const m=parts[1].match(/^TIME (\S+)$/m);
@@ -116,6 +118,12 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   for(const [key,value] of Object.entries({...(r.mode==='adaptive'?{maximumTimeStep:r.dt}:{timeStep:r.dt}),diffusivity:r.diffusivity,flowNu:r.nu,flowSpeed:r.speed,constantSource:r.source,initialValue:r.initial}))requireValue(near(summary[key],value),`${key} 与请求不符。`);
   requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
     && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
+  requireValue((summary.fluxCorrection ?? 'unrestricted')===r.fluxCorrection,'温度通量修正与请求不符。');
+  if(r.fluxCorrection==='bounded') {
+    for(const key of ['lowerBound','upperBound','maxBoundViolation'])finite(summary[key],key);
+    requireValue(summary.lowerBound<=summary.upperBound&&summary.maxBoundViolation>=0&&summary.maxBoundViolation<=1e-9,'有界温度场未达停止条件。');
+    requireValue(jointText.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'),'联合状态未绑定有界温度格式。');
+  }
   requireValue(summary.flowTolerance===r.tolerance,'流动停止容差与请求不符。');
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');
   const adaptive=r.mode==='adaptive';

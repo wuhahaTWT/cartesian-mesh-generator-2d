@@ -123,7 +123,7 @@ test('thermal invocation rejects unsafe mesh and restart inputs and emits native
     '--evolve-flow', 'channel', '--flow-nu', '0.1', '--flow-speed', '1',
     '--flow-max-iterations', '100', '--flow-tolerance', '1e-8', '--flow-convection', 'limited-linear',
     '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--diffusivity', '0.1', '--source', '0',
-    '--initial', '0', '--convection', 'upwind', '--dt', '0.05', '--steps', '4'
+    '--initial', '0', '--convection', 'upwind', '--flux-correction', 'unrestricted', '--dt', '0.05', '--steps', '4'
   ]);
   const experimental = buildThermalInvocation('/tmp/final.solver.cm2d', '/tmp/run', '/tmp/boundary.csv', request({ outletBackflow: 'normal-inlet' }));
   assert.ok(experimental.args.includes('--outlet-backflow'));
@@ -263,5 +263,17 @@ test('thermal adaptive invocation carries joint CFL, error scales and budgets', 
 test('checkpointed controller metadata is accepted while event laws require full CLI setup',()=>{
   const record='CARTMESH2D_THERMAL_CHECKPOINT 3\nCOUPLING new-time-flux-Euler-v1\nCONTROLLER 0.01 0.6\nEVENTS 0\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.1\nFLUX 1 0\n';
   assert.equal(thermalCheckpointTime(record),.1);
+  assert.throws(()=>thermalCheckpointTime(record.replace('EVENTS 0','EVENTS 1')),/时间事件/);
+});
+
+
+test('bounded thermal method reaches native and versioned restart metadata',()=>{
+  assert.equal(validateThermalRequest(request()).fluxCorrection,'unrestricted');
+  assert.throws(()=>validateThermalRequest(request({fluxCorrection:'clipped'})),/通量修正/);
+  const invocation=buildThermalInvocation('/tmp/final.solver.cm2d','/tmp/out','/tmp/bc.csv',request({fluxCorrection:'bounded'}));
+  assert.equal(invocation.args[invocation.args.indexOf('--flux-correction')+1],'bounded');
+  const record='CARTMESH2D_THERMAL_CHECKPOINT 4\nCOUPLING new-time-flux-Euler-v1\nTHERMAL_CONFIG 0.1 upwind bounded\nCONTROLLER_PRESENT 0\nEVENTS 0\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.1\nFLUX 1 0\n';
+  assert.equal(thermalCheckpointTime(record),.1);
+  assert.throws(()=>thermalCheckpointTime(record.replace(' bounded',' clipped')),/有界温度/);
   assert.throws(()=>thermalCheckpointTime(record.replace('EVENTS 0','EVENTS 1')),/时间事件/);
 });

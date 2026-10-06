@@ -80,7 +80,7 @@ def execute(args):
     cmd=[args.transport_cli,'--mesh',mesh,'--output',prefix,'--evolve-flow','custom','--flow-boundary',flow,
          '--boundary',bc,'--flow-nu',args.nu,'--flow-speed',args.speed or ('1' if args.case=='channel' else '.2'),'--flow-velocity-relaxation',args.relaxation,
          '--diffusivity',args.diffusivity,'--initial','300','--dt',args.dt,'--end-time',args.end,
-         '--flow-max-iterations','1500','--flow-convection','limited-linear','--convection','limited-linear',
+         '--flow-max-iterations','1500','--flow-convection','limited-linear','--convection','limited-linear','--flux-correction',args.flux_correction,
          '--min-dt','0.000001','--max-courant',args.courant,'--max-step-retries',args.retries,'--time-error','on' if args.error else 'off',
          '--temperature-scale','1','--velocity-scale',args.speed or ('1' if args.case=='channel' else '.2'),'--time-rtol',args.rtol]
     if not args.no_events:cmd+=['--thermal-events',event]
@@ -121,6 +121,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mesh-cli',default='build/cartmesh2d_cli');p.add_argument('--transport-cli',default='build/cartmesh2d_transport_cli')
     p.add_argument('--case',choices=['channel','cavity','cylinder'],required=True);p.add_argument('--output',required=True)
     p.add_argument('--level',default='4');p.add_argument('--dt',default='.1');p.add_argument('--end',default='6');p.add_argument('--diffusivity',default='.1');p.add_argument('--nu',default='.1')
+    p.add_argument('--flux-correction',choices=['unrestricted','bounded'],default='unrestricted')
     p.add_argument('--speed');p.add_argument('--relaxation',default='.6');p.add_argument('--courant',default='1');p.add_argument('--retries',default='18');p.add_argument('--error',action='store_true');p.add_argument('--rtol',default='.01');p.add_argument('--no-events',action='store_true');p.add_argument('--restart');p.add_argument('--label',default='result')
     p.add_argument('--isolate-live-output',action='store_true',help='Compute in temporary outputs/, then import closed files with hashes; avoids live workspace snapshot replacement')
     args=p.parse_args()

@@ -1216,6 +1216,7 @@ function applyThermalRestartControls() {
     applySharedFlowControls(request);
     for (const [field, id] of Object.entries({ diffusivity:'thermalDiffusivity', initial:'thermalInitial', source:'thermalSource', scalarConvection:'thermalConvection' }))
       $(id).value = request[field];
+    $('thermalFluxCorrection').value=request.fluxCorrection ?? 'unrestricted';
     for (const patch of thermalPatches) {
       const boundary = request.boundaries[patch], id = thermalPatchId(patch);
       $(`${id}Kind`).value = boundary.kind; $(`${id}Value`).value = boundary.value; $(`${id}Inflow`).value = boundary.inflowValue;
@@ -1238,7 +1239,7 @@ function thermalRequest() {
     minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),
     timeError:$('thermalTimeError').checked,temperatureScale:Number($('thermalTemperatureScale').value),timeRtol:Number($('thermalTimeRtol').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
-    source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
+    source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, fluxCorrection:$('thermalFluxCorrection').value, boundaries };
 }
 function validThermalInputs() {
   if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
