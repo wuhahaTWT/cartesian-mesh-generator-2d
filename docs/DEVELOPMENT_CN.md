@@ -239,6 +239,24 @@ desktop/node_modules/.bin/electron desktop --smoke=rectangle --control=manual --
 
 真实 App 流程覆盖独立总压/总温、预算失败保留完整结果及最后接受状态、隐式续算、显式阶段保护、初始压力扰动和提前稳态。导出 README 与场图分别标明稳态停止要求和瞬态终点；`viscousWork`、`heatFlux`、`convectiveEnergy` 相加为实际总能量通量。截图/清单及最小窗口检查随 `--shot` 输出；实际已完成范围与缺口只维护在当前状态。
 
+### 完整可压圆环参考与误差定义
+
+原生 cartmesh2d_compressible_couette_benchmark 直接调用 EulerStepper2D 的 Corrected、HLLC 二阶和 SDIRK2/diagonal。验证参数为 Ri=1 m、Ro=2 m、γ=1.4、R=1 J/(kg K)、μ=.02 Pa s、Pr=.72、k=μcp/Pr，A=.3、B=.2，uθ=Ar+B/r。G=μB²/k，T=C ln(r)+D−G/r²，其中 C=(.2+G(1/4−1))/ln(2)，D=1+G；原生径向求积 p∝exp(∫uθ²/(RT r)dr) 满足向心压力平衡。总质量按 3π kg/m 指定。这些是量纲一致的验证参数，不是空气物性标定。
+
+真实每个弦段面的壁速先取面心圆周方向和对应半径的解析速率，再投影到该面的真实切向；壁温取 1/1.2 K。没有放松壁法向限制。折线顶点存在速度方向跳变，不能据此宣称精确光滑旋转圆壁。网格与轮廓须分别观察，轮廓对照同时改变切割图样，不作纯几何误差隔离。
+
+保守单元平均采用原生三角形 Gauss 求积，另保存质心点参考；mean primitive 由平均保守量转原始量，不是各原始量的体积平均。所有参考保守量先按真实多边形积分质量归一化，circlePressureScale 单列连续圆环所需乘数。8/4 阶空间与 16/8 阶压力求积差作敏感性指标，不是严格误差上界。
+
+    cmake --build build --target cartmesh2d_cli cartmesh2d_compressible_couette_benchmark --parallel 2
+    ctest --test-dir build -R '^cartmesh2d_compressible_couette_reference$' --output-on-failure
+    python3 tools/flow/run_compressible_couette.py --output outputs/couette-new --segments 64 --level 5 --initial exact --end 100 --dt .05 --budget 240
+
+新增目标首次需重新配置现有 build，保持测试开关开启和 Chemistry 关闭。输出目录必须全新；--initial rest 从静止、1.1 K 初态实际启动，--checkpoint PATH 从保守状态继续，保留输入、真实网格、边界、历史、面通量和原子检查点。到达时间上限但未稳态时标为 target-time-not-steady，失败保留最后接受态；退出码 0 不能单独充当稳态证明。
+
+三门连续十步满足才停止，率门为 1e−5/(1/√1.4) s⁻¹：原生残差按 ρ、ρc、ρE 归一化，场变化按各参考分量 max(1,|q|) 归一化，壁热/功变化用 .1 W/m、壁力矩变化用 .1 N 的参照尺度。它用于观察该人工参照的离散误差，不是通用物理验收门。原生 CTest 仅检验端温、Gauss 权重归一化和热/功恒等式的舍入误差，以及 h=1e−4 m 四阶差分下对数压力梯度的 1e−9 m⁻¹ 一致性要求；不运行完整稳态验证。
+
+内/外解析向外热量约 .1808727/−.1733329 W/m，机械功约 −.02513274/.01759292 W/m，黏性力矩约 −.05026548/+.05026548 N；净热加功为零。all-faces 输出实际共享通量；按单元质心汇总的角动量含内部通量力臂与壁面力臂修正，它不等于真实单元角动量积分。报告的空间调用数不含额外诊断残差调用；完整成本应保留这些诊断、装配、检查点及导出开销。半步稳态续算比较的是点误差范数变化，不是完整场差或瞬态时间收敛阶。
+
 ### 原生曲壁环域与圆柱空间研究
 
 构建 `cartmesh2d_curved_heat_benchmark`，使用 `tools/flow/run_curved_wall.py` 生成两个真实嵌套轮廓、原生共形 Cut-cell/Solver 拓扑。实验固定内/外半径 .5/1 m、壁温 2/2.2 K、k=.37 W/(m K)。耦合演化采用 γ=1.4、R=1 J/(kg K)、μ=.02 Pa s，从 ρ=1、p=2.1、u=v=0 的均匀初场推进；这是人工验证参数，不是空气推荐工况。
