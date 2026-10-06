@@ -129,7 +129,7 @@ g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-accuracy-probe.cpp
 outputs/cloud-laminar/accuracy-probe channel 64 1e-8 upwind default outputs/cloud-laminar/channel-upwind-64
 ```
 
-相同入口支持 `manufactured`（变形网格解析强迫涡）和 `cavity`（Re=100），格式为 `upwind` 或 `face-limited-linear`，方法为 `default` 或显式 `none`。原始 `accuracy-runs.json`、`accuracy-controls.json`、`cost-runs.json` 保留每次完整命令、进程退出状态和耗时；场、输入和日志在同目录。完成这些实际运行后执行 `python3 artifacts/current/native-laminar-accuracy-postprocess.py` 生成当前精度证据。压力为运动学压力，封闭流比较去除体积加权常数；速度/压力误差分别以 m/s 和 m²/s² 报告，不混成单个场误差。通道的参考为 `u=4y(1-y), v=0, p/ρ=8ν(4-x)`，方腔按真实中心网格和规定壁值双线性插值；圆环包含多边形几何误差，不因残差小而授予精度资格。
+相同入口支持 `manufactured`（变形网格解析强迫涡）和 `cavity`（Re=100），格式为 `upwind` 或 `face-limited-linear`，方法为 `default`、显式 `none` 或研究用显式 `anderson`。原始 `accuracy-runs.json`、`accuracy-controls.json`、`cost-runs.json` 保留每次完整命令、进程退出状态和耗时；场、输入和日志在同目录。完成这些实际运行后执行 `python3 artifacts/current/native-laminar-accuracy-postprocess.py` 生成当前精度证据。压力为运动学压力，封闭流比较去除体积加权常数；速度/压力误差分别以 m/s 和 m²/s² 报告，不混成单个场误差。通道的参考为 `u=4y(1-y), v=0, p/ρ=8ν(4-x)`，方腔按真实中心网格和规定壁值双线性插值；圆环包含多边形几何误差，不因残差小而授予精度资格。
 
 
 曲壁几何/空间联合细化由 `python3 artifacts/current/native-laminar-curve-study.py` 复现（可用 `--levels 4 5 6 7` 和 `--schemes upwind face-limited-linear`）。驱动生成独立参数化圆环输入，不修改原 1024 段 XY；按原 CLI 流程生成 Solver 网格、导出 annulus 边界，再以 `custom` 默认 Newton 求解。OpenFOAM 目标需提供目录：传 `-` 只构造源网格，不产生 `.solver.cm2d`；`--case annulus` 仅用于导出边界。首次驱动误用这两个入口造成的失败记录保留，修正后实际八次求解通过。`outputs/cloud-laminar/curve-joint-refinement.json` 记录网格、边界和完整求解成本；超时显式记失败，不能宣称该档完成。误差相对圆形解析解，含多边形几何/壁速差异；全域 RMS 与最大值同时报告，固定 `.6≤r≤.9 m` 内域指标只是定位工具，不能删去近壁误差。
@@ -240,6 +240,17 @@ python3 artifacts/current/native-laminar-fixed-cylinder-pressure.py --skip-runs
 固定圆柱的分支复核由 `native-laminar-external-boundary.cpp` 按产品 external 规则把最终 716 条边界原子面写成 custom 配置；同一平坦初值的 custom 与 external cells/faces/residuals 三份数组逐字节相同。这样可在不修改公开预设接口的情况下调用 custom-only `momentum-inertia=0` Stokes，并把其单元场作为原生 `--initial-guess`。一步 Stokes 初值最终仍产生压力/黏性载荷大数抵消，只是落到不同支路。随后保持目标 Re=20 方程和所有门槛不变，用 `ν=1,.5,.2,.1 m²/s` 的已收敛单元场依次作为下一档初值；中档四阶段完整评估为 `715+509+618+473=2315`，终点得到 `max|U|/Uref=1.16451`、压力范围比 `1.79746`、总阻力 `2.06416` 的有界场。粗网格同一路径终点与直接解的 `u/v/p` 最大差小于 `5.7e-9`，但这仍只是两网格分支证据，尚未证明任意不利网格上的唯一性或默认成本合理。
 
 缩短路径复用同一原生 CLI 和同一 `1e-8` 严格门，只改变前一级已接受场。平坦启动 `.2→.1` 的两级均严格收敛，却保留高幅值支路，总成本 `680+467=1147`；平坦启动 `.5→.1` 和 `1→.1` 分别以 `735+762=1497`、`715+772=1487` 次回到四级路径的同一有界终点。后者是当前最低已验证有界成本，比四级少 `35.8%`，但仍为直接异常解成本的 `1.42` 倍。正常粗网格的 `1→.1` 为 `275+262=537` 次，终点与直接解的全单元面积加权速度 RMS 差 `1.15e-9 Uref`、去规范压力 RMS 差 `1.99e-10 Uref²`。后处理的 `normalized_field_distance` 使用所有单元面积权重，压力差仅移除全域面积均值以消除不可压规范；不删格，也不以该差值决定哪条支路正确。生成初值 CSV 时保留目标网格逐行 `cell,x,y,u,v,p`，不作空间插值。
+
+引导成本对照另采用不依赖案例幅值的容差关系：`νguide=10νtarget`，`tolguide=sqrt(toltarget)`，终档仍使用未经放宽的目标方程和目标容差。`toltarget=1e-8` 时，中档反例的两级成本由严格引导的 1,487 次降到 `459+823=1,282`，正常粗档由 537 次降到 `155+263=418`；反例终点相对严格引导终点的全场速度 RMS/最大向量差为 `1.15e-8/5.63e-7 Uref`，去规范压力 RMS/最大差为 `7.00e-9/1.59e-5 Uref²`。产品默认 `toltarget=1e-6` 另做独立真实运行：反例平坦直解 792 次仍落在高幅值支路，引导 `398` 次加终档 `606` 次回到有界支路，总成本为直解的 `1.268` 倍；正常粗档直解 204 次，引导加终档 `127+178=305` 次，两个终点的速度 RMS 差 `1.62e-7 Uref`、去规范压力 RMS 差 `2.47e-8 Uref²`。这组平方根关系只减少探针成本，不构成物理解选择原理；当前不接入 API/CLI 或默认，也不把幅值诊断升级为拒绝阈值。原始命令输出、四类场文件哈希和所有规范不变差异由同一 `native-laminar-branch-continuation.py` v4 生成。
+
+独立算法交叉检查保持目标方程、网格和全部最终严格门不变，只把显式稳态加速器切换为既有 Anderson。正常 4,716 格圆柱直接运行 276 次，与 Newton 场的速度/去规范压力面积 RMS 差为 `1.30e-8 Uref/1.76e-9 Uref²`；直通道 64 档和 Re=100 方腔 64 档分别用下列命令运行 123/1,145 次，并与 Newton 场保持约 `1e-6` 或更小的全场差异：
+
+```sh
+outputs/cloud-laminar/accuracy-probe-anderson channel 64 1e-8 face-limited-linear anderson outputs/cloud-laminar/channel-face-limited-linear-64-anderson
+outputs/cloud-laminar/accuracy-probe-anderson cavity 64 1e-8 face-limited-linear anderson outputs/cloud-laminar/cavity-face-limited-linear-64-anderson
+```
+
+同一 17,260 格反例从平坦场启动 Anderson 则在 490 次后达到速度/压力范围比 `5.928/291.78`；从有界 `ν=1` 场启动也在 1,372 次后进入 `1.391/60.69` 的另一载荷抵消支路。平坦 Newton 与 Anderson 的全场速度 RMS 差为 `2.84e-2 Uref`，去规范压力 RMS 差为 `7.78e-2 Uref²`；两者合计 1,539 次，仍不能恢复或裁决有界支路。`native-laminar-branch-continuation.py` 对所有比较保留全单元面积权重和去规范压力差，并记录原始场哈希。该交叉检查只能生成“独立算法显著不一致”的分支风险证据，不能把任一路径静默指定为物理解。
 
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 

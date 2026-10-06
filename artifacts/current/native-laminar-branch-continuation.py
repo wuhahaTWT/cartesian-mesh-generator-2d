@@ -34,6 +34,7 @@ def summary(name: str, prefix: str) -> dict:
     raw = json.loads(path.read_text())
     keys = (
         "case", "status", "cells", "iterations", "coupledEvaluations", "nu",
+        "tolerance",
         "momentumInertia", "globalRelativeImbalance", "maximumSpeedRatio",
         "pressureRangeRatio", "wallForceX", "pressureForceX", "wallViscousForceX",
     )
@@ -211,6 +212,40 @@ grid1_anderson_from_nu1 = summary(
     "grid1-anderson-from-nu-1", "far-20-fixed128-grid1-anderson-from-nu1"
 )
 grid0_anderson = summary("grid0-anderson-flat", "far-20-fixed128-grid0-anderson-flat")
+grid1_relaxed_guide_strict = summary(
+    "grid1-nu-1-guide-tol-1e-4", "far-20-fixed128-grid1-guide-nu1-tol1e4"
+)
+grid1_relaxed_target_strict = summary(
+    "grid1-nu-0.1-target-tol-1e-8-from-guide-tol-1e-4",
+    "far-20-fixed128-grid1-target-from-guide-tol1e4",
+)
+grid0_relaxed_guide_strict = summary(
+    "grid0-nu-1-guide-tol-1e-4", "far-20-fixed128-grid0-guide-nu1-tol1e4"
+)
+grid0_relaxed_target_strict = summary(
+    "grid0-nu-0.1-target-tol-1e-8-from-guide-tol-1e-4",
+    "far-20-fixed128-grid0-target-from-guide-tol1e4",
+)
+grid1_default_direct = summary(
+    "grid1-direct-target-tol-1e-6", "far-20-fixed128-grid1-direct-tol1e6"
+)
+grid1_default_guide = summary(
+    "grid1-nu-1-guide-tol-1e-3", "far-20-fixed128-grid1-guide-nu1-tol1e3"
+)
+grid1_default_target = summary(
+    "grid1-nu-0.1-target-tol-1e-6-from-guide-tol-1e-3",
+    "far-20-fixed128-grid1-target-from-guide-tol1e3-to1e6",
+)
+grid0_default_direct = summary(
+    "grid0-direct-target-tol-1e-6", "far-20-fixed128-grid0-direct-tol1e6"
+)
+grid0_default_guide = summary(
+    "grid0-nu-1-guide-tol-1e-3", "far-20-fixed128-grid0-guide-nu1-tol1e3"
+)
+grid0_default_target = summary(
+    "grid0-nu-0.1-target-tol-1e-6-from-guide-tol-1e-3",
+    "far-20-fixed128-grid0-target-from-guide-tol1e3-to1e6",
+)
 channel_default = accuracy_summary("channel-face-limited-linear-64")
 channel_anderson = accuracy_summary("channel-face-limited-linear-64-anderson")
 cavity_default = accuracy_summary("cavity-face-limited-linear-64")
@@ -230,7 +265,7 @@ nu1_two_stage_cost = grid1_stages[0]["coupledEvaluations"] + grid1_short_from_nu
 nu05_two_stage_cost = grid1_short_nu05["coupledEvaluations"] + grid1_short_from_nu05["coupledEvaluations"]
 nu02_two_stage_cost = grid1_short_nu02["coupledEvaluations"] + grid1_short_from_nu02["coupledEvaluations"]
 evidence = {
-    "schema": "cartmesh2d.native-laminar-branch-continuation.v3",
+    "schema": "cartmesh2d.native-laminar-branch-continuation.v4",
     "scope": (
         "Native fixed-geometry Re=20 cylinder branch selection and geometry-only "
         "quadratic consistency; no cells omitted and no product acceptance threshold added."
@@ -386,6 +421,96 @@ evidence = {
             "Agreement on three normal controls and disagreement on the retained counterexample "
             "supports an explicit branch-risk certificate. It does not identify which converged "
             "branch is physical, so no automatic acceptance, fallback, or default change is made."
+        ),
+    },
+    "relaxedGuideCertificate": {
+        "method": (
+            "Solve a guide equation at ten times the target kinematic viscosity with guide "
+            "tolerance equal to the square root of the final target tolerance, then solve the "
+            "unchanged target equation to its original tolerance. The guide is an independent "
+            "branch-risk probe and is never reported as the accepted target field."
+        ),
+        "strictResearchTolerance": {
+            "targetTolerance": 1.0e-8,
+            "guideTolerance": 1.0e-4,
+            "badGrid": {
+                "stages": [grid1_relaxed_guide_strict, grid1_relaxed_target_strict],
+                "totalCoupledEvaluations": (
+                    grid1_relaxed_guide_strict["coupledEvaluations"]
+                    + grid1_relaxed_target_strict["coupledEvaluations"]
+                ),
+                "strictGuideTotalCoupledEvaluations": nu1_two_stage_cost,
+                "costReductionRelativeToStrictGuide": 1.0 - (
+                    grid1_relaxed_guide_strict["coupledEvaluations"]
+                    + grid1_relaxed_target_strict["coupledEvaluations"]
+                ) / nu1_two_stage_cost,
+                "finalDistanceToStrictGuideTarget": normalized_field_distance(
+                    "far-20-fixed128-grid1-target-from-guide-tol1e4",
+                    "far-20-fixed128-grid1-short-nu01-from-nu1",
+                ),
+            },
+            "normalGrid": {
+                "stages": [grid0_relaxed_guide_strict, grid0_relaxed_target_strict],
+                "totalCoupledEvaluations": (
+                    grid0_relaxed_guide_strict["coupledEvaluations"]
+                    + grid0_relaxed_target_strict["coupledEvaluations"]
+                ),
+                "strictGuideTotalCoupledEvaluations": (
+                    grid0_stages[0]["coupledEvaluations"]
+                    + grid0_short_from_nu1["coupledEvaluations"]
+                ),
+                "finalDistanceToDirect": normalized_field_distance(
+                    "far-20-fixed128-grid0-target-from-guide-tol1e4",
+                    "far-20-fixed128-grid0-face-limited-linear",
+                ),
+            },
+        },
+        "productDefaultTolerance": {
+            "targetTolerance": 1.0e-6,
+            "guideTolerance": 1.0e-3,
+            "badGrid": {
+                "direct": grid1_default_direct,
+                "stages": [grid1_default_guide, grid1_default_target],
+                "guideAndTargetCoupledEvaluations": (
+                    grid1_default_guide["coupledEvaluations"]
+                    + grid1_default_target["coupledEvaluations"]
+                ),
+                "costRatioToDirect": (
+                    grid1_default_guide["coupledEvaluations"]
+                    + grid1_default_target["coupledEvaluations"]
+                ) / grid1_default_direct["coupledEvaluations"],
+                "directVersusGuidedDistance": normalized_field_distance(
+                    "far-20-fixed128-grid1-direct-tol1e6",
+                    "far-20-fixed128-grid1-target-from-guide-tol1e3-to1e6",
+                ),
+                "guidedDistanceToStrictBoundedTarget": normalized_field_distance(
+                    "far-20-fixed128-grid1-target-from-guide-tol1e3-to1e6",
+                    "far-20-fixed128-grid1-short-nu01-from-nu1",
+                ),
+            },
+            "normalGrid": {
+                "direct": grid0_default_direct,
+                "stages": [grid0_default_guide, grid0_default_target],
+                "guideAndTargetCoupledEvaluations": (
+                    grid0_default_guide["coupledEvaluations"]
+                    + grid0_default_target["coupledEvaluations"]
+                ),
+                "costRatioToDirect": (
+                    grid0_default_guide["coupledEvaluations"]
+                    + grid0_default_target["coupledEvaluations"]
+                ) / grid0_default_direct["coupledEvaluations"],
+                "directVersusGuidedDistance": normalized_field_distance(
+                    "far-20-fixed128-grid0-direct-tol1e6",
+                    "far-20-fixed128-grid0-target-from-guide-tol1e3-to1e6",
+                ),
+            },
+        },
+        "qualification": (
+            "The square-root guide tolerance reduces certificate cost and exposes the retained "
+            "bad mesh at the product default tolerance, while the neighboring normal mesh remains "
+            "on the same branch. Certificate overhead is still 26.8% on the bad mesh and 49.5% "
+            "on the normal mesh, and internal/closed-flow coverage is not yet available. This is "
+            "insufficient for an automatic default, fallback, or physical branch-selection rule."
         ),
     },
     "adjacentAndTopologyControls": {

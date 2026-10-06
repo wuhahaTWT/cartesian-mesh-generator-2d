@@ -102,6 +102,7 @@
         ".residuals.csv": "759676eaa8c191f9e053e00140e338db9e91f4215a507a9f9adf4db4032cd3e2"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.058872062552532,
       "wallViscousForceX": 0.829570985876897
     },
@@ -125,6 +126,7 @@
         ".residuals.csv": "6379762e8836be04104063acc1dd30444fbc8adb41ae00e54d4e82648a22fc2f"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.0621318915347593,
       "wallViscousForceX": 0.8276230235708651
     },
@@ -248,6 +250,7 @@
           ".residuals.csv": "2559d5fc3345e3a59c3822799555189ae03cfef5119963efd48ad42781bbab18"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 7.203839482253143,
         "wallViscousForceX": 3.5988186964992424
       },
@@ -271,6 +274,7 @@
           ".residuals.csv": "58c1dc3f9ae227fcba557c5ee0bbba80da053c44691917ae5001351abba96a31"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 4.704355736148031,
         "wallViscousForceX": 2.2763834975690096
       },
@@ -294,6 +298,7 @@
           ".residuals.csv": "708228ea2f360333a2252147af88716dfaa674701837a0e44e32f90aee762433"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.8694283279388615,
         "wallViscousForceX": 1.2797727403238628
       },
@@ -317,6 +322,7 @@
           ".residuals.csv": "81c33bb849879aedf902e6b9efdb25a4132b2d82825891a1e7ca53d1f4243f39"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.073428604077489,
         "wallViscousForceX": 0.8320615522604049
       }
@@ -341,6 +347,7 @@
         ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.0734286072758974,
       "wallViscousForceX": 0.8320615546101826
     },
@@ -379,6 +386,7 @@
             ".residuals.csv": "2559d5fc3345e3a59c3822799555189ae03cfef5119963efd48ad42781bbab18"
           },
           "status": "converged",
+          "tolerance": 1e-08,
           "wallForceX": 7.203839482253143,
           "wallViscousForceX": 3.5988186964992424
         },
@@ -402,6 +410,7 @@
             ".residuals.csv": "7377dbac625c48f6a80fde2b2faa2bfd4490ebdf780209a715410f7c7563d480"
           },
           "status": "converged",
+          "tolerance": 1e-08,
           "wallForceX": 2.073428603023928,
           "wallViscousForceX": 0.8320615513549682
         }
@@ -435,6 +444,7 @@
         ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.007087571876749,
       "wallViscousForceX": 15.263727156103158
     },
@@ -458,6 +468,7 @@
         ".residuals.csv": "15f340d0fb5bbcdd3fdeecd76ede7c25511c5c0057c9070a8430412841bf6125"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 0.41177380389378654,
       "wallViscousForceX": 0.22916205389038588
     },
@@ -481,6 +492,7 @@
         ".residuals.csv": "152516ed5208655be2e8867ab690bd449bea97c4089e2fb885f32ef779b0708e"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.0448071639880405,
       "wallViscousForceX": -1.995789000738583
     },
@@ -504,6 +516,7 @@
         ".residuals.csv": "4fc8c7cbc4a7efb38afa1969558fc718d3d58820ce9f544f21ae09838ba5c983"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 7.20415131762801,
       "wallViscousForceX": 3.902757375873268
     },
@@ -527,6 +540,7 @@
         ".residuals.csv": "6ef791484d0db39f55c55d85393d29ba5e611b4ae4dc2f3097b29d2ad63e1a04"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 4.702304364238886,
       "wallViscousForceX": 2.4707159235885636
     },
@@ -550,6 +564,7 @@
         ".residuals.csv": "5507dd74684f6c590f7dca20369cd27126a60dad02bafac56766160711c7e799"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.8651912937764656,
       "wallViscousForceX": 1.3918059517090158
     },
@@ -573,6 +588,7 @@
         ".residuals.csv": "d6f559c4200ba202103b00a66d324e4e63553ca5042c3bd7c690bd43cc2100b0"
       },
       "status": "converged",
+      "tolerance": 1e-08,
       "wallForceX": 2.0641631656349286,
       "wallViscousForceX": 0.9061491403613694
     }
@@ -628,6 +644,7 @@
               ".residuals.csv": "fae1bdc92620f8e6fbee0067d46470bca144ede14af44d2f7315e5e1ab5d559d"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 2.5977592846284616,
             "wallViscousForceX": 0.9036339455968267
           },
@@ -651,6 +668,7 @@
               ".residuals.csv": "f908ed913a277e0822d7d26d7e3aa65924338b9391efbed622ade23bb28f8776"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 1.9655306460459165,
             "wallViscousForceX": 0.5829978896589919
           }
@@ -691,6 +709,7 @@
               ".residuals.csv": "15fb1802c700144e811e2492683b7df9feac3bd98e00754d65a3b61b963af572"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 4.702304364359777,
             "wallViscousForceX": 2.4707159205314753
           },
@@ -714,6 +733,7 @@
               ".residuals.csv": "89491020d6a2bca771cc8050e54de1ead70bada4f263dcc222772014130a69df"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 2.06416316611448,
             "wallViscousForceX": 0.9061491384803151
           }
@@ -754,6 +774,7 @@
               ".residuals.csv": "4fc8c7cbc4a7efb38afa1969558fc718d3d58820ce9f544f21ae09838ba5c983"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 7.20415131762801,
             "wallViscousForceX": 3.902757375873268
           },
@@ -777,6 +798,7 @@
               ".residuals.csv": "851ce6a0e971f6f369d524c44cf6441b07b9894077979077efc37d33176e4a1f"
             },
             "status": "converged",
+            "tolerance": 1e-08,
             "wallForceX": 2.064163164521694,
             "wallViscousForceX": 0.9061491412689219
           }
@@ -812,6 +834,7 @@
           ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.007087571876749,
         "wallViscousForceX": 15.263727156103158
       },
@@ -837,6 +860,7 @@
           ".residuals.csv": "5946a58caa29b938416792e5b04646d17e8ceb02d485b93ccc9a53c9add7ac81"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.3503187164670853,
         "wallViscousForceX": 20.168890444718766
       },
@@ -867,6 +891,7 @@
           ".residuals.csv": "e12ea1d7f8cccf18c42129c5bf7ffe27c8520d7f57e34421c581d68031c26869"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 1.9750786136525331,
         "wallViscousForceX": 2.644766317292859
       },
@@ -951,6 +976,7 @@
           ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.0734286072758974,
         "wallViscousForceX": 0.8320615546101826
       },
@@ -982,6 +1008,7 @@
           ".residuals.csv": "92e1324f5b3af442d9da4d91d72fde5f3826fd9eb7d45fecb3d30effbbdba84d"
         },
         "status": "converged",
+        "tolerance": 1e-08,
         "wallForceX": 2.0734285743837813,
         "wallViscousForceX": 0.8320615293424385
       }
@@ -1058,6 +1085,318 @@
     "qualityGateChanged": false,
     "relatedLinuxNativeTests": "3/3 passed: flow_boundary, solver_export, io"
   },
-  "schema": "cartmesh2d.native-laminar-branch-continuation.v3",
+  "relaxedGuideCertificate": {
+    "method": "Solve a guide equation at ten times the target kinematic viscosity with guide tolerance equal to the square root of the final target tolerance, then solve the unchanged target equation to its original tolerance. The guide is an independent branch-risk probe and is never reported as the accepted target field.",
+    "productDefaultTolerance": {
+      "badGrid": {
+        "costRatioToDirect": 1.2676767676767677,
+        "direct": {
+          "case": "custom",
+          "cells": 17260,
+          "coupledEvaluations": 792,
+          "globalRelativeImbalance": 3.1556058579193323e-14,
+          "iterations": 792,
+          "maximumSpeedRatio": 5.489758778977997,
+          "momentumInertia": 1,
+          "name": "grid1-direct-target-tol-1e-6",
+          "nu": 0.1,
+          "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-direct-tol1e6",
+          "pressureForceX": -13.256639947308127,
+          "pressureRangeRatio": 265.8513226234988,
+          "rawSha256": {
+            ".cells.csv": "1e2c4b019c7d396408fbf0934884e2fbb8f61c1d116b5e3aca03f39f433e2e79",
+            ".faces.csv": "509b88211148affa2ec50fd6cacf37a48fc0e31a691304cf224b91649b61decb",
+            ".json": "d990d350c9a6b28a8382926ba35a1c5abada2acd7d7c0c332b6998a049d1c58c",
+            ".residuals.csv": "34dae90149f23a87481ea71cbf19775edd62bb1c1cb20682c77fc9e2c35e3119"
+          },
+          "status": "converged",
+          "tolerance": 1e-06,
+          "wallForceX": 2.007087655881025,
+          "wallViscousForceX": 15.263727603189148
+        },
+        "directVersusGuidedDistance": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 181.81234106705156,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 5.462877130898331,
+          "pressureRmsOverReferenceSpeedSquared": 0.07033854038232235,
+          "velocityRmsOverReferenceSpeed": 0.01348441653954413
+        },
+        "guideAndTargetCoupledEvaluations": 1004,
+        "guidedDistanceToStrictBoundedTarget": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 1.5895573542544488e-05,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 5.63119387074196e-07,
+          "pressureRmsOverReferenceSpeedSquared": 6.996911842557596e-09,
+          "velocityRmsOverReferenceSpeed": 1.1516542135079902e-08
+        },
+        "stages": [
+          {
+            "case": "custom",
+            "cells": 17260,
+            "coupledEvaluations": 398,
+            "globalRelativeImbalance": 4.744172534495791e-15,
+            "iterations": 398,
+            "maximumSpeedRatio": 1.1032447009500321,
+            "momentumInertia": 1,
+            "name": "grid1-nu-1-guide-tol-1e-3",
+            "nu": 1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-guide-nu1-tol1e3",
+            "pressureForceX": 3.3021780635947775,
+            "pressureRangeRatio": 5.222825317870924,
+            "rawSha256": {
+              ".cells.csv": "27f0c4e683c2b4b9ca880e1fac0cd4b478cc7cd0f022f95f9cb7962104ebb902",
+              ".faces.csv": "4e7d8a6884cec283fa5bd60afbcac92932c4748f5901ce8cc56d353a75c4b602",
+              ".json": "2d54ac3bfec0704f7c31cce4b789d6f777770376bd956a390f45fe611877a009",
+              ".residuals.csv": "6874c46b75eaab14f3a35d04a78beaf1de7efbc8674cea7cc1979c797fc1e3b8"
+            },
+            "status": "converged",
+            "tolerance": 0.001,
+            "wallForceX": 7.204543276701182,
+            "wallViscousForceX": 3.9023652131064113
+          },
+          {
+            "case": "custom",
+            "cells": 17260,
+            "coupledEvaluations": 606,
+            "globalRelativeImbalance": 3.5284783225312444e-14,
+            "iterations": 606,
+            "maximumSpeedRatio": 1.164509679812056,
+            "momentumInertia": 1,
+            "name": "grid1-nu-0.1-target-tol-1e-6-from-guide-tol-1e-3",
+            "nu": 0.1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-target-from-guide-tol1e3-to1e6",
+            "pressureForceX": 1.1580154616843619,
+            "pressureRangeRatio": 1.7974611850051085,
+            "rawSha256": {
+              ".cells.csv": "e4e0939fdbfee2ce7fb9a039fd28fe593ff763f9c12951a813cc230f86b4267e",
+              ".faces.csv": "c3f5bd43bf8897a1b06a08fb93d5a18fe5275eaf683b6c9dc68cba58847b6ade",
+              ".json": "a7fd0330f040c4e67646630c0d89d485703a6c6b247740b1a8697403f7990408",
+              ".residuals.csv": "8b21e9011de4182756eba40c101ca0c43b8286ef7ff1f1ea8df86b3404f69e6d"
+            },
+            "status": "converged",
+            "tolerance": 1e-06,
+            "wallForceX": 2.064163139300794,
+            "wallViscousForceX": 0.9061476776164324
+          }
+        ]
+      },
+      "guideTolerance": 0.001,
+      "normalGrid": {
+        "costRatioToDirect": 1.4950980392156863,
+        "direct": {
+          "case": "custom",
+          "cells": 4716,
+          "coupledEvaluations": 204,
+          "globalRelativeImbalance": 2.059328317627882e-14,
+          "iterations": 204,
+          "maximumSpeedRatio": 1.1622711179016707,
+          "momentumInertia": 1,
+          "name": "grid0-direct-target-tol-1e-6",
+          "nu": 0.1,
+          "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-direct-tol1e6",
+          "pressureForceX": 1.2413670941612494,
+          "pressureRangeRatio": 1.5320857550598381,
+          "rawSha256": {
+            ".cells.csv": "fd0281829b5df71e0e3a85140bd0c1422277a9e9e907358391cd8fe9082c574b",
+            ".faces.csv": "10720672a6ceb5dd53c52071b0e3669039234309bfb86327b55e62bbdb843191",
+            ".json": "4fa5b9e6a7b2f12758310aac3a9268353b62636f57de0c49a4261449b67f1df4",
+            ".residuals.csv": "a17d4a9d7aa261d3c6e6649413b367269b830efcb5d1549f6773e2c938fc6ccb"
+          },
+          "status": "converged",
+          "tolerance": 1e-06,
+          "wallForceX": 2.073428696307675,
+          "wallViscousForceX": 0.8320616021464265
+        },
+        "directVersusGuidedDistance": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 4.86096841024063e-07,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 1.0529064480995401e-06,
+          "pressureRmsOverReferenceSpeedSquared": 2.4698553001854153e-08,
+          "velocityRmsOverReferenceSpeed": 1.619720735012855e-07
+        },
+        "guideAndTargetCoupledEvaluations": 305,
+        "stages": [
+          {
+            "case": "custom",
+            "cells": 4716,
+            "coupledEvaluations": 127,
+            "globalRelativeImbalance": 2.244816798571353e-15,
+            "iterations": 127,
+            "maximumSpeedRatio": 1.103340046176141,
+            "momentumInertia": 1,
+            "name": "grid0-nu-1-guide-tol-1e-3",
+            "nu": 1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-guide-nu1-tol1e3",
+            "pressureForceX": 3.6049255781794187,
+            "pressureRangeRatio": 3.890876904884459,
+            "rawSha256": {
+              ".cells.csv": "89f832ae68d8314aee80dafa0473d8c2a11118b1d1bb659b9e0c599ea32c1f21",
+              ".faces.csv": "70140d4db5b69761b22b4795e7fd34f9b9ef51c2b99f9129a9a72263e5581612",
+              ".json": "113917ed04dbea192e56a09de8599cce7bc7ac3059d51fcbecb9ad2db4c53bcc",
+              ".residuals.csv": "33570bf31f20e5d83812a0fba18b45cbd408b0cfa079aacb52284915853757b7"
+            },
+            "status": "converged",
+            "tolerance": 0.001,
+            "wallForceX": 7.203557420968794,
+            "wallViscousForceX": 3.5986318427893753
+          },
+          {
+            "case": "custom",
+            "cells": 4716,
+            "coupledEvaluations": 178,
+            "globalRelativeImbalance": 3.409197043909932e-15,
+            "iterations": 178,
+            "maximumSpeedRatio": 1.1622708763795144,
+            "momentumInertia": 1,
+            "name": "grid0-nu-0.1-target-tol-1e-6-from-guide-tol-1e-3",
+            "nu": 0.1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-target-from-guide-tol1e3-to1e6",
+            "pressureForceX": 1.2413669852640568,
+            "pressureRangeRatio": 1.532085089241434,
+            "rawSha256": {
+              ".cells.csv": "67a1f3a2d18bdebe35562a4fc21cbe270fcf4b44594f71a547ca54fd81d42abc",
+              ".faces.csv": "b836ecb615a29b1a914d8d3959133a811b6b7e0c4a251a1e4528a9bb9e3d4d88",
+              ".json": "dd088e5d17a992dc5534c8389c4b28cb29ce495f6e6c08dcc298c580a3f2aa15",
+              ".residuals.csv": "87af9db8126d671bcfe8dc64f194d78f2142b5938e7a4e6977fadf9dc26d4f0f"
+            },
+            "status": "converged",
+            "tolerance": 1e-06,
+            "wallForceX": 2.07342813360267,
+            "wallViscousForceX": 0.8320611483386138
+          }
+        ]
+      },
+      "targetTolerance": 1e-06
+    },
+    "qualification": "The square-root guide tolerance reduces certificate cost and exposes the retained bad mesh at the product default tolerance, while the neighboring normal mesh remains on the same branch. Certificate overhead is still 26.8% on the bad mesh and 49.5% on the normal mesh, and internal/closed-flow coverage is not yet available. This is insufficient for an automatic default, fallback, or physical branch-selection rule.",
+    "strictResearchTolerance": {
+      "badGrid": {
+        "costReductionRelativeToStrictGuide": 0.13786146603900473,
+        "finalDistanceToStrictGuideTarget": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 9.665922926027017e-08,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 3.364034126486969e-09,
+          "pressureRmsOverReferenceSpeedSquared": 3.401749512339368e-11,
+          "velocityRmsOverReferenceSpeed": 1.0780284542255193e-10
+        },
+        "stages": [
+          {
+            "case": "custom",
+            "cells": 17260,
+            "coupledEvaluations": 459,
+            "globalRelativeImbalance": 4.9594474868316445e-15,
+            "iterations": 459,
+            "maximumSpeedRatio": 1.103247144458917,
+            "momentumInertia": 1,
+            "name": "grid1-nu-1-guide-tol-1e-4",
+            "nu": 1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-guide-nu1-tol1e4",
+            "pressureForceX": 3.3013618308925476,
+            "pressureRangeRatio": 5.246157439417598,
+            "rawSha256": {
+              ".cells.csv": "1b68a5af63a305464e1a7d053da342f2bcaae84414b16ad2b231d682e47d8c83",
+              ".faces.csv": "645052aca2f949e32737d1508182934efdc27930a94b3d9c1a1bb94afc665c44",
+              ".json": "628315b27f8e78addbd3bda4f748c228f320653f69359359567cac60cd824ed6",
+              ".residuals.csv": "261425ff69d67ad2fd8c111e33e7b5aab1b4310ae4444e80701e3f39d7c8d9be"
+            },
+            "status": "converged",
+            "tolerance": 0.0001,
+            "wallForceX": 7.204196750506303,
+            "wallViscousForceX": 3.902834919613755
+          },
+          {
+            "case": "custom",
+            "cells": 17260,
+            "coupledEvaluations": 823,
+            "globalRelativeImbalance": 4.6290884404797686e-15,
+            "iterations": 823,
+            "maximumSpeedRatio": 1.1645096900158902,
+            "momentumInertia": 1,
+            "name": "grid1-nu-0.1-target-tol-1e-8-from-guide-tol-1e-4",
+            "nu": 0.1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-target-from-guide-tol1e4",
+            "pressureForceX": 1.1580140210291159,
+            "pressureRangeRatio": 1.7974588969541703,
+            "rawSha256": {
+              ".cells.csv": "32d4117af93a65d75e3309db8e9aafa43eb53b6b5a76771f12ad109db36cc9bf",
+              ".faces.csv": "84276106349329630bd22216a75e467897fa42b8f7647b05b443ce1e0d9045b6",
+              ".json": "bf4915b87dbeaa6a33a34819fb95304368e9c78ea5c8b94e9874fbd0df563173",
+              ".residuals.csv": "2b9ec187e75c1cd7ba353e2c2bb2c1f4185381ff261bb32b90938a809b2653df"
+            },
+            "status": "converged",
+            "tolerance": 1e-08,
+            "wallForceX": 2.064163164869807,
+            "wallViscousForceX": 0.9061491438406917
+          }
+        ],
+        "strictGuideTotalCoupledEvaluations": 1487,
+        "totalCoupledEvaluations": 1282
+      },
+      "guideTolerance": 0.0001,
+      "normalGrid": {
+        "finalDistanceToDirect": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 5.32474833043017e-09,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 8.628871156369332e-09,
+          "pressureRmsOverReferenceSpeedSquared": 2.2193226971312005e-10,
+          "velocityRmsOverReferenceSpeed": 1.3159911338632937e-09
+        },
+        "stages": [
+          {
+            "case": "custom",
+            "cells": 4716,
+            "coupledEvaluations": 155,
+            "globalRelativeImbalance": 5.014958638062902e-15,
+            "iterations": 155,
+            "maximumSpeedRatio": 1.1033413665411005,
+            "momentumInertia": 1,
+            "name": "grid0-nu-1-guide-tol-1e-4",
+            "nu": 1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-guide-nu1-tol1e4",
+            "pressureForceX": 3.6050113309254175,
+            "pressureRangeRatio": 3.8909984959439825,
+            "rawSha256": {
+              ".cells.csv": "1a792f62f926f4857db23582e020f36f682885b246cee8b5392434c775ce436f",
+              ".faces.csv": "f27cfe999006b30ef2f82a578b52c362b4a076e6c67b5038a03ff533904348e8",
+              ".json": "e2d900021f0997aca9af5e811fb514fb85bef72fae58da0fc7105c2addccfe87",
+              ".residuals.csv": "fbeb3625e3161a51f80644e189c7691444578da0ca84ba4cd7475a60311f37eb"
+            },
+            "status": "converged",
+            "tolerance": 0.0001,
+            "wallForceX": 7.20381200739251,
+            "wallViscousForceX": 3.598800676467095
+          },
+          {
+            "case": "custom",
+            "cells": 4716,
+            "coupledEvaluations": 263,
+            "globalRelativeImbalance": 3.7639268395828477e-16,
+            "iterations": 263,
+            "maximumSpeedRatio": 1.162271062380205,
+            "momentumInertia": 1,
+            "name": "grid0-nu-0.1-target-tol-1e-8-from-guide-tol-1e-4",
+            "nu": 0.1,
+            "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-target-from-guide-tol1e4",
+            "pressureForceX": 1.2413670510712476,
+            "pressureRangeRatio": 1.5320855900382624,
+            "rawSha256": {
+              ".cells.csv": "e6a9cc6a60b9a0b0636e36e6dd150b22ce1b66bf00e42383211ed04335056d8f",
+              ".faces.csv": "124b08259b73d42ff082d0eb0ef987730d6f9466ff08d6df6cc952ee158c32fb",
+              ".json": "729fbd6b9aa0f256ba06a4711e29faa8a56575ed35ff41de596d9ab85b403a82",
+              ".residuals.csv": "6f1b5cc038195bc1f970f58a0adb8b47299c2fc746cc3c39e6f03d22659cd231"
+            },
+            "status": "converged",
+            "tolerance": 1e-08,
+            "wallForceX": 2.0734286020865165,
+            "wallViscousForceX": 0.8320615510152694
+          }
+        ],
+        "strictGuideTotalCoupledEvaluations": 537,
+        "totalCoupledEvaluations": 418
+      },
+      "targetTolerance": 1e-08
+    }
+  },
+  "schema": "cartmesh2d.native-laminar-branch-continuation.v4",
   "scope": "Native fixed-geometry Re=20 cylinder branch selection and geometry-only quadratic consistency; no cells omitted and no product acceptance threshold added."
 }
