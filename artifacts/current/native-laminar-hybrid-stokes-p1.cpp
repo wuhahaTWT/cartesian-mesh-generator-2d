@@ -248,6 +248,7 @@ struct Local {
     }
 };
 
+#ifndef CARTMESH_HYBRID_STOKES_P1_NO_MAIN
 int main(int argc,char** argv)try {
     if(argc<4||argc>6)throw std::runtime_error("usage: probe square|sheared|cut|split|tip n problem [quadrature_order] [output_prefix]");
     const std::string name=argv[1],problem=argv[3],output=argc==6?argv[5]:"";const int resolution=std::stoi(argv[2]),order=argc>=5?std::stoi(argv[4]):8;
@@ -383,3 +384,4 @@ int main(int argc,char** argv)try {
     std::cout<<",\"seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+#endif
