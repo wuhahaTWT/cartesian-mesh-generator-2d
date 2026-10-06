@@ -390,6 +390,20 @@ outputs/laminar-stability/hybrid-stokes/probe outputs/laminar-stability/hybrid-s
 
 该目录参数可省略；提供时保存每次的原始单元/面 CSV。全部输入由原生多边形生成，通道制造解边界与单元量使用精确二次均值，压力只去全局加性规范；面积、实际面与原 Solver 门均保留。切割 8/12 档明确输出质量拒绝，其余求解错误直接非零退出。稠密部分主元消元的 1500 未知量限制仅控制研究成本，不是产品规模门；无新增精度阈值。JSON 中保存原始数值、单位、未验范围、源码与小型实际场归档哈希。当前原型尚未计算原 Re=20 圆柱/圆环，也未证明通道精度足够，不能自动接入默认。
 
+`native-laminar-hybrid-stokes-p1.cpp` 将研究空间提高到 P1 单元/面速度、P1 单元压力与 P2 势重构。弱梯度和散度都以真实面矩及单元矩积分；压力为同一散度的负转置。稳定项采用 `π_F¹(r-π_T¹r+u_T)-u_F`，沿用面长/单元直径缩放，故二次速度/一次压力保持一致性。一般体力仍是单元 L2 载荷，尚未实现完整 H(div) 重构；不要把本文献启发的 Stokes 原型称为完整压力鲁棒 Navier–Stokes。以下需已有原生库，输出前缀所在目录须存在：
+
+```sh
+mkdir -p outputs/laminar-stability/hybrid-stokes-p1
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
+  -I include artifacts/current/native-laminar-hybrid-stokes-p1.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate \
+  -o outputs/laminar-stability/hybrid-stokes-p1/probe
+outputs/laminar-stability/hybrid-stokes-p1/probe sheared 8 vortex 8 \
+  outputs/laminar-stability/hybrid-stokes-p1/sheared8-vortex-q8
+```
+
+CLI 依次接受 `square|sheared|cut|split|tip`、分辨率、`couette|rotation|hydrostatic|poiseuille|vortex`、积分阶次（可省略，默认 8）、输出前缀（可省略）。实际 37 次控制清单、单位、原始数值与归档哈希在 `native-laminar-hybrid-stokes-p1.json`。多边形积分使用有向边与重心扇形的带符号 Duffy 积分；未改变真实几何。压力 RMS 是全 P1 场去全域规范后的积分误差；压力最大值仅在积分点采样，不能当作壁面连续峰值。CSV 记录规范基函数所需的真实中心、直径和二阶矩。稠密 2600 未知量上限只控制研究成本；大网格需要稀疏求解和消元，尚未宣称适用。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh
