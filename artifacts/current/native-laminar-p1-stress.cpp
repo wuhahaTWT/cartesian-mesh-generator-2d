@@ -123,13 +123,14 @@ int main(int argc,char** argv)try{
     if(argc!=10)throw std::runtime_error("usage: p1-stress assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix");
     const std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[9];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double lambda=std::stod(argv[5]);bool lifted=std::string(argv[6])=="lift",symmetric=std::string(argv[7])=="symmetric";
     if((std::string(argv[6])!="lift"&&std::string(argv[6])!="cell")||(std::string(argv[7])!="symmetric"&&std::string(argv[7])!="laplace")||(mode!="assemble"&&mode!="recover")||order<4||order>12)throw std::runtime_error("invalid mode/order");
+    if((problem=="noslip"&&name!="square")||(problem=="noslip-sheared"&&name!="sheared"))throw std::runtime_error("stationary manufactured geometry mismatch");
     auto start=std::chrono::steady_clock::now();auto f=readFixture(name,n);const auto& mesh=f.mesh;
     if(problem=="cylinder")for(const auto& face:mesh.faces)if(!face.neighbour&&face.patch!=BoundaryPatch2D::DomainBoundary&&face.patch!=BoundaryPatch2D::EmbeddedBoundary)throw std::runtime_error("cylinder control requires explicit Domain/Embedded boundary patches");
     int nc=int(mesh.cells.size()),nf=int(mesh.faces.size()),raw=4*nf+nc,count=0;std::vector<int> map(raw,-1);Vec known(raw);
     for(int i=0;i<nf;++i)if(mesh.faces[i].neighbour)for(int j=0;j<4;++j)map[4*i+j]=count++;
     for(int i=0;i<nc-1;++i)map[4*nf+i]=count++;
     for(int i=0;i<nf;++i)if(!mesh.faces[i].neighbour){const auto& face=mesh.faces[i];for(auto [z,w]:gauss(order)){double s=z-.5;Point2D p{face.centre.x-face.areaVector.y*s,face.centre.y+face.areaVector.x*s};
-        Vector2D u;if(problem=="cylinder"){bool outer=face.patch==BoundaryPatch2D::DomainBoundary;u={outer?1.:0.,0};}else u=manufactured(p,problem,lambda).u;
+        Vector2D u;if(problem=="noslip"||problem=="noslip-sheared"){u={0,0};}else if(problem=="cylinder"){bool outer=face.patch==BoundaryPatch2D::DomainBoundary;u={outer?1.:0.,0};}else u=manufactured(p,problem,lambda).u;
         known[4*i]+=w*u.x;known[4*i+1]+=12*w*s*u.x;known[4*i+2]+=w*u.y;known[4*i+3]+=12*w*s*u.y;}}
     Vec solution;std::ofstream entries,rhsout,fields,faces;std::uint64_t nnz=0;Vec rhs(count);double trace=0,constraint=0,identity=0,symmetry=0,area=0,gauge=0,urms=0,prms=0,pmax=0,divmax=0,umax=0,pmin=1e300,pmaxfield=-1e300,work=0,energy=0,forceWork=0,internalResidual=0;Vec reaction(4*nf),stressTrace(4*nf);std::vector<Vec> states;
     if(mode=="assemble")entries.open(prefix+".entries",std::ios::binary);
