@@ -5,6 +5,7 @@
 #include <array>
 #include <string>
 #include <functional>
+#include <memory>
 
 namespace cartmesh2d::fv {
 
@@ -33,6 +34,9 @@ struct EulerState2D {
 enum class EulerFluxScheme2D { Rusanov, Hllc };
 enum class EulerTimeStepControl2D { Legacy, StageGuarded };
 enum class EulerTimeIntegrator2D { Explicit, Sdirk2 };
+// Optional research transport forms. HybridHeat keeps corrected viscous stress;
+// Hybrid also solves shared velocity traces. Neither changes the default.
+enum class EulerDiffusionScheme2D { Corrected, HybridHeat, Hybrid };
 struct EulerFaceFlux2D {
     EulerConservative2D integratedFlux{};
     double waveSpeed=0;
@@ -49,6 +53,7 @@ struct EulerStepControls2D {
     EulerFluxScheme2D fluxScheme=EulerFluxScheme2D::Rusanov;
     unsigned order=1; // 1: constant/forward Euler; 2: limited linear/SSPRK(2,2).
     WallGradient2D wallGradient=WallGradient2D::Linear;
+    EulerDiffusionScheme2D diffusionScheme=EulerDiffusionScheme2D::Corrected;
     // Optional exact integration horizon; splits the penultimate step if the
     // remaining tail would fall below minimumStep. No accepted clock snapping.
     std::optional<double> endTime;
@@ -73,6 +78,9 @@ struct EulerStepResult2D {
     std::vector<std::array<double,3>> faceViscousFlux;
     double thermalCourant=0,viscousCourant=0,combinedCourant=0,boundaryHeat=0,boundaryViscousWork=0;
     std::size_t heatNonMonotoneRows=0,quadraticHeatWalls=0,quadraticViscousWalls=0;
+    // The legacy row count is meaningful only when this is true. A hybrid
+    // Schur operator is nonlocal and has not been enumerated for this diagnostic.
+    bool heatMonotonicityAssessed=true;
     // Bits 0/1 identify HLLC fallback at the first/second RK stage. Periodic
     // partners share the mask, but evaluation counts include each pair once.
     std::vector<unsigned char> faceHllcFallbackStages;
@@ -114,22 +122,25 @@ void validateEulerBoundaries2D(const FvMesh2D&,const std::vector<EulerBoundary2D
 // A failed trial is retried with smaller dt, leaving the input untouched.
 [[nodiscard]] EulerStepResult2D advanceEuler2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,
     const IdealGas2D&,const EulerState2D&,const EulerStepControls2D&,const EulerTransport2D& = {});
-// A solver owns an immutable snapshot of mesh, physics and boundaries. Geometry
-// and the full thermal Jacobian are prepared once, then reused for every stage.
+// A solver owns an immutable snapshot of mesh, physics and boundaries. Local
+// transport geometry is reused; hybrid heat currently assembles and solves its
+// global face system on every residual evaluation, including Newton products.
+struct EulerDiffusionOperators2D;
 class EulerStepper2D {
 public:
-    EulerStepper2D(FvMesh2D,std::vector<EulerBoundary2D>,IdealGas2D = {},EulerTransport2D = {},WallGradient2D = WallGradient2D::Linear);
+    EulerStepper2D(FvMesh2D,std::vector<EulerBoundary2D>,IdealGas2D = {},EulerTransport2D = {},WallGradient2D = WallGradient2D::Linear,
+        EulerDiffusionScheme2D = EulerDiffusionScheme2D::Corrected);
     [[nodiscard]] EulerStepResult2D advance(const EulerState2D&,const EulerStepControls2D&) const;
     // Maximum |R/(V scale)|, in s^-1, scales rho, rho*c, rho*c, rho*E.
     [[nodiscard]] double residualRate(const EulerState2D&,const EulerStepControls2D&) const;
     [[nodiscard]] EulerResidualDiagnostics2D diagnostics(const EulerState2D&,const EulerStepControls2D&) const;
 private:
     WallGradient2D wallGradient_=WallGradient2D::Linear;
+    EulerDiffusionScheme2D diffusionScheme_=EulerDiffusionScheme2D::Corrected;
     FvMesh2D mesh_;
     std::vector<EulerBoundary2D> boundaries_;
     IdealGas2D gas_;
-    std::optional<HeatConductionOperator2D> heat_;
-    std::optional<ViscousStressOperator2D> viscous_;
+    std::shared_ptr<const EulerDiffusionOperators2D> diffusion_;
 };
 
 } // namespace cartmesh2d::fv

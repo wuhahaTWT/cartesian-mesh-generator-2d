@@ -307,6 +307,21 @@ HybridViscousOperator2D 以已有局部牵引矩阵联立面速度；矩阵和�
 
 全局黏性微型检查包含实际 trace 矩阵的对称性/小矩阵 Cholesky、仿射与刚体运动、共享通量机械功、任意单元场的互易性/能量上界、SI 缩放及非法边界。无量纲代数预算 65536 epsilon（约 1.46e−11）只用于这些微型规模及 2e−14 请求线性容差的装配/迭代累计误差，不是物理阈值。应力与功分别按 μU 和 μU² 加实际通量累积尺度归一化；绝对误差仍输出。首轮错误地用 1 加近零 SI 输出作尺度，在高 μ/U 的刚体转动下误报，修正测试量纲后算子不变；没有用放宽物理门解决它。
 
+### Euler 的 Hybrid 扩散研究控制
+
+在 EulerStepControls2D 中显式设置 diffusionScheme，并在 EulerStepper2D 构造函数的第六个参数传相同枚举。Corrected 保持原导热/黏性路径；HybridHeat 使用 HMM 导热加原黏性；Hybrid 同时使用共享面速度黏性。候选需要 wallGradient=Linear，表示采用自己的几何形式，不能叠加旧二次壁面重构。准备的求解器与推进/残差诊断的控制不一致会失败。
+
+这不是把标量 backward-Euler 拼接到流动之后。每一次原生 Euler 空间残差都用当前密度、温度和速度调用所选输运算子，将同一真实面热流、黏性动量通量和机械功加到完整守恒通量，沿用原显式或 SDIRK2 的阶段、非线性求解与通量终值。热的局部单元枢轴和黏性单元块给出冻结密度下的质量缩放谱上界；这一能量界不意味着点正性，接受候选仍逐阶段检查 EOS/密度/压力。
+
+HMM 热的非局部 Schur 行符号尚未逐行枚举，因此结果 heatMonotonicityAssessed=false，不能将旧 heatNonMonotoneRows=0 解释成没有非单调行。静态热 trace 每个残差均重新装配/求解；黏性 trace 保留固定矩阵和图，但仍需内层全局求解。Newton 的差分矩阵向量积也包含这些成本。当前内层请求相对容差 2e−14，未经大规模预处理或工程效率资格验证。周期热边界未实现、黏性每连通区域需给定速度锚定的限制仍适用。
+
+检查点绑定几何、物性和物理边界；数值控制由调用者显式选择。微型检查包含序列化后重建求解器的逐字节续算，以及失败候选不改写输入。原生 CLI/App 尚没有该研究控制选择，不据此声明交互使用已完成。
+
+    cmake --build build --parallel 4 --target cartmesh2d_euler_hybrid_tests cartmesh2d_euler_tests cartmesh2d_euler_cli
+    ctest --test-dir build -R '^cartmesh2d_(euler_hybrid|euler_core|compressible_cloud_cli)$' --output-on-failure
+
+新时间细化检查使用原有二阶观察门（阶数 >1.8），并要求独立半步参考差异小于细步误差的 0.3；对二阶且参考步为细步 1/4 时，理论差异比例约 0.2，用于排除参考过粗，不是物理误差百分比。既有 1e−12 单元守恒审计门保持，微型闭腔另按相对总能量检查；跨平台、实际曲壁空间误差和全流程同精度成本分别验收。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。

@@ -24,7 +24,8 @@ struct HybridViscousResult2D {
 // shift, artificial rotation damping, or silent boundary substitution is used.
 // Slip means zero normal trace velocity and zero tangential traction; open
 // boundaries mean zero traction. Translational periodic pairs are supported.
-// This class does not yet connect to the full compressible time integrator.
+// An optional Euler research control connects this to the conservative time
+// integrator; curved-flow accuracy and cost remain separate qualifications.
 class HybridViscousOperator2D {
 public:
     HybridViscousOperator2D(const FvMesh2D&,const std::vector<ViscousBoundary2D>&,

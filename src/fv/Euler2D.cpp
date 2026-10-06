@@ -1,4 +1,6 @@
 #include "cartmesh2d/fv/Euler2D.hpp"
+#include "cartmesh2d/fv/HybridHeat2D.hpp"
+#include "cartmesh2d/fv/HybridViscous2D.hpp"
 #include "cartmesh2d/fv/detail/EulerNewton2D.hpp"
 #include <algorithm>
 #include <cmath>
@@ -7,6 +9,14 @@
 #include <stdexcept>
 
 namespace cartmesh2d::fv {
+struct EulerDiffusionOperators2D {
+    std::optional<HeatConductionOperator2D> heat;
+    std::optional<ViscousStressOperator2D> viscous;
+    std::optional<HybridHeatOperator2D> hybridHeat;
+    std::optional<HybridViscousOperator2D> hybridViscous;
+    std::vector<double> heatCellStiffness;
+    [[nodiscard]] bool active() const{return heat||viscous||hybridHeat||hybridViscous;}
+};
 namespace {
 void require(bool valid,const std::string& message) { if(!valid)throw std::runtime_error("Euler: "+message); }
 double finite(double x) {require(std::isfinite(x),"non-finite arithmetic");return x;}
@@ -168,7 +178,8 @@ struct SpatialOperator {
     double minimumContactRestoration=1;
 };
 SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
-    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous) {
+    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const EulerDiffusionOperators2D& diffusion) {
+    const auto* heat=diffusion.heat?&*diffusion.heat:nullptr;const auto* viscous=diffusion.viscous?&*diffusion.viscous:nullptr;
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<EulerPrimitive2D> primitive;primitive.reserve(nc);
     for(const auto& u:cells)primitive.push_back(eulerPrimitive2D(u,gas));
@@ -328,6 +339,26 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
         for(std::size_t id=0;id<nf;++id)for(std::size_t k=0;k<3;++k)out.faceFlux[id][k+1]=finite(out.faceFlux[id][k+1]+out.viscousFlux[id][k]);
         for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<3;++k)out.residual[i][k+1]=finite(out.residual[i][k+1]+stress.cellResidual[i][k]);
     }
+    if(diffusion.hybridHeat) {
+        std::vector<double> temperatures(nc);
+        for(std::size_t i=0;i<nc;++i)temperatures[i]=primitive[i].pressure/(primitive[i].density*gas.gasConstant);
+        const auto conduction=diffusion.hybridHeat->evaluateAtCells(temperatures,2e-14);
+        out.heatFlux=conduction.faceHeatFlux;
+        for(std::size_t id=0;id<nf;++id)out.faceFlux[id][3]=finite(out.faceFlux[id][3]+out.heatFlux[id]);
+        for(std::size_t i=0;i<nc;++i) {
+            out.residual[i][3]=finite(out.residual[i][3]+conduction.cellResidual[i]);
+            const double capacity=primitive[i].density*gas.gasConstant/(gas.gamma-1);
+            out.heatRate[i]=finite(diffusion.heatCellStiffness[i]/(mesh.cells[i].area*capacity));
+        }
+    }
+    if(diffusion.hybridViscous) {
+        std::vector<Vector2D> velocity(nc);std::vector<double> density(nc);
+        for(std::size_t i=0;i<nc;++i){velocity[i]={primitive[i].u,primitive[i].v};density[i]=primitive[i].density;}
+        auto stress=diffusion.hybridViscous->evaluate(velocity,density,2e-14);
+        out.viscousFlux=std::move(stress.faceFlux);out.viscousRate=std::move(stress.rate);
+        for(std::size_t id=0;id<nf;++id)for(std::size_t k=0;k<3;++k)out.faceFlux[id][k+1]=finite(out.faceFlux[id][k+1]+out.viscousFlux[id][k]);
+        for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<3;++k)out.residual[i][k+1]=finite(out.residual[i][k+1]+stress.cellResidual[i][k]);
+    }
     return out;
 }
 bool positiveUpdate(const FvMesh2D& mesh,const std::vector<EulerConservative2D>& old,
@@ -349,7 +380,7 @@ struct ImplicitStage {std::vector<EulerConservative2D> cells;SpatialOperator op;
 ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
     const IdealGas2D& gas,const std::vector<EulerConservative2D>& base,
     const std::vector<EulerConservative2D>& guess,double h,const EulerStepControls2D& control,
-    const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous,EulerStepResult2D& work) {
+    const EulerDiffusionOperators2D& diffusion,EulerStepResult2D& work) {
     using namespace detail;const auto n=base.size();NewtonVector scale(4*n),x(4*n);
     for(std::size_t i=0;i<n;++i) {
         const auto p=eulerPrimitive2D(guess[i],gas);const double c=eulerSoundSpeed2D(p,gas);
@@ -360,7 +391,7 @@ ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBo
         if(control.interrupted&&control.interrupted())throw EulerInterrupted{};
         ImplicitStage s;s.cells.resize(n);
         for(std::size_t i=0;i<n;++i)for(std::size_t k=0;k<4;++k)s.cells[i][k]=y[4*i+k]*scale[4*i+k];
-        ++work.spatialEvaluations;s.op=spatialOperator(mesh,lookup,gas,s.cells,control,heat,viscous);return s;
+        ++work.spatialEvaluations;s.op=spatialOperator(mesh,lookup,gas,s.cells,control,diffusion);return s;
     };
     auto defect=[&](const ImplicitStage& s) {
         NewtonVector f(4*n);
@@ -414,7 +445,8 @@ ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBo
 }
 }
 static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
-    const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control,const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous) {
+    const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control,const EulerDiffusionOperators2D& diffusion) {
+    const auto* heat=diffusion.heat?&*diffusion.heat:nullptr;const auto* viscous=diffusion.viscous?&*diffusion.viscous:nullptr;
     validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);
     require(initial.cells.size()==mesh.cells.size()&&std::isfinite(initial.time)&&initial.time>=0,
         "initial state does not match mesh or physical time");
@@ -431,10 +463,10 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
     require(!control.endTime||(std::isfinite(*control.endTime)&&*control.endTime>initial.time),"invalid integration end time");
-    const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,heat,viscous);
+    const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,diffusion);
     const bool guarded=control.timeStepControl==EulerTimeStepControl2D::StageGuarded;
     double cflStep=std::numeric_limits<double>::infinity();
-    for(std::size_t i=0;i<nc;++i)cflStep=std::min(cflStep,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
+    for(std::size_t i=0;i<nc;++i)cflStep=std::min(cflStep,diffusion.active()?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
     double dt=implicit?control.maximumStep:std::min(control.maximumStep,(guarded&&control.order==2?.95:1)*cflStep);
     const auto limitHorizon=[&](double step) {
       if(control.endTime) {
@@ -461,10 +493,10 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
         if(implicit) {
             try {
                 const double gamma=1-1/std::sqrt(2.);
-                const auto a=implicitStage(mesh,lookup,gas,initial.cells,initial.cells,gamma*dt,control,heat,viscous,result);
+                const auto a=implicitStage(mesh,lookup,gas,initial.cells,initial.cells,gamma*dt,control,diffusion,result);
                 auto base=initial.cells;
                 for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<4;++k)base[i][k]-=(1-gamma)*dt/mesh.cells[i].area*a.op.residual[i][k];
-                auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,heat,viscous,result);
+                auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,diffusion,result);
                 combined=b.op;
                 std::fill(combined.spectral.begin(),combined.spectral.end(),0.);
                 for(std::size_t id=0;id<nf;++id) {
@@ -502,7 +534,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
         }else if(valid&&control.order==2) {
             try {
                 ++result.spatialEvaluations;
-                const auto second=spatialOperator(mesh,lookup,gas,stage,control,heat,viscous);
+                const auto second=spatialOperator(mesh,lookup,gas,stage,control,diffusion);
                 // SSPRK(2,2): U1=Un+dt L(Un); Un+1=1/2 Un+1/2 [U1+dt L(U1)].
                 // Require admissibility of each FE stage, not just of the mixture.
                 valid=positiveUpdate(mesh,stage,second.residual,dt,gas,secondEuler);
@@ -544,7 +576,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
             result.faceFlux=std::move(combined.faceFlux);result.faceWaveSpeed=std::move(combined.speed);
             result.faceHeatFlux=std::move(combined.heatFlux);result.cellHeatRate=std::move(combined.heatRate);
             result.faceViscousFlux=std::move(combined.viscousFlux);result.cellViscousRate=std::move(combined.viscousRate);
-            result.heatNonMonotoneRows=heat?heat->nonMonotoneRows():0;
+            result.heatNonMonotoneRows=heat?heat->nonMonotoneRows():0;result.heatMonotonicityAssessed=!diffusion.hybridHeat;
             result.faceHllcFallbackStages=std::move(combined.fallback);
             result.hllcFallbackEvaluations=combined.fallbackEvaluations;
             result.reconstructionFallbackCells=combined.reconstructionFallbackCells;
@@ -608,21 +640,52 @@ std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const
     }
     return ViscousStressOperator2D(mesh,bc,transport.dynamicViscosity,wallGradient);
 }
+std::shared_ptr<const EulerDiffusionOperators2D> prepareDiffusion(const FvMesh2D& mesh,
+    const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport,
+    WallGradient2D wallGradient,EulerDiffusionScheme2D scheme) {
+    validateEulerTransport2D(transport,boundaries);
+    require(scheme==EulerDiffusionScheme2D::Corrected||scheme==EulerDiffusionScheme2D::HybridHeat||scheme==EulerDiffusionScheme2D::Hybrid,"invalid diffusion scheme");
+    require(scheme==EulerDiffusionScheme2D::Corrected||wallGradient==WallGradient2D::Linear,"hybrid diffusion requires the linear wall option; it uses its own geometric form");
+    auto out=std::make_shared<EulerDiffusionOperators2D>();
+    if(scheme==EulerDiffusionScheme2D::Corrected)out->heat=prepareHeat(mesh,boundaries,transport,wallGradient);
+    else if(transport.thermalConductivity>0) {
+        std::vector<HeatBoundary2D> bc;for(const auto& b:boundaries)bc.push_back({b.face,b.partner?HeatBoundaryKind2D::Periodic:b.thermalKind,b.thermalValue,b.partner});
+        out->hybridHeat.emplace(mesh,bc,transport.thermalConductivity);
+        // The cell Schur complement minimizes the nonnegative hybrid energy,
+        // hence its mass-scaled spectrum is bounded by the local cell pivots.
+        // This bound is not an M-matrix or full compressible positivity claim.
+        out->heatCellStiffness.resize(mesh.cells.size());
+        out->hybridHeat->visitLocalMatrices([&](std::size_t c,std::size_t,std::size_t,double a){out->heatCellStiffness[c]+=a;});
+        for(double c:out->heatCellStiffness)require(std::isfinite(c)&&c>0,"invalid hybrid heat cell bound");
+    }
+    if(scheme!=EulerDiffusionScheme2D::Hybrid)out->viscous=prepareViscous(mesh,boundaries,transport,wallGradient);
+    else if(transport.dynamicViscosity>0) {
+        std::vector<ViscousBoundary2D> bc;
+        for(const auto& b:boundaries) {
+            const auto kind=b.partner?ViscousBoundaryKind2D::Periodic:b.kind==EulerBoundaryKind2D::NoSlipWall?ViscousBoundaryKind2D::Velocity:b.kind==EulerBoundaryKind2D::SlipWall?ViscousBoundaryKind2D::Slip:ViscousBoundaryKind2D::ZeroTraction;
+            bc.push_back({b.face,kind,b.wallVelocity,b.partner});
+        }
+        out->hybridViscous.emplace(mesh,bc,transport.dynamicViscosity);
+    }
+    return out;
 }
-EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport,WallGradient2D wallGradient)
-    :wallGradient_(wallGradient),mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
+}
+EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport,WallGradient2D wallGradient,EulerDiffusionScheme2D diffusionScheme)
+    :wallGradient_(wallGradient),diffusionScheme_(diffusionScheme),mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
     validateFvMesh2D(mesh_);validateEulerBoundaries2D(mesh_,boundaries_,gas_);
     require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic||wallGradient==WallGradient2D::FaceQuadratic,"invalid wall gradient scheme");
-    heat_=prepareHeat(mesh_,boundaries_,transport,wallGradient);viscous_=prepareViscous(mesh_,boundaries_,transport,wallGradient);
+    diffusion_=prepareDiffusion(mesh_,boundaries_,transport,wallGradient,diffusionScheme);
 }
 EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const EulerStepControls2D& controls) const {
     require(controls.wallGradient==wallGradient_,"wall gradient setting differs from prepared solver");
-    return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
+    require(controls.diffusionScheme==diffusionScheme_,"diffusion scheme differs from prepared solver");
+    return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,*diffusion_);
 }
 EulerResidualDiagnostics2D EulerStepper2D::diagnostics(const EulerState2D& state,const EulerStepControls2D& control) const {
     require(state.cells.size()==mesh_.cells.size(),"residual state size differs");
+    require(control.diffusionScheme==diffusionScheme_&&control.wallGradient==wallGradient_,"residual controls differ from prepared solver");
     std::vector<const EulerBoundary2D*> lookup(mesh_.faces.size(),nullptr);for(const auto& b:boundaries_)lookup[b.face]=&b;
-    const auto op=spatialOperator(mesh_,lookup,gas_,state.cells,control,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
+    const auto op=spatialOperator(mesh_,lookup,gas_,state.cells,control,*diffusion_);
     EulerResidualDiagnostics2D result;
     for(std::size_t face=0;face<mesh_.faces.size();++face)if(!mesh_.faces[face].neighbour&&!lookup[face]->partner)for(std::size_t k=0;k<4;++k)result.boundaryFlux[k]+=op.faceFlux[face][k];
     for(std::size_t i=0;i<state.cells.size();++i) {
@@ -635,7 +698,7 @@ EulerResidualDiagnostics2D EulerStepper2D::diagnostics(const EulerState2D& state
 double EulerStepper2D::residualRate(const EulerState2D& state,const EulerStepControls2D& control) const {return diagnostics(state,control).rate;}
 EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& controls,const EulerTransport2D& transport) {
-    const auto heat=prepareHeat(mesh,boundaries,transport,controls.wallGradient);const auto viscous=prepareViscous(mesh,boundaries,transport,controls.wallGradient);
-    return advanceEulerImpl(mesh,boundaries,gas,initial,controls,heat?&*heat:nullptr,viscous?&*viscous:nullptr);
+    const auto diffusion=prepareDiffusion(mesh,boundaries,transport,controls.wallGradient,controls.diffusionScheme);
+    return advanceEulerImpl(mesh,boundaries,gas,initial,controls,*diffusion);
 }
 } // namespace cartmesh2d::fv

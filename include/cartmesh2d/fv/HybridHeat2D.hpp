@@ -2,7 +2,7 @@
 #include "cartmesh2d/fv/HeatConduction2D.hpp"
 #include <functional>
 namespace cartmesh2d::fv {
-// Research scalar HMM operator, NOT selected by Euler transport controls.
+// Research HMM operator, selected only by optional Euler research controls.
 // Cell temperatures and one actual-face trace. Constant isotropic k, 2D per depth.
 struct HybridHeatDiagnostics2D {
     double closureRoundoffRatio=0,momentRoundoffRatio=0,minimumNormalDistance=0;
@@ -29,8 +29,8 @@ public:
     // Coercivity is not an M-matrix/point-positivity guarantee. No clipping.
     [[nodiscard]] HybridHeatResult2D backwardEuler(const std::vector<double>& previous,
         const std::vector<double>& volumetricHeatCapacity,double dt,double relativeTolerance=1e-12) const;
-    // Static global trace equilibration for supplied cell values. Measures the
-    // nonlocal cost an eventual Euler residual would incur; NOT an Euler hook.
+    // Static global trace equilibration for supplied cell values. The optional
+    // Euler research path pays this global assembly/solve cost per residual.
     [[nodiscard]] HybridHeatResult2D evaluateAtCells(const std::vector<double>& temperature,double relativeTolerance=1e-12) const;
     [[nodiscard]] const HybridHeatDiagnostics2D& diagnostics() const {return diagnostics_;}
     // Native assembled condensed matrix for linear-algebra diagnostics only.
