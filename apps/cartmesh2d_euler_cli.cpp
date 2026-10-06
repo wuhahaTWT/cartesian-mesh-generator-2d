@@ -129,7 +129,7 @@ int main(int argc,char** argv) {
                 "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
-                "--wall-gradient linear|quadratic|face-quadratic (face-quadratic: experimental shared-face recovery)\n"
+                "--wall-gradient linear|quadratic|face-quadratic (face-quadratic: failed curved-grid research candidate)\n"
                 "--mode transient|steady --steady-scale SECONDS --steady-tolerance 1e-5 (scaled residual, field AND boundary-output change rate)\n"
                 "--inlet-total-pressure Pa --inlet-total-temperature K (optional resting axial reservoir pair)\n"
                 "--initial-pressure-perturbation amplitude (sinusoidal start only; |amplitude|<1)\n"

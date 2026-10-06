@@ -28,6 +28,8 @@ struct WallGradientStencil2D {
 // Experimental shared-face reconstruction for internal/periodic faces and
 // prescribed-value boundaries. Fits a FREE constant and quadratic terms to
 // centroid point estimates; this is not a volume-moment discretization.
+// Known unstable on a coarse cut-cell annulus. Retained for reproducing the
+// failed research candidate; local polynomial exactness is not dissipativity.
 // Evaluate differences against the owner value (including boundary samples),
 // and add the owner back only for the interpolated face value. One stencil is
 // used for the shared conservative flux, never independent owner/neighbor fits.
