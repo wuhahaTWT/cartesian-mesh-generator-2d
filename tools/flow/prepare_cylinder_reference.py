@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a native Re-controlled cylinder for a low-Mach wake-frequency comparison.
+"""Prepare a native cylinder for a selected low-Mach reference comparison.
 
 Runs only the native mesher and boundary exporter. The saved flow command uses
 the existing Euler research driver; no flow solution or qualification is claimed.
@@ -15,13 +15,16 @@ from run_compressible_channel import digest
 
 REPORT = "https://ntrs.nasa.gov/api/citations/19930092207/downloads/19930092207.pdf"
 NASA_CASE = "https://www.grc.nasa.gov/www/wind/valid/lamcyl/Study1_files/Study1.html"
+FORNBERG = "https://www.colorado.edu/amath/sites/default/files/attached-files/jcp_80_fl_p_cyl.pdf"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--build", type=Path, default=Path("build"))
-    parser.add_argument("--reynolds", type=float, default=100.)
+    parser.add_argument("--reference", choices=("roshko-frequency", "fornberg-steady-drag"),
+                        default="roshko-frequency")
+    parser.add_argument("--reynolds", type=float, help="defaults to 100 for Roshko, 20 for Fornberg")
     parser.add_argument("--mach", type=float, default=.1)
     parser.add_argument("--diameter", type=float, default=1e-4)
     parser.add_argument("--segments", type=int, default=192)
@@ -32,12 +35,19 @@ def main():
     parser.add_argument("--step-transits", type=float, default=.02)
     parser.add_argument("--wall-budget", type=float, default=1800.)
     args = parser.parse_args()
+    steady_reference = args.reference == "fornberg-steady-drag"
+    if args.reynolds is None:
+        args.reynolds = 20. if steady_reference else 100.
     positive = (args.reynolds, args.mach, args.diameter, args.wall_cells,
                 args.far_spans, args.end_transits, args.step_transits, args.wall_budget)
     if not all(math.isfinite(x) and x > 0 for x in positive):
         parser.error("all physical, resolution and runtime inputs must be finite and positive")
-    if not 50 < args.reynolds < 150 or not 0 < args.mach < 1:
-        parser.error("this comparison uses the experimental 50 < Re < 150 fit and subsonic inflow")
+    if not 0 < args.mach < 1:
+        parser.error("this preparer requires subsonic inflow")
+    if steady_reference and args.reynolds != 20.:
+        parser.error("the steady drag comparison currently supports only the stable Re=20 reference")
+    if not steady_reference and not 50 < args.reynolds < 150:
+        parser.error("the Roshko frequency comparison requires 50 < Re < 150")
     if not 16 <= args.segments <= 4096 or not math.isfinite(args.phase) or not 0 <= args.phase < 1:
         parser.error("segments must be in [16, 4096] and phase in [0, 1)")
     if args.step_transits > args.end_transits:
@@ -69,7 +79,7 @@ def main():
     report = {
         "format": "cartmesh2d-cylinder-reference-input-v1", "prepared": False,
         "flowExecuted": False, "physicalQualification": False,
-        "scope": "Constant-property subsonic continuum-model wake; low-speed experimental fit is a comparison target, not an exact solution or automatic pass gate.",
+        "scope": "Constant-property subsonic continuum-model cylinder; the selected reference is a comparison target, not an exact solution or automatic pass gate.",
         "requested": {**vars(args), "output": str(root), "build": str(build)},
         "physics": {"gamma": gamma, "gasConstant": gas_r, "temperatureK": temperature,
                     "densityKgM3": density, "pressurePa": pressure, "velocityMS": speed,
@@ -78,6 +88,7 @@ def main():
                     "diameterTransitSeconds": transit, "wall": "static no-slip adiabatic",
                     "prandtl": viscosity*gamma*gas_r/((gamma-1)*conductivity)},
         "reference": {
+            "kind": args.reference,
             "source": REPORT, "reportPages": [8, 11], "equation": "2a",
             "strouhalDefinition": "f*D/U", "empiricalStrouhal": .212*(1-21.2/args.reynolds),
             "validReynoldsIntervalExclusive": [50, 150],
@@ -99,6 +110,25 @@ def main():
         "commands": [], "binarySha256": {k: digest(v) for k, v in binaries.items()},
         "preparerSha256": digest(Path(__file__).resolve())
     }
+    if steady_reference:
+        report["reference"] = {
+            "kind": args.reference, "source": FORNBERG,
+            "title": "A numerical study of steady viscous flow past a circular cylinder",
+            "author": "Bengt Fornberg", "year": 1980,
+            "doi": "10.1017/S0022112080000419", "journalPages": [844, 845, 846],
+            "type": "incompressible numerical reference", "reynolds": 20.,
+            "dragCoefficient": 2.0001, "authorEstimatedNumericalError": .0002,
+            "dragDefinition": "force per unit depth / (rho*U^2*radius) = force per unit depth / (0.5*rho*U^2*D)",
+            "reportedPrecision": "Author's estimate is not a complete uncertainty bound: it excludes possible effects of a restrictive upstream computational region (p846).",
+            "limits": "Incompressible steady result with specialized far-field treatment; finite Mach, polygon geometry, finite domain/open boundaries and space/time errors must be assessed separately. The reported estimate is not our acceptance threshold.",
+            "noFrequencyReference": True
+        }
+        report["recommendedMeasurement"] = {
+            "signal": "Sum native instantaneous wall momentum-x flux per unit depth, retaining pressure and viscous contributions separately.",
+            "normalization": "Cd = wall force per unit depth / (0.5*rho*U^2*D)",
+            "requirements": "Establish steady residual, field-change and force histories; a physical-time endpoint or exhausted budget is not convergence. Compare mesh, domain and Mach sensitivity before attributing a difference from the incompressible reference to spatial error.",
+            "noSteadyStateYet": True
+        }
     def save():
         (root/"case.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n")
     def run(name, command):
@@ -130,8 +160,13 @@ def main():
         raise
     finally:
         save()
-    print(json.dumps({"case": str(root/"case.json"), "prepared": True, "flowExecuted": False,
-                      "reynolds": args.reynolds, "empiricalStrouhal": report["reference"]["empiricalStrouhal"]}))
+    summary = {"case": str(root/"case.json"), "prepared": True, "flowExecuted": False,
+               "reynolds": args.reynolds, "reference": args.reference}
+    if steady_reference:
+        summary["referenceDragCoefficient"] = report["reference"]["dragCoefficient"]
+    else:
+        summary["empiricalStrouhal"] = report["reference"]["empiricalStrouhal"]
+    print(json.dumps(summary))
 
 
 if __name__ == "__main__":

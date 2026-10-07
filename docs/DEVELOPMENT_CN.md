@@ -468,6 +468,13 @@ build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries ou
 
 频率由升力或偏离尾迹中心的速度获取，不能把阻力的双倍频率当作脱落频率。壁面力使用原生唯一共享动量通量，Cd/Cl 按 .5ρU²D 归一化；研究 driver 的 boundary-history.csv 逐壁面、逐接受步保存 RK 平均通量。后处理只能读取这些原生数据。必须明确舍弃的启动时间、连续周期统计、实际时间网格与空间/时间/外域变化，并区分低速实验关联、有限 Mach 模型差异及独立数值比较。当前未设置自动物理通过门。
 
+稳态阻力参考须显式选 --reference fornberg-steady-drag，未指定 Re 时取 20，并拒绝其他 Re；原默认 roshko-frequency 仍取 Re=100、保持 50<Re<150 范围。case.json 分别保存数值阻力与实验频率参照，不混用适用区间。有限 Mach 对不可压参考的差不能直接视为离散误差，论文误差估计也不是本项目容许值。
+
+    python3 tools/flow/prepare_cylinder_reference.py --reference fornberg-steady-drag --output outputs/steady-cylinder-new --end-transits 1 --step-transits .002 --wall-budget 180
+
+该命令只准备输入；一流经时间和 180 s 预算是后续观察推进成本的请求，均不代表稳态停止门。此 Re20/M=.1 输入对应 ρ≈.106331 kg/m³、p≈9156.66 Pa、D/U≈2.88003 μs，原生外域为 x/y 各 ±16D；质量和实际格数以 mesh.log 的 solver_quality/solver_output_cells 以及 mesh.solver.cm2d 为准。mesh.construction-quality.json 描述构造阶段，其格数不同，不能替代最终 Solver 质量。取得完整稳态后用原生瞬时壁面动量通量计算 Cd，并分别保留压力与黏性分量。
+
+
 ### 固定轮廓圆柱续算与原场读回
 
 `run_curved_cylinder_reference.py` 读取私密恢复目录 `outputs/curved-cylinder/` 中的原始命令及检查点，用当前 build 下原生 Euler CLI 续算；不映射跨网格场，不实现独立 PDE。它依次执行所选算例，每次记录完整命令、返回码和进程耗时。输出目录必须全新，避免覆盖原场；未完成返回码、检查点及诊断照常保留。
