@@ -474,6 +474,11 @@ build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries ou
 
 该命令只准备输入；一流经时间和 180 s 预算是后续观察推进成本的请求，均不代表稳态停止门。此 Re20/M=.1 输入对应 ρ≈.106331 kg/m³、p≈9156.66 Pa、D/U≈2.88003 μs，原生外域为 x/y 各 ±16D；质量和实际格数以 mesh.log 的 solver_quality/solver_output_cells 以及 mesh.solver.cm2d 为准。mesh.construction-quality.json 描述构造阶段，其格数不同，不能替代最终 Solver 质量。取得完整稳态后用原生瞬时壁面动量通量计算 Cd，并分别保留压力与黏性分量。
 
+Re20 模式还保存 nativeSteadyCommand，使用现有原生 CLI 的 HLLC/二阶/SDIRK2、D/U 归一化和 1e−5 三门停止请求。该数值停止量不是阻力误差阈值；达到物理时间上限而未满足三门仍返回失败，并保留最后接受态。稳态/瞬态分别从 17.5 ns 接受态到 18.5 ns 的实际运行，检查点逐字节一致，只有完成状态不同。原生严格阶段预算仍为默认 2e−14。
+
+nativeInstantaneousCommand 使用独立输出前缀读取 CLI 的 external 检查点，环境必须同时设置 CARTMESH_RESEARCH_CHECKPOINT_CASE=external、CARTMESH_RESEARCH_SNAPSHOT=1 和 CARTMESH_RESEARCH_RECONSTRUCTION=1；前两项绑定来源并跳过推进，第三项启用瞬时共享通量导出。只读成功不等于流动达到稳态。原始短步、预算失败和复算命令保留在本机研究证据中；长期推进和外域/Mach/空间影响仍需云端完成。
+
+
 
 ### 固定轮廓圆柱续算与原场读回
 

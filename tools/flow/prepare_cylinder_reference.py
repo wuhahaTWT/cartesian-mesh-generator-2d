@@ -18,6 +18,38 @@ NASA_CASE = "https://www.grc.nasa.gov/www/wind/valid/lamcyl/Study1_files/Study1.
 FORNBERG = "https://www.colorado.edu/amath/sites/default/files/attached-files/jcp_80_fl_p_cyl.pdf"
 
 
+def steady_commands(binaries, root, physics, end_time, maximum_step, wall_budget):
+    """Describe existing native CLI/diagnostic operations without running a flow."""
+    mesh, boundary = root/"mesh.solver.cm2d", root/"flow.boundaries"
+    prefix = root/"steady"
+    command = [str(binaries["cartmesh2d_euler_cli"]), "--mesh", str(mesh),
+               "--output", str(prefix), "--case", "external"]
+    for flag, key in (("--density", "densityKgM3"), ("--u", "velocityMS"),
+                      ("--pressure", "pressurePa"), ("--gamma", "gamma"),
+                      ("--gas-r", "gasConstant"), ("--viscosity", "dynamicViscosityPaS"),
+                      ("--conductivity", "thermalConductivityWmK")):
+        command += [flag, repr(physics[key])]
+    command += ["--v", "0", "--wall-model", "no-slip", "--wall-thermal", "insulated",
+                "--flux", "hllc", "--order", "2", "--integrator", "sdirk2",
+                "--mode", "steady", "--steady-scale", repr(physics["diameterTransitSeconds"]),
+                "--steady-tolerance", "1e-5", "--end-time", repr(end_time),
+                "--max-step", repr(maximum_step), "--max-seconds", repr(wall_budget)]
+    snapshot = [str(binaries["cartmesh2d_euler_diffusion_benchmark"]), str(mesh), str(boundary),
+                str(root/"steady-instantaneous"), "corrected", repr(end_time),
+                repr(maximum_step), repr(wall_budget), str(prefix)+".checkpoint"]
+    return {
+        "nativeSteadyCommand": command,
+        "nativeSteadyRequirements": "Uses the existing three scaled stopping criteria at 1e-5; this is a numerical stopping request, not a drag-accuracy gate. Endpoint or budget exhaustion preserves the last accepted state and returns failure when the criteria are unmet.",
+        "nativeInstantaneousCommand": snapshot,
+        "nativeInstantaneousEnvironment": {
+            "CARTMESH_RESEARCH_CHECKPOINT_CASE": "external",
+            "CARTMESH_RESEARCH_SNAPSHOT": "1",
+            "CARTMESH_RESEARCH_RECONSTRUCTION": "1"
+        },
+        "nativeInstantaneousRequirements": "Read only the saved CLI physical state, export native instantaneous fluxes to a distinct prefix. SNAPSHOT skips integration; RECONSTRUCTION enables flux export. This does not establish steady convergence."
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -129,6 +161,9 @@ def main():
             "requirements": "Establish steady residual, field-change and force histories; a physical-time endpoint or exhausted budget is not convergence. Compare mesh, domain and Mach sensitivity before attributing a difference from the incompressible reference to spatial error.",
             "noSteadyStateYet": True
         }
+        report.update(steady_commands(binaries, root, report["physics"],
+                                      args.end_transits*transit, args.step_transits*transit,
+                                      args.wall_budget))
     def save():
         (root/"case.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n")
     def run(name, command):
