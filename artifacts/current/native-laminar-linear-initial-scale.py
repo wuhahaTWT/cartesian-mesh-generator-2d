@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize the native 17,260-cell CLI cold-start scale check.
+"""Summarize native pressure-inverse scale and CLI integration checks.
 
 This script only reads native solver outputs and compares serialized states.  It
 does not implement or duplicate the flow equations.
@@ -17,7 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "outputs/laminar-stability/compatible-cli-linear-seed17260-current"
 OLD = ROOT / "outputs/laminar-stability/compatible-api"
 SCALE = ROOT / "outputs/laminar-stability/compatible-scale-current"
+CROSS = ROOT / "outputs/laminar-stability/compatible-scale-crosscase"
+CLI = ROOT / "outputs/laminar-stability/compatible-cli-aggregation-merged"
 MESH = ROOT / "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d"
+MESH4716 = ROOT / "outputs/laminar-stability/compatible-linear-seed/cylinder4716.solver.cm2d"
 COMPARE_BINARY = ROOT / "build/native-laminar-state-compare-scale"
 
 
@@ -90,8 +93,8 @@ def run(prefix):
     }
 
 
-def adapter_run(prefix):
-    report = load(SCALE / f"{prefix}.json")
+def adapter_run(prefix, directory=SCALE):
+    report = load(directory / f"{prefix}.json")
     iterations = report["iterations"]
     return {
         "completed": report["completed"],
@@ -103,17 +106,17 @@ def adapter_run(prefix):
         "totalMatrixProducts": sum(item["products"] for item in iterations),
         "iterations": iterations,
         "sha256": {
-            "report": digest(SCALE / f"{prefix}.json"),
-            "seed": digest(SCALE / f"{prefix}.seed.state"),
-            **({"accepted": digest(SCALE / f"{prefix}.accepted.state")}
-               if (SCALE / f"{prefix}.accepted.state").exists() else {}),
+            "report": digest(directory / f"{prefix}.json"),
+            "seed": digest(directory / f"{prefix}.seed.state"),
+            **({"accepted": digest(directory / f"{prefix}.accepted.state")}
+               if (directory / f"{prefix}.accepted.state").exists() else {}),
         },
     }
 
 
-def state_comparison(left, right):
+def state_comparison(mesh, left, right):
     output = subprocess.check_output([
-        str(COMPARE_BINARY), "compare", str(MESH), "0", str(left), str(right)
+        str(COMPARE_BINARY), "compare", str(mesh), "0", str(left), str(right)
     ], text=True)
     return json.loads(output)
 
@@ -129,16 +132,30 @@ matched_aggregation = adapter_run("schur-aggregation-r120")
 aggregation_full = adapter_run("schur-aggregation-full-r50")
 old_accepted = OLD / "cylinder17260-cold-schur-pt1-r100.accepted.state"
 aggregation_accepted = SCALE / "schur-aggregation-full-r50.accepted.state"
-field_comparison = state_comparison(old_accepted, aggregation_accepted)
+field_comparison = state_comparison(MESH, old_accepted, aggregation_accepted)
 old_products = sum(item["products"] for item in old["iterations"])
 old_seconds = old["seconds"]
 
+cross_ic0 = adapter_run("cylinder4716-schur-first", CROSS)
+cross_aggregation = adapter_run("cylinder4716-aggregation-first", CROSS)
+cross_full = adapter_run("cylinder4716-aggregation-full", CROSS)
+cross_reference = load(ROOT / "artifacts/current/native-laminar-linear-initial-cli.json")["realCylinder4716"]
+cross_reference_products = cross_reference["history"]["matrixProducts"]
+cross_reference_seconds = cross_reference["timingSeconds"]["elapsedBeforeSummary"]
+cross_comparison = state_comparison(
+    MESH4716,
+    ROOT / "outputs/laminar-stability/compatible-linear-seed/final-cylinder4716-current.accepted.state",
+    CROSS / "cylinder4716-aggregation-full.accepted.state",
+)
+cli_summary = load(CLI / "channel-aggregation.summary.json")
+
 result = {
-    "schema": "cartmesh2d-compatible-linear-initial-scale-v2",
+    "schema": "cartmesh2d-compatible-linear-initial-scale-v3",
     "scope": (
-        "Native product CLI cold-start scale check on the original Linux 17,260-cell "
-        "fixed-128-segment 20D cylinder. The equation, mesh, boundary atoms, original "
-        "1e-13 linear gate and all nonlinear acceptance gates are unchanged."
+        "Native matched pressure-inverse checks on the original Linux 4,716- and "
+        "17,260-cell fixed-128-segment 20D cylinders plus the explicit product CLI "
+        "selector. Equations, mesh atoms, the original 1e-13 linear gate and all "
+        "nonlinear acceptance gates remain unchanged."
     ),
     "mesh": {
         "path": str(MESH.relative_to(ROOT)),
@@ -239,6 +256,72 @@ result = {
             ),
         },
     },
+    "crossCase4716": {
+        "mesh": {
+            "path": str(MESH4716.relative_to(ROOT)),
+            "sha256": digest(MESH4716),
+            "cells": 4716,
+            "faces": 9632,
+        },
+        "scope": (
+            "Same current native executable, cold seed, equation, mesh and gates; "
+            "only diagonal-Schur IC0 versus the fixed aggregation V-cycle changes."
+        ),
+        "ic0FirstSystem": cross_ic0,
+        "aggregationFirstSystem": cross_aggregation,
+        "firstSystem": {
+            "matrixProductReductionFraction": 1.0 - cross_aggregation["totalMatrixProducts"] / cross_ic0["totalMatrixProducts"],
+            "elapsedReductionFraction": 1.0 - cross_aggregation["seconds"] / cross_ic0["seconds"],
+            "seedByteEquivalent": (
+                (CROSS / "cylinder4716-schur-first.seed.state").read_bytes() ==
+                (CROSS / "cylinder4716-aggregation-first.seed.state").read_bytes()
+            ),
+        },
+        "aggregationFullRun": {
+            **cross_full,
+            "controls": {
+                "pressureInverse": "diagonal-schur-aggregation",
+                "velocityInverse": "ilu0",
+                "linearTolerance": 1e-13,
+                "krylovDirections": 60,
+                "maximumLinearRestarts": 50,
+            },
+            "comparisonWithPriorAcceptedState": cross_comparison,
+            "comparisonWithPriorProductCliCost": {
+                "priorMatrixProducts": cross_reference_products,
+                "priorSeconds": cross_reference_seconds,
+                "matrixProductReductionFraction": 1.0 - cross_full["totalMatrixProducts"] / cross_reference_products,
+                "elapsedReductionFraction": 1.0 - cross_full["seconds"] / cross_reference_seconds,
+                "warning": (
+                    "The full fields are compared natively, but the prior cost is a saved "
+                    "product-CLI run. The first-system comparison above is the controlled A/B."
+                ),
+            },
+        },
+    },
+    "productCliIntegration": {
+        "selector": "schur-aggregation",
+        "defaultChanged": False,
+        "nativeLifecycleTest": {
+            "passed": True,
+            "cells": cli_summary["cells"],
+            "case": cli_summary["case"],
+            "status": cli_summary["status"],
+            "acceptedIterations": cli_summary["acceptedIterations"],
+            "pressureInverseRecorded": cli_summary["controls"]["pressureInverse"],
+            "absolutePressureReference": load(CLI / "channel-aggregation.loads.json")["absolutePressureReference"],
+            "coldStartAndResumeCompared": True,
+            "failureRetentionChecked": True,
+            "closedBoundaryRejected": True,
+            "signalTested": True,
+        },
+        "sha256": {
+            "binary": digest(ROOT / "build/cartmesh2d_flow_cli-aggregation-merged"),
+            "cliSource": digest(ROOT / "apps/CompatibleFlowCLI.cpp"),
+            "testSource": digest(ROOT / "tests/compatible_flow_cli_test.py"),
+            "summary": digest(CLI / "channel-aggregation.summary.json"),
+        },
+    },
     "priorResearchComparator": {
         "completed": old["completed"],
         "totalIterations": len(old["iterations"]),
@@ -275,10 +358,13 @@ result = {
         "The matched current adapter reproduces the CLI IC0 failure exactly, excluding CLI boundary conversion and lifecycle wrapping as its cause.",
         "Changing only the explicit pressure auxiliary inverse to aggregation crosses the same 1e-13 gate in 241 products; the full run converges under the original equation gates in 2622 products.",
         "The aggregation field matches the prior accepted solution to about 1e-12 in native geometry-weighted full-field norms, but this single mesh does not establish default, physical-accuracy or curved-wall-pressure qualification.",
+        "The independent 4,716-cell cross-case reduces the matched first system from 4,612 to 376 products and completes the full run in 3,157 products; its accepted field agrees with the prior product result near roundoff.",
+        "The product CLI now exposes the already-implemented aggregation inverse explicitly while retaining the previous default; a native pressure-outlet lifecycle regression records and validates the selected method.",
     ],
     "validation": {
         "nativeSolverProcessesAfterRuns": 0,
         "compatibleFlowNativeTest": "passed from current source and current native library",
+        "compatibleFlowCliLifecycleTest": "passed, including explicit schur-aggregation and invalid-selector rejection",
         "unrelatedSuitesRerun": False,
         "reason": "The native CLI failures, matched adapter A/B, full aggregation solve and native field comparison are the verification target.",
     },

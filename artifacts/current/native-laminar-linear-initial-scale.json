@@ -239,13 +239,288 @@
       "outputs/laminar-stability/compatible-cli-linear-seed17260-current/current-r120"
     ]
   },
+  "crossCase4716": {
+    "aggregationFirstSystem": {
+      "acceptedIterations": 1,
+      "completed": false,
+      "iterations": [
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 1.6954309928173732,
+          "divergence": 1.0823342222465726e-11,
+          "faceMomentum": 0.8389495225412646,
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.976784961144157e-14,
+          "originalEquationsEvaluated": true,
+          "products": 376,
+          "pseudoStep": 1,
+          "residualNorm": 104.49806529496412,
+          "restarts": 27,
+          "stateChange": 81.63787780284099,
+          "trials": 1
+        }
+      ],
+      "reason": "Nonlinear iteration budget exhausted; no converged flow",
+      "seconds": 15.518408834,
+      "sha256": {
+        "accepted": "77b4bc2f49ce8cc6aa4f42d41019ee1afea0ccbcc71e1f1d678a8de395871c6e",
+        "report": "5aa1e37f2868239ce13add304f739dea0c620d3ec35b1b3316dbe976aaa72242",
+        "seed": "46a47330cc240bb0564fbcd7047b407c53de3633dfa1e60e08aaa4506cb14b64"
+      },
+      "stop": 2,
+      "totalMatrixProducts": 376,
+      "totalRestarts": 27
+    },
+    "aggregationFullRun": {
+      "acceptedIterations": 9,
+      "comparisonWithPriorAcceptedState": {
+        "cells": 4716,
+        "faceVelocityMaximum": 2.1121879999407223e-12,
+        "faceVelocityRms": 3.622246414275511e-13,
+        "pressureMeanDifference": -2.373760149548193e-13,
+        "pressureP1RmsAbsolute": 2.8982664429865977e-13,
+        "pressureP1RmsAfterGlobalGauge": 1.66289239788962e-13,
+        "stateCoefficientMaximum": 8.920730820705103e-11,
+        "velocityP1Rms": 3.5367793823361427e-13
+      },
+      "comparisonWithPriorProductCliCost": {
+        "elapsedReductionFraction": 0.5932077279071177,
+        "matrixProductReductionFraction": 0.8146756677428824,
+        "priorMatrixProducts": 17035,
+        "priorSeconds": 259.205484781,
+        "warning": "The full fields are compared natively, but the prior cost is a saved product-CLI run. The first-system comparison above is the controlled A/B."
+      },
+      "completed": true,
+      "controls": {
+        "krylovDirections": 60,
+        "linearTolerance": 1e-13,
+        "maximumLinearRestarts": 50,
+        "pressureInverse": "diagonal-schur-aggregation",
+        "velocityInverse": "ilu0"
+      },
+      "iterations": [
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 1.6954309928173732,
+          "divergence": 1.0823342222465726e-11,
+          "faceMomentum": 0.8389495225412646,
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.976784961144157e-14,
+          "originalEquationsEvaluated": true,
+          "products": 376,
+          "pseudoStep": 1,
+          "residualNorm": 104.49806529496412,
+          "restarts": 27,
+          "stateChange": 81.63787780284099,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 0.7681093581147137,
+          "divergence": 8.719371891174887e-09,
+          "faceMomentum": 0.006190708335008288,
+          "iteration": 1,
+          "linearInitialRelativeResidual": 0.1726040184573228,
+          "linearRelativeResidual": 9.670984118407574e-14,
+          "originalEquationsEvaluated": true,
+          "products": 434,
+          "pseudoStep": 0.17190707512930067,
+          "residualNorm": 0.522690408703332,
+          "restarts": 8,
+          "stateChange": 81.5897392382753,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 0.3984122242533025,
+          "divergence": 1.9777246507146629e-10,
+          "faceMomentum": 0.00858655817704855,
+          "iteration": 2,
+          "linearInitialRelativeResidual": 0.032100162562740786,
+          "linearRelativeResidual": 9.726621783288474e-14,
+          "originalEquationsEvaluated": true,
+          "products": 528,
+          "pseudoStep": 34.36825406093098,
+          "residualNorm": 0.1349116072117014,
+          "restarts": 9,
+          "stateChange": 0.8050190848713581,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 0.024302152083123474,
+          "divergence": 1.0572698272426351e-10,
+          "faceMomentum": 0.0015585561296444356,
+          "iteration": 3,
+          "linearInitialRelativeResidual": 0.008645939138884125,
+          "linearRelativeResidual": 9.638148268774224e-14,
+          "originalEquationsEvaluated": true,
+          "products": 523,
+          "pseudoStep": 133.15353017282774,
+          "residualNorm": 0.030013821837440443,
+          "restarts": 9,
+          "stateChange": 0.21713267203960163,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 0.0009586996610260257,
+          "divergence": 1.8216450570207599e-10,
+          "faceMomentum": 0.00016258502656925456,
+          "iteration": 4,
+          "linearInitialRelativeResidual": 0.001960720497168895,
+          "linearRelativeResidual": 9.852262092023289e-14,
+          "originalEquationsEvaluated": true,
+          "products": 476,
+          "pseudoStep": 598.5228025548885,
+          "residualNorm": 0.002857783093960217,
+          "restarts": 8,
+          "stateChange": 0.05821062687028927,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 1.9178051359806246e-06,
+          "divergence": 1.0831069374717117e-10,
+          "faceMomentum": 4.2973994074921645e-07,
+          "iteration": 5,
+          "linearInitialRelativeResidual": 0.00018708103448555934,
+          "linearRelativeResidual": 9.478552816984159e-14,
+          "originalEquationsEvaluated": true,
+          "products": 412,
+          "pseudoStep": 6285.976286826631,
+          "residualNorm": 2.5964377742030622e-05,
+          "restarts": 7,
+          "stateChange": 0.005499296802447207,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 1.2665000018638912e-10,
+          "divergence": 1.5368373240676192e-10,
+          "faceMomentum": 1.1692806614548328e-11,
+          "iteration": 6,
+          "linearInitialRelativeResidual": 1.7369842652158348e-06,
+          "linearRelativeResidual": 9.632015767596122e-14,
+          "originalEquationsEvaluated": true,
+          "products": 297,
+          "pseudoStep": 691869.3349792191,
+          "residualNorm": 2.1678404486825453e-09,
+          "restarts": 5,
+          "stateChange": 4.8205043207349973e-05,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 3.399246377931429e-12,
+          "divergence": 1.717543329782245e-10,
+          "faceMomentum": 6.699546565658499e-13,
+          "iteration": 7,
+          "linearInitialRelativeResidual": 1.4487110938246714e-10,
+          "linearRelativeResidual": 9.58426506591199e-14,
+          "originalEquationsEvaluated": true,
+          "products": 111,
+          "pseudoStep": 1000000,
+          "residualNorm": 1.4272623266393545e-12,
+          "restarts": 2,
+          "stateChange": 3.2188387510956318e-09,
+          "trials": 1
+        },
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 3.580843896594126e-12,
+          "divergence": 1.717543329782245e-10,
+          "faceMomentum": 6.699253325483587e-13,
+          "iteration": 8,
+          "linearInitialRelativeResidual": 9.723420342740913e-14,
+          "linearRelativeResidual": 9.723420342740913e-14,
+          "originalEquationsEvaluated": true,
+          "products": 0,
+          "pseudoStep": 1000000,
+          "residualNorm": 1.4400150922537047e-12,
+          "restarts": 0,
+          "stateChange": 1.3798351350402527e-11,
+          "trials": 1
+        }
+      ],
+      "reason": "Original momentum, divergence, linear and applicable state-change targets satisfied",
+      "seconds": 105.442788093,
+      "sha256": {
+        "accepted": "2011a5d63cde953c66c987fb246802b6825f179794dde873156785d084200dff",
+        "report": "052afda87eb8713f686e9444e8a4415033d1c935cbd3f7ac4ae4bb4e3e8e0e28",
+        "seed": "46a47330cc240bb0564fbcd7047b407c53de3633dfa1e60e08aaa4506cb14b64"
+      },
+      "stop": 0,
+      "totalMatrixProducts": 3157,
+      "totalRestarts": 75
+    },
+    "firstSystem": {
+      "elapsedReductionFraction": 0.7656155608132443,
+      "matrixProductReductionFraction": 0.9184735472679966,
+      "seedByteEquivalent": true
+    },
+    "ic0FirstSystem": {
+      "acceptedIterations": 1,
+      "completed": false,
+      "iterations": [
+        {
+          "accepted": true,
+          "alpha": 1,
+          "cellMomentum": 1.6954309928167184,
+          "divergence": 3.736566611678427e-11,
+          "faceMomentum": 0.8389495225412424,
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.988385500866673e-14,
+          "originalEquationsEvaluated": true,
+          "products": 4612,
+          "pseudoStep": 1,
+          "residualNorm": 104.49806529493965,
+          "restarts": 86,
+          "stateChange": 81.6378778028202,
+          "trials": 1
+        }
+      ],
+      "reason": "Nonlinear iteration budget exhausted; no converged flow",
+      "seconds": 66.209211191,
+      "sha256": {
+        "accepted": "878927b86eb1621624404e166b64e699fe01629ac3a0787207c749bd52a3a50f",
+        "report": "26e1a5a9967c6fbac94a2ccf20da1568bcf1b434a56d59800ab58f1d731728cc",
+        "seed": "46a47330cc240bb0564fbcd7047b407c53de3633dfa1e60e08aaa4506cb14b64"
+      },
+      "stop": 2,
+      "totalMatrixProducts": 4612,
+      "totalRestarts": 86
+    },
+    "mesh": {
+      "cells": 4716,
+      "faces": 9632,
+      "path": "outputs/laminar-stability/compatible-linear-seed/cylinder4716.solver.cm2d",
+      "sha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e"
+    },
+    "scope": "Same current native executable, cold seed, equation, mesh and gates; only diagonal-Schur IC0 versus the fixed aggregation V-cycle changes."
+  },
   "interpretation": [
     "CurrentState cannot improve the first cold-start system because the current state is the boundary-applied seed; the measured initial relative residual is exactly one.",
     "Both failures preserve the native lifecycle: no candidate recovery, accepted field, checkpoint or loads are published.",
     "This scale check falsifies the claim that raising only the restart budget from 100 to 120 makes the current product CLI pass the original linear gate.",
     "The matched current adapter reproduces the CLI IC0 failure exactly, excluding CLI boundary conversion and lifecycle wrapping as its cause.",
     "Changing only the explicit pressure auxiliary inverse to aggregation crosses the same 1e-13 gate in 241 products; the full run converges under the original equation gates in 2622 products.",
-    "The aggregation field matches the prior accepted solution to about 1e-12 in native geometry-weighted full-field norms, but this single mesh does not establish default, physical-accuracy or curved-wall-pressure qualification."
+    "The aggregation field matches the prior accepted solution to about 1e-12 in native geometry-weighted full-field norms, but this single mesh does not establish default, physical-accuracy or curved-wall-pressure qualification.",
+    "The independent 4,716-cell cross-case reduces the matched first system from 4,612 to 376 products and completes the full run in 3,157 products; its accepted field agrees with the prior product result near roundoff.",
+    "The product CLI now exposes the already-implemented aggregation inverse explicitly while retaining the previous default; a native pressure-outlet lifecycle regression records and validates the selected method."
   ],
   "matchedCurrentExecutable": {
     "aggregationFirstSystem": {
@@ -363,6 +638,29 @@
     "totalRestarts": 465,
     "warning": "The prior result is a saved comparator, not a controlled executable A/B: the product CLI and research adapter binaries have different hashes, and their complete assembly/code-generation identity has not been proven."
   },
+  "productCliIntegration": {
+    "defaultChanged": false,
+    "nativeLifecycleTest": {
+      "absolutePressureReference": true,
+      "acceptedIterations": 6,
+      "case": "channel",
+      "cells": 36,
+      "closedBoundaryRejected": true,
+      "coldStartAndResumeCompared": true,
+      "failureRetentionChecked": true,
+      "passed": true,
+      "pressureInverseRecorded": "diagonal-schur-aggregation",
+      "signalTested": true,
+      "status": "converged"
+    },
+    "selector": "schur-aggregation",
+    "sha256": {
+      "binary": "8c4f09a140f391ce208ace780ec81981b8d4afdc2282ac13441b06edaef63711",
+      "cliSource": "c05d8c161e11b4b1b5bbc276053a2f2b832d22a350034e8479c504c9970ae99a",
+      "summary": "2067efb3b5817580e01458d206ec31c56b10ff23908025fbb8264cab54b8a272",
+      "testSource": "1db41b01baea04f4c6ef089f4a86256b474be7524f72e0c78f398c9970cb86f0"
+    }
+  },
   "run100": {
     "acceptedIterations": 0,
     "boundaryLoadsAvailable": false,
@@ -461,8 +759,8 @@
       "solve": 300.174212285
     }
   },
-  "schema": "cartmesh2d-compatible-linear-initial-scale-v2",
-  "scope": "Native product CLI cold-start scale check on the original Linux 17,260-cell fixed-128-segment 20D cylinder. The equation, mesh, boundary atoms, original 1e-13 linear gate and all nonlinear acceptance gates are unchanged.",
+  "schema": "cartmesh2d-compatible-linear-initial-scale-v3",
+  "scope": "Native matched pressure-inverse checks on the original Linux 4,716- and 17,260-cell fixed-128-segment 20D cylinders plus the explicit product CLI selector. Equations, mesh atoms, the original 1e-13 linear gate and all nonlinear acceptance gates remain unchanged.",
   "seedIdentity": {
     "comparisonWithPriorResearchDriver": {
       "byteEquivalentValues": true,
@@ -482,10 +780,11 @@
     "priorResearchReport": "c0c8946d99afb7958545493b1d56e3b7dd44b4a8cd479aeefdcb45e9da1f6a41",
     "priorResearchSeed": "4429a54d6beab14837020ed78ffac5c9d600f6088559dd59a2862781bb6ab9a8",
     "productCliBinary": "4a956ef4f79ad82a5d2b5528a041f23feb952990b9ce623110238a43b7f35c1c",
-    "productCliSource": "bf8b52447ca9bfe5882e6045b03edf13bcfc15a3b0160f6587afe29512f65b07",
+    "productCliSource": "c05d8c161e11b4b1b5bbc276053a2f2b832d22a350034e8479c504c9970ae99a",
     "researchAdapterSource": "234f9a536b4a30ba233f39b601ff1bd2c81180466830dcfc577607333c17c0b3"
   },
   "validation": {
+    "compatibleFlowCliLifecycleTest": "passed, including explicit schur-aggregation and invalid-selector rejection",
     "compatibleFlowNativeTest": "passed from current source and current native library",
     "nativeSolverProcessesAfterRuns": 0,
     "reason": "The native CLI failures, matched adapter A/B, full aggregation solve and native field comparison are the verification target.",
