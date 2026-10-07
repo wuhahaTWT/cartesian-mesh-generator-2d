@@ -2,6 +2,8 @@
 #include "cartmesh2d/fv/FvMesh2D.hpp"
 #include <array>
 #include <functional>
+#include <iosfwd>
+#include <memory>
 #include <optional>
 #include <string>
 namespace cartmesh2d::fv {
@@ -54,6 +56,24 @@ struct CompatibleFlowIteration2D {
     bool accepted=false;
     std::optional<CompatibleFlowMetrics2D> metrics; // absent until original equations were evaluated
 };
+namespace detail {struct CompatibleCheckpointData2D;struct CompatibleCheckpointAccess2D;}
+// Immutable accepted steady iterate. This is a numerical continuation, not a
+// physical-time checkpoint or an accuracy certificate. Only the native solver
+// and the checked reader create it; seeds/rejected candidates cannot be saved.
+class CompatibleFlowCheckpoint2D {
+public:
+    std::size_t acceptedIterations()const;
+    double nextPseudoStep()const;
+    CompatibleFlowMetrics2D lastAcceptedMetrics()const;
+private:
+    std::shared_ptr<const detail::CompatibleCheckpointData2D> data_;
+    explicit CompatibleFlowCheckpoint2D(std::shared_ptr<const detail::CompatibleCheckpointData2D> data):data_(std::move(data)){}
+    friend struct detail::CompatibleCheckpointAccess2D;
+};
+// Bit-exact double storage and FNV-1a integrity check (not authentication).
+// Read bounds allocation by the supplied mesh; resume validates full context.
+void writeCompatibleFlowCheckpoint2D(std::ostream&,const CompatibleFlowCheckpoint2D&);
+[[nodiscard]] CompatibleFlowCheckpoint2D readCompatibleFlowCheckpoint2D(std::istream&,const FvMesh2D&);
 struct CompatibleFlowControls2D {
     double viscosity=.01,referenceLength=1,referenceVelocity=1;
     CompatibleEquation2D equation=CompatibleEquation2D::NavierStokes;
@@ -72,6 +92,9 @@ struct CompatibleFlowControls2D {
     // Callback exceptions propagate; cancellation does not accept an unfinished trial.
     std::function<bool()> stopRequested;
     std::function<void(const CompatibleFlowIteration2D&)> iterationAccepted;
+    // Runs after complete acceptance and before progress notification.
+    // It may publish a checkpoint atomically; exceptions propagate.
+    std::function<void(const CompatibleFlowCheckpoint2D&)> checkpointAccepted;
 };
 enum class CompatibleFlowStop2D { Converged, Cancelled, NonlinearBudget, LinearBudget, BacktrackingBudget, NumericalFailure, BoundaryFailure };
 struct CompatibleFlowResult2D {
@@ -80,6 +103,9 @@ struct CompatibleFlowResult2D {
     // A seed is never called an accepted flow or a physical checkpoint.
     std::optional<CompatibleFlowState2D> seed,lastAccepted,lastRejected;
     std::vector<CompatibleFlowIteration2D> iterations;
+    std::optional<CompatibleFlowCheckpoint2D> checkpoint;
+    std::size_t acceptedIterationsBefore=0; // validated restart history, not this call's attempts
+    bool resumed=false;
     bool converged()const{return stop==CompatibleFlowStop2D::Converged;}
 };
 // initial is an explicit algebraic seed, not a physical restart/checkpoint.
@@ -88,4 +114,10 @@ struct CompatibleFlowResult2D {
 [[nodiscard]] CompatibleFlowResult2D solveCompatibleIncompressible2D(
     const FvMesh2D&,const CompatibleFlowControls2D&,
     const std::optional<CompatibleFlowState2D>& initial=std::nullopt);
+// Restores normalized coefficients and the next pseudo-step without seed
+// projection/gauge reset. Binds mesh/order, scales, equation, quadrature,
+// globalization, boundary kinds/policies, projected traces and native loads.
+// Iteration/linear targets and budgets may change; convergence is re-evaluated.
+[[nodiscard]] CompatibleFlowResult2D resumeCompatibleIncompressible2D(
+    const FvMesh2D&,const CompatibleFlowControls2D&,const CompatibleFlowCheckpoint2D&);
 }

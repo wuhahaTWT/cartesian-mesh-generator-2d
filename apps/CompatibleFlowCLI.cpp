@@ -87,7 +87,7 @@ void progress(const CompatibleFlowIteration2D& it) {
     std::cout << "}" << std::endl;
 }
 struct Options {
-    std::string mesh, prefix, scenario = "external", boundary;
+    std::string mesh, prefix, scenario = "external", boundary, restart;
     CompatibleFlowControls2D controls;
 };
 Options parse(int argc, char** argv) {
@@ -104,6 +104,7 @@ Options parse(int argc, char** argv) {
         else if (key == "--output") opt.prefix = value;
         else if (key == "--case") opt.scenario = value;
         else if (key == "--boundary") opt.boundary = value;
+        else if (key == "--restart") opt.restart = value;
         else if (key == "--nu") c.viscosity = number(value);
         else if (key == "--speed") c.referenceVelocity = number(value);
         else if (key == "--reference-length") c.referenceLength = number(value);
@@ -153,16 +154,25 @@ void help() {
         "--linear-restarts 50 --krylov-directions 60 --quadrature-order 6\n"
         "Existing explicit boundary values are facewise constant. Symmetry preserves zero normal trace.\n"
         "Pressure outlet uses pseudo-traction -p*n and rejects backflow; it does not separately impose p and all normal velocity derivatives.\n"
-        "No variable material, transient, pressure opening, smooth moving wall, restart or App integration yet.\n"
+        "--restart FILE: restore a matching accepted steady checkpoint and next pseudo-step; iteration budget is additional.\n"
+        "No variable material, physical time, pressure opening, smooth moving wall or App integration yet.\n"
         "Outputs retain full P1 cell/face states. Seed and rejected trials are never accepted flow fields.\n"
         "Numerical convergence is not a spatial/physical accuracy certificate. SIGINT/SIGTERM cancel cooperatively.\n";
 }
 void ensureFresh(const std::string& prefix) {
-    for (const auto* suffix : {".json", ".summary.json", ".summary.json.tmp", ".cells.csv", ".faces.csv", ".fields.json", ".residuals.csv", ".vtk", ".boundaries", ".seed.json", ".accepted.json", ".rejected.json"})
+    for (const auto* suffix : {".checkpoint", ".checkpoint.tmp", ".json", ".summary.json", ".summary.json.tmp", ".cells.csv", ".faces.csv", ".fields.json", ".residuals.csv", ".vtk", ".boundaries", ".seed.json", ".accepted.json", ".rejected.json"})
         if (std::filesystem::exists(prefix + suffix) || std::filesystem::is_symlink(prefix + suffix))
             throw std::invalid_argument("Output already exists: " + prefix + suffix);
     const auto parent = std::filesystem::path(prefix).parent_path();
     if (!parent.empty()) std::filesystem::create_directories(parent);
+}
+void publishCheckpoint(const Options& opt, const CompatibleFlowCheckpoint2D& checkpoint) {
+    auto out = output(opt.prefix + ".checkpoint.tmp");
+    writeCompatibleFlowCheckpoint2D(out,checkpoint);
+    out.close();
+    // In the same directory: a process kill before rename leaves the previous
+    // complete checkpoint available. Power-loss durability is not claimed.
+    std::filesystem::rename(opt.prefix + ".checkpoint.tmp",opt.prefix + ".checkpoint");
 }
 void stateArrays(std::ostream& out, const CompatibleFlowState2D& state) {
     out << "\"cells\":[";
@@ -245,12 +255,19 @@ void fields(const Options& opt, const TopologyMesh2D& topology, const FvMesh2D& 
 }
 void summary(const Options& opt, const FvMesh2D& mesh, const CompatibleFlowResult2D* result, const char* status, const std::string& reason, bool complete, double readSeconds, double solveSeconds, double exportSeconds, double totalSeconds) {
     const auto& c = opt.controls;
+    const bool savedCheckpoint = std::filesystem::is_regular_file(opt.prefix + ".checkpoint");
     auto out = output(opt.prefix + ".summary.json.tmp");
     out << "{\"format\":\"cartmesh2d-compatible-flow-summary-v1\",\"discretization\":\"compatible\",\"status\":"; jsonString(out,status);
     out << ",\"reason\":"; jsonString(out,reason);
     out << ",\"exportsComplete\":" << (complete ? "true" : "false") << ",\"converged\":" << (complete && result && result->converged() ? "true" : "false")
         << ",\"numericallyConverged\":" << (result && result->converged() ? "true" : "false")
-        << ",\"physicalAccuracyQualified\":false,\"contextBoundCheckpoint\":false,\"mesh\":"; jsonString(out,opt.mesh);
+        << ",\"physicalAccuracyQualified\":false,\"contextBoundCheckpoint\":" << (savedCheckpoint ? "true" : "false")
+        << ",\"checkpointAvailable\":" << (savedCheckpoint ? "true" : "false") << ",\"checkpointPath\":"; jsonString(out,opt.prefix + ".checkpoint");
+    out << ",\"restartInput\":"; if(opt.restart.empty())out << "null"; else jsonString(out,opt.restart);
+    out << ",\"resumed\":" << (result && result->resumed ? "true" : "false")
+        << ",\"acceptedIterationsBefore\":" << (result ? result->acceptedIterationsBefore : 0)
+        << ",\"totalAcceptedIterations\":" << (result && result->checkpoint ? result->checkpoint->acceptedIterations() : 0)
+        << ",\"mesh\":"; jsonString(out,opt.mesh);
     out << ",\"case\":"; jsonString(out,opt.scenario);
     out << ",\"cells\":" << mesh.cells.size() << ",\"faces\":" << mesh.faces.size()
         << ",\"lastAcceptedAvailable\":" << (result && result->lastAccepted ? "true" : "false") << ",\"lastRejectedAvailable\":" << (result && result->lastRejected ? "true" : "false")
@@ -259,6 +276,7 @@ void summary(const Options& opt, const FvMesh2D& mesh, const CompatibleFlowResul
         << ",\"acceptedIterations\":" << (result ? std::count_if(result->iterations.begin(),result->iterations.end(),[](const auto& it){return it.accepted;}) : 0)
         << ",\"lastAcceptedMetrics\":";
     std::optional<CompatibleFlowMetrics2D> acceptedMetrics;
+    if(result && result->checkpoint)acceptedMetrics=result->checkpoint->lastAcceptedMetrics();
     if (result) for (const auto& it : result->iterations) if (it.accepted) acceptedMetrics=it.metrics;
     metrics(out,acceptedMetrics);
     out << ",\"controls\":{\"viscosity\":" << c.viscosity << ",\"referenceLength\":" << c.referenceLength << ",\"referenceVelocity\":" << c.referenceVelocity
@@ -291,6 +309,16 @@ int run(int argc, char** argv) {
     boundaries.scenario = "custom";
     opt.controls.stopRequested = [] { return cancelled != 0; };
     opt.controls.iterationAccepted = progress;
+    std::optional<CompatibleFlowCheckpoint2D> restart, publishedCheckpoint;
+    if(!opt.restart.empty()) {
+        std::ifstream input(opt.restart);
+        if(!input)throw std::invalid_argument("Cannot open compatible checkpoint");
+        restart=readCompatibleFlowCheckpoint2D(input,mesh);
+    }
+    opt.controls.checkpointAccepted=[&](const CompatibleFlowCheckpoint2D& checkpoint) {
+        publishCheckpoint(opt,checkpoint);
+        publishedCheckpoint=checkpoint;
+    };
     const auto prepared = Clock::now();
     const double readSeconds = std::chrono::duration<double>(prepared-start).count();
     ensureFresh(opt.prefix);
@@ -300,9 +328,12 @@ int run(int argc, char** argv) {
     try {
         Signals signals;
         const auto solveStart = Clock::now();
-        result = solveCompatibleIncompressible2D(mesh,opt.controls);
+        result = restart ? resumeCompatibleIncompressible2D(mesh,opt.controls,*restart)
+                         : solveCompatibleIncompressible2D(mesh,opt.controls);
         const auto solved = Clock::now();
         solveSeconds = std::chrono::duration<double>(solved-solveStart).count();
+        // On a failed resumed attempt, preserve the existing accepted state too.
+        if(result.checkpoint)publishCheckpoint(opt,*result.checkpoint);
         // Preserve complete solver evidence before any derived visualization export.
         saveState(opt,result.seed,".seed.json","seed");
         saveState(opt,result.lastAccepted,".accepted.json","accepted-iterate");
@@ -317,6 +348,9 @@ int run(int argc, char** argv) {
         std::cout << ",\"converged\":" << (result.converged() ? "true" : "false") << ",\"reason\":"; jsonString(std::cout,result.reason); std::cout << "}\n";
         return result.converged() ? 0 : result.stop == CompatibleFlowStop2D::Cancelled ? 130 : 2;
     } catch (const std::exception& e) {
+        // A callback/export exception must still expose the last successfully
+        // published checkpoint; it does not manufacture derived flow fields.
+        if(publishedCheckpoint)result.checkpoint=publishedCheckpoint;
         // An incomplete export must never advertise a completed deliverable.
         try { summary(opt,mesh,&result,"failed",e.what(),false,readSeconds,solveSeconds,0,std::chrono::duration<double>(Clock::now()-start).count()); }
         catch (const std::exception& exportError) { std::cerr << "Could not publish failure summary: " << exportError.what() << '\n'; }

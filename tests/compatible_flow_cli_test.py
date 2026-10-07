@@ -33,9 +33,9 @@ def snapshot(prefix):
             for p in root.glob(prefix.name + '.*') if p.is_file()}
 
 
-def run(label, case='cavity', extra=(), code=0, compatible=True):
+def run(label, case='cavity', extra=(), code=0, compatible=True, nu='.1'):
     prefix = root / label
-    cmd = [cli, '--mesh', str(mesh), '--output', str(prefix), '--case', case, '--nu', '.1']
+    cmd = [cli, '--mesh', str(mesh), '--output', str(prefix), '--case', case, '--nu', nu]
     if compatible:
         cmd += ['--discretization', 'compatible']
     cmd += list(extra)
@@ -50,7 +50,8 @@ def exported(prefix, expected):
     summary = read(prefix)
     assert summary['status'] == expected and summary['exportsComplete']
     assert summary['converged'] == (expected == 'converged')
-    assert not summary['physicalAccuracyQualified'] and not summary['contextBoundCheckpoint']
+    assert not summary['physicalAccuracyQualified'] and summary['contextBoundCheckpoint']
+    assert summary['checkpointAvailable'] and Path(str(prefix) + '.checkpoint').is_file()
     assert summary['lastAcceptedAvailable']
     accepted, field = read(prefix, '.accepted.json'), read(prefix, '.fields.json')
     assert accepted['kind'] == 'accepted-iterate'
@@ -58,7 +59,10 @@ def exported(prefix, expected):
     assert len(accepted['cells']) == summary['cells'] and len(accepted['faces']) == summary['faces']
     assert all(len(c) == 9 for c in accepted['cells'])
     assert all(len(f) == 4 for f in accepted['faces'])
-    assert read(prefix, '.seed.json')['kind'] == 'seed'
+    if summary['resumed']:
+        assert not Path(str(prefix) + '.seed.json').exists()
+    else:
+        assert read(prefix, '.seed.json')['kind'] == 'seed'
     with Path(str(prefix) + '.cells.csv').open() as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == summary['cells']
@@ -103,6 +107,30 @@ try:
     exported(custom, 'converged')
     assert read(custom, '.accepted.json')['cells'] == read(cavity, '.accepted.json')['cells']
     assert read(custom, '.accepted.json')['faces'] == read(cavity, '.accepted.json')['faces']
+
+    continued = run('continued', extra=('--restart', str(budget) + '.checkpoint'))
+    resumed_summary = exported(continued, 'converged')
+    assert resumed_summary['resumed'] and resumed_summary['acceptedIterationsBefore'] == 1
+    assert resumed_summary['totalAcceptedIterations'] == solved['acceptedIterations']
+    assert Path(str(continued) + '.checkpoint').read_bytes() == Path(str(cavity) + '.checkpoint').read_bytes()
+    assert read(continued, '.accepted.json')['cells'] == read(cavity, '.accepted.json')['cells']
+    assert read(continued, '.accepted.json')['faces'] == read(cavity, '.accepted.json')['faces']
+    failed_resume = run('failed-resume', extra=('--restart', str(budget) + '.checkpoint',
+                                              '--linear-restarts', '1', '--krylov-directions', '1'), code=2)
+    failed_summary = exported(failed_resume, 'linear-budget')
+    assert failed_summary['acceptedIterations'] == 0 and failed_summary['totalAcceptedIterations'] == 1
+    assert Path(str(failed_resume) + '.checkpoint').read_bytes() == Path(str(budget) + '.checkpoint').read_bytes()
+    mismatched = run('mismatch', extra=('--restart', str(budget) + '.checkpoint'), nu='.2', code=1)
+    assert read(mismatched)['status'] == 'failed' and not read(mismatched)['checkpointAvailable']
+    assert not Path(str(mismatched) + '.accepted.json').exists()
+    seed_as_restart = run('seed-as-restart', extra=('--restart', str(budget) + '.seed.json'), code=1)
+    assert not Path(str(seed_as_restart) + '.summary.json').exists()
+    corrupt = root / 'corrupt.checkpoint'
+    text = Path(str(budget) + '.checkpoint').read_text()
+    index = text.index('STATE\n') + len('STATE\n') + 15
+    corrupt.write_text(text[:index] + ('1' if text[index] == '0' else '0') + text[index+1:])
+    damaged = run('corrupt-read', extra=('--restart', str(corrupt)), code=1)
+    assert not Path(str(damaged) + '.summary.json').exists()
 
     # New opt-in must not alter the original default path.
     default = run('default', compatible=False, extra=('--max-iterations', '1500',))
@@ -160,6 +188,35 @@ try:
         cancelled = exported(prefix, 'cancelled')
         assert 1 <= cancelled['acceptedIterations'] < solved['acceptedIterations']
         assert not cancelled['converged']
+        cancel_resume = run('cancel-resume', extra=('--restart', str(prefix) + '.checkpoint'))
+        exported(cancel_resume, 'converged')
+        assert Path(str(cancel_resume) + '.checkpoint').read_bytes() == Path(str(cavity) + '.checkpoint').read_bytes()
+
+        # Uncatchable termination must leave the most recently published file.
+        killed_prefix = root / 'killed'
+        cmd = [cli, '--discretization', 'compatible', '--mesh', str(mesh),
+               '--output', str(killed_prefix), '--case', 'cavity', '--nu', '.1']
+        child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        lines, events = [], queue.Queue()
+        reader = threading.Thread(target=collect, daemon=True)
+        reader.start()
+        try:
+            events.get(timeout=20)
+            child.kill()
+            code = child.wait(timeout=20)
+            reader.join(timeout=2)
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait()
+        Path(str(killed_prefix) + '.stdout').write_text(''.join(lines))
+        Path(str(killed_prefix) + '.stderr').write_text(child.stderr.read())
+        assert code == -signal.SIGKILL
+        assert read(killed_prefix)['status'] == 'running' and not read(killed_prefix)['converged']
+        recovered = run('kill-resume', extra=('--restart', str(killed_prefix) + '.checkpoint'))
+        exported(recovered, 'converged')
+        assert Path(str(recovered) + '.checkpoint').read_bytes() == Path(str(cavity) + '.checkpoint').read_bytes()
+
     print(json.dumps({'passed': True, 'cavityIterations': solved['acceptedIterations'],
                       'cavityCells': solved['cells'], 'signalTested': os.name == 'posix',
                       'evidenceDirectory': str(root)}))

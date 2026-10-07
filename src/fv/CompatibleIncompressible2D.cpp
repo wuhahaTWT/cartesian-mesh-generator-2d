@@ -1,6 +1,8 @@
 #include "cartmesh2d/fv/CompatibleIncompressible2D.hpp"
 #include "cartmesh2d/fv/detail/CompatibleFlowTransport2D.hpp"
 #include "cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp"
+#include "cartmesh2d/fv/detail/CompatibleFlowCheckpoint2D.hpp"
+#include <bit>
 #include <exception>
 #include <limits>
 #include <numeric>
@@ -12,6 +14,7 @@ using detail::linearNorm;
 namespace sparse=detail::compatible::linear;
 constexpr auto absent=std::numeric_limits<std::size_t>::max();
 struct Cancelled {};
+struct IncompatibleCheckpoint:std::invalid_argument {using std::invalid_argument::invalid_argument;};
 struct UserException {std::exception_ptr exception;};
 template<class F> auto userCall(F&& f) {
     try{return f();}catch(...){throw UserException{std::current_exception()};}
@@ -98,6 +101,32 @@ struct Problem {
                 }
             }
         }
+    }
+    std::shared_ptr<const std::vector<std::uint64_t>> checkpointContext(const FvMesh2D& original)const {
+        auto context=std::make_shared<std::vector<std::uint64_t>>();
+        context->reserve(detail::compatibleCheckpointContextWords2D(original));
+        const auto word=[&](std::uint64_t x){context->push_back(x);};
+        const auto real=[&](double x){word(std::bit_cast<std::uint64_t>(x));};
+        // Scheme version must change when the underlying discrete problem changes.
+        word(1);word(original.cells.size());word(original.faces.size());
+        real(control.viscosity);real(control.referenceVelocity);real(control.referenceLength);
+        word(static_cast<std::uint64_t>(control.equation));word(static_cast<std::uint64_t>(control.quadratureOrder));
+        word(static_cast<std::uint64_t>(control.globalization));
+        for(const auto& cell:original.cells){real(cell.centre.x);real(cell.centre.y);real(cell.area);word(cell.faces.size());for(auto f:cell.faces)word(f);}
+        for(std::size_t f=0;f<original.faces.size();++f){const auto& face=original.faces[f];
+            word(face.owner);word(face.neighbour?static_cast<std::uint64_t>(*face.neighbour):std::numeric_limits<std::uint64_t>::max());
+            word(static_cast<std::uint64_t>(face.patch));real(face.centre.x);real(face.centre.y);
+            real(face.areaVector.x);real(face.areaVector.y);real(face.correction.x);real(face.correction.y);
+            real(face.transmissibility);real(face.neighbourWeight);
+            if(face.neighbour){word(std::numeric_limits<std::uint64_t>::max());word(0);}
+            else {const auto& b=control.boundaries[boundary[f]];word(static_cast<std::uint64_t>(b.kind));word(b.rejectBackflow?1:0);}
+        }
+        for(double x:known)real(x);
+        // These are the loads actually integrated by the native preparation,
+        // including arbitrary callbacks. No second quadrature/PDE implementation.
+        for(const auto& cell:cells)for(double x:cell.base.rhs)real(x);
+        require(context->size()==detail::compatibleCheckpointContextWords2D(original),"Internal compatible checkpoint context extent");
+        return context;
     }
     Vec seed(const std::optional<CompatibleFlowState2D>& initial)const {
         const auto nc=mesh.cells.size();Vec state(9*nc+4*mesh.faces.size());const double U=control.referenceVelocity;
@@ -193,13 +222,23 @@ Vec recover(const Problem& p,const Assembly& a,const Vec& solution){Vec retained
         for(std::size_t j=0;j<v.size();++j)state[p.index(t,e.a.m,j)]=v[j];}
     for(auto x:state)linearFinite(x);return state;
 }
-}
-CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::optional<CompatibleFlowState2D>& initial) {
+CompatibleFlowResult2D run(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::optional<CompatibleFlowState2D>& initial,const CompatibleFlowCheckpoint2D* restart) {
     validate(mesh,c,initial);CompatibleFlowResult2D result;
+    using CheckpointAccess=detail::CompatibleCheckpointAccess2D;
     try {
-        poll(c);Problem problem(mesh,c);auto current=problem.seed(initial);result.seed=problem.physical(current);auto old=problem.metrics(current);
-        const bool pseudo=c.globalization==CompatibleGlobalization2D::PseudoTime;double step=c.initialPseudoStep;
-        for(std::size_t it=0;it<c.maximumIterations;++it){poll(c);result.iterations.emplace_back();auto& record=result.iterations.back();record.iteration=it;record.pseudoStep=pseudo?step:0;
+        poll(c);Problem problem(mesh,c);const auto context=problem.checkpointContext(mesh);
+        Vec current;double step=c.initialPseudoStep;std::size_t acceptedCount=0;
+        if(restart){const auto& saved=CheckpointAccess::get(*restart);
+            if(!saved.context||*saved.context!=*context||saved.normalizedState.size()!=9*mesh.cells.size()+4*mesh.faces.size())
+                throw IncompatibleCheckpoint("Compatible checkpoint mesh, scales, equation, boundary or native load differs");
+            if(saved.nextPseudoStep>c.maximumPseudoStep)throw IncompatibleCheckpoint("Checkpoint next pseudo-step exceeds the requested maximum");
+            if(saved.acceptedIterations>std::numeric_limits<std::size_t>::max()-c.maximumIterations)throw IncompatibleCheckpoint("Compatible checkpoint iteration range exceeded");
+            current=saved.normalizedState;step=saved.nextPseudoStep;acceptedCount=saved.acceptedIterations;
+            result.resumed=true;result.acceptedIterationsBefore=acceptedCount;result.lastAccepted=problem.physical(current);result.checkpoint=*restart;
+        }else {current=problem.seed(initial);result.seed=problem.physical(current);}
+        auto old=problem.metrics(current);
+        const bool pseudo=c.globalization==CompatibleGlobalization2D::PseudoTime;
+        for(std::size_t it=0;it<c.maximumIterations;++it){poll(c);result.iterations.emplace_back();auto& record=result.iterations.back();record.iteration=result.acceptedIterationsBefore+it;record.pseudoStep=pseudo?step:0;
             const auto assembly=assemble(problem,current,pseudo?1/step:0);const auto solved=linearSolve(problem,assembly,record);
             if(!solved){result.stop=CompatibleFlowStop2D::LinearBudget;result.reason="Sparse linear solve did not meet its true residual target; no candidate recovery";return result;}
             const auto candidate=recover(problem,assembly,*solved);bool accepted=false;
@@ -215,6 +254,9 @@ CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,cons
                     if(pseudo){next=metrics.residualNorm==0||old.residualNorm==0||converged?c.maximumPseudoStep:std::min(c.maximumPseudoStep,step*(old.residualNorm/metrics.residualNorm));
                         if(!std::isfinite(next)||next<=0)throw std::runtime_error("Compatible pseudo-time step invalid; trial not accepted");}
                     auto physical=problem.physical(trial);poll(c);result.lastAccepted=std::move(physical);current=std::move(trial);old=metrics;step=next;accepted=true;record.accepted=true;
+                    ++acceptedCount;
+                    result.checkpoint=CheckpointAccess::make({context,current,mesh.cells.size(),mesh.faces.size(),acceptedCount,step,metrics});
+                    if(c.checkpointAccepted)userCall([&]{c.checkpointAccepted(*result.checkpoint);});
                     if(c.iterationAccepted)userCall([&]{c.iterationAccepted(record);});
                     if(converged){result.stop=CompatibleFlowStop2D::Converged;result.reason="Original momentum, divergence, linear and applicable state-change targets satisfied";return result;}
                     break;
@@ -224,9 +266,17 @@ CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,cons
             if(!accepted){result.stop=CompatibleFlowStop2D::BacktrackingBudget;result.reason="All backtracking trials rejected; last accepted iterate retained";return result;}
         }
         result.stop=CompatibleFlowStop2D::NonlinearBudget;result.reason="Nonlinear iteration budget exhausted; no converged flow";
-    }catch(const UserException& e){std::rethrow_exception(e.exception);}
+    }catch(const IncompatibleCheckpoint&){throw;}
+    catch(const UserException& e){std::rethrow_exception(e.exception);}
     catch(const Cancelled&){result.stop=CompatibleFlowStop2D::Cancelled;result.reason="Cancelled; unfinished trial not accepted";}
     catch(const std::exception& e){result.stop=CompatibleFlowStop2D::NumericalFailure;result.reason=e.what();}
     return result;
+}
+}
+CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::optional<CompatibleFlowState2D>& initial) {
+    return run(mesh,c,initial,nullptr);
+}
+CompatibleFlowResult2D resumeCompatibleIncompressible2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const CompatibleFlowCheckpoint2D& checkpoint) {
+    return run(mesh,c,std::nullopt,&checkpoint);
 }
 }
