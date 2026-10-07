@@ -89,7 +89,8 @@ struct Problem {
             for(std::size_t l=0;l<mesh.cells[t].faces.size();++l){const auto id=mesh.cells[t].faces[l];if(!open[id])continue;const auto& f=mesh.faces[id];const auto& b=c.boundaries[boundary[id]];const auto S=f.areaVector;const double length=std::hypot(S.x,S.y);
                 for(auto [z,w]:gauss(c.quadratureOrder)){const double s=z-.5;const Point2D p{f.centre.x-s*S.y,f.centre.y+s*S.x};Vector2D traction{};
                     if(mixed[id]){const auto n=normals[id];const double shear=scalarValue(b.tangentialTraction,{p.x*L,p.y*L});traction={-n.y*shear,n.x*shear};}
-                    else traction=value(b.value,{p.x*L,p.y*L});const auto phi=a.basis.phi(p);
+                    else traction=value(b.value,{p.x*L,p.y*L});
+                    const auto phi=a.basis.phi(p);
                     for(std::size_t k=0;k<2;++k){const double test=w*(k?s:1);const auto rx=3+2*l+k,ry=m+rx;
                         e.rhs[rx]+=test*length*traction.x/U/U;e.rhs[ry]+=test*length*traction.y/U/U;
                         if(b.kind==CompatibleBoundaryKind2D::PseudoTraction)for(std::size_t j=0;j<m;++j){double gx=0,gy=0;for(std::size_t q=0;q<3;++q){gx+=phi[q]*a.gx(q,j);gy+=phi[q]*a.gy(q,j);}
@@ -108,20 +109,24 @@ struct Problem {
                 state[x]=n.x*known[4*id+j]-n.y*tangent;state[y]=n.y*known[4*id+j]+n.x*tangent;}}
             else for(std::size_t j=0;j<4;++j)if(map[4*id+j]==absent)state[9*nc+4*id+j]=known[4*id+j];}
         if(!outlet){const double p=state[9*(nc-1)+6];for(std::size_t t=0;t<nc;++t)state[9*t+6]-=p;}
-        for(auto x:state)linearFinite(x);return state;
+        for(auto x:state)linearFinite(x);
+        return state;
     }
     CompatibleFlowState2D physical(const Vec& state)const {
         CompatibleFlowState2D out;out.cells.resize(mesh.cells.size());out.faces.resize(mesh.faces.size());const double U=control.referenceVelocity;
         for(std::size_t t=0;t<out.cells.size();++t)for(std::size_t j=0;j<9;++j)out.cells[t][j]=linearFinite(state[9*t+j]*(j<6?U:U*U));
-        for(std::size_t f=0;f<out.faces.size();++f)for(std::size_t j=0;j<4;++j)out.faces[f][j]=linearFinite(state[9*out.cells.size()+4*f+j]*U);return out;
+        for(std::size_t f=0;f<out.faces.size();++f)for(std::size_t j=0;j<4;++j)out.faces[f][j]=linearFinite(state[9*out.cells.size()+4*f+j]*U);
+        return out;
     }
     std::size_t index(std::size_t t,std::size_t m,std::size_t j)const {
-        if(j>=2*m)return 9*t+6+j-2*m;const auto c=j/m,k=j%m;
+        if(j>=2*m)return 9*t+6+j-2*m;
+        const auto c=j/m,k=j%m;
         return k<3?9*t+3*c+k:9*mesh.cells.size()+4*mesh.cells[t].faces[(k-3)/2]+2*c+(k-3)%2;
     }
     Vec local(std::size_t t,const Vec& state)const {const auto m=cells[t].base.a.m;Vec out(2*m+3);for(std::size_t j=0;j<out.size();++j)out[j]=state[index(t,m,j)];return out;}
     std::vector<std::size_t> retained(std::size_t t,const P1System& e)const {std::vector<std::size_t> ids;const auto m=e.a.m;
-        for(auto j:e.outside)if(j==2*m)ids.push_back(4*mesh.faces.size()+t);else{const auto c=j/m,k=j%m;ids.push_back(4*mesh.cells[t].faces[(k-3)/2]+2*c+(k-3)%2);}return ids;}
+        for(auto j:e.outside)if(j==2*m)ids.push_back(4*mesh.faces.size()+t);else{const auto c=j/m,k=j%m;ids.push_back(4*mesh.cells[t].faces[(k-3)/2]+2*c+(k-3)%2);}
+        return ids;}
     // Orthogonal face coordinates affect both test and trial functions:
     // K_frame=W^T K_cart W, f_frame=W^T f_cart. Stored fields stay Cartesian.
     std::array<std::pair<std::size_t,double>,2> project(std::size_t raw)const {
@@ -144,13 +149,15 @@ struct Problem {
         for(std::size_t t=0;t<cells.size();++t){poll(control);const auto e=equations(t,state);const auto v=local(t,state);const auto m=e.a.m;
             for(std::size_t i=0;i<v.size();++i){double r=-e.rhs[i];for(std::size_t j=0;j<v.size();++j)r+=e.matrix(i,j)*v[j];residual[index(t,m,i)]+=linearFinite(r);}
             for(const auto& tri:cells[t].lift.tri)for(auto point:{tri.c,tri.a,tri.b}){const auto phi=e.a.basis.phi(point);double d=0;
-                for(std::size_t j=0;j<3;++j)for(std::size_t l=0;l<m;++l)d+=phi[j]*(e.a.gx(j,l)*v[l]+e.a.gy(j,l)*v[m+l]);out.divergence=std::max(out.divergence,std::abs(linearFinite(d)));}
+                for(std::size_t j=0;j<3;++j)for(std::size_t l=0;l<m;++l)d+=phi[j]*(e.a.gx(j,l)*v[l]+e.a.gy(j,l)*v[m+l]);
+                out.divergence=std::max(out.divergence,std::abs(linearFinite(d)));}
         }
         for(std::size_t t=0;t<cells.size();++t)for(std::size_t j=0;j<6;++j)out.cellMomentum=std::max(out.cellMomentum,std::abs(residual[9*t+j])/mesh.cells[t].area);
         for(std::size_t f=0;f<mesh.faces.size();++f){
             if(mixed[f]){const auto n=normals[f];for(std::size_t j=0;j<2;++j){auto& rx=residual[9*cells.size()+4*f+j];auto& ry=residual[9*cells.size()+4*f+2+j];const double tangent=-n.y*rx+n.x*ry;rx=n.x*rx+n.y*ry;ry=tangent;}}
             for(std::size_t j=0;j<4;++j){auto& q=residual[9*cells.size()+4*f+j];if(map[4*f+j]==absent)q=0;else out.faceMomentum=std::max(out.faceMomentum,std::abs(q)/std::hypot(mesh.faces[f].areaVector.x,mesh.faces[f].areaVector.y));}}
-        if(!outlet)residual[9*(cells.size()-1)+6]=0;out.residualNorm=linearNorm(residual);
+        if(!outlet)residual[9*(cells.size()-1)+6]=0;
+        out.residualNorm=linearNorm(residual);
         linearFinite(out.cellMomentum);linearFinite(out.faceMomentum);return out;
     }
 };
@@ -161,19 +168,23 @@ Assembly assemble(const Problem& p,const Vec& state,double inverseStep) {
         if(inverseStep>0)for(std::size_t c=0;c<2;++c)for(std::size_t i=0;i<3;++i)for(std::size_t j=0;j<3;++j){const double mass=inverseStep*e.a.mass(i,j);e.matrix(c*m+i,c*m+j)+=mass;e.rhs[c*m+i]+=mass*old[c*m+j];}
         e.condense();const auto pk=e.condensed().first;
         if(p.control.equation==CompatibleEquation2D::NavierStokes){const auto d=transportAdvectorDerivative(p.mesh,t,e.a,p.cells[t].lift,old,p.localOpen(t),p.control.quadratureOrder);
-            for(std::size_t i=0;i<2*m;++i)for(std::size_t j=0;j<2*m;++j){e.matrix(i,j)+=d(i,j);e.rhs[i]+=d(i,j)*old[j];}e.condense();}
+            for(std::size_t i=0;i<2*m;++i)for(std::size_t j=0;j<2*m;++j){e.matrix(i,j)+=d(i,j);e.rhs[i]+=d(i,j)*old[j];}
+            e.condense();}
         const auto [k,b]=e.condensed();const auto ids=p.retained(t,e);
-        for(std::size_t i=0;i<ids.size();++i)for(const auto [rawRow,rowWeight]:p.project(ids[i])){
-            if(rowWeight==0)continue;const auto row=p.map[rawRow];if(row==absent)continue;out.rhs[row]+=rowWeight*b[i];
-            for(std::size_t j=0;j<ids.size();++j)for(const auto [rawCol,colWeight]:p.project(ids[j])){
-                if(colWeight==0)continue;const auto col=p.map[rawCol];const double value=rowWeight*k(i,j)*colWeight,preconditioner=rowWeight*pk(i,j)*colWeight;
+        for(std::size_t i=0;i<ids.size();++i)for(const auto& [rawRow,rowWeight]:p.project(ids[i])){
+            if(rowWeight==0)continue;
+            const auto row=p.map[rawRow];if(row==absent)continue;out.rhs[row]+=rowWeight*b[i];
+            for(std::size_t j=0;j<ids.size();++j)for(const auto& [rawCol,colWeight]:p.project(ids[j])){
+                if(colWeight==0)continue;
+                const auto col=p.map[rawCol];const double value=rowWeight*k(i,j)*colWeight,preconditioner=rowWeight*pk(i,j)*colWeight;
                 if(col==absent)out.rhs[row]-=value*p.known[rawCol];
                 else {if(value!=0)out.entries.push_back({static_cast<std::int64_t>(row),static_cast<std::int64_t>(col),value});
                     if(preconditioner!=0)out.picard.push_back({static_cast<std::int64_t>(row),static_cast<std::int64_t>(col),preconditioner});}}
         }
         out.local.push_back(std::move(e));
     }
-    for(auto x:out.rhs)linearFinite(x);return out;
+    for(auto x:out.rhs)linearFinite(x);
+    return out;
 }
 std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlowIteration2D& record) {
     const double initial=linearNorm(a.rhs);Vec x(p.count),r=a.rhs;record.linearRelativeResidual=initial==0?0:1;if(initial==0)return x;
@@ -181,7 +192,8 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
     sparse::Block block(k,p.areas,"ilu0",p.outlet?(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet"):"gauge",p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
         const auto d=detail::newtonKrylovDirection2D([&](const Vec& v){poll(p.control);++record.matrixProducts;return k.apply(block.apply(v));},r,p.control.krylovDirections);
-        if(!d)return std::nullopt;const auto step=block.apply(*d);for(std::size_t i=0;i<x.size();++i)x[i]+=step[i];
+        if(!d)return std::nullopt;
+        const auto step=block.apply(*d);for(std::size_t i=0;i<x.size();++i)x[i]+=step[i];
         const auto ax=k.apply(x);for(std::size_t i=0;i<x.size();++i)r[i]=a.rhs[i]-ax[i];++record.linearRestarts;
         record.linearRelativeResidual=linearNorm(r)/initial;if(record.linearRelativeResidual<=p.control.linearTolerance)return x;
     }
@@ -189,9 +201,10 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
 }
 Vec recover(const Problem& p,const Assembly& a,const Vec& solution){Vec retained=p.known,state(9*p.cells.size()+4*p.mesh.faces.size());
     for(std::size_t i=0;i<retained.size();++i)if(p.map[i]!=absent)retained[i]=solution[p.map[i]];
-    for(std::size_t t=0;t<a.local.size();++t){poll(p.control);const auto& e=a.local[t];Vec ext;for(auto id:p.retained(t,e)){double value=0;for(const auto [raw,weight]:p.project(id))if(weight!=0)value+=weight*retained[raw];ext.push_back(value);}const auto v=e.recover(ext);
+    for(std::size_t t=0;t<a.local.size();++t){poll(p.control);const auto& e=a.local[t];Vec ext;for(auto id:p.retained(t,e)){double value=0;for(const auto& [raw,weight]:p.project(id))if(weight!=0)value+=weight*retained[raw];ext.push_back(value);}const auto v=e.recover(ext);
         for(std::size_t j=0;j<v.size();++j)state[p.index(t,e.a.m,j)]=v[j];}
-    for(auto x:state)linearFinite(x);return state;
+    for(auto x:state)linearFinite(x);
+    return state;
 }
 }
 CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::optional<CompatibleFlowState2D>& initial) {

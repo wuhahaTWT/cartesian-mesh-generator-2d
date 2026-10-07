@@ -1,0 +1,101 @@
+{
+  "schema": "cartmesh2d-native-laminar-compatible-symmetry-v1",
+  "scope": "Explicit compatible API symmetry boundary and independent zero-field Re=20 cylinder start; research driver only, no legacy default change.",
+  "geometry": {
+    "polygonSha256": "a3c33ea090e7c12b820ba0d4931ff4565245418ec2950e3f854008fbc14571d9",
+    "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+    "cells": 17260,
+    "faces": 34904,
+    "preserved": ["all original cells", "all original faces", "embedded no-slip wall", "left velocity", "horizontal symmetry", "right product-style pseudo-traction"]
+  },
+  "symmetryBoundary": {
+    "apiKindAtRecordedRun": "Symmetry in local research commit b1768f5; after ordinary merge, the strictly more general public kind is NormalVelocity with zero normalVelocity and zero tangentialTraction callbacks.",
+    "meaning": "Only the callback velocity dotted with the outward unit normal is prescribed; both P1 tangential face moments remain unknown.",
+    "implementation": "Each straight boundary face uses an orthogonal tangent/normal change of basis before local condensation and converts saved physical x/y traces at the API boundary. The merged NormalVelocity interface additionally supports nonzero tangential traction.",
+    "rotatedUniformControl": {
+      "angleRadians": 0.37,
+      "iterations": 1,
+      "cellMomentum": 6.4517474984961286e-15,
+      "faceMomentum": 7.3021930736099244e-15,
+      "divergence": 2.6996917670354343e-14,
+      "testOutputSha256": "9a7c5596079c7ec0eb4d16ec6f77223f217aef896355542f89e367664a6d3785"
+    },
+    "mergedNormalVelocityControl": {
+      "iterations": 1,
+      "cellMomentum": 7.4907492505992604e-15,
+      "faceMomentum": 6.4200638729031057e-15,
+      "divergence": 2.7693719247536224e-14,
+      "testOutputSha256": "dbcc27e6f79738006d3db5a99bdeb13a14e94f90700ccaf123d647888e36adf6"
+    }
+  },
+  "coldStart": {
+    "initialField": "zero coefficients followed only by exact boundary trace imposition",
+    "equation": "steady compatible Navier-Stokes",
+    "nu_m2_s": 0.1,
+    "referenceVelocity_m_s": 1.0,
+    "referenceLength_m": 1.0,
+    "boundary": "left (1,0), horizontal symmetry, embedded (0,0), right (nu G-pI)n=0",
+    "globalization": "pseudo-time",
+    "initialPseudoStep": 1.0,
+    "maximumPseudoStep": 1000000.0,
+    "linearRelativeTolerance": 1e-13,
+    "maximumLinearRestarts": 100,
+    "krylovDirections": 60,
+    "nonlinearIterations": 8,
+    "linearRestarts": 465,
+    "matrixProducts": 27511,
+    "processSeconds": 1298.5147151629999,
+    "peakRssObservedKiB": 1237504,
+    "converged": true,
+    "final": {
+      "cellMomentum": 1.5905289844649216e-12,
+      "faceMomentum": 2.9504136664720803e-13,
+      "maxWeakDivergence_s-1": 5.0842718923860275e-11,
+      "stateCoefficientChange": 2.3632651391380932e-10,
+      "internalResidual": 4.6033055839389547e-15,
+      "uncondensedResidualL2": 7.083355352777345e-13,
+      "freeFaceResidual": 1.2989609388114332e-14,
+      "wallNormalVelocity_m_s": 0.0,
+      "netBoundaryMassFlux_m2_s": -2.0018271762456408e-11,
+      "wallFx_m3_s2": 2.0686336487212165,
+      "wallPressureFx_m3_s2": 1.2457975011428313,
+      "wallViscousAndStabilizationFx_m3_s2": 0.8227463112235642,
+      "wallConvectionReconstructionFx_m3_s2": 8.983635482491932e-05,
+      "pressureVertexRange_m2_s2": 1.1664280401410108,
+      "rt1SampledMaxSpeed_m_s": 1.1676588324653701,
+      "energyBalance_m4_s3": 5.41214321622685e-11,
+      "globalMomentumBalanceX_m3_s2": -4.877709347539394e-11
+    },
+    "firstLinearSolve": {
+      "restarts": 97,
+      "matrixProducts": 5784,
+      "relativeResidual": 8.906495532311576e-14,
+      "interpretation": "The previously tested 50-restart budget cannot satisfy this deterministic first linear system; the successful path is not yet a cheap default."
+    }
+  },
+  "comparisonToPriorMediumContinuationDiagnostics": {
+    "source": "artifacts/current/native-laminar-product-outlet.json mediumFromPriorNaturalOutlet",
+    "note": "The earlier full reference state was not re-read in this run, so these are diagnostic differences, not a whole-field norm.",
+    "wallFxDifference_m3_s2": 9.701617287305453e-11,
+    "wallPressureFxDifference_m3_s2": 6.714162559262604e-11,
+    "wallViscousAndStabilizationFxDifference_m3_s2": 2.987321501279894e-11,
+    "wallConvectionReconstructionFxDifference_m3_s2": 6.431663470037041e-15,
+    "pressureVertexRangeDifference_m2_s2": 6.074052372184724e-11,
+    "rt1SampledMaxSpeedDifference_m_s": 1.133892979510165e-11
+  },
+  "sha256": {
+    "compatibleSolverBinary": "2de6c0de52f8e063dbd6478394d32daa6cb1da89ed226b54fe514881045ab942",
+    "mergedNormalVelocitySolverBinary": "1836497dfd98a60b2762a68db9efed15d7542d0cfae99c48736057e6c6282e63",
+    "acceptedState": "1027c12f86345093f8275ee69042f072fbb0b7cc154f0258a04f44ed70d02ed8",
+    "apiResult": "c0c8946d99afb7958545493b1d56e3b7dd44b4a8cd479aeefdcb45e9da1f6a41",
+    "nativeCheckCells": "b93cfc5c719eb4d6e48da8766b370fa37780eb2393db4b07c957df2b13c3c379",
+    "nativeCheckFaces": "b534d9a9ee7485cfad8d2133ae9a36b61bea81f8ca04a0721fce65d22d023ae0"
+  },
+  "limitations": [
+    "This compatible discretization differs from the legacy collocated FVM, so its bounded result does not silently select a legacy nonlinear branch or prove the old stencil repaired.",
+    "Only one independent medium-grid cold start is added; general uniqueness is not established.",
+    "The 27,511 matrix products, 100-restart requirement and about 1.18 GiB observed peak RSS (1,237,504 KiB) are not yet acceptable as the default backend.",
+    "Local curved-wall pressure and wall traction accuracy still require a sufficient spatial/geometric sequence.",
+    "This batch did not rerun the merged explicit CLI end to end; its separate boundary/CLI evidence remains in native-laminar-compatible-boundary-cli.json. No desktop, macOS or packaged-app integration is claimed here."
+  ]
+}
