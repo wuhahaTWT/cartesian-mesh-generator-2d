@@ -7,70 +7,9 @@
 #include <limits>
 #include <sstream>
 
-struct Tri {
-    Point2D c,a,b; double h,det; Vector2D j0,j1;
-    Tri(Point2D C,Point2D A,Point2D B,double H):c(C),a(A),b(B),h(H),j0{(A.x-C.x)/H,(A.y-C.y)/H},j1{(B.x-C.x)/H,(B.y-C.y)/H} {
-        det=j0.x*j1.y-j0.y*j1.x;
-        if(!(det>0))throw std::runtime_error("unsupported nonpositive centroid fan; geometry untouched");
-    }
-    Vector2D ref(Point2D p)const {auto d=p-c;return {(d.x*j1.y-d.y*j1.x)/(h*det),(j0.x*d.y-j0.y*d.x)/(h*det)};}
-    std::array<Vector2D,8> shape(Point2D p)const {
-        auto z=ref(p);std::array<Vector2D,8> a{{{1,0},{z.x,0},{z.y,0},{0,1},{0,z.x},{0,z.y},{z.x*z.x,z.x*z.y},{z.x*z.y,z.y*z.y}}};
-        for(auto& v:a)v={(j0.x*v.x+j1.x*v.y)/det,(j0.y*v.x+j1.y*v.y)/det};
-        return a;
-    }
-    std::vector<Q> quadrature(int order)const {
-        std::vector<Q> out;auto g=gauss(order);
-        for(auto [r,w]:g)for(auto [s,z]:g)out.push_back({{c.x+r*(a.x-c.x)+s*(1-r)*(b.x-c.x),c.y+r*(a.y-c.y)+s*(1-r)*(b.y-c.y)},w*z*(1-r)*h*h*det});
-        return out;
-    }
-};
-struct Lift {
-    std::vector<Tri> tri;std::vector<int> faceLocal;Mat coefficients;
-    double traceResidual=0,divResidual=0;
-    Lift(const Fixture& f,int t,const Local& a,int order):coefficients(8*int(f.mesh.cells[t].faces.size()),2*a.m) {
-        const auto& mesh=f.mesh;const auto& cell=mesh.cells[t];int nf=int(cell.faces.size()),nv=8*nf,ncon=7*nf-1,n=nv+ncon;
-        std::vector<int> perm(nf);std::iota(perm.begin(),perm.end(),0);
-        std::sort(perm.begin(),perm.end(),[&](int i,int j){auto x=mesh.faces[cell.faces[i]].centre-cell.centre,y=mesh.faces[cell.faces[j]].centre-cell.centre;return std::atan2(x.y,x.x)<std::atan2(y.y,y.x);});
-        for(int i:perm){const auto& face=mesh.faces[cell.faces[i]];double s=face.owner==std::size_t(t)?1:-1;auto S=face.areaVector;
-            tri.emplace_back(cell.centre,Point2D{face.centre.x+s*S.y/2,face.centre.y-s*S.x/2},Point2D{face.centre.x-s*S.y/2,face.centre.y+s*S.x/2},a.basis.h);faceLocal.push_back(i);}
-        for(int i=0;i<nf;++i){auto d=tri[i].a-tri[(i+nf-1)%nf].b;double scale=1+std::hypot(cell.centre.x,cell.centre.y)+std::sqrt(cell.area);
-            if(std::hypot(d.x,d.y)>256*std::numeric_limits<double>::epsilon()*scale)throw std::runtime_error("fan endpoints not closed at construction roundoff");}
-        Mat k(n,n),r(n,2*a.m),constraints(ncon,nv),targets(ncon,2*a.m);int cr=0;auto g=gauss(order);
-        for(int i=0;i<nf;++i){const auto& tr=tri[i];
-            for(auto q:tr.quadrature(order)){auto s=tr.shape(q.p);auto phi=a.basis.phi(q.p);double w=q.w/cell.area;
-                for(int j=0;j<8;++j){for(int l=0;l<8;++l)k(8*i+j,8*i+l)+=w*dot(s[j],s[l]);for(int c=0;c<2;++c)for(int l=0;l<3;++l)r(8*i+j,c*a.m+l)+=w*(c?s[j].y:s[j].x)*phi[l];}}
-            constraints(cr,8*i+1)=1;constraints(cr,8*i+5)=1;constraints(cr+1,8*i+6)=3;constraints(cr+2,8*i+7)=3;
-            for(int c=0;c<2;++c)for(int j=0;j<a.m;++j){const auto& d=c?a.gy:a.gx;double hdet=tr.h*tr.det;
-                targets(cr,c*a.m+j)=hdet*d(0,j);targets(cr+1,c*a.m+j)=hdet*(d(1,j)*tr.j0.x+d(2,j)*tr.j0.y);targets(cr+2,c*a.m+j)=hdet*(d(1,j)*tr.j1.x+d(2,j)*tr.j1.y);}
-            cr+=3;
-            const auto& face=mesh.faces[cell.faces[faceLocal[i]]];double sign=face.owner==std::size_t(t)?1:-1;Vector2D S{sign*face.areaVector.x/tr.h,sign*face.areaVector.y/tr.h};
-            for(auto [z,w]:g){double s=z-.5;Point2D p{face.centre.x-face.areaVector.y*s,face.centre.y+face.areaVector.x*s};auto shape=tr.shape(p);
-                for(int l=0;l<2;++l){double wt=w*(l?s:1);for(int j=0;j<8;++j)constraints(cr+l,8*i+j)+=wt*dot(shape[j],S);
-                    for(int c=0;c<2;++c)for(int j=0;j<2;++j)targets(cr+l,c*a.m+3+2*faceLocal[i]+j)+=wt*(j?s:1)*(c?S.y:S.x);}}
-            cr+=2;
-        }
-        // Omit only the redundant mean normal continuity on one radial face;
-        // its full trace is checked after reconstruction along with all others.
-        for(int i=0;i<nf;++i){int prev=(i+nf-1)%nf;auto d=tri[i].a-cell.centre;Vector2D S{d.y/a.basis.h,-d.x/a.basis.h};
-            for(int l=(i==0?1:0);l<2;++l){for(auto [z,w]:g){Point2D p{cell.centre.x+z*d.x,cell.centre.y+z*d.y};auto x=tri[i].shape(p),y=tri[prev].shape(p);double wt=w*(l?z-.5:1);
-                for(int j=0;j<8;++j){constraints(cr,8*i+j)+=wt*dot(x[j],S);constraints(cr,8*prev+j)-=wt*dot(y[j],S);}}++cr;}}
-        if(cr!=ncon)throw std::runtime_error("RT1 constraint size");
-        for(int i=0;i<ncon;++i){double norm=0;for(int j=0;j<nv;++j)norm+=constraints(i,j)*constraints(i,j);norm=std::sqrt(norm);if(!(norm>0))throw std::runtime_error("zero RT1 constraint");
-            for(int j=0;j<nv;++j)k(nv+i,j)=k(j,nv+i)=constraints(i,j)/norm;
-            for(int j=0;j<2*a.m;++j)r(nv+i,j)=targets(i,j)/norm;}
-        DenseLU lu(k.v,n);
-        for(int j=0;j<2*a.m;++j){Vec rhs(n);for(int i=0;i<n;++i)rhs[i]=r(i,j);auto x=lu.solve(rhs);
-            for(int pass=0;pass<1;++pass){auto rr=rhs;for(int i=0;i<n;++i)for(int l=0;l<n;++l)rr[i]-=k(i,l)*x[l];auto dx=lu.solve(rr);for(int i=0;i<n;++i)x[i]+=dx[i];}
-            for(int i=0;i<nv;++i)coefficients(i,j)=x[i];
-            for(int i=0;i<ncon;++i){double v=-targets(i,j);for(int l=0;l<nv;++l)v+=constraints(i,l)*x[l];divResidual=std::max(divResidual,std::abs(v));}
-            for(int i=0;i<nf;++i){int prev=(i+nf-1)%nf;auto d=tri[i].a-cell.centre;Vector2D S{d.y/a.basis.h,-d.x/a.basis.h};
-                for(double z:{0.,.5,1.}){Point2D p{cell.centre.x+z*d.x,cell.centre.y+z*d.y};auto s=tri[i].shape(p),v=tri[prev].shape(p);double jump=0;
-                    for(int l=0;l<8;++l)jump+=dot(s[l],S)*x[8*i+l]-dot(v[l],S)*x[8*prev+l];
-                    traceResidual=std::max(traceResidual,std::abs(jump));}}
-        }
-    }
-    Vector2D value(int i,int j,Point2D p)const{auto s=tri[i].shape(p);Vector2D v{};for(int l=0;l<8;++l){v.x+=s[l].x*coefficients(8*i+l,j);v.y+=s[l].y*coefficients(8*i+l,j);}return v;}
+struct FixtureLift : cartmesh2d::fv::detail::compatible::Lift {
+    FixtureLift(const Fixture& f,int t,const P1Local& a,int order):
+        cartmesh2d::fv::detail::compatible::Lift(f.mesh,t,a,order){}
 };
 
 double potentialAt(Point2D p){return p.x*p.x*p.x+p.x*p.y*p.y;}
@@ -78,33 +17,22 @@ Exact manufactured(Point2D p,const std::string& problem,double lambda){
     auto e=problem=="cylinder"?Exact{{0,0},{0,0},0}:exactAt(p,problem);
     e.p+=lambda*potentialAt(p);e.f.x+=lambda*(3*p.x*p.x+p.y*p.y);e.f.y+=lambda*2*p.x*p.y;return e;
 }
-struct Element {
-    Local a;Mat matrix;Vec rhs;std::vector<int> inside,outside;Mat eliminated;Vec loadInternal;
+struct Element : P1System {
     double trace=0,constraint=0,loadIdentity=0;
-    Element(const Fixture& f,int t,const std::string& problem,double lambda,bool lifted,bool symmetric,int order):a(f,t,problem=="cylinder"?"couette":problem,order),matrix(2*a.m+3,2*a.m+3),rhs(2*a.m+3),eliminated(8,2*a.m-5) {
-        int m=a.m;const auto& cell=f.mesh.cells[t];
-        for(int c=0;c<2;++c)for(int i=0;i<m;++i)for(int j=0;j<m;++j){matrix(c*m+i,c*m+j)=a.stiffness(i,j);
-            if(symmetric)for(int k=0;k<3;++k)for(int l=0;l<3;++l)matrix(c*m+i,c*m+j)+=a.mass(k,l)*(c?a.gy(k,i)*a.gy(l,j):a.gx(k,i)*a.gx(l,j));}
-        if(symmetric)for(int i=0;i<m;++i)for(int j=0;j<m;++j)for(int k=0;k<3;++k)for(int l=0;l<3;++l){double v=a.mass(k,l)*a.gy(k,i)*a.gx(l,j);matrix(i,m+j)+=v;matrix(m+j,i)+=v;}
-        for(int c=0;c<2;++c)for(int i=0;i<m;++i)for(int p=0;p<3;++p)matrix(c*m+i,2*m+p)=matrix(2*m+p,c*m+i)=-(c?a.by(p,i):a.bx(p,i));
-        if(lifted){Lift lift(f,t,a,order);trace=lift.traceResidual;constraint=lift.divResidual;Vec identity(2*m);
+    Element(const Fixture& f,int t,const std::string& problem,double lambda,bool lifted,bool symmetric,int order):
+        P1System(P1Local(f.mesh,t,f.diameter.at(t),order),symmetric){
+        const int m=a.m;const auto& cell=f.mesh.cells[t];
+        if(lifted){FixtureLift lift(f,t,a,order);rhs=liftedBodyForce(a,lift,order,[&](Point2D p){return manufactured(p,problem,lambda).f;});trace=lift.traceResidual;constraint=lift.divResidual;Vec identity(2*m);
             for(std::size_t tri=0;tri<lift.tri.size();++tri)for(auto q:lift.tri[tri].quadrature(order)){
-                auto force=manufactured(q.p,problem,lambda).f;Vector2D grad{3*q.p.x*q.p.x+q.p.y*q.p.y,2*q.p.x*q.p.y};auto phi=a.basis.phi(q.p);
-                for(int j=0;j<2*m;++j){auto v=lift.value(int(tri),j,q.p);rhs[j]+=q.w*dot(force,v);int c=j/m,k=j%m;double div=0;for(int l=0;l<3;++l)div+=phi[l]*(c?a.gy(l,k):a.gx(l,k));identity[j]+=q.w*(dot(grad,v)+potentialAt(q.p)*div);}}
+                Vector2D grad{3*q.p.x*q.p.x+q.p.y*q.p.y,2*q.p.x*q.p.y};auto phi=a.basis.phi(q.p);
+                for(int j=0;j<2*m;++j){auto v=lift.value(int(tri),j,q.p);int c=j/m,k=j%m;double div=0;for(int l=0;l<3;++l)div+=phi[l]*(c?a.gy(l,k):a.gx(l,k));identity[j]+=q.w*(dot(grad,v)+potentialAt(q.p)*div);}}
             for(std::size_t i=0;i<cell.faces.size();++i){const auto& face=f.mesh.faces[cell.faces[i]];double sign=face.owner==std::size_t(t)?1:-1;
                 for(auto [z,w]:gauss(order)){double s=z-.5;Point2D p{face.centre.x-face.areaVector.y*s,face.centre.y+face.areaVector.x*s};
                     for(int c=0;c<2;++c)for(int j=0;j<2;++j)identity[c*m+3+2*i+j]-=w*potentialAt(p)*(j?s:1)*sign*(c?face.areaVector.y:face.areaVector.x);}}
             for(double x:identity)loadIdentity=std::max(loadIdentity,std::abs(x));
         }else for(auto q:a.q){auto e=manufactured(q.p,problem,lambda);auto phi=a.basis.phi(q.p);for(int k=0;k<3;++k){rhs[k]+=q.w*phi[k]*e.f.x;rhs[m+k]+=q.w*phi[k]*e.f.y;}}
-        inside={0,1,2,m,m+1,m+2,2*m+1,2*m+2};
-        for(int i=0;i<2*m+3;++i)if(std::find(inside.begin(),inside.end(),i)==inside.end())outside.push_back(i);
-        Mat ii(8,8);for(int i=0;i<8;++i)for(int j=0;j<8;++j)ii(i,j)=matrix(inside[i],inside[j]);DenseLU lu(ii.v,8);
-        for(std::size_t j=0;j<outside.size();++j){Vec v(8);for(int i=0;i<8;++i)v[i]=matrix(inside[i],outside[j]);v=lu.solve(v);for(int i=0;i<8;++i)eliminated(i,int(j))=v[i];}
-        Vec r(8);for(int i=0;i<8;++i)r[i]=rhs[inside[i]];loadInternal=lu.solve(r);
+        condense();
     }
-    std::pair<Mat,Vec> condensed()const {int n=int(outside.size());Mat k(n,n);Vec b(n);for(int i=0;i<n;++i){b[i]=rhs[outside[i]];for(int l=0;l<8;++l)b[i]-=matrix(outside[i],inside[l])*loadInternal[l];
-        for(int j=0;j<n;++j){k(i,j)=matrix(outside[i],outside[j]);for(int l=0;l<8;++l)k(i,j)-=matrix(outside[i],inside[l])*eliminated(l,j);}}return {k,b};}
-    Vec recover(const Vec& ext)const{Vec v(rhs.size());for(std::size_t i=0;i<outside.size();++i)v[outside[i]]=ext[i];for(int i=0;i<8;++i){v[inside[i]]=loadInternal[i];for(std::size_t j=0;j<outside.size();++j)v[inside[i]]-=eliminated(i,int(j))*ext[j];}return v;}
 };
 Fixture readFixture(const std::string& name,int n){
     if(name=="square"||name=="sheared"||name=="cut")return grid(n,name=="sheared"?.7:0,name=="cut");
@@ -137,7 +65,7 @@ int main(int argc,char** argv)try{
     else {std::ifstream in(prefix+".solution",std::ios::binary);solution.resize(count);in.read(reinterpret_cast<char*>(solution.data()),count*sizeof(double));if(!in||in.peek()!=EOF)throw std::runtime_error("missing/truncated/trailing sparse solution");for(int i=0;i<raw;++i)if(map[i]>=0)known[i]=solution[map[i]];fields.open(prefix+".cells.csv");faces.open(prefix+".faces.csv");fields<<std::setprecision(17)<<"cell,x,y,area,h,mean_X2,mean_XY,mean_Y2,potential0,potentialX,potentialY,u0,uX,uY,v0,vX,vY,p0,pX,pY,ru0,ruX,ruY,ruXX,ruXY,ruYY,rv0,rvX,rvY,rvXX,rvXY,rvYY\n";faces<<std::setprecision(17)<<"face,x,y,Sx,Sy,owner,neighbour,u0,us,v0,vs,traction_x,traction_y,stress_x,stress_y\n";}
     for(int t=0;t<nc;++t){Element e(f,t,problem,lambda,lifted,symmetric,order);const auto& a=e.a;int m=a.m;trace=std::max(trace,e.trace);constraint=std::max(constraint,e.constraint);identity=std::max(identity,e.loadIdentity);area+=mesh.cells[t].area;
         std::vector<int> ids;for(int j:e.outside){if(j==2*m)ids.push_back(4*nf+t);else {int c=j/m,k=j%m;ids.push_back(4*int(mesh.cells[t].faces[(k-3)/2])+2*c+(k-3)%2);}}
-        auto [k,b]=e.condensed();for(int i=0;i<k.nr;++i)for(int j=0;j<k.nc;++j)symmetry=std::max(symmetry,std::abs(k(i,j)-k(j,i)));
+        auto [k,b]=e.condensed();for(std::size_t i=0;i<k.nr;++i)for(std::size_t j=0;j<k.nc;++j)symmetry=std::max(symmetry,std::abs(k(i,j)-k(j,i)));
         if(mode=="assemble"){for(std::size_t i=0;i<ids.size();++i){int row=map[ids[i]];if(row<0)continue;rhs[row]+=b[i];for(std::size_t j=0;j<ids.size();++j){int col=map[ids[j]];double v=k(int(i),int(j));if(col<0)rhs[row]-=v*known[ids[j]];else if(v!=0){Entry z{row,col,v};entries.write(reinterpret_cast<char*>(&z),sizeof z);++nnz;}}}}
         else {Vec ext;for(int id:ids)ext.push_back(known[id]);auto v=e.recover(ext);states.push_back(v);P6 ru{},rv{};
             for(int l=0;l<6;++l)for(int j=0;j<m;++j){ru[l]+=a.potential(l,j)*v[j];rv[l]+=a.potential(l,j)*v[m+j];}

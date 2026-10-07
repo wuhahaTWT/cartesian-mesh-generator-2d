@@ -13,13 +13,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#define main inherited_native_face_test_main
-#include "../../tests/flow_face_test.cpp"
-#undef main
+#include "cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp"
+#include "../../tests/fixtures/PolygonMesh2D.hpp"
 
-using Vec=std::vector<double>;
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
+using namespace cartmesh2d::fv::detail::compatible;
+using cartmesh2d::test::fromPolygons;
 
 struct Fixture { FvMesh2D mesh; Vec meanY2, diameter; };
 
@@ -66,87 +66,6 @@ Fixture grid(int n,double shear,bool cut) {
     return makeFixture(polys);
 }
 
-struct DenseLU {
-    int n;Vec a;std::vector<int> pivots;
-    explicit DenseLU(Vec matrix,int size):n(size),a(std::move(matrix)),pivots(n) {
-        for(int k=0;k<n;++k) {
-            int p=k;for(int i=k+1;i<n;++i) if(std::abs(a[i*n+k])>std::abs(a[p*n+k]))p=i;
-            if(!std::isfinite(a[p*n+k]) || a[p*n+k]==0.)
-                throw std::runtime_error("singular research matrix; no solution accepted");
-            pivots[k]=p;if(p!=k)for(int j=0;j<n;++j)std::swap(a[k*n+j],a[p*n+j]);
-            for(int i=k+1;i<n;++i) {
-                const double t=(a[i*n+k]/=a[k*n+k]);
-                for(int j=k+1;j<n;++j)a[i*n+j]-=t*a[k*n+j];
-            }
-        }
-    }
-    Vec solve(Vec x)const {
-        for(int k=0;k<n;++k)if(pivots[k]!=k)std::swap(x[k],x[pivots[k]]);
-        for(int i=0;i<n;++i)for(int j=0;j<i;++j)x[i]-=a[i*n+j]*x[j];
-        for(int i=n-1;i>=0;--i){for(int j=i+1;j<n;++j)x[i]-=a[i*n+j]*x[j];x[i]/=a[i*n+i];}
-        return x;
-    }
-};
-
-// P1 cell/face velocity and P1 cell pressure. Reconstructed gradients are P1;
-// the potential reconstruction is P2. Its mean is the cell velocity mean.
-// Stabilisation is the face projection of r - pi_T^1 r + u_T minus u_F,
-// scaled by face length / cell diameter, as in the order-zero comparison.
-// The pressure block is the exact transpose of the same weak divergence.
-// The load here is the ordinary cell L2 load. This is not the full general
-// pressure-robust H(div) reconstruction or a Navier--Stokes solver.
-
-struct Mat {
-    int nr=0,nc=0;Vec v;
-    Mat(int r,int c):nr(r),nc(c),v(r*c){}
-    double& operator()(int r,int c){return v[r*nc+c];}
-    double operator()(int r,int c)const{return v[r*nc+c];}
-};
-struct Q {Point2D p;double w;};
-using P3=std::array<double,3>;
-using P6=std::array<double,6>;
-
-std::vector<std::pair<double,double>> gauss(int n) {
-    std::vector<std::pair<double,double>> q;
-    const double pi=std::acos(-1.);
-    for(int i=0;i<n;++i) {
-        double x=std::cos(pi*(i+.75)/(n+.5)),derivative=0;
-        for(int it=0;it<30;++it) {
-            double p0=1,p1=x;
-            for(int k=2;k<=n;++k){const double p=((2*k-1)*x*p1-(k-1)*p0)/k;p0=p1;p1=p;}
-            derivative=n*(x*p1-p0)/(x*x-1);
-            const double dx=p1/derivative;x-=dx;
-            if(std::abs(dx)<2e-16)break;
-        }
-        // Re-evaluate derivative at the final root.
-        double p0=1,p1=x;
-        for(int k=2;k<=n;++k){const double p=((2*k-1)*x*p1-(k-1)*p0)/k;p0=p1;p1=p;}
-        derivative=n*(x*p1-p0)/(x*x-1);
-        q.push_back({.5*(1+x),1./((1-x*x)*derivative*derivative)});
-    }
-    return q;
-}
-
-std::vector<Q> cellQuadrature(const FvMesh2D& mesh,int t,int order) {
-    std::vector<Q> q;const auto c=mesh.cells[t].centre;const auto rule=gauss(order);
-    for(const auto f:mesh.cells[t].faces) {
-        const auto& face=mesh.faces[f];const double s=face.owner==std::size_t(t)?1:-1;
-        const Point2D a{face.centre.x+s*face.areaVector.y/2,face.centre.y-s*face.areaVector.x/2};
-        const Point2D b{face.centre.x-s*face.areaVector.y/2,face.centre.y+s*face.areaVector.x/2};
-        const double jac=(a.x-c.x)*(b.y-c.y)-(a.y-c.y)*(b.x-c.x);
-        for(const auto& [r,wr]:rule)for(const auto& [z,wz]:rule)
-            q.push_back({{(1-r)*c.x+r*(1-z)*a.x+r*z*b.x,(1-r)*c.y+r*(1-z)*a.y+r*z*b.y},wr*wz*r*jac});
-    }
-    return q;
-}
-
-struct Basis {
-    Point2D c;double h;P3 moments{};
-    P3 phi(Point2D p)const{return {1,(p.x-c.x)/h,(p.y-c.y)/h};}
-    P6 theta(Point2D p)const{const auto a=phi(p);return {1,a[1],a[2],a[1]*a[1]-moments[0],a[1]*a[2]-moments[1],a[2]*a[2]-moments[2]};}
-    std::array<Vector2D,6> grad(Point2D p)const{const auto a=phi(p);return {{{0,0},{1/h,0},{0,1/h},{2*a[1]/h,0},{a[2]/h,a[1]/h},{0,2*a[2]/h}}};}
-};
-
 struct Exact {Vector2D u,f;double p;std::array<Vector2D,2> gradient{};};
 Exact exactAt(Point2D p,const std::string& problem) {
     if(problem=="couette")return {{p.y,0},{0,0},0,{{{0,1},{0,0}}}};
@@ -183,70 +102,14 @@ Exact exactAt(Point2D p,const std::string& problem) {
     throw std::runtime_error("unknown manufactured Stokes problem");
 }
 
-struct Local {
-    Basis basis;int m;std::vector<Q> q;
-    Mat mass,bx,by,gx,gy,potential,stiffness;std::array<Vec,2> force;
-    Local(const Fixture& fixture,int t,const std::string& problem,int order):
-        basis{fixture.mesh.cells[t].centre,fixture.diameter[t],{}},
-        m(3+2*int(fixture.mesh.cells[t].faces.size())),q(cellQuadrature(fixture.mesh,t,order)),
-        mass(3,3),bx(3,m),by(3,m),gx(3,m),gy(3,m),potential(6,m),stiffness(m,m),force{Vec(3),Vec(3)} {
-        const auto& mesh=fixture.mesh;const auto& cell=mesh.cells[t];
-        for(const auto& v:q) {
-            const auto phi=basis.phi(v.p);const auto exact=exactAt(v.p,problem);
-            for(int i=0;i<3;++i)for(int j=0;j<3;++j)mass(i,j)+=v.w*phi[i]*phi[j];
-            for(int j=0;j<3;++j) {
-                bx(1,j)-=v.w*phi[j]/basis.h;by(2,j)-=v.w*phi[j]/basis.h;
-                force[0][j]+=v.w*phi[j]*exact.f.x;force[1][j]+=v.w*phi[j]*exact.f.y;
-            }
-        }
-        basis.moments={mass(1,1)/cell.area,mass(1,2)/cell.area,mass(2,2)/cell.area};
-        Mat k(5,5),r(5,m),project(3,6);
-        for(const auto& v:q) {
-            const auto phi=basis.phi(v.p);const auto theta=basis.theta(v.p);const auto grad=basis.grad(v.p);
-            for(int i=0;i<5;++i)for(int j=0;j<5;++j)k(i,j)+=v.w*dot(grad[i+1],grad[j+1]);
-            for(int i=0;i<3;++i)for(int j=0;j<6;++j)project(i,j)+=v.w*phi[i]*theta[j];
-            for(int j=0;j<3;++j){r(2,j)-=2*v.w*phi[j]/(basis.h*basis.h);r(4,j)-=2*v.w*phi[j]/(basis.h*basis.h);}
-        }
-        const auto rule=gauss(order);
-        for(std::size_t f=0;f<cell.faces.size();++f) {
-            const auto& face=mesh.faces[cell.faces[f]];const double sign=face.owner==std::size_t(t)?1:-1;
-            const auto S=face.areaVector;
-            for(const auto& [z,w]:rule) {
-                const double s=z-.5;const Point2D p{face.centre.x-S.y*s,face.centre.y+S.x*s};
-                const auto phi=basis.phi(p);const auto grad=basis.grad(p);
-                for(int j=0;j<2;++j) {
-                    const double psi=j?s:1;const int col=3+2*int(f)+j;
-                    for(int i=0;i<3;++i){bx(i,col)+=w*psi*sign*S.x*phi[i];by(i,col)+=w*psi*sign*S.y*phi[i];}
-                    for(int i=0;i<5;++i)r(i,col)+=w*psi*sign*dot(S,grad[i+1]);
-                }
-            }
-        }
-        const DenseLU ml(mass.v,3),kl(k.v,5);
-        for(int j=0;j<m;++j) {
-            Vec x(3),y(3),z(5);for(int i=0;i<3;++i){x[i]=bx(i,j);y[i]=by(i,j);}for(int i=0;i<5;++i)z[i]=r(i,j);
-            x=ml.solve(x);y=ml.solve(y);z=kl.solve(z);
-            for(int i=0;i<3;++i){gx(i,j)=x[i];gy(i,j)=y[i];}for(int i=0;i<5;++i)potential(i+1,j)=z[i];
-        }
-        potential(0,0)=1;
-        for(int j=0;j<6;++j){Vec x(3);for(int i=0;i<3;++i)x[i]=project(i,j);x=ml.solve(x);for(int i=0;i<3;++i)project(i,j)=x[i];}
-        for(int i=0;i<m;++i)for(int j=0;j<m;++j)for(int a=0;a<3;++a)for(int b=0;b<3;++b)
-            stiffness(i,j)+=mass(a,b)*(gx(a,i)*gx(b,j)+gy(a,i)*gy(b,j));
-        for(std::size_t f=0;f<cell.faces.size();++f) {
-            const auto& face=mesh.faces[cell.faces[f]];const auto S=face.areaVector;const double length=std::hypot(S.x,S.y);
-            Mat residual(2,m);
-            for(const auto& [z,w]:rule) {
-                const double s=z-.5;const Point2D p{face.centre.x-S.y*s,face.centre.y+S.x*s};
-                const auto phi=basis.phi(p);auto theta=basis.theta(p);
-                for(int a=0;a<6;++a)for(int b=0;b<3;++b)theta[a]-=phi[b]*project(b,a);
-                for(int a=0;a<2;++a)for(int j=0;j<m;++j) {
-                    double value=j<3?phi[j]:0.;for(int b=0;b<6;++b)value+=theta[b]*potential(b,j);
-                    residual(a,j)-=w*(a?12*s:1)*value;
-                }
-            }
-            residual(0,3+2*int(f))+=1;residual(1,4+2*int(f))+=1;
-            for(int i=0;i<m;++i)for(int j=0;j<m;++j)
-                stiffness(i,j)+=length/basis.h*(residual(0,i)*residual(0,j)+residual(1,i)*residual(1,j)/12.);
-        }
+// Manufactured load adapter; every geometric/discrete coefficient comes
+// from the same native kernel used by the higher-order coupled equations.
+struct Local : P1Local {
+    std::array<Vec,2> force;
+    Local(const Fixture& f,int t,const std::string& problem,int order):
+        P1Local(f.mesh,t,f.diameter.at(t),order),force{Vec(3),Vec(3)} {
+        for(const auto& v:q){const auto phi=basis.phi(v.p);const auto ex=exactAt(v.p,problem);
+            for(int j=0;j<3;++j){force[0][j]+=v.w*phi[j]*ex.f.x;force[1][j]+=v.w*phi[j]*ex.f.y;}}
     }
 };
 
@@ -276,14 +139,14 @@ int main(int argc,char** argv)try {
     }
     for(int t=0;t<nc;++t) {
         local.emplace_back(fixture,t,problem,order);const auto& a=local.back();
-        for(int c=0;c<2;++c)for(int i=0;i<a.m;++i) {
+        for(int c=0;c<2;++c)for(std::size_t i=0;i<a.m;++i) {
             const int row=map[id(t,c,i)];if(row<0)continue;
             if(i<3)rhs[row]+=a.force[c][i];
-            for(int j=0;j<a.m;++j){const int raw=id(t,c,j),col=map[raw];if(col>=0)matrix[row*n+col]+=a.stiffness(i,j);else rhs[row]-=a.stiffness(i,j)*known[raw];}
+            for(std::size_t j=0;j<a.m;++j){const int raw=id(t,c,j),col=map[raw];if(col>=0)matrix[row*n+col]+=a.stiffness(i,j);else rhs[row]-=a.stiffness(i,j)*known[raw];}
         }
         for(int p=0;p<3;++p) {
             const int row=pIndex(t,p);if(row<0)continue;
-            for(int c=0;c<2;++c)for(int i=0;i<a.m;++i) {
+            for(int c=0;c<2;++c)for(std::size_t i=0;i<a.m;++i) {
                 const double b=c?a.by(p,i):a.bx(p,i);const int raw=id(t,c,i),col=map[raw];
                 if(col>=0){matrix[row*n+col]-=b;matrix[col*n+row]-=b;}else rhs[row]+=b*known[raw];
             }
@@ -302,14 +165,14 @@ int main(int argc,char** argv)try {
     if(!output.empty()){fields.open(output+".cells.csv");faces.open(output+".faces.csv");fields<<std::setprecision(17)<<"cell,x,y,area,h,mean_X2,mean_XY,mean_Y2,u0,uX,uY,v0,vX,vY,p0,pX,pY,ru0,ruX,ruY,ruXX,ruXY,ruYY,rv0,rvX,rvY,rvXX,rvXY,rvYY\n";faces<<std::setprecision(17)<<"face,owner,neighbour,x,y,Sx,Sy,u0,us,v0,vs\n";}
     for(int t=0;t<nc;++t) {
         const auto& a=local[t];Vec uc(a.m),vc(a.m),div(3);P6 ru{},rv{};P3 p{};Vector2D ue{};
-        for(int j=0;j<a.m;++j){uc[j]=u[id(t,0,j)];vc[j]=u[id(t,1,j)];}
+        for(std::size_t j=0;j<a.m;++j){uc[j]=u[id(t,0,j)];vc[j]=u[id(t,1,j)];}
         for(int k=0;k<3;++k) {
             if(pIndex(t,k)>=0)p[k]=x[pIndex(t,k)];
-            for(int j=0;j<a.m;++j)div[k]+=a.bx(k,j)*uc[j]+a.by(k,j)*vc[j];
+            for(std::size_t j=0;j<a.m;++j)div[k]+=a.bx(k,j)*uc[j]+a.by(k,j)*vc[j];
             pressureWork-=p[k]*div[k];
         }
         meanDiv=std::max(meanDiv,std::abs(div[0])/mesh.cells[t].area);div=DenseLU(a.mass.v,3).solve(div);
-        for(int k=0;k<6;++k)for(int j=0;j<a.m;++j){ru[k]+=a.potential(k,j)*uc[j];rv[k]+=a.potential(k,j)*vc[j];}
+        for(int k=0;k<6;++k)for(std::size_t j=0;j<a.m;++j){ru[k]+=a.potential(k,j)*uc[j];rv[k]+=a.potential(k,j)*vc[j];}
         for(const auto& q:a.q) {
             const auto phi=a.basis.phi(q.p);const auto theta=a.basis.theta(q.p);const auto e=exactAt(q.p,problem);
             double ux=0,vy=0,pv=0;for(int k=0;k<6;++k){ux+=theta[k]*ru[k];vy+=theta[k]*rv[k];}for(int k=0;k<3;++k)pv+=phi[k]*p[k];
@@ -352,7 +215,7 @@ int main(int argc,char** argv)try {
             // gradient trace alone is not the method's momentum flux.
             for(int c=0;c<2;++c)for(int k=0;k<2;++k) {
                 const int row=3+2*int(j)+k;
-                for(int l=0;l<a.m;++l)reaction[c][k]+=a.stiffness(row,l)*u[id(t,c,l)];
+                for(std::size_t l=0;l<a.m;++l)reaction[c][k]+=a.stiffness(row,l)*u[id(t,c,l)];
                 for(int l=0;l<3;++l)reaction[c][k]-=(c?a.by(l,row):a.bx(l,row))*p[l];
             }
             momentum.x+=reaction[0][0];momentum.y+=reaction[1][0];wallLength+=length;

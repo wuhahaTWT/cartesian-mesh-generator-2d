@@ -12,7 +12,7 @@ WallTraction recoverWallTraction(const Element& e,const Vec& state,int localFace
     for(int component=0;component<2;++component)for(int moment=0;moment<2;++moment){
         const int row=component*e.a.m+3+2*localFace+moment;
         double residual=-e.rhs[row];
-        for(int column=0;column<e.matrix.nc;++column)residual+=e.matrix(row,column)*state[column];
+        for(std::size_t column=0;column<e.matrix.nc;++column)residual+=e.matrix(row,column)*state[column];
         const double scale=(moment?12.:1.)/length;
         double& value=component?result.value[moment].y:result.value[moment].x;
         double& omitted=component?result.withoutFaceLoad[moment].y:result.withoutFaceLoad[moment].x;

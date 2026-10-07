@@ -56,10 +56,9 @@ struct Transport : Oseen {
             }
         }
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)+=convection(i,j);
-        Mat ii(8,8);for(int i=0;i<8;++i)for(int j=0;j<8;++j)ii(i,j)=e.matrix(e.inside[i],e.inside[j]);DenseLU lu(ii.v,8);
-        for(std::size_t j=0;j<e.outside.size();++j){Vec r(8);for(int i=0;i<8;++i)r[i]=e.matrix(e.inside[i],e.outside[j]);r=lu.solve(r);for(int i=0;i<8;++i)e.eliminated(i,int(j))=r[i];}Vec r(8);for(int i=0;i<8;++i)r[i]=e.rhs[e.inside[i]];e.loadInternal=lu.solve(r);
+        e.condense();
     }
-    Vector2D transported(const Vec& v,int k,Point2D p)const{Vector2D u{};for(int j=0;j<2*e.a.m;++j){auto r=lift.value(k,j,p);u.x+=v[j]*r.x;u.y+=v[j]*r.y;}return u;}
+    Vector2D transported(const Vec& v,int k,Point2D p)const{Vector2D u{};for(std::size_t j=0;j<2*e.a.m;++j){auto r=lift.value(k,j,p);u.x+=v[j]*r.x;u.y+=v[j]*r.y;}return u;}
     double energyIdentity(const Vec& v)const{
         int m=e.a.m;double result=0;
         for(std::size_t k=0;k<lift.tri.size();++k){const auto& tr=lift.tri[k];for(auto q:tr.quadrature(order)){auto phi=e.a.basis.phi(q.p);double div=0;for(int j=0;j<3;++j)for(int l=0;l<m;++l)div+=phi[j]*(e.a.gx(j,l)*beta[l]+e.a.gy(j,l)*beta[m+l]);auto u=transported(v,int(k),q.p);result+=.5*q.w*div*dot(u,u);}

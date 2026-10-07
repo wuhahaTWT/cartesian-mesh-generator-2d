@@ -611,6 +611,20 @@ python3 artifacts/current/native-laminar-oseen-block.py square 8 outlet-poiseuil
 `native-laminar-product-wall-profile.cpp` 在同一固定多边形的两份研究场之间逐段覆盖全部原壁面，原 `wallPressureDifferenceRms` 和 `pA0/pB0` 仍是去全域均值后的历史量；新增 `wallPressureAbsoluteDifferenceRms`、绝对压力CSV列及两种端点最大差。固定压力出口必须看绝对量，不能只看去均值量。P1差在每个重叠区间内是仿射函数，故端点最大值是该区间精确极值；`MaxAtQuadrature` 旧字段仍保留原采样含义。调用为 `wall-profile meshA nA stateA meshB nB stateB new-output.csv`，覆盖不一致或已有输出明确拒绝；不同真实曲线/折线不能用此固定几何读取器声称网格差。历史云端数据与合并后的读取语义分开保存在 `native-laminar-product-outlet.json`，Mac小场对照在 `native-laminar-open-boundary.json` 的 `mergedCloudIntegration`。
 
 
+### 相容局部离散的原生共用核心
+
+`include/cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp` 与 `src/fv/CompatibleFlowElement2D.cpp` 定义 `detail::compatible` 内核，并编入 `cartmesh2d_fv`。`P1Local` 只接收通过原网格工厂的 `FvMesh2D`、单元编号、原多边形尺度与积分阶次；生成P1质量/弱梯度、P2势及原面稳定项。`Lift` 匹配所有原子面法向矩、P1散度和径向连续性；非正质心扇形仍显式失败。`P1System` 保存完整混合局部方程，`condense()` 消去六个单元速度和两个压力斜率，`condensed()/recover()` 使用同一消元。修改局部矩阵/右端后必须重新 `condense()`；该方法在任何可能失败的分解前使旧消元结果失效，失败后 `condensed()/recover()` 明确拒绝产生候选；只修改保留行且未修改内部耦合的开放边界特例仍可复用消元。一般体力通过 `liftedBodyForce()` 回调输入，内核不识别算例名或制造解。
+
+研究P1/Stokes/NS/Newton/伪时间入口已经调用这个核心，故拉取新提交后须先重建原生库，再按各节链接程序；不能继续链接旧库。数值完整状态格式保持。`newton.py` 同时记录核心源码哈希。夹具生成仍只属于研究/测试支持，原生核心不包含 `tests/` 或 `artifacts/`，也未接入旧默认全局求解器。
+
+```sh
+cmake -S . -B build
+cmake --build build --target cartmesh2d_fv cartmesh2d_compatible_flow_element_tests cartmesh2d_flow_face_tests -j 2
+ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_face)$' --output-on-failure
+```
+
+已有macOS配置继续使用 `/usr/bin/clang++`。新原生测试用非零解析二次Stokes、仿射压力、三次势梯度载荷核对真实弱方程与恢复，并检查非法维数/非有限体力失败。参考量沿用 `U=L=ν=1、p/U²`，局部舍入预算为 `4096 ε N_dof (1+|reference|)`，只用于这些小且形状受控的多项式回归，不是任意网格的条件数保证、产品残差或物理精度阈值。库迁移的三组完整同场对照、全部源码版本和归档见 `native-laminar-compatible-core.json`。下一步仍需把全局边界、完整未知量状态和失败/取消/检查点流程接入产品，而非仅注册库目标。
+
 ### 相容方程的解析 Newton 与残差回溯
 
 `native-laminar-newton.cpp` 包含现有开放边界入口，通过模板微分同一保守 RT1 体积、径向内面、原始共享面及出口对流。令 `F(u)=K_Picard(u)u-f`，增加 `D_beta C(u)[δu]u`，求解 `J(u_k)u_candidate=f+D_beta C(u_k)[u_k]u_k`，等价于 `Jδu=-F`。压力约束、弱边界及静态凝聚自由度保持；内部8×8消元使用真实J重新计算。上风积分仍按当前P1通量的真实零点分段，零点处沿原符号分支取导数；没有宣称全局光滑。

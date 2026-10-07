@@ -48,9 +48,7 @@ template<class Base> struct NewtonTransport : Base {
         // This is exactly the increment equation J d = -F, with inhomogeneous
         // velocity traces kept in the ordinary retained-unknown elimination.
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){e.matrix(i,j)+=advectorDerivative(i,j);e.rhs[i]+=advectorDerivative(i,j)*beta[j];}
-        Mat ii(8,8);for(int i=0;i<8;++i)for(int j=0;j<8;++j)ii(i,j)=e.matrix(e.inside[i],e.inside[j]);DenseLU lu(ii.v,8);
-        for(std::size_t j=0;j<e.outside.size();++j){Vec r(8);for(int i=0;i<8;++i)r[i]=e.matrix(e.inside[i],e.outside[j]);r=lu.solve(r);for(int i=0;i<8;++i)e.eliminated(i,int(j))=r[i];}
-        Vec r(8);for(int i=0;i<8;++i)r[i]=e.rhs[e.inside[i]];e.loadInternal=lu.solve(r);
+        e.condense();
     }
 };
 

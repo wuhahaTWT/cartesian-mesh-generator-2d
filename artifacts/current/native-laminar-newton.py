@@ -88,6 +88,8 @@ def main():
         names=['native-laminar-newton.cpp','native-laminar-newton.py','native-laminar-p1-oseen.cpp','native-laminar-p1-transport.cpp','native-laminar-open-boundary.cpp','native-laminar-p1-stress.cpp','native-laminar-hybrid-stokes-p1.cpp','native-laminar-block-precondition.cpp','native-laminar-state-compare.cpp']
         if pseudo:names.append('native-laminar-pseudo-time.cpp')
         record['sourceSha256']={n:sha(root/'artifacts/current'/n) for n in names}
+        core=['include/cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp','src/fv/CompatibleFlowElement2D.cpp']
+        record['nativeCoreSourceSha256']={n:sha(root/n) for n in core}
         if Path(a.mesh).is_file():record['meshSha256']=sha(a.mesh)
         if a.initial_state!='zero':record['initialStateSha256']=sha(a.initial_state)
         geometry=a.output/'geometry';record['geometry']=native([a.fields,'geometry',a.mesh,a.n,geometry],'geometry')

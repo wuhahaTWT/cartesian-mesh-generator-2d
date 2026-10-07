@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-07",
+  "gitBase": "d302a394ca9922aa7c22c08da022bcfd1d2a38c1",
+  "scope": "Begin native product integration of the established compatible discretization. Shared local equations are now compiled into cartmesh2d_fv and consumed by existing Stokes/Oseen/RT1-NS/Newton/pseudo-time research drivers. This is not completion of a new default solver.",
+  "implementation": {
+    "namespace": "cartmesh2d::fv::detail::compatible",
+    "sharedEquations": [
+      "P1 native cell/face mass, weak gradient and pressure-divergence transpose",
+      "P2 potential and existing projected face stabilization",
+      "full symmetric-stress mixed local matrix",
+      "RT1 native fan reconstruction, normal moments, divergence and internal normal continuity",
+      "general finite body-force integration against the same RT1 test reconstruction",
+      "six cell velocities plus two pressure slopes condensed through the original eight-dimensional interior block"
+    ],
+    "researchOnlyAdapters": "Manufactured exact fields, case names, geometry fixture generation, boundary classification, global solve/file orchestration and diagnostics remain outside the library kernel.",
+    "reuse": "Removed numerical copies from the P1 prototypes and replaced four independently repeated local condensations with P1System::condense. The open-boundary retained-row-only optimization remains unchanged.",
+    "geometry": "Original FvMesh2D and all atomic faces retained. makeFvMesh2D remains the required quality-checked construction entry. Nonpositive centroid fans still fail explicitly; no geometry replacement, smoothing, discarded cell or pressure regularization.",
+    "contracts": "Native indices use size_t. Local LU rejects invalid dimensions/nonfinite solutions; general force rejects NaN/Inf; recovery requires a condensed system and matching retained state. No shifted pivot or numerical fallback.",
+    "testDependencies": "Production header/source contain no test or artifact includes. Research generators use only the small tests/fixtures/PolygonMesh2D.hpp support; the prior include of the entire flow_face_test.cpp is removed.",
+    "provenance": "newton.py now records the linked native core source hashes in addition to the research adapters and executable hashes."
+  },
+  "validation": {
+    "environment": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "compiler": "/usr/bin/clang++; existing CMake Release (-O3 -DNDEBUG), research executables -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+    "warnings": "Final native-library and target builds have no warnings; no warning suppression was added.",
+    "nativeCTest": {
+      "command": "ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_face)$' --output-on-failure",
+      "passed": 2,
+      "run": 2,
+      "wholeSuiteRun": false
+    },
+    "analyticKernelTest": {
+      "fixtures": [
+        "sheared quadrilateral",
+        "actual straight-cut trapezoid",
+        "split collinear face with both neighbours",
+        "two triangles"
+      ],
+      "equations": "u=(x^2-y^2,-2xy), p=1+2x-3y, nu=1, f=(2,-3); exact solenoidal quadratic Stokes fields with affine pressure. Separate hydrostatic grad(x^3+xy^2) balance uses P1 pressure projection.",
+      "checks": [
+        "native area unchanged",
+        "interior mixed equation balance",
+        "analytic state recovered from condensed retained values",
+        "P2 velocity and affine pressure recovered at quadrature points",
+        "RT1 normal continuity and weak divergence",
+        "gradient force balance for all cell velocity tests",
+        "malformed local/recovery dimensions, nonfinite body force and underintegrated order explicitly rejected"
+      ],
+      "roundoffGate": {
+        "formula": "4096*epsilon*local_DOF_count*(1+abs(reference))",
+        "units": "U=L=nu=1; velocity uses U and kinematic pressure U^2; local equation defects are in the corresponding native unit-size weak equation convention",
+        "basis": "A conservative floating-point regression allowance for sums and local saddle solves on these small well-shaped fixtures, not a theorem for arbitrary cell conditioning or a physical qualification tolerance.",
+        "necessity": "Detect algebra/geometry/force regressions when moving actual equations into the linked library.",
+        "costSeconds": 0.74
+      },
+      "actualMetrics": {
+        "cells": 7,
+        "velocityMax": 8.881784197001252e-15,
+        "pressureMax": 1.687538997430238e-14,
+        "internalEquilibriumMax": 1.161028556277871e-13,
+        "gradientLoadBalanceMax": 7.993605777301127e-15
+      }
+    },
+    "builtConsumers": [
+      "P1 standalone Stokes",
+      "compatible symmetric Stokes",
+      "wall pressure recovery",
+      "state field reader",
+      "analytic Newton",
+      "pseudo-time Newton"
+    ],
+    "completeFlowComparisons": [
+      {
+        "case": "nonlinear-stalled-recovery",
+        "command": [
+          "/Users/Zhuanz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/artifacts/current/native-laminar-newton.py",
+          "sheared",
+          "4",
+          "noslip-sheared",
+          "0.01",
+          "ns",
+          "closed",
+          "/tmp/cartmesh2d-compatible-core/nonlinear-stalled-recovery",
+          "--transport",
+          "/tmp/cartmesh2d-compatible-core/pseudo",
+          "--fields",
+          "/tmp/cartmesh2d-compatible-core/reference/fields",
+          "--block",
+          "/tmp/cartmesh2d-compatible-core/reference/block-merged",
+          "--pseudo-step",
+          "0.1",
+          "--pressure-preconditioner",
+          "viscous",
+          "--iterations",
+          "60"
+        ],
+        "processSeconds": 2.2464991670276504,
+        "driverSeconds": 2.1422012920083944,
+        "steps": 11,
+        "priorSteps": 11,
+        "byteIdenticalState": true,
+        "fieldDifference": {
+          "cells": 16,
+          "velocityP1Rms": 0,
+          "pressureP1RmsAbsolute": 0,
+          "pressureP1RmsAfterGlobalGauge": 0,
+          "pressureMeanDifference": 0,
+          "faceVelocityRms": 0,
+          "faceVelocityMaximum": 0,
+          "stateCoefficientMaximum": 0
+        },
+        "resultSha256": "318f2124c993cc87f077520b275d53f1caa7ada6386621f88b94bdb78a4fdd0d",
+        "finalStateSha256": "750a7e55e9aa5b62073fe98b1520c157c5e66db0d65a3316223ea5b6521cf311",
+        "maximumTrueEquationResidual": 3.771661864348342e-14,
+        "finalStateCoefficientChange": 2.1710921949136264e-10
+      },
+      {
+        "case": "pseudo-stokes",
+        "command": [
+          "/Users/Zhuanz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/artifacts/current/native-laminar-newton.py",
+          "square",
+          "4",
+          "outlet-poiseuille",
+          "0.1",
+          "stokes",
+          "pressure",
+          "/tmp/cartmesh2d-compatible-core/pseudo-stokes",
+          "--transport",
+          "/tmp/cartmesh2d-compatible-core/pseudo",
+          "--fields",
+          "/tmp/cartmesh2d-compatible-core/reference/fields",
+          "--block",
+          "/tmp/cartmesh2d-compatible-core/reference/block-merged",
+          "--pseudo-step",
+          "0.1",
+          "--pressure-preconditioner",
+          "viscous",
+          "--iterations",
+          "60"
+        ],
+        "processSeconds": 0.46107479199417867,
+        "driverSeconds": 0.4248127919854596,
+        "steps": 7,
+        "priorSteps": 7,
+        "byteIdenticalState": true,
+        "fieldDifference": {
+          "cells": 16,
+          "velocityP1Rms": 0,
+          "pressureP1RmsAbsolute": 0,
+          "pressureP1RmsAfterGlobalGauge": 0,
+          "pressureMeanDifference": 0,
+          "faceVelocityRms": 0,
+          "faceVelocityMaximum": 0,
+          "stateCoefficientMaximum": 0
+        },
+        "resultSha256": "88d4fec716a77043c9c045e6c23c109470f1b7a102b4d7255a4a13bc60a106dd",
+        "finalStateSha256": "f3771c79828f6c575384947ce54c68d10f3aba86f5252c221cb7167cdc0ff542",
+        "maximumTrueEquationResidual": 1.2949811247999398e-13,
+        "finalStateCoefficientChange": 3.1086244689504383e-15
+      },
+      {
+        "case": "pseudo-schur",
+        "command": [
+          "/Users/Zhuanz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/artifacts/current/native-laminar-newton.py",
+          "square",
+          "4",
+          "outlet-poiseuille",
+          "0.1",
+          "ns",
+          "pressure",
+          "/tmp/cartmesh2d-compatible-core/pseudo-schur",
+          "--transport",
+          "/tmp/cartmesh2d-compatible-core/pseudo",
+          "--fields",
+          "/tmp/cartmesh2d-compatible-core/reference/fields",
+          "--block",
+          "/tmp/cartmesh2d-compatible-core/reference/block-merged",
+          "--pseudo-step",
+          "0.1",
+          "--pressure-preconditioner",
+          "schur-diagonal",
+          "--iterations",
+          "60"
+        ],
+        "processSeconds": 0.5407819169922732,
+        "driverSeconds": 0.5067977920116391,
+        "steps": 7,
+        "priorSteps": 7,
+        "byteIdenticalState": true,
+        "fieldDifference": {
+          "cells": 16,
+          "velocityP1Rms": 0,
+          "pressureP1RmsAbsolute": 0,
+          "pressureP1RmsAfterGlobalGauge": 0,
+          "pressureMeanDifference": 0,
+          "faceVelocityRms": 0,
+          "faceVelocityMaximum": 0,
+          "stateCoefficientMaximum": 0
+        },
+        "resultSha256": "9cb3dbe179a5924d363426ae0280c119bbcb608f2b0e566d1f293928f65d6d86",
+        "finalStateSha256": "a8019a08e5a9e43c6d14b9130a4e85c708add6cc1a7f696a10159e3e1d78cf42",
+        "maximumTrueEquationResidual": 4.585356307694008e-13,
+        "finalStateCoefficientChange": 3.126388037344441e-13
+      }
+    ],
+    "versionNotes": [
+      "Initial three complete solves used the extracted shared core before the later local-factor lifecycle fix. The later singular-reassembly regression and final eleven-step complete NS solve validate the final core. No valid-equation arithmetic was changed by factor invalidation.",
+      "Comparison block and reader binaries were restored from the verified d302a39-era archive. Current residual and all candidate operations use the newly linked pseudo-time solver.",
+      "No wall-clock speedup is claimed; startup and build-related contention differ. This integration preserves numerical output on the listed controls."
+    ]
+  },
+  "provenance": {
+    "sourceSha256": {
+      "CMakeLists.txt": "3e38675dca0da257a016308f35e79453c9bc2f03aa2e6df396177eb58b363ec6",
+      "include/cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp": "8274902ca21b50bb3436f9c4d4770a998bdccd6eb830d970cf3afbf438d1642a",
+      "src/fv/CompatibleFlowElement2D.cpp": "13e10da27510c87612910035f515e120b96a88608a05a032090883905854810f",
+      "tests/compatible_flow_element_test.cpp": "26ef9424d7b71c478a97682393c09a10e5ed0187aa9bc3a7468981888fce02f6",
+      "tests/fixtures/PolygonMesh2D.hpp": "12bf1fb1b361f1d75555916af8fb0bf8a7232b8eb96f66e3a3ee0aa14dd21ee9",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "0a23e1df1a099f6b8043b49afb8ab42873195a223654660c2a2b732c3d46ab53",
+      "artifacts/current/native-laminar-p1-stress.cpp": "56a62fbef109d5e00a36900b3a0c7ea416695d8f692764d79ebb3da907409cd1",
+      "artifacts/current/native-laminar-p1-oseen.cpp": "418fff5a2479bebdc8006fc3d881674eb99beebb0d3c3d056f72ffd496d3873d",
+      "artifacts/current/native-laminar-p1-transport.cpp": "c1711edc6d2ec650547e1549c135b95449aa6e1111108505d680d16a0516924d",
+      "artifacts/current/native-laminar-newton.cpp": "247bf245cdf0b03c671a1a57112334bbdc3dfaebee121cb0eb7d175858ddd23b",
+      "artifacts/current/native-laminar-newton.py": "c24adcfe72049acb8ae58b150809bca0e4841dca97e620e074a82beac3fdd707",
+      "artifacts/current/native-laminar-pseudo-time.cpp": "a370d629cf55ace2e6ee928b2add7b62939650c2b9b2de65024b60fb330f275a",
+      "artifacts/current/native-laminar-wall-recovery.cpp": "77d57e3f2370844066a8468bac480dac745fbb9a57dcc9ca8c5afc145744e9e6"
+    },
+    "librarySha256": "5c685bb077d09920ba2ef9148521e8c20fdc8bbf53dca7669b4c2a5c7575bf90",
+    "binarySha256": {
+      "pseudo": "17c2a46ff392ddcf1d62adc829525b88f6255b4fe54cbbd31c60771d66b8acab",
+      "newton": "e9ab0eaa89fe6c0db3e271ece06bbaecdf3b8f7dd9d8d5a1a667d7095a6fcfe2",
+      "stress": "7ccb9060df4d629ca727bb7a712f8c763e0a2d6f5443b8269e9b4e76f39e5022",
+      "p1": "3d673d74810315151423d32909b93bb21425d046d0fe681dcd711260ee73b7c9",
+      "fields": "0260f5c8e004cb141f277b5eb2ae4b3a8b3445161f34da28279a9dc2486bc7f3",
+      "wall": "c74fffdc117c413b235b79fd6a2de6f582a4a7de07f591726489536a4c36c4b2"
+    },
+    "previousReferenceArchive": "outputs/laminar-stability/pseudo-time/native-pseudo-time-research.tar.gz",
+    "previousReferenceArchiveSha256": "71d38a4a0ee604ba38899fbd4d7aaec85c20168a9cb8e2264c1696b4cfa601f7",
+    "extractionSourceSha256": {
+      "CMakeLists.txt": "3e38675dca0da257a016308f35e79453c9bc2f03aa2e6df396177eb58b363ec6",
+      "include/cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp": "8274902ca21b50bb3436f9c4d4770a998bdccd6eb830d970cf3afbf438d1642a",
+      "src/fv/CompatibleFlowElement2D.cpp": "ed1b532752c3cd398aabbec2bf955fe6f8a46285e2afafe1951a532ab67707b6",
+      "tests/compatible_flow_element_test.cpp": "ac56096b0132dbd7984ae3d9615391e3091489268d7dc3e8fb45768f3b24a7c7",
+      "tests/fixtures/PolygonMesh2D.hpp": "12bf1fb1b361f1d75555916af8fb0bf8a7232b8eb96f66e3a3ee0aa14dd21ee9",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "0a23e1df1a099f6b8043b49afb8ab42873195a223654660c2a2b732c3d46ab53",
+      "artifacts/current/native-laminar-p1-stress.cpp": "56a62fbef109d5e00a36900b3a0c7ea416695d8f692764d79ebb3da907409cd1",
+      "artifacts/current/native-laminar-p1-oseen.cpp": "418fff5a2479bebdc8006fc3d881674eb99beebb0d3c3d056f72ffd496d3873d",
+      "artifacts/current/native-laminar-p1-transport.cpp": "c1711edc6d2ec650547e1549c135b95449aa6e1111108505d680d16a0516924d",
+      "artifacts/current/native-laminar-newton.cpp": "247bf245cdf0b03c671a1a57112334bbdc3dfaebee121cb0eb7d175858ddd23b",
+      "artifacts/current/native-laminar-newton.py": "c24adcfe72049acb8ae58b150809bca0e4841dca97e620e074a82beac3fdd707",
+      "artifacts/current/native-laminar-pseudo-time.cpp": "a370d629cf55ace2e6ee928b2add7b62939650c2b9b2de65024b60fb330f275a",
+      "artifacts/current/native-laminar-wall-recovery.cpp": "77d57e3f2370844066a8468bac480dac745fbb9a57dcc9ca8c5afc145744e9e6"
+    },
+    "extractionLibrarySha256": "5947decf1466f536b5db423b11990885d3d23b0fad9d235169881e7b4ca5b75c"
+  },
+  "productDefaultChanged": false,
+  "newPhysicalAccuracyQualification": false,
+  "remaining": "General global boundary/state assembly, solver API/CLI/desktop integration, full-state cancellation/last-accepted/checkpoint continuation and memory/cost handling still need native product implementation. Real curved-wall accuracy, medium-grid independent cold start, full cost and declared-platform qualifications remain outstanding; cloud research continues independently.",
+  "storage": {
+    "archive": "outputs/laminar-stability/compatible-core/native-compatible-core.tar.gz",
+    "sha256": "4baa0b8be8df906eac8af1f948d2fe671ef4227cac5139c2d7a18f79a9c71acd",
+    "bytes": 3436194,
+    "files": 661,
+    "originalBytes": 9144973,
+    "readback": "Complete sequential SHA256/byte-count/member-set verification, then a second hash check of all loose files before deleting exactly that manifest allowlist.",
+    "activeDataUsers": 0,
+    "looseDataRemoved": true,
+    "otherArchivesModified": false,
+    "cloudPersistenceConfirmed": false,
+    "pathMapping": "/tmp/cartmesh2d-compatible-core and /private/tmp/cartmesh2d-compatible-core map to archive-relative members."
+  },
+  "localFactorFailureRegression": {
+    "regression": "Successful local factorization, then make one interior row singular and recondense. Previously recover() used the old factor after the new factorization threw.",
+    "before": {
+      "exitCode": 1,
+      "message": "failed reassembly exposed stale recovery"
+    },
+    "fix": "Clear loadInternal before attempting the next factorization, so condensed()/recover() reject stale factors after any failure. The owning global solver retains its accepted field separately.",
+    "after": {
+      "nativeCTestPassed": 2,
+      "nativeCTestRun": 2,
+      "analyticMetrics": {
+        "cells": 7,
+        "velocityMax": 8.881784197001252e-15,
+        "pressureMax": 1.687538997430238e-14,
+        "internalEquilibriumMax": 1.161028556277871e-13,
+        "gradientLoadBalanceMax": 7.993605777301127e-15
+      },
+      "buildWarnings": 0
+    },
+    "finalFullSolve": {
+      "case": "sheared4 nu=.01 NS closed, pseudo-step=.1, Picard ILU0/viscous pressure",
+      "steps": 11,
+      "driverSeconds": 2.177075124986004,
+      "finalStateByteIdenticalToBeforeLifecycleFix": true,
+      "finalStateSha256": "750a7e55e9aa5b62073fe98b1520c157c5e66db0d65a3316223ea5b6521cf311",
+      "resultSha256": "4fbc22b2d0cc8953dbeea672d94542ddd827e0fdf3de831820b765045592b338",
+      "actualOriginalEquationResidualMax": 3.771661864348342e-14,
+      "stateCoefficientChange": 2.1710921949136264e-10
+    },
+    "scope": "This protects the shared local algebra lifecycle. It is not a new claim that product cancellation/checkpoint continuation has been integrated or revalidated.",
+    "storage": {
+      "archive": "outputs/laminar-stability/compatible-core/native-compatible-core-lifecycle.tar.gz",
+      "sha256": "a0dda12c09391a7d75ccfadd5db138976dbba1a261f9f4f096b1053330f93c22",
+      "bytes": 1182439,
+      "files": 273,
+      "originalBytes": 3087896,
+      "completeHashReadback": true,
+      "noActiveUsers": true,
+      "onlyManifestLooseDuplicatesRemoved": true,
+      "cloudPersistenceConfirmed": false
+    }
+  }
+}

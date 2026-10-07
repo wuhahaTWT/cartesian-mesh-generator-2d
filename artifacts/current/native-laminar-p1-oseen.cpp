@@ -54,7 +54,7 @@ Vector2D forceAt(Point2D p,const std::string& problem,double nu,bool nonlinear){
     if(nonlinear){force.x+=ex.u.x*ex.gradient[0].x+ex.u.y*ex.gradient[0].y;force.y+=ex.u.x*ex.gradient[1].x+ex.u.y*ex.gradient[1].y;}return force;
 }
 struct Oseen {
-    Element e;Lift lift;Mat convection,outletMatrix;Vec beta,outletLoad;std::vector<Vec> bc;int outletModel;double nu;int order;const Fixture& f;int t;std::string problem;
+    Element e;FixtureLift lift;Mat convection,outletMatrix;Vec beta,outletLoad;std::vector<Vec> bc;int outletModel;double nu;int order;const Fixture& f;int t;std::string problem;
     Oseen(const Fixture& F,int T,const std::string& Problem,double viscosity,bool nonlinear,int OutletModel,int Order,const Vec& previous):
         e(F,T,Problem,0,false,true,Order),lift(F,T,e.a,Order),convection(2*e.a.m,2*e.a.m),outletMatrix(2*e.a.m,2*e.a.m),beta(nonlinear?localState(F,T,e.a.m,previous):Vec(2*e.a.m+3)),outletLoad(2*e.a.m),outletModel(OutletModel),nu(viscosity),order(Order),f(F),t(T),problem(Problem){
         auto& a=e.a;int m=a.m;const auto& cell=f.mesh.cells[t];e.rhs.assign(e.rhs.size(),0);
@@ -88,12 +88,10 @@ struct Oseen {
             }
         }
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)+=convection(i,j);
-        Mat ii(8,8);for(int i=0;i<8;++i)for(int j=0;j<8;++j)ii(i,j)=e.matrix(e.inside[i],e.inside[j]);DenseLU lu(ii.v,8);
-        for(std::size_t j=0;j<e.outside.size();++j){Vec r(8);for(int i=0;i<8;++i)r[i]=e.matrix(e.inside[i],e.outside[j]);r=lu.solve(r);for(int i=0;i<8;++i)e.eliminated(i,int(j))=r[i];}
-        Vec r(8);for(int i=0;i<8;++i)r[i]=e.rhs[e.inside[i]];e.loadInternal=lu.solve(r);
+        e.condense();
     }
     Vector2D betaAt(int k,Point2D p)const{auto shape=lift.tri[k].shape(p);Vector2D b{};for(int l=0;l<8;++l){b.x+=shape[l].x*bc[k][l];b.y+=shape[l].y*bc[k][l];}return b;}
-    Vector2D liftedVelocity(const Vec& v,int k,Point2D p)const{Vector2D u{};for(int j=0;j<2*e.a.m;++j){auto r=lift.value(k,j,p);u.x+=v[j]*r.x;u.y+=v[j]*r.y;}return u;}
+    Vector2D liftedVelocity(const Vec& v,int k,Point2D p)const{Vector2D u{};for(std::size_t j=0;j<2*e.a.m;++j){auto r=lift.value(k,j,p);u.x+=v[j]*r.x;u.y+=v[j]*r.y;}return u;}
     double energyIdentity(const Vec& v)const{
         int m=e.a.m;double result=0;const auto& cell=f.mesh.cells[t];
         for(std::size_t k=0;k<lift.tri.size();++k)for(auto q:lift.tri[k].quadrature(order)){auto phi=e.a.basis.phi(q.p);double u=0,w=0,d=0;for(int j=0;j<3;++j){u+=phi[j]*v[j];w+=phi[j]*v[m+j];for(int l=0;l<m;++l)d+=phi[j]*(e.a.gx(j,l)*beta[l]+e.a.gy(j,l)*beta[m+l]);}result+=.5*q.w*d*(u*u+w*w);}
