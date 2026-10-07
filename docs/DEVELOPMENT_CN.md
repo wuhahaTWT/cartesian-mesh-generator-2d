@@ -729,6 +729,10 @@ CLI在每个原生接受步写 `.checkpoint.tmp`，显式关闭后同目录重�
 
 本批四项CTest、带单位缩放的7步与2＋5步实际轨迹、64格曲壁外流15步与3＋12步完整场/检查点，以及真实CLI信号恢复见 `native-laminar-compatible-checkpoint.json`。其中 `1e-18` 仅是一次追加迭代的刻意不可达、无量纲动量/散度/场变化负对照，用来证实不会沿用旧收敛标记；不新增物理精度标准。次正规数读写在正常量级主流加极小正交边界分量上验证；全场只有次正规量级的旧试探在原Krylov中失败，保留原记录，没有以修改数值阈值解决它。这不是极端幅值PDE资格。桌面、载荷、物理时间、曲壁局部精度、中档稳定性与其他平台仍需按目标推进。
 
+相容稀疏 `Matrix::residual(rhs,x)` 使用已有FMA/TwoSum保留乘积舍入尾项并补偿累加原 `b−Kx`，不先形成舍入后的完整Kx再相减。GMRES乘积算子仍是原K；收敛目标、原方程和默认重启预算不改。`CompatibleLinearInitialGuess2D::CurrentState` 是显式代数策略，每次从当前非线性迭代的面/压力保留量出发；混合面按当前法向/切向坐标还原，零默认保持。它不改变检查点的物理/离散身份，也不能使失败候选成为下一轮初猜。`linearInitialRelativeResidual` 与最终真实相对残差分开记录。
+
+研究入口 `native-laminar-compatible-solver` 在原参数末尾可追加 `[linear-restarts] [zero|accepted]`；accepted指当前非线性状态（首轮为种子、后续为接受态）。API可显式选择，产品CLI目前继续用零初猜。本批Linux原4,716格同场成本、严格残差失败与负收益步骤见 `native-laminar-linear-initial-guess.json`；不能把100次预算的成功当作默认50次已完成。
+
 ### 相容接受检查点的守恒载荷
 
 `evaluateCompatibleFlowLoads2D(mesh, controls, checkpoint, momentOrigin)` 核对与续算相同的原生离散上下文，再以原始稳态方程求载荷，不推进流场。输入是不可变接受检查点，预算尚未完成的检查点也可评估；返回值的接受步数只是来源，不能解释为收敛或精度证书。错网格/物性/边界/实际载荷拒绝，取消不返回部分报告。闭域不自动去均值，`absolutePressureReference=false` 明确保留原规范。

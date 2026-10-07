@@ -58,7 +58,8 @@ int main()try {
     for(std::size_t i=0;i<resumed.iterations.size();++i) {
         const auto& a=resumed.iterations[i];const auto& b=full.iterations[i+2];
         check(a.iteration==b.iteration&&a.pseudoStep==b.pseudoStep&&a.matrixProducts==b.matrixProducts&&
-              a.linearRelativeResidual==b.linearRelativeResidual&&a.metrics->residualNorm==b.metrics->residualNorm,"Split/full actual iteration differs");
+              a.linearInitialRelativeResidual==b.linearInitialRelativeResidual&&a.linearRelativeResidual==b.linearRelativeResidual&&
+              a.metrics->residualNorm==b.metrics->residualNorm,"Split/full actual iteration differs");
     }
     auto reordered=c;std::reverse(reordered.boundaries.begin(),reordered.boundaries.end());
     check(save(*resumeCompatibleIncompressible2D(domain,reordered,checkpoint).checkpoint)==save(*full.checkpoint),"Boundary vector order changed physical identity");

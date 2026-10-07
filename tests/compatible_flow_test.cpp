@@ -1,5 +1,6 @@
 #include "cartmesh2d/fv/CompatibleIncompressible2D.hpp"
 #include "cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp"
+#include "cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp"
 #include "fixtures/PolygonMesh2D.hpp"
 #include <cmath>
 #include <iomanip>
@@ -58,6 +59,12 @@ void print(const char* name,const CompatibleFlowResult2D& r,double u=std::numeri
 bool same(const CompatibleFlowState2D& a,const CompatibleFlowState2D& b){return a.cells==b.cells&&a.faces==b.faces;}
 }
 int main()try {
+    // The ordinary product rounds 1e16+1-1e16 before b-Ax.  The strict
+    // residual path must retain the unit term without changing K, b or x.
+    const detail::compatible::linear::Matrix cancellation(3,{{0,0,1e16},{0,1,1},{0,2,-1e16}});
+    const detail::LinearVector2D cancellationX{1,1,1},cancellationRhs{1,0,0};
+    check(cancellation.apply(cancellationX)[0]!=cancellationRhs[0],"Cancellation control unexpectedly exact");
+    check(cancellation.residual(cancellationRhs,cancellationX)[0]==0,"Compensated compatible residual lost assembled equation");
     // These analytic polynomial cases exercise actual coupled global assembly,
     // gauges, natural stress, Newton and inhomogeneous trace elimination. The
     // 1e-7 field allowance is a numerical regression target in U,L units,
@@ -77,6 +84,9 @@ int main()try {
     polygonPatch({{{{0,0},{1,0},{.75,1},{0,1}}}});
     polygonPatch({{{{0,0},{1,0},{1,1},{1,2},{0,2}}},{{{1,0},{2,0},{2,1},{1,1}}},{{{1,1},{2,1},{2,2},{1,2}}}});
     auto mesh=grid(3,.3);auto c=control(mesh,true,false);const auto nonlinear=solveCompatibleIncompressible2D(mesh,c);print("nonlinear-rotation",nonlinear);check(nonlinear.converged(),"Nonlinear rotation failed");auto [u,p]=errors(mesh,*nonlinear.lastAccepted,true,false);print("nonlinear-errors",nonlinear,u,p);check(u<1e-7&&p<1e-7,"Nonlinear analytic field failed");
+    auto warmControls=c;warmControls.linearInitialGuess=CompatibleLinearInitialGuess2D::CurrentState;const auto warm=solveCompatibleIncompressible2D(mesh,warmControls);check(warm.converged()&&warm.lastAccepted,"Current-state linear initial guess failed");
+    check(warm.iterations.size()>1&&warm.iterations[0].linearInitialRelativeResidual==1&&warm.iterations[1].linearInitialRelativeResidual<1,"Accepted-state initial residual was not applied after the first step");
+    auto [wu,wp]=errors(mesh,*warm.lastAccepted,true,false);check(wu<1e-7&&wp<1e-7,"Accepted-state linear initial guess changed analytic accuracy");
     auto scaledMesh=grid(3,.3,2.5);auto scaledControls=control(scaledMesh,true,false,3,2.5);const auto scaled=solveCompatibleIncompressible2D(scaledMesh,scaledControls);check(scaled.converged(),"Physical scaling solve failed");auto [su,sp]=errors(scaledMesh,*scaled.lastAccepted,true,false,3,2.5);print("scaled-nonlinear",scaled,su,sp);check(su<1e-7&&sp<1e-7,"Physical unit conversion failed");
     auto one=c;one.maximumIterations=1;const auto budget=solveCompatibleIncompressible2D(mesh,one);print("nonlinear-budget",budget);check(budget.stop==CompatibleFlowStop2D::NonlinearBudget&&budget.lastAccepted&&budget.seed,"Iteration limit mislabeled");check(!same(*budget.seed,*budget.lastAccepted),"Seed substituted for accepted iteration");
     const auto resumed=solveCompatibleIncompressible2D(mesh,c,budget.lastAccepted);check(resumed.converged(),"Algebraic seed continuation failed");auto [ru,rp]=errors(mesh,*resumed.lastAccepted,true,false);check(ru<1e-7&&rp<1e-7,"Resumed algebraic solve differs");

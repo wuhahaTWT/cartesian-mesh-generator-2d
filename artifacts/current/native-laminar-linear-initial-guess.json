@@ -1,0 +1,502 @@
+{
+  "closedSheared64": {
+    "cells": 64,
+    "currentState": {
+      "initialRelativeResiduals": [
+        1,
+        0.25121744523267975,
+        0.024515064228021306,
+        0.00011466829890056601,
+        4.504007639078062e-09,
+        9.590047487589906e-14
+      ],
+      "linearRestarts": 6,
+      "matrixProducts": 253,
+      "seconds": 0.72708385,
+      "sha256": "6bfe9ebe6c0257b0ab1635f131f2ac642ad297bfba021fbd618290f201d68c13"
+    },
+    "faces": 144,
+    "fieldDifference": {
+      "cells": 64,
+      "faceVelocityMaximum": 1.638453652062131e-12,
+      "faceVelocityRms": 7.529402726163113e-13,
+      "pressureMeanDifference": -3.858558654881726e-12,
+      "pressureP1RmsAbsolute": 4.197465431449777e-12,
+      "pressureP1RmsAfterGlobalGauge": 1.6523441394132326e-12,
+      "stateCoefficientMaximum": 6.518341422179219e-12,
+      "velocityP1Rms": 7.896086178314876e-13
+    },
+    "fieldDifferenceSha256": "17ff749c26d50c6e0d3fc513a3c2c1665a81d80d694be2f7818f298e3defabc0",
+    "iterations": 6,
+    "label": "64-cell sheared stationary-wall manufactured flow",
+    "perIteration": {
+      "currentState": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.536970954783015e-14,
+          "products": 47,
+          "restarts": 1
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 0.25121744523267975,
+          "linearRelativeResidual": 8.763992620054257e-14,
+          "products": 62,
+          "restarts": 2
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 0.024515064228021306,
+          "linearRelativeResidual": 5.790280176700703e-14,
+          "products": 60,
+          "restarts": 1
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 0.00011466829890056601,
+          "linearRelativeResidual": 8.238194701221733e-14,
+          "products": 52,
+          "restarts": 1
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 4.504007639078062e-09,
+          "linearRelativeResidual": 9.596180735403387e-14,
+          "products": 32,
+          "restarts": 1
+        },
+        {
+          "iteration": 5,
+          "linearInitialRelativeResidual": 9.590047487589906e-14,
+          "linearRelativeResidual": 9.590047487589906e-14,
+          "products": 0,
+          "restarts": 0
+        }
+      ],
+      "zero": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.536970954783015e-14,
+          "products": 47,
+          "restarts": 1
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.500062249966177e-14,
+          "products": 65,
+          "restarts": 2
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.431173127267627e-14,
+          "products": 75,
+          "restarts": 2
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.492850354607644e-14,
+          "products": 74,
+          "restarts": 2
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.48894938131864e-14,
+          "products": 74,
+          "restarts": 2
+        },
+        {
+          "iteration": 5,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.487609382724786e-14,
+          "products": 74,
+          "restarts": 2
+        }
+      ]
+    },
+    "relativeChange": {
+      "linearRestarts": -0.4545454545454546,
+      "matrixProducts": -0.38141809290953543,
+      "seconds": -0.01899255199930916
+    },
+    "zero": {
+      "linearRestarts": 11,
+      "matrixProducts": 409,
+      "seconds": 0.741160377,
+      "sha256": "d07eb0802e366159e02b14e19edcc5a00d0725a76194aaceb4196e1a0a2eb243"
+    }
+  },
+  "controls": {
+    "equation": "NavierStokes",
+    "initialPseudoStep": 1.0,
+    "krylovDirections": 60,
+    "linearTolerance": 1e-13,
+    "maximumLinearRestarts": 100,
+    "maximumPseudoStep": 1000000.0,
+    "pressureInverse": "diagonal-schur for pressure-reference outlet/cylinder; viscous-mass gauge inverse for closed flow",
+    "quadratureOrder": 6,
+    "viscosity": 0.1
+  },
+  "hashes": {
+    "artifacts/current/native-laminar-compatible-solver.cpp": "8e2a40cffd030a0a222c62593a5038c0a63b80b274690b3bae0f26480a141b81",
+    "binary": "884acc51971df5cfde10be4870c070aaf5dde16d599a7233d63e8c7534969ebf",
+    "include/cartmesh2d/fv/CompatibleIncompressible2D.hpp": "46d4ed1ec25ecf8976b6567688ab3257a3ca4570fe42a43daef39fdc72e341cf",
+    "include/cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp": "29c61d47dd5f156fa859fd294a931aef5470de506a0cc24d658f4b759c4c67f3",
+    "mesh4716": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+    "src/fv/CompatibleIncompressible2D.cpp": "98642f9005763041d20ba9b8ea470ee73b88361948f98cf22118d94a04ec9353",
+    "tests/compatible_flow_checkpoint_test.cpp": "c37cee65e3d753667574aec9d2db282edf1f273d87bfe3c0f7b263bdd390b968",
+    "tests/compatible_flow_test.cpp": "c179e231fa0a83a20c94d798552a71dfc16c22eec71692b276f3e18f7153901e"
+  },
+  "limitations": [
+    "The 4716-cell second nonlinear system regressed from 4291 to 4616 matrix products even though the current-state initial residual was 0.173 instead of 1; only complete same-source totals are used for the cost comparison.",
+    "The real cylinder still required 17035 matrix products and 267.6 seconds with the current-state seed, so neither compensated residual evaluation nor this explicit seed by itself qualifies a scalable default backend.",
+    "No 17260-cell rerun was made; no physical branch, curved-wall local pressure/traction, desktop or cross-platform qualification is claimed."
+  ],
+  "linuxValidation": {
+    "frontendOrDesktopRun": false,
+    "fullNativeSuiteRun": false,
+    "outputsSha256": {
+      "final-compatible-boundary-test.stdout": "780cd3cc5ba591be830edf8deeeef1ab17785039bbb222d1a88ded0eaf99b7c1",
+      "final-compatible-checkpoint-test.stdout": "b7a333b92b5ccfe2ab907f5bd4fb59e84711251a851bf44e048025437c1aa662",
+      "final-compatible-cli-test.stdout": "952e7e7c8d5466d6b41cfe96626a7a82871fe1e7118783ab7483dcbb4f85f665",
+      "final-compatible-flow-test-rerun.stdout": "03d2802b64cf677554b2a457049ccd8be843c1c8170b658a2f256e8cfb09f7fd",
+      "final-flow-boundary-test.stdout": "f38b419efd1da2652ff2a7b1179b0affd81e3524906e1c34ca0cc3b3f6ce26b7",
+      "final-flow-branch-test.stdout": "e1296837aae7142e417f56ab23d60f5f7d90afad0a70bbd966725369b81b135f"
+    },
+    "passed": 6,
+    "scope": "compatible flow, compatible checkpoint, compatible boundary, legacy flow boundary, branch certificate, and real compatible CLI lifecycle"
+  },
+  "openOutlet64": {
+    "cells": 64,
+    "currentState": {
+      "initialRelativeResiduals": [
+        1,
+        0.06991099783639433,
+        0.0004192877463286453,
+        7.539768933611875e-08,
+        6.965177392924912e-14
+      ],
+      "linearRestarts": 4,
+      "matrixProducts": 138,
+      "seconds": 0.550690078,
+      "sha256": "c48265e9e00b329b2e34ce2d1d9d2d05e175bc4921642375b9e688eaa86b89a4"
+    },
+    "faces": 144,
+    "fieldDifference": {
+      "cells": 64,
+      "faceVelocityMaximum": 9.429291298572678e-13,
+      "faceVelocityRms": 1.5407146079649429e-13,
+      "pressureMeanDifference": -2.36624955740618e-14,
+      "pressureP1RmsAbsolute": 1.6916463621593827e-13,
+      "pressureP1RmsAfterGlobalGauge": 1.675015237222584e-13,
+      "stateCoefficientMaximum": 1.6814592073186634e-12,
+      "velocityP1Rms": 1.4621801502127998e-13
+    },
+    "fieldDifferenceSha256": "e89c2298cbd0d7f2ba9d2646b542787bbbd9c3816e9bcb16d9b2823150e7d4af",
+    "iterations": 5,
+    "label": "64-cell analytic product-style open outlet",
+    "perIteration": {
+      "currentState": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 5.384167469801162e-14,
+          "products": 39,
+          "restarts": 1
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 0.06991099783639433,
+          "linearRelativeResidual": 9.682451246023072e-14,
+          "products": 39,
+          "restarts": 1
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 0.0004192877463286453,
+          "linearRelativeResidual": 5.030266639799728e-14,
+          "products": 35,
+          "restarts": 1
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 7.539768933611875e-08,
+          "linearRelativeResidual": 6.769210647967864e-14,
+          "products": 25,
+          "restarts": 1
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 6.965177392924912e-14,
+          "linearRelativeResidual": 6.965177392924912e-14,
+          "products": 0,
+          "restarts": 0
+        }
+      ],
+      "zero": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 5.384167469801162e-14,
+          "products": 39,
+          "restarts": 1
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 5.885448862548857e-14,
+          "products": 42,
+          "restarts": 1
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.79288323445518e-14,
+          "products": 42,
+          "restarts": 1
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.839020661766526e-14,
+          "products": 42,
+          "restarts": 1
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 7.8838472651669e-14,
+          "products": 42,
+          "restarts": 1
+        }
+      ]
+    },
+    "relativeChange": {
+      "linearRestarts": -0.19999999999999996,
+      "matrixProducts": -0.33333333333333337,
+      "seconds": 0.028507391713431085
+    },
+    "zero": {
+      "linearRestarts": 5,
+      "matrixProducts": 207,
+      "seconds": 0.535426466,
+      "sha256": "b6b414210e5c797318f8054e98e7ddccf75b44358a6904ca6c5832a628241cc7"
+    }
+  },
+  "realCylinder4716": {
+    "cells": 4716,
+    "currentState": {
+      "initialRelativeResiduals": [
+        1,
+        0.17260401845736587,
+        0.032100162625027316,
+        0.008645939139991746,
+        0.0019607204982804907,
+        0.00018708103473843258,
+        1.736984247817055e-06,
+        1.4485314673443603e-10,
+        1.0063033178770163e-13
+      ],
+      "linearRestarts": 296,
+      "matrixProducts": 17035,
+      "seconds": 267.561009971,
+      "sha256": "abab8b0478e7c24a2756b21cb83eb4d2a3b39089dc003ce8b9e8404d23070267"
+    },
+    "faces": 9632,
+    "fieldDifference": {
+      "cells": 4716,
+      "faceVelocityMaximum": 1.6965070325433085e-12,
+      "faceVelocityRms": 7.242207534622115e-13,
+      "pressureMeanDifference": -1.7702824428743564e-13,
+      "pressureP1RmsAbsolute": 4.58066540544558e-13,
+      "pressureP1RmsAfterGlobalGauge": 4.224759830936744e-13,
+      "stateCoefficientMaximum": 5.340261566288973e-11,
+      "velocityP1Rms": 7.210838891126129e-13
+    },
+    "fieldDifferenceSha256": "0de62c223cf2e492f688e2744d4be3a3f81322db8e984c6487a765c7ce600d97",
+    "iterations": 9,
+    "label": "fixed-128-segment 20D cylinder, original 4716-cell Linux mesh",
+    "perIteration": {
+      "currentState": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.988385500866673e-14,
+          "products": 4612,
+          "restarts": 86
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 0.17260401845736587,
+          "linearRelativeResidual": 9.979390213840006e-14,
+          "products": 4616,
+          "restarts": 77
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 0.032100162625027316,
+          "linearRelativeResidual": 9.853878692846417e-14,
+          "products": 1979,
+          "restarts": 33
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 0.008645939139991746,
+          "linearRelativeResidual": 9.972665150957126e-14,
+          "products": 1582,
+          "restarts": 27
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 0.0019607204982804907,
+          "linearRelativeResidual": 9.964990440827105e-14,
+          "products": 1307,
+          "restarts": 22
+        },
+        {
+          "iteration": 5,
+          "linearInitialRelativeResidual": 0.00018708103473843258,
+          "linearRelativeResidual": 9.983906808925142e-14,
+          "products": 1358,
+          "restarts": 23
+        },
+        {
+          "iteration": 6,
+          "linearInitialRelativeResidual": 1.736984247817055e-06,
+          "linearRelativeResidual": 9.951926194104283e-14,
+          "products": 1109,
+          "restarts": 19
+        },
+        {
+          "iteration": 7,
+          "linearInitialRelativeResidual": 1.4485314673443603e-10,
+          "linearRelativeResidual": 9.999903346302845e-14,
+          "products": 470,
+          "restarts": 8
+        },
+        {
+          "iteration": 8,
+          "linearInitialRelativeResidual": 1.0063033178770163e-13,
+          "linearRelativeResidual": 9.960408598364093e-14,
+          "products": 2,
+          "restarts": 1
+        }
+      ],
+      "zero": [
+        {
+          "iteration": 0,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.988385500866673e-14,
+          "products": 4612,
+          "restarts": 86
+        },
+        {
+          "iteration": 1,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.9875031161373e-14,
+          "products": 4291,
+          "restarts": 72
+        },
+        {
+          "iteration": 2,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.93110777031674e-14,
+          "products": 2468,
+          "restarts": 42
+        },
+        {
+          "iteration": 3,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.955935698823409e-14,
+          "products": 1814,
+          "restarts": 31
+        },
+        {
+          "iteration": 4,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.995813794185968e-14,
+          "products": 1664,
+          "restarts": 28
+        },
+        {
+          "iteration": 5,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.85748868180362e-14,
+          "products": 1845,
+          "restarts": 31
+        },
+        {
+          "iteration": 6,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.983454641889383e-14,
+          "products": 1831,
+          "restarts": 31
+        },
+        {
+          "iteration": 7,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.96157729280488e-14,
+          "products": 1855,
+          "restarts": 31
+        },
+        {
+          "iteration": 8,
+          "linearInitialRelativeResidual": 1,
+          "linearRelativeResidual": 9.773746413103164e-14,
+          "products": 1849,
+          "restarts": 31
+        }
+      ]
+    },
+    "relativeChange": {
+      "linearRestarts": -0.22715404699738906,
+      "matrixProducts": -0.23365873408610371,
+      "seconds": -0.18506803355556467
+    },
+    "zero": {
+      "linearRestarts": 383,
+      "matrixProducts": 22229,
+      "seconds": 328.323125105,
+      "sha256": "2676cc3b4f09391e6f9aeed0164f0f5b86b3e170cd4bcc9a830ae6beeadc2def"
+    }
+  },
+  "roundoffBoundary": {
+    "extendedAccumulationDiagnostic": {
+      "acceptedStateSha256": "ed83f2dfca765c48e68536b51f8bfe156eced66be63d44133a4966950ce0c698",
+      "path": "outputs/laminar-stability/compatible-linear-seed/strict-comp-cylinder4716-current.json",
+      "sha256": "3f86e6bcd168a444e62f587e2358cfdb0556012dada66cbd21cbb0f53c02bda3"
+    },
+    "extendedVsPortableFieldDifference": {
+      "cells": 4716,
+      "faceVelocityMaximum": 8.930303687308189e-13,
+      "faceVelocityRms": 7.830939301820963e-14,
+      "pressureMeanDifference": 5.961776155968169e-14,
+      "pressureP1RmsAbsolute": 9.541073821328454e-14,
+      "pressureP1RmsAfterGlobalGauge": 7.44911502999975e-14,
+      "stateCoefficientMaximum": 3.229239098345715e-11,
+      "velocityP1Rms": 7.846509126764921e-14
+    },
+    "extendedVsPortableFieldDifferenceSha256": "d9a49d53b57618109f3b327527619504a16c63415124f8f6aae2c3fb48d5e641",
+    "interpretation": "The ordinary separately rounded A*x path exhausted the unchanged 100-restart budget just above 1e-13. Extended accumulation and portable FMA/TwoSum independently crossed the unchanged target; their accepted fields agree to roundoff but are not byte-identical because FMA/TwoSum retains product error. This is an algebraic residual-evaluation repair, not a relaxed gate.",
+    "ordinaryResidualRecompute": {
+      "completed": false,
+      "firstLinearRestarts": 100,
+      "firstMatrixProducts": 4164,
+      "path": "outputs/laminar-stability/compatible-linear-seed/strict-cylinder4716-current.json",
+      "reportedRelativeResidual": 1.1263735857365017e-13,
+      "sha256": "66a11c67a975153b935a656f9fd6fdc70962b8f706dedf9f2dd9b88de4cc8e2f"
+    },
+    "portableTwoSumFma": {
+      "acceptedStateSha256": "3ed19b582c3e02d8f956ff18493ea1835ba191a4ae9a6d7334db133c6c2b535d",
+      "path": "outputs/laminar-stability/compatible-linear-seed/final-cylinder4716-current.json",
+      "sha256": "abab8b0478e7c24a2756b21cb83eb4d2a3b39089dc003ce8b9e8404d23070267"
+    }
+  },
+  "schemaVersion": 2,
+  "scope": "Explicit algebraic current-state initial guess layered on the existing strict Krylov-cycle target, with FMA/TwoSum recomputation of the same assembled b-K*x residual. K, rhs, nonlinear equations, pseudo-time, preconditioner, tolerances, budgets and all original acceptance gates are unchanged."
+}

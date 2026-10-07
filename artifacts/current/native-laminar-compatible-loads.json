@@ -393,5 +393,132 @@
       "/tmp/cartmesh-compatible-loads-finalize.py"
     ],
     "checks": "All archived members read back and hashed; temporary files unchanged and unused before removing exactly the archived temporary allowlist. Existing unique archives preserved."
+  },
+  "cloudIntegration": {
+    "remoteCommit": "9d4aaace62ec524e79fe7f23c6715d7ae9959fb0",
+    "localLoadCommit": "457c39872b2de735b4117a65543a016d14747490",
+    "kind": "ordinary merge preserving both histories",
+    "relatedCTest": {
+      "passed": 6,
+      "total": 6,
+      "seconds": 5.0
+    },
+    "realCutCellReadback": [
+      {
+        "name": "old-checkpoint",
+        "command": [
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads-merge/cylinder.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads-merge/old-checkpoint",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur",
+          "--restart",
+          "/tmp/cartmesh-compatible-loads-merge/before.checkpoint",
+          "--linear-restarts",
+          "1",
+          "--krylov-directions",
+          "1"
+        ],
+        "code": 2,
+        "processSeconds": 0.09263525001006201,
+        "acceptedIterations": 15,
+        "momentumImbalance": [
+          2.149391775674303e-13,
+          4.114417140321791e-14
+        ],
+        "differencesFromPreMerge": {
+          "cellVelocityCoefficients": {
+            "rms": 0.0,
+            "maximum": 0.0
+          },
+          "cellPressureCoefficients": {
+            "rms": 0.0,
+            "maximum": 0.0
+          },
+          "faceVelocityCoefficients": {
+            "rms": 0.0,
+            "maximum": 0
+          },
+          "tractionMomentMaximumDifference": 0.0
+        },
+        "differenceMeaning": "Unweighted physical polynomial-coefficient comparisons, not recovered spatial RMS or an accuracy gate. Open pressure is absolute; no gauge subtraction.",
+        "loadsIdenticalAtOldCheckpoint": true,
+        "newCheckpointByteIdenticalToOld": true
+      },
+      {
+        "name": "cold",
+        "command": [
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads-merge/cylinder.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads-merge/cold",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur"
+        ],
+        "code": 0,
+        "processSeconds": 0.6947217080160044,
+        "acceptedIterations": 15,
+        "momentumImbalance": [
+          2.3003821070233244e-13,
+          3.643960133636881e-14
+        ],
+        "differencesFromPreMerge": {
+          "cellVelocityCoefficients": {
+            "rms": 3.757095934743532e-14,
+            "maximum": 6.012967901369848e-13
+          },
+          "cellPressureCoefficients": {
+            "rms": 2.780113509778199e-14,
+            "maximum": 1.9939605522267811e-13
+          },
+          "faceVelocityCoefficients": {
+            "rms": 4.775129987084021e-15,
+            "maximum": 3.5083047578154947e-14
+          },
+          "tractionMomentMaximumDifference": 3.2014321749151975e-15
+        },
+        "differenceMeaning": "Unweighted physical polynomial-coefficient comparisons, not recovered spatial RMS or an accuracy gate. Open pressure is absolute; no gauge subtraction.",
+        "loadsIdenticalAtOldCheckpoint": false,
+        "newCheckpointByteIdenticalToOld": false
+      }
+    ],
+    "scope": "Merged portable compensated true residual and explicit current-state linear seed with checkpoint-bound conservative loads. No large mesh replay locally; default seed remains Zero. Original equations/checkpoint discrete-context definition unchanged.",
+    "archive": {
+      "path": "outputs/laminar-stability/native-loads/native-compatible-loads-cloud-merge.tar.gz",
+      "bytes": 536739,
+      "sha256": "6aa19c4b40f6f66bf531b0407c36cdebe29127448c3fa3b6399485be84989e68",
+      "contentFiles": 38,
+      "uncompressedContentBytes": 1555919,
+      "memberReadbackVerified": true,
+      "cloudDurableCopyConfirmed": false
+    },
+    "temporaryCleanup": {
+      "files": 34,
+      "bytes": 622012,
+      "rootRemoved": true,
+      "allowlist": [
+        "/tmp/cartmesh-compatible-loads-merge",
+        "/tmp/cartmesh-compatible-loads-merge-build.log",
+        "/tmp/cartmesh-compatible-loads-merge-ctest.log",
+        "/tmp/cartmesh-compatible-loads-merge-run.py",
+        "/tmp/cartmesh-compatible-loads-merge-evidence.py"
+      ],
+      "checks": "Member/hash readback, unchanged files, no open files or active solver; unique archives retained."
+    }
   }
 }

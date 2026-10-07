@@ -34,6 +34,7 @@ struct CompatibleBoundary2D {
 enum class CompatibleEquation2D { Stokes, NavierStokes };
 enum class CompatibleGlobalization2D { Backtracking, PseudoTime };
 enum class CompatiblePressureInverse2D { ViscousMass, DiagonalSchur };
+enum class CompatibleLinearInitialGuess2D { Zero, CurrentState };
 struct CompatibleFlowState2D {
     // Per cell: u0,uX,uY,v0,vX,vY,p0,pX,pY in basis (1,dx/h,dy/h).
     // Physical velocity and kinematic pressure. h is the actual diameter.
@@ -52,7 +53,7 @@ struct CompatibleFlowMetrics2D {
 };
 struct CompatibleFlowIteration2D {
     std::size_t iteration=0,linearRestarts=0,matrixProducts=0,trials=0;
-    double linearRelativeResidual=0,pseudoStep=0,alpha=1;
+    double linearInitialRelativeResidual=0,linearRelativeResidual=0,pseudoStep=0,alpha=1;
     bool accepted=false;
     std::optional<CompatibleFlowMetrics2D> metrics; // absent until original equations were evaluated
 };
@@ -79,6 +80,11 @@ struct CompatibleFlowControls2D {
     CompatibleEquation2D equation=CompatibleEquation2D::NavierStokes;
     CompatibleGlobalization2D globalization=CompatibleGlobalization2D::PseudoTime;
     CompatiblePressureInverse2D pressureInverse=CompatiblePressureInverse2D::ViscousMass;
+    // Explicit algebraic strategy only. CurrentState starts each absolute
+    // condensed solve from the retained coefficients of the current nonlinear
+    // iterate (the seed first, then the last accepted state); it does not alter
+    // K, rhs or acceptance gates.
+    CompatibleLinearInitialGuess2D linearInitialGuess=CompatibleLinearInitialGuess2D::Zero;
     // Iteration targets inherited from the compatible research solver,
     // applied separately to the normalized quantities above. Not accuracy bounds.
     double equationTolerance=1e-9,stateTolerance=1e-9,linearTolerance=1e-13;
