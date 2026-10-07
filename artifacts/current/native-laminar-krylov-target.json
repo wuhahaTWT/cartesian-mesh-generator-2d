@@ -1,0 +1,1089 @@
+{
+  "schema": "cartmesh2d-compatible-krylov-target-v1",
+  "baseCommit": "72ac4ddd08ba9212d9349a2a612deafcdce07652",
+  "scope": "Retain the GMRES subspace for the existing strict compatible linear target; no PDE, preconditioner, geometry, acceptance tolerance, maximum direction/restart budget, or legacy Newton default change.",
+  "method": {
+    "old": "newtonKrylovDirection2D default 0.1 forcing ends each cycle after a tenfold residual reduction, even when a strict linear solve still needs the available directions.",
+    "new": "Compatible solve supplies linearTolerance / currentTrueRelativeResidual as the cycle target; cap remains krylovDirections. Each update is accepted only after recomputing the true unpreconditioned b-K*x residual.",
+    "defaultDiscretization": "collocated unchanged; compatible remains explicit",
+    "legacyNewtonForcing": 0.1,
+    "extraPhysicalThreshold": false,
+    "extraKrylovCapacity": false
+  },
+  "references": [
+    "https://petsc.org/release/manualpages/KSP/KSPGMRESSetRestart/",
+    "https://petsc.org/release/manualpages/KSP/KSPSetTolerances/"
+  ],
+  "minimalFailure": {
+    "before": "Linear Newton forcing exhausted a sufficient Krylov subspace",
+    "beforeExit": 1,
+    "description": "9-cell analytic Stokes traction problem, one available linear restart and 60-direction cap. Old forcing returns LinearBudget without recovering a candidate; corrected target converges in that same one restart and satisfies existing analytic field/true residual checks.",
+    "after": {
+      "case": "one-restart-linear-target",
+      "converged": true,
+      "iterations": 1,
+      "velocityMax": null,
+      "pressureMax": null,
+      "originalEquationsEvaluated": true,
+      "cellMomentum": 6.3647833325523234e-15,
+      "faceMomentum": 2.5050794771885876e-13,
+      "divergence": 3.13541659508814e-13,
+      "stateChange": 2.166666666666652,
+      "reason": "Original momentum, divergence, linear and applicable state-change targets satisfied"
+    }
+  },
+  "sameMatrixComparisons": [
+    {
+      "case": "cylinder64-pt01",
+      "before": {
+        "mode": "newton-forcing",
+        "converged": true,
+        "unknowns": 480,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 180,
+        "restarts": 13,
+        "preconditionerApplications": 193,
+        "relativeTrueResidual": 9.908442318291897e-15,
+        "matrixReadSeconds": 0.001920291,
+        "setupSeconds": 0.001940792,
+        "solveAndSetupSeconds": 0.014556625,
+        "trueResidualHistory": [
+          7.345850764024293,
+          0.6282141873856216,
+          0.057888547123306766,
+          0.004601049509033607,
+          0.0002945722376762461,
+          2.134868748158812e-05,
+          1.7146598901574247e-06,
+          1.5705203592909346e-07,
+          1.3061013739317874e-08,
+          9.549639057749637e-10,
+          9.05747143777698e-11,
+          7.930699583972634e-12,
+          7.36895703791386e-13,
+          7.278593857411517e-14
+        ]
+      },
+      "after": {
+        "mode": "linear-target",
+        "converged": true,
+        "unknowns": 480,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 60,
+        "restarts": 2,
+        "preconditionerApplications": 62,
+        "relativeTrueResidual": 7.831727055957827e-14,
+        "matrixReadSeconds": 0.001920291,
+        "setupSeconds": 0.001853791,
+        "solveAndSetupSeconds": 0.008491583,
+        "trueResidualHistory": [
+          7.345850764024293,
+          9.159538587698326e-13,
+          5.753069817763753e-13
+        ]
+      },
+      "nativeInputSha256": {
+        ".entries": "fbf1a1cdbe085f185499c0b7e37135ac1a05132a88b9933b379428bcaac1ac21",
+        ".rhs": "4a12e2b65260a78f5c847fbe66894928cfcc06dd7be877775602e7991918afcb",
+        ".picard.entries": "c4f4f177873ee97f8049d4373efec4690cc1ade6680e1bf53fb4d71b8a308bb8",
+        ".cells.csv": "b287d1bd3c7b73ff51245f2689277b8ea1c102e99651a69140d3151397858b82"
+      }
+    },
+    {
+      "case": "outlet8-pt01",
+      "before": {
+        "mode": "newton-forcing",
+        "converged": true,
+        "unknowns": 544,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 48,
+        "restarts": 11,
+        "preconditionerApplications": 59,
+        "relativeTrueResidual": 5.023146621998647e-14,
+        "matrixReadSeconds": 0.002309625,
+        "setupSeconds": 0.002157791,
+        "solveAndSetupSeconds": 0.006092625,
+        "trueResidualHistory": [
+          1.577935785884187,
+          0.13452087760903794,
+          0.009733664337296206,
+          0.0005032644737867548,
+          4.783611840208364e-05,
+          2.7947871150802567e-06,
+          2.7762844950356333e-07,
+          9.29334496104607e-09,
+          5.91476525112808e-10,
+          3.970584104046954e-11,
+          2.333645851308294e-12,
+          7.926202812594934e-14
+        ]
+      },
+      "after": {
+        "mode": "linear-target",
+        "converged": true,
+        "unknowns": 544,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 31,
+        "restarts": 1,
+        "preconditionerApplications": 32,
+        "relativeTrueResidual": 9.55086241086397e-14,
+        "matrixReadSeconds": 0.002309625,
+        "setupSeconds": 0.002072917,
+        "solveAndSetupSeconds": 0.005020458,
+        "trueResidualHistory": [
+          1.577935785884187,
+          1.5070647584158378e-13
+        ]
+      },
+      "nativeInputSha256": {
+        ".entries": "2574e3e708c5aa63b782f42c5e5414584be35ea7ac24241d20fddcbb28e2803b",
+        ".rhs": "ac67890a80f3933720e4028a3339c933395314b1d93594dc209091b453704829",
+        ".picard.entries": "2faae2ad63ef9bcd3695969fa7d937fed35169cd7a4992f5f8b3bfcc0ee4d2b0",
+        ".cells.csv": "649b9dfcf43074cbfe5a8a0d66d10c93c9bfad5c998d297b857a28abf64e71bb"
+      }
+    },
+    {
+      "case": "outlet8-pt1",
+      "before": {
+        "mode": "newton-forcing",
+        "converged": true,
+        "unknowns": 544,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 72,
+        "restarts": 12,
+        "preconditionerApplications": 84,
+        "relativeTrueResidual": 2.528264354020854e-14,
+        "matrixReadSeconds": 0.00218325,
+        "setupSeconds": 0.0020135,
+        "solveAndSetupSeconds": 0.007515583,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          0.15301613879961878,
+          0.014611642874836062,
+          0.0011901412294353536,
+          8.707345297622345e-05,
+          7.199755014888645e-06,
+          5.780178429354514e-07,
+          4.5217944504041325e-08,
+          3.73903917140572e-09,
+          1.6321001988665864e-10,
+          1.0995852935371514e-11,
+          7.198544780455845e-13,
+          3.938501728148139e-14
+        ]
+      },
+      "after": {
+        "mode": "linear-target",
+        "converged": true,
+        "unknowns": 544,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 39,
+        "restarts": 1,
+        "preconditionerApplications": 40,
+        "relativeTrueResidual": 3.708870318745579e-14,
+        "matrixReadSeconds": 0.00218325,
+        "setupSeconds": 0.002034125,
+        "solveAndSetupSeconds": 0.00615825,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          5.777636399700755e-14
+        ]
+      },
+      "nativeInputSha256": {
+        ".entries": "69b92657e8a243d3fa0f535d81592764a517db142c5b3d5887e1fd0470f68cfd",
+        ".rhs": "b2d3d6eca0bb054a3136f76044efccb2cd224812575692ef2d49d5a1f800da46",
+        ".picard.entries": "d5286feb0f42b4ff38cf30573c849a8ab3686e2c451b328416a5d49d5eae1b49",
+        ".cells.csv": "649b9dfcf43074cbfe5a8a0d66d10c93c9bfad5c998d297b857a28abf64e71bb"
+      }
+    },
+    {
+      "case": "sheared4-newton",
+      "before": {
+        "mode": "newton-forcing",
+        "converged": true,
+        "unknowns": 111,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 58,
+        "restarts": 11,
+        "preconditionerApplications": 69,
+        "relativeTrueResidual": 4.292884347120077e-14,
+        "matrixReadSeconds": 0.000616375,
+        "setupSeconds": 0.000366542,
+        "solveAndSetupSeconds": 0.001260209,
+        "trueResidualHistory": [
+          0.72684751176039,
+          0.04021457627090018,
+          0.002145902696888248,
+          0.00016690246582869622,
+          1.4924158662342926e-05,
+          3.56776056823909e-07,
+          1.771195606408249e-08,
+          1.5026250208125862e-09,
+          7.731832706614902e-11,
+          6.5656363998759466e-12,
+          3.7598438894035423e-13,
+          3.120272305979354e-14
+        ]
+      },
+      "after": {
+        "mode": "linear-target",
+        "converged": true,
+        "unknowns": 111,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 32,
+        "restarts": 1,
+        "preconditionerApplications": 33,
+        "relativeTrueResidual": 7.848249225071131e-14,
+        "matrixReadSeconds": 0.000616375,
+        "setupSeconds": 0.000326334,
+        "solveAndSetupSeconds": 0.000919,
+        "trueResidualHistory": [
+          0.72684751176039,
+          5.70448042091836e-14
+        ]
+      },
+      "nativeInputSha256": {
+        ".entries": "51ee2e411a1b1ce17d3821a2ca0adf61aff928f22a08f87210be8d481fadbec2",
+        ".rhs": "300b4e7eb40f468cbdf3529bd7ca7ab7f879f66fe661af43c11546a740f10071",
+        ".picard.entries": "51ee2e411a1b1ce17d3821a2ca0adf61aff928f22a08f87210be8d481fadbec2",
+        ".cells.csv": "23b93c6aae513b5cbd2d24ab30d40d2096d5eb1b50c3b27d85a71f94b199f5f6"
+      }
+    },
+    {
+      "case": "sheared8-pt01",
+      "before": {
+        "mode": "newton-forcing",
+        "converged": true,
+        "unknowns": 511,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 225,
+        "restarts": 13,
+        "preconditionerApplications": 238,
+        "relativeTrueResidual": 1.6095184293043507e-14,
+        "matrixReadSeconds": 0.002207584,
+        "setupSeconds": 0.001666,
+        "solveAndSetupSeconds": 0.018834042,
+        "trueResidualHistory": [
+          0.443272236979921,
+          0.042838590498803474,
+          0.003559130084979515,
+          0.00033847046191312575,
+          3.120339746534423e-05,
+          2.7694450509246003e-06,
+          2.7170356101646513e-07,
+          2.7066288787090075e-08,
+          1.4299180523067085e-09,
+          1.4236241316002978e-10,
+          1.1845259068520827e-11,
+          1.1197828576688227e-12,
+          1.0167599390404963e-13,
+          7.134548346181484e-15
+        ]
+      },
+      "after": {
+        "mode": "linear-target",
+        "converged": true,
+        "unknowns": 511,
+        "relativeTarget": 1e-13,
+        "directionsPerRestart": 60,
+        "maximumRestarts": 50,
+        "products": 123,
+        "restarts": 3,
+        "preconditionerApplications": 126,
+        "relativeTrueResidual": 9.312940747596437e-14,
+        "matrixReadSeconds": 0.002207584,
+        "setupSeconds": 0.001594625,
+        "solveAndSetupSeconds": 0.016668583,
+        "trueResidualHistory": [
+          0.443272236979921,
+          6.798979693632809e-08,
+          7.243184167049278e-14,
+          4.1281680780485306e-14
+        ]
+      },
+      "nativeInputSha256": {
+        ".entries": "dba230d3b7a6ed37d8842d0cd8d29f66e7a5d80acc72f8b32899f43e0e7c4400",
+        ".rhs": "258545da9ef87a0c85efdde9a154707bf22861ec6eec61959009766bbe9307ca",
+        ".picard.entries": "dba230d3b7a6ed37d8842d0cd8d29f66e7a5d80acc72f8b32899f43e0e7c4400",
+        ".cells.csv": "04b6ee1817b9e8567c1b6d299f3061beb10737dcbb37044d80796b11fcc19902"
+      }
+    }
+  ],
+  "completeApiComparisons": {
+    "outlet4": {
+      "before": {
+        "completed": true,
+        "iterations": 7,
+        "products": 295,
+        "restarts": 80,
+        "seconds": 0.182654291,
+        "final": {
+          "iteration": 6,
+          "restarts": 11,
+          "products": 43,
+          "linearRelativeResidual": 4.289728636637948e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 1.7763568394002505e-14,
+          "faceMomentum": 1.3589129821411916e-13,
+          "divergence": 4.56335801403946e-13,
+          "residualNorm": 7.661151947840573e-14,
+          "stateChange": 3.206324095117452e-13,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "after": {
+        "completed": true,
+        "iterations": 7,
+        "products": 193,
+        "restarts": 7,
+        "seconds": 0.169959375,
+        "final": {
+          "iteration": 6,
+          "restarts": 1,
+          "products": 29,
+          "linearRelativeResidual": 4.095724271605163e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 2.4868995751603507e-14,
+          "faceMomentum": 8.326672684688674e-14,
+          "divergence": 3.7121654902814183e-13,
+          "residualNorm": 7.341123443254728e-14,
+          "stateChange": 6.704092126123677e-14,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "fieldDifference": {
+        "cells": 16,
+        "velocityP1Rms": 4.888560249694061e-14,
+        "pressureP1RmsAbsolute": 1.1410344433899097e-13,
+        "pressureP1RmsAfterGlobalGauge": 8.178989181083617e-14,
+        "pressureMeanDifference": -7.956135750220036e-14,
+        "faceVelocityRms": 5.770215562500632e-14,
+        "faceVelocityMaximum": 1.8062219771303036e-13,
+        "stateCoefficientMaximum": 2.7489122089718876e-13
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "4",
+        "outlet-poiseuille",
+        ".1",
+        "ns",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/baseline/outlet4",
+        ".1",
+        "40",
+        "schur"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "4",
+        "outlet-poiseuille",
+        ".1",
+        "ns",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/candidate/outlet4",
+        ".1",
+        "40",
+        "schur"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    },
+    "outlet8": {
+      "before": {
+        "completed": true,
+        "iterations": 6,
+        "products": 397,
+        "restarts": 71,
+        "seconds": 0.671957292,
+        "final": {
+          "iteration": 5,
+          "restarts": 12,
+          "products": 72,
+          "linearRelativeResidual": 4.519467933500058e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 8.704148513061227e-14,
+          "faceMomentum": 1.163513729807164e-13,
+          "divergence": 7.128756877484361e-13,
+          "residualNorm": 6.842196697324567e-14,
+          "stateChange": 2.537969834293108e-13,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "after": {
+        "completed": true,
+        "iterations": 6,
+        "products": 236,
+        "restarts": 6,
+        "seconds": 0.591875,
+        "final": {
+          "iteration": 5,
+          "restarts": 1,
+          "products": 42,
+          "linearRelativeResidual": 5.625050828988568e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 7.460698725481052e-14,
+          "faceMomentum": 1.4566126083082054e-13,
+          "divergence": 1.0481640664446652e-12,
+          "residualNorm": 8.49171526837059e-14,
+          "stateChange": 3.469446951953614e-14,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "fieldDifference": {
+        "cells": 64,
+        "velocityP1Rms": 9.84032918327019e-14,
+        "pressureP1RmsAbsolute": 1.3033783752538753e-13,
+        "pressureP1RmsAfterGlobalGauge": 9.042397777970254e-14,
+        "pressureMeanDifference": -9.386935673205688e-14,
+        "faceVelocityRms": 9.716223444157965e-14,
+        "faceVelocityMaximum": 2.4598752352847995e-13,
+        "stateCoefficientMaximum": 4.505285033928885e-13
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "8",
+        "outlet-poiseuille",
+        ".1",
+        "ns",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/baseline/outlet8",
+        ".1",
+        "40",
+        "schur"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "8",
+        "outlet-poiseuille",
+        ".1",
+        "ns",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/candidate/outlet8",
+        ".1",
+        "40",
+        "schur"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    },
+    "sheared4": {
+      "before": {
+        "completed": true,
+        "iterations": 11,
+        "products": 3281,
+        "restarts": 143,
+        "seconds": 0.328714792,
+        "final": {
+          "iteration": 10,
+          "restarts": 13,
+          "products": 424,
+          "linearRelativeResidual": 1.3106944047567847e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 3.219646771412954e-15,
+          "faceMomentum": 1.709743457922741e-14,
+          "divergence": 3.831377501413564e-14,
+          "residualNorm": 1.2725092993192411e-14,
+          "stateChange": 2.1709756214960407e-10,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "after": {
+        "completed": true,
+        "iterations": 11,
+        "products": 1061,
+        "restarts": 20,
+        "seconds": 0.290066375,
+        "final": {
+          "iteration": 10,
+          "restarts": 2,
+          "products": 117,
+          "linearRelativeResidual": 4.356883160457242e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 3.3306690738754696e-15,
+          "faceMomentum": 4.54081217071689e-14,
+          "divergence": 1.1572201208791558e-13,
+          "residualNorm": 4.253442227798506e-14,
+          "stateChange": 2.1677981631995635e-10,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "fieldDifference": {
+        "cells": 16,
+        "velocityP1Rms": 1.4304439998204523e-13,
+        "pressureP1RmsAbsolute": 9.754999014968417e-14,
+        "pressureP1RmsAfterGlobalGauge": 9.742521631710846e-14,
+        "pressureMeanDifference": -4.932322350386254e-15,
+        "faceVelocityRms": 1.566800625190639e-13,
+        "faceVelocityMaximum": 6.984271115431346e-13,
+        "stateCoefficientMaximum": 9.516554211330686e-13
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/baseline/sheared4",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/candidate/sheared4",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    },
+    "sheared8": {
+      "before": {
+        "completed": true,
+        "iterations": 11,
+        "products": 5599,
+        "restarts": 147,
+        "seconds": 1.732107792,
+        "final": {
+          "iteration": 10,
+          "restarts": 14,
+          "products": 767,
+          "linearRelativeResidual": 3.1659277838101526e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 1.0658141036401503e-14,
+          "faceMomentum": 2.8199664825478976e-14,
+          "divergence": 4.472150443915427e-13,
+          "residualNorm": 2.011653684638592e-14,
+          "stateChange": 1.780264824446931e-10,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "after": {
+        "completed": true,
+        "iterations": 11,
+        "products": 4880,
+        "restarts": 87,
+        "seconds": 1.665620208,
+        "final": {
+          "iteration": 10,
+          "restarts": 13,
+          "products": 750,
+          "linearRelativeResidual": 9.655515542200955e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 1.1491246089414449e-14,
+          "faceMomentum": 7.260858581048524e-14,
+          "divergence": 9.958509967168812e-13,
+          "residualNorm": 6.130176252091881e-14,
+          "stateChange": 1.782687331086663e-10,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "fieldDifference": {
+        "cells": 64,
+        "velocityP1Rms": 6.664104816566741e-13,
+        "pressureP1RmsAbsolute": 6.168554606057722e-13,
+        "pressureP1RmsAfterGlobalGauge": 5.590416311251129e-13,
+        "pressureMeanDifference": 2.607357166713707e-13,
+        "faceVelocityRms": 6.348737218614521e-13,
+        "faceVelocityMaximum": 1.8147855591833756e-12,
+        "stateCoefficientMaximum": 2.6753044224392397e-12
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/baseline/sheared8",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/candidate/sheared8",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    },
+    "stokes4": {
+      "before": {
+        "completed": true,
+        "iterations": 7,
+        "products": 515,
+        "restarts": 84,
+        "seconds": 0.030248458,
+        "final": {
+          "iteration": 6,
+          "restarts": 12,
+          "products": 60,
+          "linearRelativeResidual": 1.0886977379228792e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 8.881784197001252e-15,
+          "faceMomentum": 1.1546319456101628e-14,
+          "divergence": 1.3046028562654678e-13,
+          "residualNorm": 2.078169586462154e-14,
+          "stateChange": 3.1086244689504383e-15,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "after": {
+        "completed": true,
+        "iterations": 7,
+        "products": 226,
+        "restarts": 7,
+        "seconds": 0.0253515,
+        "final": {
+          "iteration": 6,
+          "restarts": 1,
+          "products": 32,
+          "linearRelativeResidual": 4.5817787748444546e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": true,
+          "cellMomentum": 1.2434497875801753e-14,
+          "faceMomentum": 1.3233858453531866e-13,
+          "divergence": 2.894902566279225e-13,
+          "residualNorm": 8.758067783781898e-14,
+          "stateChange": 2.0256486711677147e-14,
+          "trials": 1,
+          "alpha": 1,
+          "pseudoStep": 1000000
+        }
+      },
+      "fieldDifference": {
+        "cells": 16,
+        "velocityP1Rms": 6.913661111898241e-14,
+        "pressureP1RmsAbsolute": 4.1180428525476714e-14,
+        "pressureP1RmsAfterGlobalGauge": 4.117962819877743e-14,
+        "pressureMeanDifference": -2.567390744445718e-16,
+        "faceVelocityRms": 9.942273453297873e-14,
+        "faceVelocityMaximum": 3.0492597615708365e-13,
+        "stateCoefficientMaximum": 4.475339071203339e-13
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "4",
+        "outlet-poiseuille",
+        ".1",
+        "stokes",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/baseline/stokes4",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "square",
+        "4",
+        "outlet-poiseuille",
+        ".1",
+        "stokes",
+        "pressure",
+        "/tmp/cartmesh2d-krylov-target/candidate/stokes4",
+        ".1",
+        "40",
+        "mass"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    },
+    "newton-negative": {
+      "before": {
+        "completed": false,
+        "iterations": 15,
+        "products": 7693,
+        "restarts": 185,
+        "seconds": 0.922571791,
+        "final": {
+          "iteration": 14,
+          "restarts": 15,
+          "products": 843,
+          "linearRelativeResidual": 2.916387791608766e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": false,
+          "cellMomentum": 0.5172946253146132,
+          "faceMomentum": 0.1932570215425129,
+          "divergence": 2.216665660699782e-13,
+          "residualNorm": 0.11620733942322142,
+          "stateChange": 0.0494586365347216,
+          "trials": 15,
+          "alpha": 6.103515625e-05,
+          "pseudoStep": 0
+        }
+      },
+      "after": {
+        "completed": false,
+        "iterations": 15,
+        "products": 4326,
+        "restarts": 77,
+        "seconds": 0.855332208,
+        "final": {
+          "iteration": 14,
+          "restarts": 15,
+          "products": 760,
+          "linearRelativeResidual": 9.978008555206042e-14,
+          "originalEquationsEvaluated": true,
+          "accepted": false,
+          "cellMomentum": 0.5172946427605122,
+          "faceMomentum": 0.1932570394318093,
+          "divergence": 6.458789343025266e-13,
+          "residualNorm": 0.11620734677829622,
+          "stateChange": 0.04945947048181958,
+          "trials": 15,
+          "alpha": 6.103515625e-05,
+          "pseudoStep": 0
+        }
+      },
+      "fieldDifference": {
+        "cells": 16,
+        "velocityP1Rms": 1.3928974581382353e-09,
+        "pressureP1RmsAbsolute": 1.0834087891772232e-09,
+        "pressureP1RmsAfterGlobalGauge": 7.950947591546109e-10,
+        "pressureMeanDifference": -7.359340516862395e-10,
+        "faceVelocityRms": 1.7176339747246467e-09,
+        "faceVelocityMaximum": 1.1329788770722374e-08,
+        "stateCoefficientMaximum": 1.4255393310236286e-08
+      },
+      "commandBefore": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/baseline/newton-negative",
+        "0",
+        "40",
+        "mass"
+      ],
+      "commandAfter": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/native-laminar-compatible-solver",
+        "sheared",
+        "4",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh2d-krylov-target/candidate/newton-negative",
+        "0",
+        "40",
+        "mass"
+      ],
+      "timingCaveat": "Single process measurements can overlap relevant build/CTest; retain actual cost but do not infer a speedup ratio."
+    }
+  },
+  "cliComparisons": {
+    "cylinder64": {
+      "beforeStatus": "converged",
+      "afterStatus": "converged",
+      "beforeIterations": 15,
+      "afterIterations": 15,
+      "beforeMetrics": {
+        "cellMomentum": 5.702448378884974e-13,
+        "faceMomentum": 4.465914844343241e-14,
+        "divergence": 1.018767876573115e-12,
+        "stateChange": 6.122879980807738e-13,
+        "residualNorm": 7.425437247363877e-14
+      },
+      "afterMetrics": {
+        "cellMomentum": 7.317653124494671e-13,
+        "faceMomentum": 3.191317723597338e-13,
+        "divergence": 1.082320055665064e-11,
+        "stateChange": 6.560862964022363e-13,
+        "residualNorm": 3.5332709362726466e-13
+      },
+      "fieldDifference": {
+        "cells": 64,
+        "velocityP1Rms": 1.0975902992766423e-13,
+        "pressureP1RmsAbsolute": 2.823571081082854e-13,
+        "pressureP1RmsAfterGlobalGauge": 1.7918917359676498e-13,
+        "pressureMeanDifference": -2.1821268653536813e-13,
+        "faceVelocityRms": 1.267104402880329e-13,
+        "faceVelocityMaximum": 6.442066568557687e-13,
+        "stateCoefficientMaximum": 2.084610262187425e-12
+      }
+    },
+    "cavity36-mass": {
+      "beforeStatus": "converged",
+      "afterStatus": "converged",
+      "beforeIterations": 6,
+      "afterIterations": 6,
+      "beforeMetrics": {
+        "cellMomentum": 1.865174681370263e-14,
+        "faceMomentum": 8.112029566594477e-14,
+        "divergence": 2.8012376829993092e-12,
+        "stateChange": 8.837375276016246e-14,
+        "residualNorm": 9.56687328474273e-14
+      },
+      "afterMetrics": {
+        "cellMomentum": 1.9539925233402755e-14,
+        "faceMomentum": 1.9317880628477724e-13,
+        "divergence": 1.4211469403485349e-12,
+        "stateChange": 8.870681966755001e-14,
+        "residualNorm": 1.0525667572690281e-13
+      },
+      "fieldDifference": {
+        "cells": 36,
+        "velocityP1Rms": 1.4515303035535787e-13,
+        "pressureP1RmsAbsolute": 1.456794443913593e-12,
+        "pressureP1RmsAfterGlobalGauge": 2.84790977908365e-13,
+        "pressureMeanDifference": 1.428686162430191e-12,
+        "faceVelocityRms": 1.4210497768974873e-13,
+        "faceVelocityMaximum": 5.365103144026436e-13,
+        "stateCoefficientMaximum": 1.8274270985330077e-12
+      }
+    }
+  },
+  "pairedCompleteCliCosts": {
+    "cylinder64": {
+      "order": [
+        "archived",
+        "current",
+        "current",
+        "archived"
+      ],
+      "processSeconds": [
+        2.1956596660311334,
+        1.4027311659883708,
+        1.4056005000020377,
+        1.4336467090179212
+      ],
+      "solveSecondsIncludingCheckpointIO": [
+        1.402937917,
+        1.377889834,
+        1.385335542,
+        1.409161958
+      ],
+      "iterations": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "bothVersionsRepeatFullFieldsExactly": true,
+      "timingCaveat": "Serial old/new/new/old on this host, not an exclusive-machine benchmark. The first old cylinder launch is visibly slower; do not hide it or treat the median as a general speedup.",
+      "baselineBinarySource": "native-compatible-checkpoint.tar.gz binaries/cartmesh2d_flow_cli (5649fcc pre-cloud-formatting code); old cavity/cylinder complete fields match the live 72ac4dd baseline exactly.",
+      "binarySha256": {
+        "archived": "a88c93646300c8e331ed96d162f48c0a7a6ea52ac07f0a645ec08dc2f8d7dfa7",
+        "current": "b45f3c58881aab4afa1e52efa5703c40cbbefb4ef334c721d712cf7026c7f937"
+      }
+    },
+    "cavity36": {
+      "order": [
+        "archived",
+        "current",
+        "current",
+        "archived"
+      ],
+      "processSeconds": [
+        0.34423704200889915,
+        0.3410549580003135,
+        0.3401280000107363,
+        0.3322853749850765
+      ],
+      "solveSecondsIncludingCheckpointIO": [
+        0.324361125,
+        0.322556375,
+        0.321938541,
+        0.315337958
+      ],
+      "iterations": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "bothVersionsRepeatFullFieldsExactly": true,
+      "timingCaveat": "Serial old/new/new/old on this host, not an exclusive-machine benchmark. The first old cylinder launch is visibly slower; do not hide it or treat the median as a general speedup.",
+      "baselineBinarySource": "native-compatible-checkpoint.tar.gz binaries/cartmesh2d_flow_cli (5649fcc pre-cloud-formatting code); old cavity/cylinder complete fields match the live 72ac4dd baseline exactly.",
+      "binarySha256": {
+        "archived": "a88c93646300c8e331ed96d162f48c0a7a6ea52ac07f0a645ec08dc2f8d7dfa7",
+        "current": "b45f3c58881aab4afa1e52efa5703c40cbbefb4ef334c721d712cf7026c7f937"
+      }
+    },
+    "channel36": {
+      "order": [
+        "archived",
+        "current",
+        "current",
+        "archived"
+      ],
+      "processSeconds": [
+        0.33686625002883375,
+        0.3280900830286555,
+        0.3353315420099534,
+        0.33673037495464087
+      ],
+      "solveSecondsIncludingCheckpointIO": [
+        0.318161959,
+        0.309818375,
+        0.31695975,
+        0.319059625
+      ],
+      "iterations": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "bothVersionsRepeatFullFieldsExactly": true,
+      "timingCaveat": "Serial old/new/new/old on this host, not an exclusive-machine benchmark. The first old cylinder launch is visibly slower; do not hide it or treat the median as a general speedup.",
+      "baselineBinarySource": "native-compatible-checkpoint.tar.gz binaries/cartmesh2d_flow_cli (5649fcc pre-cloud-formatting code); old cavity/cylinder complete fields match the live 72ac4dd baseline exactly.",
+      "binarySha256": {
+        "archived": "a88c93646300c8e331ed96d162f48c0a7a6ea52ac07f0a645ec08dc2f8d7dfa7",
+        "current": "b45f3c58881aab4afa1e52efa5703c40cbbefb4ef334c721d712cf7026c7f937"
+      }
+    }
+  },
+  "validation": {
+    "ctest": "Test project /Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build\n    Start 16: cartmesh2d_compatible_flow_checkpoint\n1/5 Test #16: cartmesh2d_compatible_flow_checkpoint ...   Passed    1.47 sec\n    Start 17: cartmesh2d_compatible_flow_boundary\n2/5 Test #17: cartmesh2d_compatible_flow_boundary .....   Passed    0.58 sec\n    Start 18: cartmesh2d_compatible_flow\n3/5 Test #18: cartmesh2d_compatible_flow ..............   Passed    0.70 sec\n    Start 22: cartmesh2d_flow_boundary\n4/5 Test #22: cartmesh2d_flow_boundary ................   Passed   27.95 sec\n    Start 30: cartmesh2d_compatible_flow_cli\n5/5 Test #30: cartmesh2d_compatible_flow_cli ..........   Passed    2.35 sec\n\n100% tests passed out of 5\n\nTotal Test time (real) =  33.07 sec\n",
+    "researchBuild": "macOS /usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+    "rawRecords": "archive files include commands, matrices/RHS/Picard matrices, complete fields/checkpoints, failure candidates and build/test logs; no duplicate PDE audit"
+  },
+  "limits": [
+    "No original 4,716/17,260-cell run in this batch; medium default-budget reliability remains unproven.",
+    "No new curved-wall spatial/geometric/domain or physical accuracy qualification.",
+    "Small complete CLI costs are broadly similar despite fewer linear products; no general elapsed-time or memory improvement claimed.",
+    "The failed direct Newton control remains a failure; last accepted iterates are not converged solutions.",
+    "Checkpoint v1 remains readable; cross-version iteration trajectories are not claimed bit-identical.",
+    "No frontend, actual App or Linux/Windows run in this batch."
+  ],
+  "oldCheckpointResume": {
+    "source": "previous checkpoint archive cylinder-partial.checkpoint, three accepted iterations",
+    "resumed": true,
+    "totalAcceptedIterations": 15,
+    "converged": true,
+    "lastAcceptedMetrics": {
+      "cellMomentum": 3.7768426437975603e-13,
+      "faceMomentum": 3.1883737035571194e-13,
+      "divergence": 1.0842369767793281e-11,
+      "stateChange": 1.2737033650012108e-13,
+      "residualNorm": 3.5389246835822086e-13
+    },
+    "differenceFromCurrentColdStart": {
+      "cells": 64,
+      "velocityP1Rms": 1.9775573608988536e-15,
+      "pressureP1RmsAbsolute": 2.4494181771078835e-15,
+      "pressureP1RmsAfterGlobalGauge": 2.4070435471191615e-15,
+      "pressureMeanDifference": -4.536416742524028e-16,
+      "faceVelocityRms": 3.502903435963514e-15,
+      "faceVelocityMaximum": 2.3678020503857003e-14,
+      "stateCoefficientMaximum": 4.915512441527881e-13
+    },
+    "crossVersionBitIdentityClaimed": false
+  },
+  "retainedInputFailure": {
+    "case": "initial cavity36 research run requested outlet-only diagonal Schur on a closed cavity",
+    "error": "Compatible flow CLI: Diagonal Schur currently requires a traction pressure reference",
+    "correction": "Use the supported gauge/mass policy for closed cavity in the separate cavity36-mass records; original rejection files retained."
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/detail/NewtonKrylov2D.hpp": "d57e1f6bfd15bd378807671a987d63e515fa52cde106c90f83b342fbacfef66d",
+    "src/fv/CompatibleIncompressible2D.cpp": "8170a74235a2488a64e2bd01974243428eb520ad5ea82894ab4f0396eec2014d",
+    "tests/compatible_flow_test.cpp": "5a74b18e7c9458f7b5b435a8a13d4e542677b8318385b70711cb6fe71d2468ab",
+    "tests/flow_boundary_test.cpp": "53ff98ac166dc9111f01eb9c8fb8585e80f494a0f63099c1d2a3f10a17f446a5",
+    "artifacts/current/native-laminar-krylov-target.cpp": "1edc342148ec58645132b7c775246d6661218342c38cd9a3f9d7183ac2bc1c1b",
+    "docs/CURRENT_STATE_CN.md": "455aa637edff943c44848f07406476dcbda39ea2c89b9ff30df878cc8d7cd167",
+    "docs/DEVELOPMENT_CN.md": "eb1de5d2201b569edc661726ed5a015aeb1453b9fcc70131ac1a3ca322ba363c"
+  },
+  "archive": {
+    "path": "outputs/laminar-stability/krylov-target/native-compatible-krylov-target.tar.gz",
+    "sha256": "11105d2277dc0b46c010bf6fd0348382755e8eb102128b87f096f6bee60f7cab",
+    "bytes": 2747223,
+    "contentFiles": 441,
+    "uncompressedBytes": 9167533,
+    "allMembersReadbackVerified": true,
+    "cloudDurableCopyConfirmed": false
+  },
+  "baselineBinaryDependency": {
+    "archive": "outputs/laminar-stability/native-checkpoint/native-compatible-checkpoint.tar.gz",
+    "sha256": "9aed620f9bd331b0d268974a89da47f7abd421d686fc814cb51437d1b9f1c213",
+    "member": "binaries/cartmesh2d_flow_cli",
+    "binarySha256": "a88c93646300c8e331ed96d162f48c0a7a6ea52ac07f0a645ec08dc2f8d7dfa7",
+    "verifiedReadbackBeforeDuplicateRemoval": true
+  },
+  "cleanup": {
+    "temporaryDirectory": "/tmp/cartmesh2d-krylov-target",
+    "exactExternalFiles": [
+      "/tmp/cartmesh2d-krylov-target-run.py",
+      "/tmp/cartmesh2d-krylov-target-edit.py",
+      "/tmp/cartmesh2d-krylov-target-api-test.py",
+      "/tmp/cartmesh2d-krylov-target-matrices.py",
+      "/tmp/cartmesh2d-krylov-target-fields.py",
+      "/tmp/cartmesh2d-krylov-target-evidence.py",
+      "/tmp/cartmesh2d-krylov-target-closeout.py",
+      "/tmp/native-laminar-krylov-target.cpp"
+    ],
+    "removedDuplicateFiles": 426,
+    "removedDuplicateBytes": 6845372,
+    "openFileCheck": "lsof +D and explicit external allowlist: no open files (exit 1, no stdout/stderr)",
+    "status": "completed-after-archive-and-dependency-readback"
+  }
+}

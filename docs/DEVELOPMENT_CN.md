@@ -659,6 +659,17 @@ build/native-laminar-compatible-solver ORIGINAL.solver.cm2d 0 cylinder .1 ns pre
 
 该入口要求原网格含DomainBoundary/EmbeddedBoundary，外域为轴对齐矩形，保留全部真实原子面；左入口 `(1,0)`、水平零法向速度/零切向牵引、嵌入壁面零速度、右零伪牵引。研究驱动未启用CLI的出口端点回流拒绝，也没有逐步文件检查点回调，不能与CLI完整策略/成本混为一谈。中档云端冷启动原记录使用本地 `b1768f5` 的Symmetry；合并后的通用NormalVelocity仅新增旋转均匀场回归，中档尚未重跑，详见 `native-laminar-compatible-symmetry.json`。伪步1和100次预算是这批研究的显式控制，不是默认升级；粗档失败与完整场比较见 `native-laminar-pseudo-time-cylinder.json`。
 
+相容API的严格线性求解现向 `newtonKrylovDirection2D` 传入本轮剩余相对目标 `linearTolerance/currentTrueRelativeResidual`，避免使用旧Newton默认 `.1` 在达标前过早丢弃子空间。方向上限与重启上限仍由原控制限定，外层每轮重算真残差；Arnoldi估计不能单独宣布线性或物理收敛。该细节不新增用户精度阈值，旧单元中心Newton调用保留原forcing。对应最小Stokes失败先红后绿，来源与完整代价见 `native-laminar-krylov-target.json`。
+
+同矩阵复现工具 `native-laminar-krylov-target.cpp` 复用既有原生矩阵/面积读取器、ILU0/Schur块和GMRES，分别运行 `.1` forcing与真实线性目标；不重新实现PDE。下面输入由既有 `native-laminar-pseudo-time` 组装；闭域将 `outlet-schur-diag` 换为 `gauge`，使用同一组物理控制。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-krylov-target.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-krylov-target
+build/native-laminar-krylov-target MATRIX_PREFIX CELL_AREAS.csv outlet-schur-diag .1 1e-13 50 FRESH_OUTPUT_PREFIX PICARD_PREFIX
+```
+
+两组都保留完整真实残差历史、矩阵乘、重启、构造/求解代价与未知量；成功写 `.solution`，失败只写 `.candidate`。对照程序退出0只表示两组研究运行完成，必须读取各自 `converged`；不把失败候选恢复成接受流场。输入矩阵与原始场按SHA保留，Python只编排、序列化与读结果。仅这批小网格不证明原中档的默认50次预算已通过，旧检查点可继续但跨算法版本不保证相同迭代轨迹。
+
 ### 相容混合边界与显式命令行
 
 API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。

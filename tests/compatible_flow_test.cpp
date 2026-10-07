@@ -64,6 +64,15 @@ int main()try {
     // larger than the 1e-9 nonlinear stop; it is not a mesh/physical error gate.
     for(bool outlet:{false,true}){auto mesh=grid(3,outlet?0:.3);auto c=control(mesh,false,outlet);if(outlet)c.pressureInverse=CompatiblePressureInverse2D::DiagonalSchur;
         const auto r=solveCompatibleIncompressible2D(mesh,c);print(outlet?"quadratic-traction":"quadratic-closed",r);check(r.converged()&&r.lastAccepted.has_value(),"Quadratic Stokes global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,outlet);print("quadratic-errors",r,u,p);check(u<1e-7&&p<1e-7,"Quadratic Stokes analytic field failed");}
+    // One full Krylov subspace suffices for this small analytic Stokes
+    // system. Early .1 Newton forcing must not consume a linear restart.
+    const auto boundedMesh=grid(3);auto bounded=control(boundedMesh,false,true);
+    bounded.pressureInverse=CompatiblePressureInverse2D::DiagonalSchur;bounded.maximumLinearRestarts=1;
+    const auto strictLinear=solveCompatibleIncompressible2D(boundedMesh,bounded);
+    print("one-restart-linear-target",strictLinear);
+    check(strictLinear.converged()&&strictLinear.lastAccepted&&strictLinear.iterations.size()==1&&strictLinear.iterations[0].linearRestarts==1,"Linear Newton forcing exhausted a sufficient Krylov subspace");
+    const auto [bu,bp]=errors(boundedMesh,*strictLinear.lastAccepted,false,true);
+    check(bu<1e-7&&bp<1e-7,"One-restart analytic Stokes field failed");
     const auto polygonPatch=[&](const std::vector<Polygon2D>& polygons){const auto mesh=makeFvMesh2D(cartmesh2d::test::fromPolygons(polygons));const auto r=solveCompatibleIncompressible2D(mesh,control(mesh,false,false));check(r.converged(),"Actual polygon global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,false);print("actual-polygon-patch",r,u,p);check(u<1e-7&&p<1e-7,"Actual polygon polynomial consistency lost");};
     polygonPatch({{{{0,0},{1,0},{.75,1},{0,1}}}});
     polygonPatch({{{{0,0},{1,0},{1,1},{1,2},{0,2}}},{{{1,0},{2,0},{2,1},{1,1}}},{{{1,1},{2,1},{2,2},{1,2}}}});

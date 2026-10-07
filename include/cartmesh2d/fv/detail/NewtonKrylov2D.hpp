@@ -11,11 +11,19 @@ namespace cartmesh2d::fv::detail {
 // passes retain the small Krylov directions. The .1 forcing term is an inner
 // work target, not a nonlinear/physical acceptance tolerance. The caller must
 // test the actual nonlinear residual and retain its original convergence gates.
+// A strict linear caller may supply its remaining relative residual target so
+// the same subspace is retained until that target or maximumDirections is met.
+// Zero requests all directions unless the residual/breakdown is exactly zero.
+// The caller still recomputes its true unpreconditioned residual; the Arnoldi
+// estimate alone never grants convergence. Restart and tolerance are distinct:
+// https://petsc.org/release/manualpages/KSP/KSPGMRESSetRestart/
 // Independent implementation of standard inexact Newton--Krylov principles:
 // https://petsc.org/release/manual/snes/#inexact-newton-like-methods
 inline std::optional<LinearVector2D> newtonKrylovDirection2D(
     const std::function<LinearVector2D(const LinearVector2D&)>& apply,
-    const LinearVector2D& rhs, std::size_t maximumDirections=60) {
+    const LinearVector2D& rhs, std::size_t maximumDirections=60, double relativeTarget=.1) {
+    linearEnsure(std::isfinite(relativeTarget)&&relativeTarget>=0&&relativeTarget<1,
+                 "Invalid Krylov residual reduction target");
     const auto count=std::min(maximumDirections,rhs.size());
     const double beta=linearNorm(rhs);
     if(count==0 || beta==0)return {};
@@ -46,7 +54,7 @@ inline std::optional<LinearVector2D> newtonKrylovDirection2D(
         cosine[j]=h[j][j]/diagonal;sine[j]=h[j+1][j]/diagonal;
         h[j][j]=diagonal;h[j+1][j]=0;
         g[j+1]=-sine[j]*g[j];g[j]*=cosine[j];used=j+1;
-        if(std::abs(g[j+1])<=.1*beta || remainder==0)break;
+        if(std::abs(g[j+1])<=relativeTarget*beta || remainder==0)break;
     }
     LinearVector2D y(used),solution(rhs.size());
     for(std::size_t i=used;i-- >0;) {

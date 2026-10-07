@@ -220,7 +220,11 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
     const sparse::Matrix k(p.count,a.entries),pk(p.count,a.picard);
     sparse::Block block(k,p.areas,"ilu0",p.outlet?(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet"):"gauge",p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
-        const auto d=detail::newtonKrylovDirection2D([&](const Vec& v){poll(p.control);++record.matrixProducts;return k.apply(block.apply(v));},r,p.control.krylovDirections);
+        // This is a strict linear solve, not an inexact Newton direction.
+        // Keep the available subspace until the original relative target or
+        // direction cap, then always recompute b-K*x below before accepting.
+        const double remaining=p.control.linearTolerance/record.linearRelativeResidual;
+        const auto d=detail::newtonKrylovDirection2D([&](const Vec& v){poll(p.control);++record.matrixProducts;return k.apply(block.apply(v));},r,p.control.krylovDirections,remaining);
         if(!d)return std::nullopt;
         const auto step=block.apply(*d);for(std::size_t i=0;i<x.size();++i)x[i]+=step[i];
         const auto ax=k.apply(x);for(std::size_t i=0;i<x.size();++i)r[i]=a.rhs[i]-ax[i];++record.linearRestarts;

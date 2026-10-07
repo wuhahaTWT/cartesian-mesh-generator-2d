@@ -254,6 +254,17 @@ void coupledNewtonStability() {
         "Coupled Krylov failed the known indefinite system");
     require(!detail::newtonKrylovDirection2D([](const Vec& x){return Vec(x.size());},Vec{1,1}),
         "A zero Jacobian invented a Newton direction");
+    // A mild two-eigenvalue system reaches the inexact-Newton forcing target
+    // in one direction. A strict linear solve must retain the second one.
+    std::size_t looseProducts=0,strictProducts=0;
+    const auto loose=detail::newtonKrylovDirection2D([&](const Vec& x){++looseProducts;return Vec{x[0],1.1*x[1]};},Vec{1,1});
+    const auto strict=detail::newtonKrylovDirection2D([&](const Vec& x){++strictProducts;return Vec{x[0],1.1*x[1]};},Vec{1,1},60,1e-13);
+    require(loose&&strict&&looseProducts==1&&strictProducts==2,
+        "Strict linear target discarded its available Krylov subspace");
+    require(std::hypot((*strict)[0]-1,(*strict)[1]-1/1.1)<64*std::numeric_limits<double>::epsilon(),
+        "Strict Krylov direction missed the exact linear solution");
+    for(double invalid:{-1.,1.,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()})
+        rejects([&]{(void)detail::newtonKrylovDirection2D([](const Vec& x){return x;},Vec{1},60,invalid);});
     for(bool cavity:{false,true}) {
         const auto mesh=cavity?rectangle(10,10,1):rectangle(18,6,3,true);
         auto control=conditions(mesh,cavity);control.nu=.1;control.maxIterations=2000;control.profile=true;
