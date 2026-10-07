@@ -4,14 +4,16 @@
 #include "native-laminar-newton.cpp"
 #include "cartmesh2d/fv/CompatibleIncompressible2D.hpp"
 int main(int argc,char** argv)try {
-    if(argc<11||argc>13)throw std::runtime_error("usage: compatible-solver mesh n problem nu stokes|ns closed|traction|pseudo-traction|pressure output-prefix pseudo-step iterations mass|schur [linear-restarts] [zero|accepted]");
+    if(argc<11||argc>13)throw std::runtime_error("usage: compatible-solver mesh n problem nu stokes|ns closed|traction|pseudo-traction|pressure output-prefix pseudo-step iterations mass|schur|schur-aggregation [linear-restarts] [zero|accepted]");
     const auto start=std::chrono::steady_clock::now();const auto fixture=readFixture(argv[1],std::stoi(argv[2]));const auto& mesh=fixture.mesh;
     const std::string problem=argv[3],boundary=argv[6],prefix=argv[7];const double nu=std::stod(argv[4]),step=std::stod(argv[8]);const bool nonlinear=std::string(argv[5])=="ns";
     if((!nonlinear&&std::string(argv[5])!="stokes")||(boundary!="closed"&&boundary!="traction"&&boundary!="pseudo-traction"&&boundary!="pressure")||(problem=="cylinder"&&boundary!="pressure"))throw std::runtime_error("unsupported research adapter; API requires explicit boundary data");
     if(std::filesystem::exists(prefix+".json")||std::filesystem::exists(prefix+".accepted.state"))throw std::runtime_error("existing API evidence output");
     CompatibleFlowControls2D c;c.viscosity=nu;c.maximumIterations=std::stoull(argv[9]);if(argc>=12)c.maximumLinearRestarts=std::stoull(argv[11]);c.equation=nonlinear?CompatibleEquation2D::NavierStokes:CompatibleEquation2D::Stokes;
     c.globalization=step>0?CompatibleGlobalization2D::PseudoTime:CompatibleGlobalization2D::Backtracking;if(step>0)c.initialPseudoStep=step;
-    c.pressureInverse=std::string(argv[10])=="schur"?CompatiblePressureInverse2D::DiagonalSchur:CompatiblePressureInverse2D::ViscousMass;
+    const std::string pressure=argv[10];if(pressure!="mass"&&pressure!="schur"&&pressure!="schur-aggregation")throw std::runtime_error("unsupported pressure inverse");
+    c.pressureInverse=pressure=="schur-aggregation"?CompatiblePressureInverse2D::DiagonalSchurAggregation:
+        pressure=="schur"?CompatiblePressureInverse2D::DiagonalSchur:CompatiblePressureInverse2D::ViscousMass;
     if(argc==13){const std::string guess=argv[12];if(guess!="zero"&&guess!="accepted")throw std::runtime_error("linear initial guess must be zero or accepted");c.linearInitialGuess=guess=="accepted"?CompatibleLinearInitialGuess2D::CurrentState:CompatibleLinearInitialGuess2D::Zero;}
     c.acceleration=[=](Point2D p){return forceAt(p,problem,nu,nonlinear);};
     for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour){const auto& face=mesh.faces[id];CompatibleBoundary2D b;b.face=id;

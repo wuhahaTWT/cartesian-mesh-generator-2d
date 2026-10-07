@@ -80,6 +80,18 @@ int main()try {
     check(strictLinear.converged()&&strictLinear.lastAccepted&&strictLinear.iterations.size()==1&&strictLinear.iterations[0].linearRestarts==1,"Linear Newton forcing exhausted a sufficient Krylov subspace");
     const auto [bu,bp]=errors(boundedMesh,*strictLinear.lastAccepted,false,true);
     check(bu<1e-7&&bp<1e-7,"One-restart analytic Stokes field failed");
+    // More than 32 pressure rows exercises coarsening, not just the dense
+    // terminal solve. Keep the same polynomial field regression allowance.
+    const auto aggregationMesh=grid(8);auto aggregationControls=control(aggregationMesh,false,true);
+    aggregationControls.pressureInverse=CompatiblePressureInverse2D::DiagonalSchurAggregation;
+    const auto aggregated=solveCompatibleIncompressible2D(aggregationMesh,aggregationControls);
+    check(aggregated.converged()&&aggregated.lastAccepted,"Aggregation Schur global solve failed");
+    const auto [au,ap]=errors(aggregationMesh,*aggregated.lastAccepted,false,true);
+    print("aggregation-schur-polynomial",aggregated,au,ap);
+    check(au<1e-7&&ap<1e-7,"Aggregation Schur changed the analytic Stokes field");
+    auto closedAggregation=control(boundedMesh,false,false);closedAggregation.pressureInverse=CompatiblePressureInverse2D::DiagonalSchurAggregation;
+    bool closedRejected=false;try{(void)solveCompatibleIncompressible2D(boundedMesh,closedAggregation);}catch(const std::invalid_argument&){closedRejected=true;}
+    check(closedRejected,"Aggregation silently expanded the API pressure gauge scope");
     const auto polygonPatch=[&](const std::vector<Polygon2D>& polygons){const auto mesh=makeFvMesh2D(cartmesh2d::test::fromPolygons(polygons));const auto r=solveCompatibleIncompressible2D(mesh,control(mesh,false,false));check(r.converged(),"Actual polygon global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,false);print("actual-polygon-patch",r,u,p);check(u<1e-7&&p<1e-7,"Actual polygon polynomial consistency lost");};
     polygonPatch({{{{0,0},{1,0},{.75,1},{0,1}}}});
     polygonPatch({{{{0,0},{1,0},{1,1},{1,2},{0,2}}},{{{1,0},{2,0},{2,1},{1,1}}},{{{1,1},{2,1},{2,2},{1,2}}}});

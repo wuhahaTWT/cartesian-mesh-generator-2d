@@ -33,7 +33,9 @@ struct CompatibleBoundary2D {
 };
 enum class CompatibleEquation2D { Stokes, NavierStokes };
 enum class CompatibleGlobalization2D { Backtracking, PseudoTime };
-enum class CompatiblePressureInverse2D { ViscousMass, DiagonalSchur };
+// Aggregation is an explicit research option: one fixed native V-cycle for
+// the same diagonal-velocity Schur approximation. It does not change defaults.
+enum class CompatiblePressureInverse2D { ViscousMass, DiagonalSchur, DiagonalSchurAggregation };
 enum class CompatibleLinearInitialGuess2D { Zero, CurrentState };
 struct CompatibleFlowState2D {
     // Per cell: u0,uX,uY,v0,vX,vY,p0,pX,pY in basis (1,dx/h,dy/h).

@@ -631,7 +631,7 @@ ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_
 
 一般体力单位为 `m/s²`、速度 `m/s`、运动学压力/牵引 `m²/s²`，函数参数是原物理坐标。内部用调用方明确的 `referenceLength/referenceVelocity` 转为无量纲问题，并原样转回全部P1单元/面系数。压力均值与斜率都保存；完整状态含每单元9个和每原子面4个系数。`CompatibleFlowState2D` 的输入是代数种子，不是经过网格/边界/物性身份核对的物理检查点。
 
-`CompatibleFlowTransport2D` 共用真实RT1守恒对流和解析advector导数；每个P1法向通量在真实零点分段，开放面保留自然对流迹。`CompatibleFlowLinear2D` 共用原稀疏块预条件器；默认Picard速度ILU0、黏性压力质量近似，有显式牵引出口时可选对角Schur/IC0。Newton矩阵不被近似逆替换，坏主元显式失败，没有自动后备解或压力罚项。局部积分/重构准备后缓存，迭代无需导出再读取矩阵。
+`CompatibleFlowTransport2D` 共用真实RT1守恒对流和解析advector导数；每个P1法向通量在真实零点分段，开放面保留自然对流迹。`CompatibleFlowLinear2D` 共用原稀疏块预条件器；默认Picard速度ILU0、黏性压力质量近似，有显式牵引出口时可选对角Schur/IC0或显式研究用的固定一次原生aggregation V-cycle。Newton矩阵不被近似逆替换，坏主元显式失败，没有自动后备解或压力罚项。局部积分/重构准备后缓存，迭代无需导出再读取矩阵。
 
 数值验收与成本：单元弱动量残差除以真实无量纲面积，自由面残差除以真实无量纲面长，P1弱散度在所有真实扇形顶点取最大；默认各自 `1e-9` 是研究迭代目标，非几何或物理精度保证。全部归一化状态系数变化另用 `1e-9`，真线性相对残差用 `1e-13`；普通一次Stokes可豁免场变化，伪时间Stokes仍必须通过。归一化分别相当于动量加速度 `Uref²/Lref`、面牵引 `Uref²`、散度 `Uref/Lref`、速度/压力系数 `Uref/Uref²`。这些尺度使不同单位下的停止规则一致；每次候选仍计算原方程，无额外独立PDE审计。原自由弱方程L2范数只用于回溯和伪步长更新，不独自判收敛。伪时间单位为 `Lref/Uref`，不是物理时间推进。
 
@@ -678,6 +678,19 @@ build/native-laminar-pressure-lsc MATRIX_PREFIX CELL_AREAS.csv outlet .1 lsc ic0
 ```
 
 参数可选 `gauge|outlet`、`schur|schur-full|lsc`、`ic0|dense`。dense只把同一个辅助压力矩阵L解得更准确，不是精确原Schur；上限256个压力未知量用于限制稠密参考的立方成本（单份系数256² doubles约0.5MiB），不是物理或质量门。每个程序先验证已知小矩阵的LSC符号/恒等式和完整块逆；浮点额度仅用于这个代数控制。GMRES外层矩阵乘、每次重启额外的真实残差矩阵乘、LSC内部动量块乘、速度/压力逆次数与成本分别记录；`.solution`只表示线性目标满足，失败写 `.candidate` 并退出2，均不能当接受的非线性流场。这批两种尝试未取得默认采用价值，负结果及源输入索引见 `native-laminar-pressure-lsc.json`。
+
+压力多层研究入口 `native-laminar-pressure-aggregation.cpp` 直接调用共享 `PressureSchurDiagonal` / `Block`，只比较同一L的IC0与既有 `AggregationHierarchy2D` 固定V-cycle；无可变内迭代。分片常数P、R=Pᵀ、精确Galerkin粗矩阵、正反Gauss–Seidel及最多32行的小LDLᵀ解均来自已有原生模块。模块要求输入完全对称、非对角非正、合法正主元，失败显式返回，不修整原系数或改物理网格。API选项 `DiagonalSchurAggregation` 和研究驱动 `schur-aggregation` 保留牵引压力参考限制，普通CLI尚未开放该预条件器选项；默认不变。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-pressure-aggregation.cpp -framework Accelerate -o build/native-laminar-pressure-aggregation
+build/native-laminar-pressure-aggregation MATRIX_PREFIX CELL_AREAS.csv outlet .1 aggregation 1e-13 50 FRESH_OUTPUT_PREFIX
+# 同一输入把 aggregation 改成 ic0，输出使用另一不存在的前缀。
+build/native-laminar-compatible-solver square 16 outlet-poiseuille .1 ns pressure outputs/api-aggregation .1 40 schur-aggregation 50 zero
+```
+
+同矩阵入口还支持 `gauge`：输入已经移除了最后一格压力坐标，传给共享块的是对应剩余面积；不更改原凝聚系统或补回规范行。这只是冻结矩阵对照，不能越过完整API的压力参考限制。每次重启使用当前FMA/TwoSum真残差；输出记录建层/求解代价、各层未知量与系数、压力逆/速度逆调用次数及原场系数，不仅报告外层乘积。9组原始矩阵源于已有LSC归档，SHA逐项读回；原失败状态、新完整接受场、无一致提速的计时和复现脚本见 `native-laminar-pressure-aggregation.json` 及其无损归档。小型全流程与物理/网格精度资格分开，云端原网格的默认预算仍待完成。
+
+已有 `CurrentState` 线性初值在CLI显式写作 `--linear-initial-guess current-state`，省略或 `zero` 保持默认。摘要报告选项，`.residuals.csv` 新增 `linearInitialRelativeResidual`；它只是线性代数策略，不绑定物理检查点，续算可切换。旧列名保持，读取历史应按列名；完整入口、实际原圆柱载荷与Linux6/6范围见 `native-laminar-linear-initial-cli.json`。
 
 ### 相容混合边界与显式命令行
 

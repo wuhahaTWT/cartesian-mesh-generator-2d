@@ -32,7 +32,8 @@ void validate(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::
     require(std::isfinite(c.referenceVelocity*c.referenceVelocity)&&c.referenceVelocity*c.referenceVelocity>0&&std::isfinite(c.referenceLength*c.referenceLength)&&c.referenceLength*c.referenceLength>0,"Compatible reference scale range exceeded");
     require(c.equation==CompatibleEquation2D::Stokes||c.equation==CompatibleEquation2D::NavierStokes,"Invalid compatible equation");
     require(c.globalization==CompatibleGlobalization2D::Backtracking||c.globalization==CompatibleGlobalization2D::PseudoTime,"Invalid compatible globalization");
-    require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur,"Invalid compatible pressure inverse");
+    require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur||
+        c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation,"Invalid compatible pressure inverse");
     require(c.linearInitialGuess==CompatibleLinearInitialGuess2D::Zero||c.linearInitialGuess==CompatibleLinearInitialGuess2D::CurrentState,"Invalid compatible linear initial guess");
     require(c.linearTolerance<=.01&&c.maximumIterations>0&&c.maximumLinearRestarts>0&&c.krylovDirections>0&&c.maximumBacktracks>0&&c.maximumBacktracks<=static_cast<std::size_t>(std::numeric_limits<double>::max_exponent-std::numeric_limits<double>::min_exponent),"Invalid compatible iteration budget");
     require(c.quadratureOrder>=4&&c.quadratureOrder<=12,"Compatible quadrature must be 4..12");
@@ -47,7 +48,7 @@ void validate(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::
         if(b.kind==CompatibleBoundaryKind2D::Velocity)++velocityFaces;else if(!mixed)++openFaces;}
     for(std::size_t f=0;f<mesh.faces.size();++f)require(mesh.faces[f].neighbour.has_value()||seen[f],"Compatible boundary missing");
     require(velocityFaces>0,"Compatible solver requires a velocity boundary to fix rigid motion");
-    require(c.pressureInverse!=CompatiblePressureInverse2D::DiagonalSchur||openFaces>0,"Diagonal Schur currently requires a traction pressure reference");
+    require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||openFaces>0,"Diagonal Schur currently requires a traction pressure reference");
     // A single pressure gauge cannot anchor disconnected components. Report
     // this unsupported input; do not solve an unanchored saddle system.
     std::vector<bool> visited(mesh.cells.size());std::vector<std::size_t> pending{0};visited[0]=true;
@@ -294,7 +295,12 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
     if(guess)r=k.residual(a.rhs,x);
     record.linearInitialRelativeResidual=record.linearRelativeResidual=linearNorm(r)/initial;
     if(record.linearRelativeResidual<=p.control.linearTolerance)return x;
-    sparse::Block block(k,p.areas,"ilu0",p.outlet?(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet"):"gauge",p.nu,0,pk);
+    const char* pressure="gauge";
+    if(p.outlet) {
+        pressure=p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation?"outlet-schur-aggregation":
+            p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet";
+    }
+    sparse::Block block(k,p.areas,"ilu0",pressure,p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
         // This is a strict linear solve, not an inexact Newton direction.
         // Keep the available subspace until the original relative target or

@@ -68,6 +68,7 @@ struct PressureSchurDiagonal {
     SparsePattern2D pattern;
     SparseSystem2D system;
     LinearWorkspace2D workspace;
+    std::unique_ptr<AggregationHierarchy2D> aggregation;
 
     static Data build(const Matrix& matrix,const Matrix& velocityMatrix,std::size_t nv) {
         linearEnsure(matrix.n==velocityMatrix.n&&nv<matrix.n,"Schur input dimensions invalid");
@@ -101,17 +102,26 @@ struct PressureSchurDiagonal {
         linearEnsure(result.symmetryError<=1e-12*std::max(1.,result.coefficientMaximum),"Schur diagonal approximation is not symmetric");
         return result;
     }
-    PressureSchurDiagonal(const Matrix& matrix,const Matrix& velocityMatrix,std::size_t nv)
-        :PressureSchurDiagonal(build(matrix,velocityMatrix,nv)) {}
-    explicit PressureSchurDiagonal(Data assembled):data(std::move(assembled)),pattern(data.diag.size(),data.connections),system(pattern),workspace(data.diag.size()) {
+    PressureSchurDiagonal(const Matrix& matrix,const Matrix& velocityMatrix,std::size_t nv,
+        LinearPressureMethod2D inverse=LinearPressureMethod2D::IC0)
+        :PressureSchurDiagonal(build(matrix,velocityMatrix,nv),inverse) {}
+    explicit PressureSchurDiagonal(Data assembled,LinearPressureMethod2D inverse=LinearPressureMethod2D::IC0)
+        :data(std::move(assembled)),pattern(data.diag.size(),data.connections),system(pattern),workspace(data.diag.size()) {
+        linearEnsure(inverse==LinearPressureMethod2D::IC0||inverse==LinearPressureMethod2D::Aggregation,"Unsupported Schur inverse");
         system.diag=data.diag;
         for(const auto& [key,value]:data.off)system.off[pattern.slot(key.first,key.second)]=value;
-        system.factorIC0();
+        if(inverse==LinearPressureMethod2D::Aggregation) {
+            // A fixed linear V-cycle is compatible with the ordinary outer
+            // GMRES. Preserve every coefficient; the hierarchy rejects a
+            // nonsymmetry or positive off diagonals rather than repairing them.
+            aggregation=std::make_unique<AggregationHierarchy2D>(pattern.rows,pattern.columns,system.diag,system.off);
+        } else system.factorIC0();
     }
     void apply(const Vec& input,std::size_t offset,Vec& output) {
         linearEnsure(input.size()==output.size()&&offset+data.diag.size()==input.size(),"Schur pressure vector size mismatch");
         for(std::size_t i=0;i<data.diag.size();++i)workspace.r[i]=input[offset+i];
-        system.precondition(workspace,LinearPressureMethod2D::IC0);
+        if(aggregation)aggregation->apply(workspace.r,workspace.z);
+        else system.precondition(workspace,LinearPressureMethod2D::IC0);
         for(std::size_t i=0;i<data.diag.size();++i)output[offset+i]=-workspace.z[i];
     }
 };
@@ -121,9 +131,9 @@ struct Block {
     std::unique_ptr<PressureSchurDiagonal> pressureSchur;
     LinearPressureMethod2D method;double asymmetry=0,matrixAsymmetry=0,symmetryCorrection=0;std::size_t applications=0;
     Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,double speed,const Matrix& pk):matrix(k),volume(area),
-        nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag")?0:1))),
-        np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag")?0:1)),
-        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"),viscosity(nu),transportSpeed(speed),
+        nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1))),
+        np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1)),
+        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation"),viscosity(nu),transportSpeed(speed),
         pattern(nv,connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
         linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
         for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
@@ -148,7 +158,8 @@ struct Block {
         }
         if(mode=="ic0")velocity.factorIC0();
         if(ilu0)velocity.factorILU0();
-        if(schurDiagonal)pressureSchur=std::make_unique<PressureSchurDiagonal>(matrix,pk,nv);
+        if(schurDiagonal)pressureSchur=std::make_unique<PressureSchurDiagonal>(matrix,pk,nv,
+            pressure=="outlet-schur-aggregation"?LinearPressureMethod2D::Aggregation:LinearPressureMethod2D::IC0);
     }
     Vec apply(const Vec& r) {
         ++applications;Vec z(r.size());long double sum=0;
