@@ -850,7 +850,11 @@ function projectControls() {
     displayMode: $('displayMode').value, thermalEvents: thermalEventRows() };
 }
 window.__projectControls = projectControls;
-function applyProjectInputs(ui) {
+function applyProjectInputs(ui, thermalRequest=null) {
+  // Legacy projects have no absolute-tolerance inputs. Restore their actual
+  // defaults, not whatever was left in the controls by another project.
+  $('thermalTemperatureAtol').value=thermalRequest?.temperatureAtol ?? .001;
+  $('thermalVelocityAtol').value=thermalRequest?.velocityAtol ?? .0001;
   for (const [id, value] of Object.entries(ui?.inputs || {})) {
     const input = $(id);
     if (!input?.matches('.panel input, .panel select') || input.type === 'file') continue;
@@ -873,14 +877,15 @@ async function openProject(recoveryId=null) {
     const payload = typeof recoveryId==='string'?await window.cartmesh.recoverProject(recoveryId):await window.cartmesh.openProject();
     if (!payload) return null;
     const ui = payload.projectUi;
+    const thermalRequest=payload.thermalRestart?.metadata?.request || payload.thermal?.request;
     selectMethod(payload.job.method);
-    applyProjectInputs(ui);
+    applyProjectInputs(ui,thermalRequest);
     $('fluidRegion').value = payload.job.fluidRegion;
     state.regions = structuredClone(ui?.regions || []);
     state.sampleId = null;
     await chooseGeometry(payload.job.geometryPath, payload.projectLabel || '项目几何');
     bindMeshResult(payload);
-    applyProjectInputs(ui);
+    applyProjectInputs(ui,thermalRequest);
     state.flowBoundaryDefinition = ui?.boundaryDefinition || payload.flow?.request.boundaryDefinition || null;
     state.flowRestart = payload.flowRestart?.metadata || null;
     state.thermalRestart = payload.thermalRestart?.metadata || null;
@@ -1283,7 +1288,13 @@ function updateThermalMode() {
     input.disabled = Boolean(state.busy || resuming);
   updateThermalEventEditor();
   const automatic=$('flowMode').value==='adaptive';
-  for(const id of ['thermalTemperatureScale','thermalTimeRtol','thermalTimeError'])$(id).disabled=Boolean(state.busy||!automatic);
+  for(const id of ['thermalTemperatureScale','thermalTimeRtol','thermalTimeError','thermalTemperatureAtol','thermalVelocityAtol'])$(id).disabled=Boolean(state.busy||!automatic);
+  const scales=['thermalTemperatureScale','flowSpeed','thermalTimeRtol','thermalTemperatureAtol','thermalVelocityAtol'].map(id=>Number($(id).value));
+  const [temperatureScale,velocityScale,rtol,temperatureAtol,velocityAtol]=scales;
+  const number=value=>Number(value.toPrecision(6)).toString();
+  $('thermalTimeBudget').textContent=scales.every(value=>Number.isFinite(value)&&value>0)
+    ? `单步局部缺陷预算：温度 ${number(temperatureAtol+rtol*temperatureScale)} K；速度 ${number(velocityAtol+rtol*velocityScale)} m/s。`
+    : '请填写正的有限尺度和容差，以显示实际时间误差预算。';
   const vortex=!resuming && $('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
   $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom');
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
@@ -1293,7 +1304,7 @@ function updateThermalMode() {
   const start = resuming ? Number(restart.time) : 0;
   const duration = Number($('flowDt').value) * Number($('flowSteps').value);
   $('thermalTimeHint').textContent = (vortex ? '从所填局部涡速度初值开始；仅在零时刻施加。' : '') + ($('flowMode').value==='adaptive'
-    ? `联合自动步长：目标 ${$('flowEndTime').value} s；任一方失败回退重试。${$('thermalTimeError').checked?'用指定温升尺度控制时间误差。':'CFL 与收敛控制不保证时间精度。'}`
+    ? `联合自动步长：目标 ${$('flowEndTime').value} s；任一方失败回退重试。${$('thermalTimeError').checked?'用指定尺度和容差控制单步局部缺陷。':'CFL 与收敛控制不保证时间精度。'}`
     : Number.isFinite(duration) && duration > 0
     ? `温度始终非定常：本次 ${start.toPrecision(5)} → ${(start + duration).toPrecision(5)} s。温度积分需乘 ρcp 才是单位深度热量。`
     : '请在上方填写时间步长与本次步数。');
@@ -1332,6 +1343,7 @@ function thermalRequest() {
     mode:$('flowMode').value==='adaptive'?'adaptive':'transient',endTime:Number($('flowEndTime').value),
     minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),
     timeError:$('thermalTimeError').checked,temperatureScale:Number($('thermalTemperatureScale').value),timeRtol:Number($('thermalTimeRtol').value),
+    temperatureAtol:Number($('thermalTemperatureAtol').value),velocityAtol:Number($('thermalVelocityAtol').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, fluxCorrection:$('thermalFluxCorrection').value, boundaries,
     ...(!$('thermalResume').checked && !$('flowResume').checked && $('flowMode').value!=='steady' && $('flowInitialVortex').checked
@@ -1943,4 +1955,4 @@ function renderRegions() {
 
 for(const id of ['backgroundMode','backgroundLevel','backgroundMinimumLevel','backgroundPadding']) $(id).addEventListener('change',updateReady);
 
-for(const id of ['thermalTimeError','thermalTemperatureScale','thermalTimeRtol'])$(id).addEventListener('input',updateThermalMode);
+for(const id of ['thermalTimeError','thermalTemperatureScale','thermalTimeRtol','thermalTemperatureAtol','thermalVelocityAtol','flowSpeed'])$(id).addEventListener('input',updateThermalMode);

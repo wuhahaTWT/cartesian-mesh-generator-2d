@@ -354,7 +354,10 @@
         <label><input id="thermalTimeError" type="checkbox">启用整步／两半步误差估计</label>
         <label class="field">特征温升<span class="unit"><input id="thermalTemperatureScale" type="number" min="0.000000001" step="any" value="1"><i>K</i></span></label>
         <label class="field">时间相对容差<input id="thermalTimeRtol" type="number" min="0.000000001" step="any" value="0.01"></label>
-        <p class="note">按温升而非绝对开尔文温度归一化；同时检查速度误差。每次估计需要三个联合求解，仍为一阶后向欧拉。CFL／内迭代收敛与时间精度分别检查。</p>
+        <label class="field">温度绝对容差<span class="unit"><input id="thermalTemperatureAtol" type="number" min="0" step="any" value="0.001"><i>K</i></span></label>
+        <label class="field">速度绝对容差<span class="unit"><input id="thermalVelocityAtol" type="number" min="0" step="any" value="0.0001"><i>m/s</i></span></label>
+        <p class="note" id="thermalTimeBudget"></p>
+        <p class="note">预算为绝对容差 + 相对容差 × 特征尺度；两种绝对容差须为正。温度使用特征温升，速度使用上方参考速度。每次估计需要三个联合求解，仍为一阶后向欧拉。长期相位、幅值与换热精度仍需步长对照。</p>
       </details>
       <details id="thermalEventEditor"><summary>热源与边界随时间变化</summary>
         <p class="note">填写绝对物理时刻（秒）。变化在该时刻之后生效，并持续到下一次同目标变化。使用自动步长，求解器会精确停在每个变化时刻；同一时刻可改变不同目标。</p>

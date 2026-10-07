@@ -171,6 +171,12 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 同进程关窗恢复的真实验收在 `outputs/thermal-same-process/`：Cmd-W 关闭全部窗口后，从 Finder 重开上述新 App，`reactivated-process.json` 确认 PID 未变；通过恢复会话界面读回 1.45 s，再续至 1.5 s／111 个历史时刻并用 NSSavePanel 保存 `same-process-1p5.zip`。`verify.py` 与 `comparison.json` 核对 7 类原生文件、原项目不变和进程身份；`raw-manifest.json` 封存结束后的输入、输出与记录。该过程未点击 Dock，全窗口画面只在界面工具中查看。
 
+### 桌面时间误差的绝对预算
+
+桌面 `temperatureAtol`／`velocityAtol` 显式传到既有 CLI `--temperature-atol`／`--velocity-atol`，默认仍为 .001 K／.0001 m/s。原生摘要新增 `temperatureAbsoluteTolerance`、`velocityAbsoluteTolerance` 和 `velocityScale`；旧桌面项目缺省按原默认恢复，新非默认请求必须与原生报告一致。`applyProjectInputs` 防止从前一个项目遗留新容差，完整 ZIP 同时保存请求和表单；控制器已有数值签名负责建议重建，不改物理检查点身份、方法或接受门。
+
+`outputs/thermal-time-budget/` 保留前后前端回归、完整温度 CLI 回归、冻结程序、真实系统对话框保存包 `time-budget-1p55.zip` 和新进程身份。`verify-app.py` 用正式项目读取器及参数构造器读回，再比较 App／新 CLI／旧 CLI 的 7 类原生物理文件；`comparison.json` 记录 1.5→1.55 s／79 步与完整 190 步历史。重跑使用新目录，已结束输入和输出由 `raw-manifest.json` 封存；活动 Electron 配置与日志不在清单中。当前增量验收源码 App，既有打包 App 证据保持原版本。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。

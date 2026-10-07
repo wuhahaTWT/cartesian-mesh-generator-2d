@@ -72,6 +72,16 @@ def main(a):
         assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
         return out
     continuous=invoke('continuous')
+    original_summary=json.loads(continuous.with_suffix('.json').read_text())
+    assert original_summary['temperatureAbsoluteTolerance']==.001 and original_summary['velocityAbsoluteTolerance']==.0001
+    controlled=invoke('explicit-budget',['--restart',continuous.with_suffix('.thermal.checkpoint'),
+        '--end-time','6.05','--time-error','on','--temperature-scale','.01','--velocity-scale','.2',
+        '--time-rtol','.0001','--temperature-atol','.000002','--velocity-atol','.000003'])
+    settings=json.loads(controlled.with_suffix('.json').read_text())
+    assert settings['acceptedTime']==6.05 and settings['timeStepControl']=='joint-cfl-be-error-retry'
+    for key,value in {'temperatureScale':.01,'velocityScale':.2,'timeRelativeTolerance':.0001,
+            'temperatureAbsoluteTolerance':.000002,'velocityAbsoluteTolerance':.000003}.items():
+        assert settings[key]==value,(key,settings[key],value)
     check=invoke('check-only',['--restart',continuous.with_suffix('.thermal.checkpoint'),'--check-restart','on'])
     checked=json.loads((root/'check-only.log').read_text())
     assert checked['status']=='valid' and checked['time']==6 and not check.with_suffix('.json').exists()

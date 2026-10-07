@@ -172,3 +172,39 @@ test('thermal renderer permits system Cholesky on macOS and explains unsupported
   context.window.cartmesh.platform='win32';assert.equal(context.validThermalInputs(),false);assert.match(messages.at(-1).join(' '),/macOS/);
   elements.flowPressurePreconditioner.value='aggregation';assert.equal(context.validThermalInputs(),true);
 });
+
+
+test('thermal budget controls stay editable on resume and expose the actual dimensional allowance',()=>{
+  const elements=new Proxy({}, {get:(target,key)=>target[key] ||= {value:'0',checked:false,hidden:false}});
+  Object.assign(elements.flowMode,{value:'adaptive'});elements.flowSpeed.value='2';
+  elements.thermalTemperatureScale.value='.01';elements.thermalTimeRtol.value='.001';
+  elements.thermalTemperatureAtol.value='.001';elements.thermalVelocityAtol.value='.0001';
+  elements.thermalTimeError.checked=true;elements.thermalResume.checked=true;
+  const context={$:id=>elements[id],state:{result:{},busy:false,thermalRestart:{time:1}},
+    document:{querySelectorAll:()=>[elements.thermalTemperatureAtol,elements.thermalVelocityAtol]},
+    updateThermalEventEditor(){},thermalPatches:[],thermalEventRows:()=>[]};
+  vm.createContext(context);vm.runInContext(functionSource('updateThermalMode')+'\n'+functionSource('thermalRequest'),context);
+  context.updateThermalMode();
+  assert.equal(elements.thermalTemperatureAtol.disabled,false);assert.equal(elements.thermalVelocityAtol.disabled,false);
+  assert.match(elements.thermalTimeBudget.textContent,/0\.00101 K/);
+  assert.match(elements.thermalTimeBudget.textContent,/0\.0021 m\/s/);
+  elements.thermalTemperatureAtol.value='0.000001';context.updateThermalMode();
+  assert.match(elements.thermalTimeBudget.textContent,/0\.000011 K/);
+  assert.equal(context.thermalRequest().temperatureAtol,.000001);
+  assert.equal(context.thermalRequest().velocityAtol,.0001);
+  context.state.busy=true;context.updateThermalMode();assert.equal(elements.thermalTemperatureAtol.disabled,true);
+  context.state.busy=false;elements.flowMode.value='transient';context.updateThermalMode();assert.equal(elements.thermalVelocityAtol.disabled,true);
+});
+
+test('opening a legacy project resets newly exposed tolerances instead of leaking a prior project value',()=>{
+  const elements=new Proxy({}, {get:(target,key)=>target[key] ||= {value:'9',checked:false,hidden:false,matches:()=>true}});
+  const context={$:id=>elements[id],setThermalEvents(){},updateControlMode(){}};
+  vm.createContext(context);vm.runInContext(functionSource('applyProjectInputs'),context);
+  context.applyProjectInputs({inputs:{}});
+  assert.equal(Number(elements.thermalTemperatureAtol.value),.001);
+  assert.equal(Number(elements.thermalVelocityAtol.value),.0001);
+  context.applyProjectInputs({inputs:{thermalTemperatureAtol:'0.000002',thermalVelocityAtol:'0.000003'}});
+  assert.equal(elements.thermalTemperatureAtol.value,'0.000002');assert.equal(elements.thermalVelocityAtol.value,'0.000003');
+  context.applyProjectInputs(null,{temperatureAtol:4e-6,velocityAtol:5e-6});
+  assert.equal(Number(elements.thermalTemperatureAtol.value),4e-6);assert.equal(Number(elements.thermalVelocityAtol.value),5e-6);
+});

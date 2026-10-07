@@ -594,6 +594,8 @@ int main(int argc,char**argv) {
             <<",\n\"startTime\":"<<startTime<<",\n\"completedSteps\":"<<completedSteps<<",\n\"rejectedAttempts\":"<<rejectedAttempts
             <<",\n\"maximumTimeStep\":"<<timeControls.limits.maximumStep
             <<",\n\"temperatureScale\":"<<timeControls.temperatureScale<<",\n\"timeRelativeTolerance\":"<<timeControls.relativeTolerance
+            <<",\n\"temperatureAbsoluteTolerance\":"<<timeControls.temperatureAbsoluteTolerance
+            <<",\n\"velocityScale\":"<<timeControls.velocityScale<<",\n\"velocityAbsoluteTolerance\":"<<timeControls.velocityAbsoluteTolerance
             <<",\n\"thermalEventCount\":"<<thermalSetup.events.size()
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")

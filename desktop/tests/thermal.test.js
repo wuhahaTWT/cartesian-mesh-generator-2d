@@ -442,3 +442,27 @@ test('saved seeded thermal state validates without reapplying its initial vortex
   assert.equal(meta.time,.2);assert.equal(calls,1);
   assert.equal(JSON.stringify(original),snapshot,'startup provenance must stay in the saved request');
 });
+
+
+test('desktop time budget forwards absolute tolerances and reads legacy defaults',()=>{
+  const r=request({mode:'adaptive',endTime:.2,temperatureScale:.01,timeRtol:.001,
+    temperatureAtol:1e-6,velocityAtol:2e-6,timeError:true});
+  const call=buildThermalInvocation('/tmp/mesh.solver.cm2d','/tmp/out','/tmp/bc.csv',r);
+  for(const [flag,value] of [['--temperature-atol','0.000001'],['--velocity-atol','0.000002']])
+    assert.equal(call.args[call.args.indexOf(flag)+1],value);
+  const legacy=validateThermalRequest(request());
+  assert.equal(legacy.temperatureAtol,.001);assert.equal(legacy.velocityAtol,.0001);
+  for(const key of ['temperatureAtol','velocityAtol'])for(const value of [0,-1,NaN,'0.001'])
+    assert.throws(()=>validateThermalRequest({...r,[key]:value}),/容差|有限数/);
+  const f=thermalContractFixture(),summary={...f.summary,timeStepControl:'joint-cfl-be-error-retry',
+    maximumTimeStep:.05,temperatureScale:.01,timeRelativeTolerance:.001,completedSteps:4,
+    temperatureAbsoluteTolerance:1e-6,velocityAbsoluteTolerance:2e-6,velocityScale:1};
+  const input={...f.input,...r,case:'external'};
+  const read=(s,request=input)=>validateThermalOutput(s,f.cells,f.history,f.joint,f.mesh,request);
+  assert.equal(read(summary).request.temperatureAtol,1e-6);
+  for(const key of ['temperatureAbsoluteTolerance','velocityAbsoluteTolerance','velocityScale'])
+    assert.throws(()=>read({...summary,[key]:summary[key]*2}),/时间误差/);
+  const {temperatureAbsoluteTolerance,velocityAbsoluteTolerance,velocityScale,...old}=summary;
+  assert.throws(()=>read(old),/时间误差/,'old native output cannot claim new nondefault tolerances');
+  assert.equal(read(old,{...input,temperatureAtol:.001,velocityAtol:.0001}).request.temperatureAtol,.001);
+});

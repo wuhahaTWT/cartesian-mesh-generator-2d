@@ -1,0 +1,279 @@
+{
+  "format": "cartmesh2d-desktop-thermal-time-budget-evidence-v1",
+  "sourceBase": "12a096e014ac8e3407c2d82e273467f281c5e989",
+  "recordedUtc": "2026-10-07T07:42:56.795581+00:00",
+  "scope": "Expose existing native time-error absolute tolerances in the desktop App, preserving defaults and physical algorithms. Actual macOS source App, no new packaged release.",
+  "defaultBudget": {
+    "temperatureAtolK": 0.001,
+    "velocityAtolMS": 0.0001,
+    "formula": "absoluteTolerance + relativeTolerance * characteristicScale",
+    "temperatureScale": "temperature change in K",
+    "velocityScale": "flow reference speed in m/s"
+  },
+  "implementation": {
+    "nativeCliAlreadySupportedFlags": true,
+    "nativeSummaryNowReportsActualBudgets": true,
+    "legacyProjectDefaultsPreserved": true,
+    "nondefaultProjectRestoredInNewProcess": true,
+    "numericalControlChangesUseExistingControllerReset": true,
+    "physicalDefaultsUnchanged": true
+  },
+  "validation": {
+    "beforeRegression": {
+      "passed": 32,
+      "failed": 3
+    },
+    "afterRelatedFrontend": {
+      "passed": 35,
+      "failed": 0
+    },
+    "allFrontend": {
+      "passed": 232,
+      "failed": 0
+    },
+    "nativeControlCli": {
+      "pressurePreconditioner": "ic0",
+      "readOnlyNativeCheckpointValidation": true,
+      "frozenCustomCarrierExact": true,
+      "frozenCrLfSupported": true,
+      "frozenMalformedRejected": true,
+      "boundedMethodsRestartedExactly": [
+        "bounded",
+        "bounded-spatial"
+      ],
+      "passed": true,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-time-budget/native-control/run-z875mo74",
+      "existingAcceptedOutputNotOverwritten": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.0070532956411852865,
+      "integratedHeatGain": 0.007053221260278254,
+      "integratedBudgetDefect": 7.438106338824277e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "replacedLiveOutputFailsClosedAndResumesIdentically": true,
+      "continuousCheckpointSha256": "a9e1203501610d9c0b2766f642308e681bbd8457451ba52bf935d862d4d05359"
+    },
+    "app": {
+      "format": "cartmesh2d-thermal-desktop-time-budget-v1",
+      "sourceBase": "12a096e014ac8e3407c2d82e273467f281c5e989",
+      "sourceZipSha256": "a16ff198d6e6abda316c48a49a7559f0fdbc378bf28baec3200a57d3c17c4dda",
+      "sourceZipUnchanged": true,
+      "savedZipSha256": "a557a509e15c3631d350e5342a4ff85a4570427b069ccd3b083d6b1f3419f597",
+      "zipCrcPassed": true,
+      "nativeBinarySha256": "85b8e1e55940603b9f2d96d82ec1bfede2971409102958135dafee572a383535",
+      "sourceTimeS": 1.5,
+      "endTimeS": 1.55,
+      "cells": 904,
+      "acceptedSteps": 79,
+      "history": {
+        "rows": 190,
+        "firstTime": 0.0001953125,
+        "lastTime": 1.55
+      },
+      "request": {
+        "case": "cavity",
+        "nu": 0.01,
+        "speed": 0.2,
+        "maxIterations": 1500,
+        "tolerance": 1e-08,
+        "convection": "limited-linear",
+        "pressurePreconditioner": "cholesky",
+        "outletBackflow": "reject",
+        "viscousStress": "symmetric",
+        "steadyAcceleration": "none",
+        "linearPolicy": "strict",
+        "velocityRelaxation": 0.6,
+        "pressureCorrectionPasses": 4,
+        "mode": "adaptive",
+        "resume": true,
+        "dt": 0.025,
+        "endTime": 1.55,
+        "minDt": 1e-07,
+        "maxCourant": 1,
+        "maxRetries": 24,
+        "maxSteps": 100000,
+        "diffusivity": 0.02,
+        "initial": 300,
+        "source": 0,
+        "scalarConvection": "upwind",
+        "fluxCorrection": "bounded-spatial",
+        "boundaries": {
+          "wall": {
+            "kind": "value",
+            "value": 301,
+            "inflowValue": 300
+          },
+          "inlet": {
+            "kind": "flux",
+            "value": 0,
+            "inflowValue": 300
+          },
+          "outlet": {
+            "kind": "flux",
+            "value": 0,
+            "inflowValue": 300
+          },
+          "top": {
+            "kind": "value",
+            "value": 301,
+            "inflowValue": 300
+          },
+          "bottom": {
+            "kind": "value",
+            "value": 300,
+            "inflowValue": 300
+          }
+        },
+        "events": [
+          {
+            "time": 0.137,
+            "target": "source",
+            "kind": "source",
+            "value": 0.2
+          },
+          {
+            "time": 0.137,
+            "target": "top",
+            "kind": "value",
+            "value": 300,
+            "inflowValue": 300
+          },
+          {
+            "time": 0.243,
+            "target": "source",
+            "kind": "source",
+            "value": 0
+          },
+          {
+            "time": 0.337,
+            "target": "top",
+            "kind": "value",
+            "value": 301,
+            "inflowValue": 300
+          },
+          {
+            "time": 0.913,
+            "target": "source",
+            "kind": "source",
+            "value": 0.1
+          },
+          {
+            "time": 1.137,
+            "target": "source",
+            "kind": "source",
+            "value": 0
+          },
+          {
+            "time": 1.337,
+            "target": "source",
+            "kind": "source",
+            "value": -0.1
+          }
+        ],
+        "timeError": true,
+        "temperatureScale": 0.01,
+        "timeRtol": 0.001,
+        "temperatureAtol": 1e-06,
+        "velocityAtol": 2e-06
+      },
+      "displayedLocalBudget": {
+        "temperatureK": 1.1e-05,
+        "velocityMS": 0.000202
+      },
+      "files": [
+        {
+          "suffix": ".thermal.checkpoint",
+          "sha256": "3b85188efa2c06c7f958054dad8ca4d146043241b6945b6023def8fd78e20aa9",
+          "bytes": 452785,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "sha256": "4ba24d869cf072e0399a5c54436d48279c453d47c65a85a63cab748d93372f9e",
+          "bytes": 118246,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "sha256": "461716518b357687b327aba2d90ee1e7d783136834eec599c0502d0dac3a09bf",
+          "bytes": 152176,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".heat-history.csv",
+          "sha256": "f31e75da4e6b62066d385d4382a7721e569d564adc31f1a707d73595d187a105",
+          "bytes": 14997,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".thermal-history.csv",
+          "sha256": "0a815202e15c2c5eb33fd30a862bd022aad7c8c2d084acd4e817284e9f716026",
+          "bytes": 12828,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".boundary-heat-history.csv",
+          "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+          "bytes": 73,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "sha256": "9b8e0fd20f1f8b803eadba3f26de8b353f5954d0cc874a852c68d35eaa4df872",
+          "bytes": 13193,
+          "appEqualsCli": true,
+          "nativePhysicalOutputsUnchanged": true
+        }
+      ],
+      "actualUi": {
+        "nativeOpenPanel": true,
+        "controlsEdited": true,
+        "budgetTextObserved": true,
+        "nativeSavePanel": true,
+        "panelScreenshotVisuallyInspected": true,
+        "screenshotSavedLocally": false,
+        "newProcessReopen": true,
+        "restoredTimeS": 1.55,
+        "restoredHistorySteps": 190,
+        "nondefaultBudgetRestored": true
+      },
+      "scope": "Real macOS arm64 source Electron App with rebuilt CLI; no new packaged distribution. Native physical outputs match the previously validated binary under these same explicit tolerances.",
+      "processes": {
+        "oldPid": 54806,
+        "oldProcessExited": true,
+        "newProcess": {
+          "pid": 57094,
+          "command": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron desktop --user-data-dir=outputs/thermal-time-budget/electron-profile"
+        },
+        "nativeSourceApp": true
+      }
+    }
+  },
+  "rawEvidence": {
+    "manifest": "outputs/thermal-time-budget/raw-manifest.json",
+    "manifestSha256": "7dd215c7c7c69e77b4b36194a1a55f9d27f5cb8e6ad30c1c4418a6660027f28b",
+    "count": 743,
+    "bytes": 39473914,
+    "allMatched": true,
+    "activeFilesExcluded": true
+  },
+  "limitations": [
+    "Local step-defect budget is not a global phase, amplitude or heat-transfer accuracy guarantee.",
+    "Smaller absolute/relative tolerances can increase accepted/rejected steps and nonlinear-solve cost.",
+    "This UI increment was exercised on macOS arm64 source Electron; Windows/Linux and a new distribution package were not tested.",
+    "Full-window panel screenshots were visually inspected through the UI tool, not saved locally."
+  ]
+}

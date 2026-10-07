@@ -49,7 +49,9 @@ function validateThermalRequest(input) {
   r.timeError=Boolean(input.timeError);
   r.temperatureScale=finite(input.temperatureScale ?? 1,'温升尺度');
   r.timeRtol=finite(input.timeRtol ?? .01,'时间误差相对容差');
-  requireValue(r.temperatureScale>0&&r.timeRtol>0,'温升尺度和时间误差容差须为正。');
+  r.temperatureAtol=finite(input.temperatureAtol ?? .001,'温度时间绝对容差');
+  r.velocityAtol=finite(input.velocityAtol ?? .0001,'速度时间绝对容差');
+  requireValue(r.temperatureScale>0&&r.timeRtol>0&&r.temperatureAtol>0&&r.velocityAtol>0,'温升尺度和时间误差容差须为正。');
   return r;
 }
 // Match the native flow cases. A nonrectangular boundary outside duct fails;
@@ -105,7 +107,8 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null,events=n
   if(r.mode==='adaptive')args.push('--end-time',String(r.endTime),'--min-dt',String(r.minDt),
     '--max-courant',String(r.maxCourant),'--max-step-retries',String(r.maxRetries),'--max-time-steps',String(r.maxSteps),
     '--time-error',r.timeError?'on':'off','--temperature-scale',String(r.temperatureScale),
-    '--velocity-scale',String(r.speed),'--time-rtol',String(r.timeRtol));
+    '--velocity-scale',String(r.speed),'--time-rtol',String(r.timeRtol),
+    '--temperature-atol',String(r.temperatureAtol),'--velocity-atol',String(r.velocityAtol));
   else args.push('--steps',String(r.steps));
   if(r.initialVortex) {
     const v=r.initialVortex;args.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
@@ -220,7 +223,16 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');
   const adaptive=r.mode==='adaptive';
   const t=adaptive?r.endTime:startTime+r.dt*r.steps;
-  if(adaptive) {requireValue(near(summary.temperatureScale,r.temperatureScale)&&near(summary.timeRelativeTolerance,r.timeRtol),'时间误差尺度与请求不符。');}
+  if(adaptive) {
+    requireValue(near(summary.temperatureScale,r.temperatureScale)&&near(summary.timeRelativeTolerance,r.timeRtol),'时间误差尺度与请求不符。');
+    // Older desktop outputs used these native defaults and passed speed as the
+    // velocity scale. A nondefault request needs matching new native metadata.
+    for(const [key,expected,legacy] of [['temperatureAbsoluteTolerance',r.temperatureAtol,.001],
+      ['velocityAbsoluteTolerance',r.velocityAtol,.0001],['velocityScale',r.speed,r.speed]]) {
+      const value=summary[key]===undefined?legacy:finite(summary[key],key);
+      requireValue(near(value,expected),'时间误差绝对容差或速度尺度与请求不符。');
+    }
+  }
   if(adaptive)requireValue(summary.timeStepControl===(r.timeError?'joint-cfl-be-error-retry':'joint-cfl-retry'),'联合时间控制模式不符。');
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');
   if(r.events.length)requireValue(summary.thermalEventCount===new Set(r.events.map(e=>e.time)).size,'原生时间事件数量与请求不符。');
