@@ -1,0 +1,1678 @@
+{
+  "format": "cartmesh2d-periodic-thermal-carrier-v1",
+  "completed": true,
+  "protocol": {
+    "format": "cartmesh2d-periodic-cavity-protocol-v1",
+    "sourceBase": "3b4e57b46675d2b84fd1dd5e08e93cdff8176e29",
+    "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+    "meshBinarySha256": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+    "geometry": "unit square interior",
+    "lidSpeed": 0.2,
+    "viscosity": 0.01,
+    "ReUsingSideLength": 20,
+    "diffusivity": 0.02,
+    "PeUsingSideLength": 10,
+    "initialTemperature": 300,
+    "topHotTemperature": 301,
+    "topColdTemperature": 300,
+    "bottomTemperature": 300,
+    "sidewalls": "adiabatic",
+    "period": 4,
+    "halfPeriod": 2,
+    "plannedCycles": 12,
+    "storedEventLawCycles": 16,
+    "temperatureScale": 1,
+    "timeRtol": 0.01,
+    "method": "bounded-spatial",
+    "acceptance": "Existing native convergence/bounds/joint time-error gates only. Report same-phase cycle differences and compare them with observed time/mesh sensitivity; no new universal physical tolerance.",
+    "meshes": [
+      {
+        "label": "coarse",
+        "level": 4,
+        "cells": 196,
+        "mesh": "outputs/thermal-periodic/coarse/mesh.solver.cm2d",
+        "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+        "flow": "outputs/thermal-periodic/coarse/flow.boundaries",
+        "boundary": "outputs/thermal-periodic/coarse/thermal.csv",
+        "events": "outputs/thermal-periodic/coarse/events.csv"
+      },
+      {
+        "label": "medium",
+        "level": 5,
+        "cells": 784,
+        "mesh": "outputs/thermal-periodic/medium/mesh.solver.cm2d",
+        "meshSha256": "017e206928aea6421b4bc282dacf00b6efd3e003ab89aa285f8e0ffa8a84297e",
+        "flow": "outputs/thermal-periodic/medium/flow.boundaries",
+        "boundary": "outputs/thermal-periodic/medium/thermal.csv",
+        "events": "outputs/thermal-periodic/medium/events.csv"
+      },
+      {
+        "label": "fine",
+        "level": 6,
+        "cells": 3136,
+        "mesh": "outputs/thermal-periodic/fine/mesh.solver.cm2d",
+        "meshSha256": "d9bc6a6d564b1a8306fdf88f30d15ce7e08139cab4387f883d2dd865cc12851b",
+        "flow": "outputs/thermal-periodic/fine/flow.boundaries",
+        "boundary": "outputs/thermal-periodic/fine/thermal.csv",
+        "events": "outputs/thermal-periodic/fine/events.csv"
+      }
+    ],
+    "sourceDiffSha256": "a2fd2690ef9584ce9d34589df1d955cd8148482a7530499be4f3cf066c45ea03",
+    "repair": "On-demand pressure residual cap derived from unchanged scalar carrier budget; same physical controls."
+  },
+  "postprocessing": "All quantities read from native accepted histories and fields. Heat is K*m^2, flux K*m^2/s. Cycle moments use trapezoidal history integration; wall integrals use native accepted-step right-end flux*dt. Fundamental lag is relative to the positive-sine first harmonic of the square input. No PDE reconstruction or physical accuracy gate is added.",
+  "runs": {
+    "coarse-fixed-dt0025": {
+      "cells": 196,
+      "maxDtS": 0.025,
+      "cycles": 12,
+      "finalTimeS": 48,
+      "acceptedSteps": 1968,
+      "rejectedAttempts": 24,
+      "seconds": 27.909684541024035,
+      "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+      "minimumK": 299.9999999998212,
+      "maximumK": 300.9457068923336,
+      "integratedNativeBalanceKm2": -1.3578488899979128e-08,
+      "sumAbsoluteIntegratedNativeBalanceKm2": 2.067027856292123e-07,
+      "lastCycle": {
+        "meanHeatGainKm2": 0.2546965218976526,
+        "heatGainHalfRangeKm2": 0.08439557710264012,
+        "fundamentalHeatAmplitudeKm2": 0.07113311933095004,
+        "fundamentalPhaseLagS": 0.5406374541549984,
+        "hotEndHeatGainKm2": 0.3390911376681409,
+        "coldEndHeatGainKm2": 0.17031215802005945,
+        "integratedOutwardWallFluxKm2": {
+          "bottom": 0.042444334523965045,
+          "lid": -0.042456509198910926,
+          "wall": 0.0
+        },
+        "heatGainChangeOverCycleKm2": 1.217455735513795e-05,
+        "maxNativeBalanceKm2PerS": 1.8439519244850544e-08
+      },
+      "samePhaseCycleChanges": [
+        {
+          "cycle": 2,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.12423944051329272,
+              "rmsTemperatureChangeK": 0.071122469252828,
+              "heatGainChangeKm2": 0.06261865312283815
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.07805239548866894,
+              "rmsTemperatureChangeK": 0.047743120188483666,
+              "heatGainChangeKm2": 0.04269306143923002
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.048286861751250854,
+              "rmsTemperatureChangeK": 0.03199238534410801,
+              "heatGainChangeKm2": 0.028796194312680046
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.030642059993397197,
+              "rmsTemperatureChangeK": 0.021431275486087056,
+              "heatGainChangeKm2": 0.01931922114916035
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.021158796754832565,
+              "rmsTemperatureChangeK": 0.01432619062477672,
+              "heatGainChangeKm2": 0.012909750035708323
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.014653537956803575,
+              "rmsTemperatureChangeK": 0.009562700088428574,
+              "heatGainChangeKm2": 0.008604795732118337
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.01002322128221067,
+              "rmsTemperatureChangeK": 0.006373341231953248,
+              "heatGainChangeKm2": 0.005726958766236467
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.006783186041900535,
+              "rmsTemperatureChangeK": 0.004241328972941726,
+              "heatGainChangeKm2": 0.0038064158106590196
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.004562230333590378,
+              "rmsTemperatureChangeK": 0.0028202985414371353,
+              "heatGainChangeKm2": 0.002528732588596594
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0030535135230707056,
+              "rmsTemperatureChangeK": 0.001873342040085609,
+              "heatGainChangeKm2": 0.0016785102799550533
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0020379720376126897,
+              "rmsTemperatureChangeK": 0.0012440779446755011,
+              "heatGainChangeKm2": 0.0011141408891911508
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.001357126687253185,
+              "rmsTemperatureChangeK": 0.0008255747081249899,
+              "heatGainChangeKm2": 0.000739102107808226
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0009026120519592951,
+              "rmsTemperatureChangeK": 0.0005479104701710348,
+              "heatGainChangeKm2": 0.0004904025723875272
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0005996844689661884,
+              "rmsTemperatureChangeK": 0.0003634300511618818,
+              "heatGainChangeKm2": 0.0003252368787740323
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00039821384336846677,
+              "rmsTemperatureChangeK": 0.00024112545696631377,
+              "heatGainChangeKm2": 0.00021576037224790845
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0002642987033141253,
+              "rmsTemperatureChangeK": 0.00015990729356323973,
+              "heatGainChangeKm2": 0.00014307691285914137
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00017538156799901117,
+              "rmsTemperatureChangeK": 0.000106079245331987,
+              "heatGainChangeKm2": 9.490901637498883e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00011634945565219823,
+              "rmsTemperatureChangeK": 7.034224993205082e-05,
+              "heatGainChangeKm2": 6.293366378226639e-05
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 7.718270569512242e-05,
+              "rmsTemperatureChangeK": 4.666102476242641e-05,
+              "heatGainChangeKm2": 4.174534440787303e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 5.119315807178282e-05,
+              "rmsTemperatureChangeK": 3.094016182206054e-05,
+              "heatGainChangeKm2": 2.768052646923147e-05
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 3.395527949123789e-05,
+              "rmsTemperatureChangeK": 2.0523318036483792e-05,
+              "heatGainChangeKm2": 1.8360792118865543e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 2.2519783442476182e-05,
+              "rmsTemperatureChangeK": 1.3608444345747699e-05,
+              "heatGainChangeKm2": 1.2174557094707383e-05
+            }
+          }
+        }
+      ]
+    },
+    "medium-fixed-dt01": {
+      "cells": 784,
+      "maxDtS": 0.1,
+      "cycles": 12,
+      "finalTimeS": 48,
+      "acceptedSteps": 816,
+      "rejectedAttempts": 120,
+      "seconds": 65.51731399999699,
+      "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+      "minimumK": 299.999999999657,
+      "maximumK": 300.97384569974764,
+      "integratedNativeBalanceKm2": -1.9513924893029398e-08,
+      "sumAbsoluteIntegratedNativeBalanceKm2": 2.207561910745358e-07,
+      "lastCycle": {
+        "meanHeatGainKm2": 0.2549401257906021,
+        "heatGainHalfRangeKm2": 0.08478454158884574,
+        "fundamentalHeatAmplitudeKm2": 0.07055810936064126,
+        "fundamentalPhaseLagS": 0.5200679896467387,
+        "hotEndHeatGainKm2": 0.3397219834616892,
+        "coldEndHeatGainKm2": 0.1701652440470104,
+        "integratedOutwardWallFluxKm2": {
+          "bottom": 0.04251978396473261,
+          "lid": -0.04253212863800726,
+          "wall": 0.0
+        },
+        "heatGainChangeOverCycleKm2": 1.2343762307409634e-05,
+        "maxNativeBalanceKm2PerS": 1.914214232956457e-08
+      },
+      "samePhaseCycleChanges": [
+        {
+          "cycle": 2,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.12441247648467879,
+              "rmsTemperatureChangeK": 0.0711070817850715,
+              "heatGainChangeKm2": 0.06253038812784548
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.07792159119924236,
+              "rmsTemperatureChangeK": 0.04776399842897246,
+              "heatGainChangeKm2": 0.04265936000465949
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0482504726377897,
+              "rmsTemperatureChangeK": 0.032042986333715655,
+              "heatGainChangeKm2": 0.028795430115945042
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.030687860093905783,
+              "rmsTemperatureChangeK": 0.02148967977264421,
+              "heatGainChangeKm2": 0.01933864174591049
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.02131903940619395,
+              "rmsTemperatureChangeK": 0.014378074792485632,
+              "heatGainChangeKm2": 0.012932297405873205
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.014793780403181245,
+              "rmsTemperatureChangeK": 0.0096078932801209,
+              "heatGainChangeKm2": 0.00862842735222924
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.01013369995098401,
+              "rmsTemperatureChangeK": 0.0064085291771983,
+              "heatGainChangeKm2": 0.005746565639747903
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.006868804861994704,
+              "rmsTemperatureChangeK": 0.004269075529531265,
+              "heatGainChangeKm2": 0.0038229493012846005
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.004625963664182109,
+              "rmsTemperatureChangeK": 0.0028406964878189413,
+              "heatGainChangeKm2": 0.0025412321049663733
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00310009787835952,
+              "rmsTemperatureChangeK": 0.0018886957218554284,
+              "heatGainChangeKm2": 0.001688290170914819
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0020712715828494765,
+              "rmsTemperatureChangeK": 0.0012550298413343463,
+              "heatGainChangeKm2": 0.0011212513145357206
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0013807000957513083,
+              "rmsTemperatureChangeK": 0.0008335946113238653,
+              "heatGainChangeKm2": 0.0007444518840967751
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0009191038478206792,
+              "rmsTemperatureChangeK": 0.0005535344836225159,
+              "heatGainChangeKm2": 0.0004942102413942329
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0006111645716373459,
+              "rmsTemperatureChangeK": 0.0003674797878705128,
+              "heatGainChangeKm2": 0.00032803584896778926
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00040615920374875714,
+              "rmsTemperatureChangeK": 0.0002439385571334189,
+              "heatGainChangeKm2": 0.00021772828812299805
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0002697742027635286,
+              "rmsTemperatureChangeK": 0.00016190835997553088,
+              "heatGainChangeKm2": 0.00014449983829617485
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0001791455931083874,
+              "rmsTemperatureChangeK": 0.00010746056773523945,
+              "heatGainChangeKm2": 9.590088806704644e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00011892969342852666,
+              "rmsTemperatureChangeK": 7.131696041615771e-05,
+              "heatGainChangeKm2": 6.364287835014526e-05
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 7.894855014001223e-05,
+              "rmsTemperatureChangeK": 4.733076772331921e-05,
+              "heatGainChangeKm2": 4.223663511121467e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 5.239959284608631e-05,
+              "rmsTemperatureChangeK": 3.140995886303847e-05,
+              "heatGainChangeKm2": 2.8028887646525114e-05
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 3.47787109831188e-05,
+              "rmsTemperatureChangeK": 2.084510708185531e-05,
+              "heatGainChangeKm2": 1.860105714274196e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 2.308060987843419e-05,
+              "rmsTemperatureChangeK": 1.3833024495746907e-05,
+              "heatGainChangeKm2": 1.2343762572114558e-05
+            }
+          }
+        }
+      ]
+    },
+    "medium-fixed-dt005": {
+      "cells": 784,
+      "maxDtS": 0.05,
+      "cycles": 12,
+      "finalTimeS": 48,
+      "acceptedSteps": 1224,
+      "rejectedAttempts": 96,
+      "seconds": 87.01731416699477,
+      "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+      "minimumK": 299.999999999657,
+      "maximumK": 300.9741637111435,
+      "integratedNativeBalanceKm2": -2.1830983771037138e-08,
+      "sumAbsoluteIntegratedNativeBalanceKm2": 3.025699957761218e-07,
+      "lastCycle": {
+        "meanHeatGainKm2": 0.25494083947308405,
+        "heatGainHalfRangeKm2": 0.08508809396968786,
+        "fundamentalHeatAmplitudeKm2": 0.07099503112758053,
+        "fundamentalPhaseLagS": 0.5177184884826065,
+        "hotEndHeatGainKm2": 0.3400263702166124,
+        "coldEndHeatGainKm2": 0.1698620885853344,
+        "integratedOutwardWallFluxKm2": {
+          "bottom": 0.04252001273527251,
+          "lid": -0.04253192071026343,
+          "wall": 0.0
+        },
+        "heatGainChangeOverCycleKm2": 1.1906307975095842e-05,
+        "maxNativeBalanceKm2PerS": 1.9951699438414128e-08
+      },
+      "samePhaseCycleChanges": [
+        {
+          "cycle": 2,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.12430885974794137,
+              "rmsTemperatureChangeK": 0.07108793491815613,
+              "heatGainChangeKm2": 0.06253509352785008
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.07774754263408568,
+              "rmsTemperatureChangeK": 0.047699070084736374,
+              "heatGainChangeKm2": 0.042607554578820234
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.047997180070012746,
+              "rmsTemperatureChangeK": 0.03194450716167194,
+              "heatGainChangeKm2": 0.028710141040622972
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.030516686209182353,
+              "rmsTemperatureChangeK": 0.02138834349095594,
+              "heatGainChangeKm2": 0.019247520356723086
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.02123881537266925,
+              "rmsTemperatureChangeK": 0.014285718900565483,
+              "heatGainChangeKm2": 0.01284828548802347
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.014705633280016173,
+              "rmsTemperatureChangeK": 0.009529558078319445,
+              "heatGainChangeKm2": 0.008557133499624031
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.010051169822020256,
+              "rmsTemperatureChangeK": 0.0063450882253149035,
+              "heatGainChangeKm2": 0.005688963047873086
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.006798027522222583,
+              "rmsTemperatureChangeK": 0.0042193010631173845,
+              "heatGainChangeKm2": 0.00377793797180373
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.004568727737591871,
+              "rmsTemperatureChangeK": 0.0028026045790068474,
+              "heatGainChangeKm2": 0.002506904198313731
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0030555160477661047,
+              "rmsTemperatureChangeK": 0.001860063868441185,
+              "heatGainChangeKm2": 0.001662567156749839
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.002037489538963655,
+              "rmsTemperatureChangeK": 0.0012338333837104197,
+              "heatGainChangeKm2": 0.0011022433382887331
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0013555569521486177,
+              "rmsTemperatureChangeK": 0.0008180746007635952,
+              "heatGainChangeKm2": 0.0007305581137041217
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0009007074831401951,
+              "rmsTemperatureChangeK": 0.0005422841057140549,
+              "heatGainChangeKm2": 0.00048414756786668844
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0005978191496183172,
+              "rmsTemperatureChangeK": 0.000359382867455143,
+              "heatGainChangeKm2": 0.00032080072141099647
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00039658475793658,
+              "rmsTemperatureChangeK": 0.00023815105638750806,
+              "heatGainChangeKm2": 0.00021255844130246837
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0002629411311545482,
+              "rmsTemperatureChangeK": 0.00015779317786268564,
+              "heatGainChangeKm2": 0.00014082554769506705
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00017430351380198772,
+              "rmsTemperatureChangeK": 0.00010454891827296273,
+              "heatGainChangeKm2": 9.330150801800663e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00011550991177955439,
+              "rmsTemperatureChangeK": 6.926484341879744e-05,
+              "heatGainChangeKm2": 6.181133965316166e-05
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 7.654659577838174e-05,
+              "rmsTemperatureChangeK": 4.5889851430180965e-05,
+              "heatGainChangeKm2": 4.095062654274617e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 5.071593676575503e-05,
+              "rmsTemperatureChangeK": 3.040118059882607e-05,
+              "heatGainChangeKm2": 2.712871503821046e-05
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 3.3604057477987226e-05,
+              "rmsTemperatureChangeK": 2.0141004923045152e-05,
+              "heatGainChangeKm2": 1.7972711488178916e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 2.226235721991543e-05,
+              "rmsTemperatureChangeK": 1.3342777226348536e-05,
+              "heatGainChangeKm2": 1.1906308428094592e-05
+            }
+          }
+        }
+      ]
+    },
+    "medium-fixed-dt0025": {
+      "cells": 784,
+      "maxDtS": 0.025,
+      "cycles": 12,
+      "finalTimeS": 48,
+      "acceptedSteps": 2112,
+      "rejectedAttempts": 72,
+      "seconds": 139.90840787501656,
+      "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+      "minimumK": 299.999999999657,
+      "maximumK": 300.974338339021,
+      "integratedNativeBalanceKm2": -1.5259613389117617e-08,
+      "sumAbsoluteIntegratedNativeBalanceKm2": 4.827820641878021e-07,
+      "lastCycle": {
+        "meanHeatGainKm2": 0.254941248112013,
+        "heatGainHalfRangeKm2": 0.08525629212368813,
+        "fundamentalHeatAmplitudeKm2": 0.0712210662699369,
+        "fundamentalPhaseLagS": 0.5155053151570876,
+        "hotEndHeatGainKm2": 0.3401950681682828,
+        "coldEndHeatGainKm2": 0.16969415014565647,
+        "integratedOutwardWallFluxKm2": {
+          "bottom": 0.04252016376103762,
+          "lid": -0.04253182973547582,
+          "wall": 0.0
+        },
+        "heatGainChangeOverCycleKm2": 1.1666224963846616e-05,
+        "maxNativeBalanceKm2PerS": 2.3096085710605507e-08
+      },
+      "samePhaseCycleChanges": [
+        {
+          "cycle": 2,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.12422257429818728,
+              "rmsTemperatureChangeK": 0.07107485208746223,
+              "heatGainChangeKm2": 0.06253777464019014
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.077640257240148,
+              "rmsTemperatureChangeK": 0.047661514324517755,
+              "heatGainChangeKm2": 0.04257774860913881
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.04785043865865646,
+              "rmsTemperatureChangeK": 0.03188859051868279,
+              "heatGainChangeKm2": 0.02866173044514231
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.03041983389368852,
+              "rmsTemperatureChangeK": 0.021331225101749098,
+              "heatGainChangeKm2": 0.019196124332229447
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.021194254552881375,
+              "rmsTemperatureChangeK": 0.014233895981235612,
+              "heatGainChangeKm2": 0.012801106680751906
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.01465609573921256,
+              "rmsTemperatureChangeK": 0.009485621408396691,
+              "heatGainChangeKm2": 0.008517125199154707
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.010004774788285431,
+              "rmsTemperatureChangeK": 0.006309579639861959,
+              "heatGainChangeKm2": 0.005656728820670531
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.006758287413333619,
+              "rmsTemperatureChangeK": 0.004191468992092593,
+              "heatGainChangeKm2": 0.003752783156140471
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.004536508433545805,
+              "rmsTemperatureChangeK": 0.0027813060945127543,
+              "heatGainChangeKm2": 0.0024877227751627373
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.003030476813307814,
+              "rmsTemperatureChangeK": 0.0018440958713385066,
+              "heatGainChangeKm2": 0.001648226464737862
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0020185550942528607,
+              "rmsTemperatureChangeK": 0.0012220143587333256,
+              "heatGainChangeKm2": 0.0010916517316697516
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.001341541465365026,
+              "rmsTemperatureChangeK": 0.0008094443051187055,
+              "heatGainChangeKm2": 0.0007228347537581725
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.000890451787256552,
+              "rmsTemperatureChangeK": 0.0005360297921854234,
+              "heatGainChangeKm2": 0.0004785563402988635
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0005904162183583139,
+              "rmsTemperatureChangeK": 0.00035489244284029264,
+              "heatGainChangeKm2": 0.00031678882935218255
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00039127301124608493,
+              "rmsTemperatureChangeK": 0.00023494330943348225,
+              "heatGainChangeKm2": 0.0002096938593348363
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00025916069290587984,
+              "rmsTemperatureChangeK": 0.0001555170179750937,
+              "heatGainChangeKm2": 0.0001387936130239631
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00017162701192319219,
+              "rmsTemperatureChangeK": 0.00010293957760795583,
+              "heatGainChangeKm2": 9.186503006247682e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00011362400425696251,
+              "rmsTemperatureChangeK": 6.81326887820519e-05,
+              "heatGainChangeKm2": 6.080098912447651e-05
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 7.522325051922962e-05,
+              "rmsTemperatureChangeK": 4.509552713122107e-05,
+              "heatGainChangeKm2": 4.024174425015792e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 4.979043148978235e-05,
+              "rmsTemperatureChangeK": 2.9846129460314764e-05,
+              "heatGainChangeKm2": 2.663341668460162e-05
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 3.295839240990972e-05,
+              "rmsTemperatureChangeK": 1.9753884497640263e-05,
+              "heatGainChangeKm2": 1.7627275869347425e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 2.1813195417053066e-05,
+              "rmsTemperatureChangeK": 1.3073701734389972e-05,
+              "heatGainChangeKm2": 1.1666224499440325e-05
+            }
+          }
+        }
+      ]
+    },
+    "fine-fixed-dt0025": {
+      "cells": 3136,
+      "maxDtS": 0.025,
+      "cycles": 12,
+      "finalTimeS": 48,
+      "acceptedSteps": 2256,
+      "rejectedAttempts": 120,
+      "seconds": 659.8574049579911,
+      "binarySha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978",
+      "minimumK": 299.99999999953667,
+      "maximumK": 300.9874896329674,
+      "integratedNativeBalanceKm2": -4.914504273983731e-08,
+      "sumAbsoluteIntegratedNativeBalanceKm2": 1.0262496297845153e-06,
+      "lastCycle": {
+        "meanHeatGainKm2": 0.2550077290254628,
+        "heatGainHalfRangeKm2": 0.08546987135960649,
+        "fundamentalHeatAmplitudeKm2": 0.07120746475957643,
+        "fundamentalPhaseLagS": 0.509267605444323,
+        "hotEndHeatGainKm2": 0.34047460498808446,
+        "coldEndHeatGainKm2": 0.16954639560790494,
+        "integratedOutwardWallFluxKm2": {
+          "bottom": 0.04254263466677471,
+          "lid": -0.042554167117081085,
+          "wall": 0.0
+        },
+        "heatGainChangeOverCycleKm2": 1.1533338465596898e-05,
+        "maxNativeBalanceKm2PerS": 3.9746461857892434e-08
+      },
+      "samePhaseCycleChanges": [
+        {
+          "cycle": 2,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.12413670931960041,
+              "rmsTemperatureChangeK": 0.0710703555500423,
+              "heatGainChangeKm2": 0.06252161304035411
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.07752342830804082,
+              "rmsTemperatureChangeK": 0.047644104662219716,
+              "heatGainChangeKm2": 0.04255144491300458
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.047784818779575744,
+              "rmsTemperatureChangeK": 0.03186496658773433,
+              "heatGainChangeKm2": 0.028630115688065838
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.030372707742344573,
+              "rmsTemperatureChangeK": 0.021306998412325015,
+              "heatGainChangeKm2": 0.019165929785366825
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.02120392445942798,
+              "rmsTemperatureChangeK": 0.01421126783055971,
+              "heatGainChangeKm2": 0.012774314589927394
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.014654818799840541,
+              "rmsTemperatureChangeK": 0.009466212760724619,
+              "heatGainChangeKm2": 0.0084949938766751
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.009997780796993538,
+              "rmsTemperatureChangeK": 0.006293350250106537,
+              "heatGainChangeKm2": 0.005638874770251379
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.006750099460930414,
+              "rmsTemperatureChangeK": 0.004178602060972359,
+              "heatGainChangeKm2": 0.003738965800632793
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.004528222874000676,
+              "rmsTemperatureChangeK": 0.002771235024050244,
+              "heatGainChangeKm2": 0.002477163465755605
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0030233903442535848,
+              "rmsTemperatureChangeK": 0.0018364603072732702,
+              "heatGainChangeKm2": 0.0016403488303919078
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0020126135979126047,
+              "rmsTemperatureChangeK": 0.0012162712578934669,
+              "heatGainChangeKm2": 0.0010858195618574373
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0013369132732350408,
+              "rmsTemperatureChangeK": 0.0008052094908701985,
+              "heatGainChangeKm2": 0.0007185818999038696
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0008868500934227086,
+              "rmsTemperatureChangeK": 0.0005329231475938356,
+              "heatGainChangeKm2": 0.0004754702857703852
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.0005877343601241591,
+              "rmsTemperatureChangeK": 0.0003526457434515302,
+              "heatGainChangeKm2": 0.00031457422991384987
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.00038926263130178995,
+              "rmsTemperatureChangeK": 0.00023332332092423962,
+              "heatGainChangeKm2": 0.00020810991044101224
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00025770157105853286,
+              "rmsTemperatureChangeK": 0.0001543615562772235,
+              "heatGainChangeKm2": 0.00013767025680735956
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 0.0001705570485341923,
+              "rmsTemperatureChangeK": 0.00010211600653763058,
+              "heatGainChangeKm2": 9.106930769053889e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 0.00011285967843832623,
+              "rmsTemperatureChangeK": 6.755113756010327e-05,
+              "heatGainChangeKm2": 6.024151928080146e-05
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 7.467165153229871e-05,
+              "rmsTemperatureChangeK": 4.4684990499895206e-05,
+              "heatGainChangeKm2": 3.9848765675642994e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 4.94006794156121e-05,
+              "rmsTemperatureChangeK": 2.9558409498594404e-05,
+              "heatGainChangeKm2": 2.6358920961588872e-05
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "phases": {
+            "hot": {
+              "maxTemperatureChangeK": 3.268050949145618e-05,
+              "rmsTemperatureChangeK": 1.9552576586635684e-05,
+              "heatGainChangeKm2": 1.7436017480443322e-05
+            },
+            "cold": {
+              "maxTemperatureChangeK": 2.161851909932011e-05,
+              "rmsTemperatureChangeK": 1.2933478165352496e-05,
+              "heatGainChangeKm2": 1.1533339010466603e-05
+            }
+          }
+        }
+      ]
+    }
+  },
+  "timeComparisons": [
+    {
+      "coarser": "medium-fixed-dt01",
+      "finer": "medium-fixed-dt005",
+      "differences": {
+        "meanHeatGainKm2": {
+          "absolute": 7.136824819453658e-07,
+          "relativeToFiner": 2.799404298740118e-06
+        },
+        "heatGainHalfRangeKm2": {
+          "absolute": 0.00030355238084212033,
+          "relativeToFiner": 0.00356750711739129
+        },
+        "fundamentalHeatAmplitudeKm2": {
+          "absolute": 0.0004369217669392689,
+          "relativeToFiner": 0.0061542584037199075
+        },
+        "fundamentalPhaseLagS": {
+          "absolute": 0.0023495011641322394,
+          "relativeToFiner": 0.004538182847242811
+        },
+        "hotEndHeatGainKm2": {
+          "absolute": 0.00030438675492322487,
+          "relativeToFiner": 0.000895185731416409
+        },
+        "coldEndHeatGainKm2": {
+          "absolute": 0.0003031554616760024,
+          "relativeToFiner": 0.0017847152604844182
+        }
+      },
+      "phaseEndpointFields": {
+        "hot": {
+          "maxTemperatureDifferenceK": 0.0026245641484479165,
+          "rmsTemperatureDifferenceK": 0.0010198202962449592
+        },
+        "cold": {
+          "maxTemperatureDifferenceK": 0.0026235685315896262,
+          "rmsTemperatureDifferenceK": 0.0010195333053235713
+        }
+      }
+    },
+    {
+      "coarser": "medium-fixed-dt005",
+      "finer": "medium-fixed-dt0025",
+      "differences": {
+        "meanHeatGainKm2": {
+          "absolute": 4.0863892897258225e-07,
+          "relativeToFiner": 1.6028749054881828e-06
+        },
+        "heatGainHalfRangeKm2": {
+          "absolute": 0.00016819815400026528,
+          "relativeToFiner": 0.0019728532617422157
+        },
+        "fundamentalHeatAmplitudeKm2": {
+          "absolute": 0.00022603514235637612,
+          "relativeToFiner": 0.0031737118551367115
+        },
+        "fundamentalPhaseLagS": {
+          "absolute": 0.002213173325518847,
+          "relativeToFiner": 0.004293211457663509
+        },
+        "hotEndHeatGainKm2": {
+          "absolute": 0.00016869795167040458,
+          "relativeToFiner": 0.0004958859414944708
+        },
+        "coldEndHeatGainKm2": {
+          "absolute": 0.00016793843967791156,
+          "relativeToFiner": 0.000989653677123001
+        }
+      },
+      "phaseEndpointFields": {
+        "hot": {
+          "maxTemperatureDifferenceK": 0.0014713647847202083,
+          "rmsTemperatureDifferenceK": 0.0005749230043359228
+        },
+        "cold": {
+          "maxTemperatureDifferenceK": 0.0014708722864043011,
+          "rmsTemperatureDifferenceK": 0.0005748352279070299
+        }
+      }
+    }
+  ],
+  "spatialComparisons": [
+    {
+      "coarser": "coarse-fixed-dt0025",
+      "finer": "medium-fixed-dt0025",
+      "differences": {
+        "meanHeatGainKm2": {
+          "absolute": 0.0002447262143604467,
+          "relativeToFiner": 0.0009599318124186866
+        },
+        "heatGainHalfRangeKm2": {
+          "absolute": 0.0008607150210480086,
+          "relativeToFiner": 0.010095618746816954
+        },
+        "fundamentalHeatAmplitudeKm2": {
+          "absolute": 8.79469389868659e-05,
+          "relativeToFiner": 0.0012348444581486019
+        },
+        "fundamentalPhaseLagS": {
+          "absolute": 0.02513213899791078,
+          "relativeToFiner": 0.04875243427946495
+        },
+        "hotEndHeatGainKm2": {
+          "absolute": 0.001103930500141903,
+          "relativeToFiner": 0.003244992662844326
+        },
+        "coldEndHeatGainKm2": {
+          "absolute": 0.0006180078744029704,
+          "relativeToFiner": 0.003641892627839588
+        }
+      }
+    },
+    {
+      "coarser": "medium-fixed-dt0025",
+      "finer": "fine-fixed-dt0025",
+      "differences": {
+        "meanHeatGainKm2": {
+          "absolute": 6.648091344979568e-05,
+          "relativeToFiner": 0.0002607015626697239
+        },
+        "heatGainHalfRangeKm2": {
+          "absolute": 0.0002135792359183597,
+          "relativeToFiner": 0.0024988833201789323
+        },
+        "fundamentalHeatAmplitudeKm2": {
+          "absolute": 1.3601510360478075e-05,
+          "relativeToFiner": 0.00019101242273407662
+        },
+        "fundamentalPhaseLagS": {
+          "absolute": 0.006237709712764605,
+          "relativeToFiner": 0.012248392880443205
+        },
+        "hotEndHeatGainKm2": {
+          "absolute": 0.00027953681980164014,
+          "relativeToFiner": 0.0008210210562148183
+        },
+        "coldEndHeatGainKm2": {
+          "absolute": 0.00014775453775153768,
+          "relativeToFiner": 0.0008714696483034451
+        }
+      }
+    }
+  ],
+  "unchangedPassingRuns": [
+    {
+      "original": "coarse-dt0025",
+      "fixed": "coarse-fixed-dt0025",
+      "filesCompared": 168,
+      "allByteEqual": true
+    },
+    {
+      "original": "medium-dt01",
+      "fixed": "medium-fixed-dt01",
+      "filesCompared": 168,
+      "allByteEqual": true
+    },
+    {
+      "original": "medium-dt005",
+      "fixed": "medium-fixed-dt005",
+      "filesCompared": 168,
+      "allByteEqual": true
+    },
+    {
+      "original": "medium-dt0025",
+      "fixed": "medium-fixed-dt0025",
+      "filesCompared": 168,
+      "allByteEqual": true
+    }
+  ],
+  "failureRecovery": {
+    "input": {
+      "exitCode": 0,
+      "seconds": 55.454825458000414,
+      "inputSha256": "dde9363d21ed1d558f357a18edfaa329d5d55cb15225e921783a25416c6882c3",
+      "inputUnchanged": true
+    },
+    "terminalFiles": [
+      {
+        "suffix": ".thermal.checkpoint",
+        "byteEqual": true,
+        "sha256": "1b1c4b19eacee5c46827d1274bbd82063e413a08f33bd6a56c8ab6b587de10bf"
+      },
+      {
+        "suffix": ".carrier.checkpoint",
+        "byteEqual": true,
+        "sha256": "b09dd2efc1f665706fcd60863ee1092c249e38f8b0b9e4be8c75d658b7b68b96"
+      },
+      {
+        "suffix": ".cells.csv",
+        "byteEqual": true,
+        "sha256": "04dc242eb5c9d0fdcee23d77a84e7c66d2e5fc00f27dd76a3c18b045474ee9a5"
+      },
+      {
+        "suffix": ".faces.csv",
+        "byteEqual": true,
+        "sha256": "b7b6311f0d84a1ba4449cc26618b6e9b7b46b7857f664c80026e4e67c3c4488c"
+      }
+    ],
+    "combinedHistories": [
+      {
+        "suffix": ".heat-history.csv",
+        "rows": 94,
+        "equalExceptSegmentLocalStep": true
+      },
+      {
+        "suffix": ".thermal-history.csv",
+        "rows": 94,
+        "equalExceptSegmentLocalStep": true
+      },
+      {
+        "suffix": ".boundary-heat-history.csv",
+        "rows": 282,
+        "equalExceptSegmentLocalStep": true
+      },
+      {
+        "suffix": ".attempt-history.csv",
+        "rows": 99,
+        "equalExceptSegmentLocalStep": true
+      }
+    ]
+  },
+  "carrierRepair": {
+    "originalFailureTimeS": 0.18257317915885818,
+    "originalDiagnostic": [
+      {
+        "label": "full",
+        "converged": true,
+        "time": 0.20757317915885817,
+        "iterations": 45,
+        "maxCarrierRatio": 1.0328825411782543,
+        "worstCell": 0,
+        "imbalance": -1.0331749749080183e-12,
+        "budget": 1.0002831238965762e-12,
+        "flowContinuity": 2.8928899297424513e-10
+      },
+      {
+        "label": "first-half",
+        "converged": true,
+        "time": 0.1950731791588582,
+        "iterations": 36,
+        "maxCarrierRatio": 0.11833906608885963,
+        "worstCell": 0,
+        "imbalance": -1.183612743762996e-13,
+        "budget": 1.0001876665768453e-12,
+        "flowContinuity": 3.314115682536389e-11
+      },
+      {
+        "label": "second-half",
+        "converged": true,
+        "time": 0.2075731791588582,
+        "iterations": 35,
+        "maxCarrierRatio": 0.6913230141196458,
+        "worstCell": 0,
+        "imbalance": -6.915254519061341e-13,
+        "budget": 1.0002928266271392e-12,
+        "flowContinuity": 1.9362712653371755e-10
+      }
+    ],
+    "repairedDiagnostic": [
+      {
+        "label": "joint-refined",
+        "converged": true,
+        "time": 0.20757317915885817,
+        "iterations": 45,
+        "maxCarrierRatio": 0.0015027087863506315,
+        "worstCell": 0,
+        "imbalance": 1.5031342391043183e-15,
+        "budget": 1.0002831238877095e-12,
+        "flowContinuity": 4.2087758694920913e-13
+      },
+      {
+        "jointAccepted": true,
+        "carrierCompatible": true,
+        "scalarConverged": true
+      },
+      {
+        "label": "full",
+        "converged": true,
+        "time": 0.20757317915885817,
+        "iterations": 45,
+        "maxCarrierRatio": 1.0328825411782543,
+        "worstCell": 0,
+        "imbalance": -1.0331749749080183e-12,
+        "budget": 1.0002831238965762e-12,
+        "flowContinuity": 2.8928899297424513e-10
+      },
+      {
+        "label": "first-half",
+        "converged": true,
+        "time": 0.1950731791588582,
+        "iterations": 36,
+        "maxCarrierRatio": 0.11833906608885963,
+        "worstCell": 0,
+        "imbalance": -1.183612743762996e-13,
+        "budget": 1.0001876665768453e-12,
+        "flowContinuity": 3.314115682536389e-11
+      },
+      {
+        "label": "second-half",
+        "converged": true,
+        "time": 0.2075731791588582,
+        "iterations": 35,
+        "maxCarrierRatio": 0.6913230141196458,
+        "worstCell": 0,
+        "imbalance": -6.915254519061341e-13,
+        "budget": 1.0002928266271392e-12,
+        "flowContinuity": 1.9362712653371755e-10
+      }
+    ],
+    "pressureResidualCap": "0.5 * unchanged scalar carrierAbsoluteTolerance / sqrt(max(1,N-1)); used only after a typed continuity mismatch; original face check remains decisive",
+    "repeatFromImmutableAcceptedState": true,
+    "maximumAdditionalPressureRefinedJointTrials": 1,
+    "defaultStandaloneFlowStopUnchanged": true,
+    "temperatureClipping": false,
+    "smallRegressionCells": 144,
+    "smallRegressionFailedBeforeFix": true,
+    "smallRegressionPassedAfterFix": true
+  },
+  "desktop": {
+    "format": "cartmesh2d-periodic-cavity-app-comparison-v1",
+    "completed": true,
+    "cells": 3076,
+    "displayedTimeBefore": 1.3,
+    "recoveredTime": 1.3,
+    "finalTime": 1.4,
+    "events": 7,
+    "eventTimes": [
+      1.337
+    ],
+    "sourceCheckpointUnchanged": true,
+    "sourceManifestValidated": true,
+    "sourceZipValidated": true,
+    "sourceZipUnchangedDuringRead": true,
+    "sourceZipSha256": "9b3225e15ce7cefe03d2612373c61c8663c496d710efe50e4017e3a06ce60a98",
+    "oldDisplayUnchanged": true,
+    "fieldSha256": "664d44dd479f4d7d10e84c22d05976d9887bbb33486a5ebe4cbe718aeaefcfd1",
+    "inputSha256": "092f416f3cd64a07d087de4f8017c57ac9aa639df0772479348473c2253f3894",
+    "history": {
+      "availableSteps": 107,
+      "segments": 5,
+      "gaps": [],
+      "firstTime": 0.0001953125,
+      "lastTime": 1.4
+    },
+    "files": [
+      {
+        "suffix": ".thermal.checkpoint",
+        "bytes": 1368439,
+        "sha256": "90ddb29ed6adbfbe3aaca4b050b6be1be01253f84f0bdd630ac11be51f52e153",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".cells.csv",
+        "bytes": 408933,
+        "sha256": "4c945b9c457c7152d324524bd3c4cdd5d8359c56d277eae2d99707659fdb842c",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".faces.csv",
+        "bytes": 514079,
+        "sha256": "3ec41c26885de3eb6fb41eb99261974310ae178f251103fc8aa6ff6a2ed2a63a",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".heat-history.csv",
+        "bytes": 959,
+        "sha256": "43ac331ad749e57d1cf617d91b8e7f2fe04e3bae30b654b80495c702771ae620",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".thermal-history.csv",
+        "bytes": 902,
+        "sha256": "58a23d106103870d4b357c3d9908c15015407fda984d6c3c79c46ab0b03c265d",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".boundary-heat-history.csv",
+        "bytes": 73,
+        "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".attempt-history.csv",
+        "bytes": 566,
+        "sha256": "abffe872db91bdd81529b8668e8b4cf309a3008e941c8fba7f454e3fad7632fa",
+        "byteEqual": true
+      }
+    ],
+    "initialWorkflow": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "startupFailure": null,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "continuousHistory": {
+        "rows": 102,
+        "firstTime": 0.0001953125,
+        "lastTime": 1.3,
+        "segments": 4
+      },
+      "finalTime": 1.3,
+      "eventsChecked": true,
+      "firstEventTimes": [
+        0.137,
+        0.243,
+        0.337
+      ]
+    },
+    "request": {
+      "case": "cavity",
+      "nu": 0.01,
+      "speed": 0.2,
+      "maxIterations": 1500,
+      "tolerance": 1e-08,
+      "convection": "limited-linear",
+      "pressurePreconditioner": "ic0",
+      "outletBackflow": "reject",
+      "viscousStress": "symmetric",
+      "steadyAcceleration": "none",
+      "linearPolicy": "strict",
+      "velocityRelaxation": 0.6,
+      "pressureCorrectionPasses": 4,
+      "mode": "adaptive",
+      "resume": true,
+      "dt": 0.05,
+      "endTime": 1.3,
+      "minDt": 1e-07,
+      "maxCourant": 1,
+      "maxRetries": 24,
+      "maxSteps": 100000,
+      "diffusivity": 0.02,
+      "initial": 300,
+      "source": 0,
+      "scalarConvection": "upwind",
+      "fluxCorrection": "bounded-spatial",
+      "boundaries": {
+        "wall": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "inlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "outlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "top": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "bottom": {
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        }
+      },
+      "events": [
+        {
+          "time": 0.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0.2
+        },
+        {
+          "time": 0.137,
+          "target": "top",
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.243,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 0.337,
+          "target": "top",
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.913,
+          "target": "source",
+          "kind": "source",
+          "value": 0.1
+        },
+        {
+          "time": 1.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 1.337,
+          "target": "source",
+          "kind": "source",
+          "value": -0.1
+        }
+      ],
+      "timeError": true,
+      "temperatureScale": 1,
+      "timeRtol": 0.01
+    },
+    "meshIsSeparateDesktopCase": true,
+    "captureRecheck": {
+      "state": {
+        "busy": false,
+        "status": "温度时间推进完成",
+        "thermalTimelineVisible": true
+      },
+      "status": "温度时间推进完成",
+      "finalTimeS": 1.4,
+      "sameSevenNativeFilesAsFirstReopen": true,
+      "firstStaleCompositorFrameRetained": true
+    },
+    "cancellationAndKillReverifiedThisIncrement": false,
+    "sourceZipUnchangedAcrossProcess": true,
+    "package": {
+      "platform": "macOS arm64",
+      "signed": false,
+      "published": false,
+      "files": [
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/app.asar",
+          "bytes": 5935677,
+          "sha256": "60a58fe12ca127103e50c73a71452ce3ecbbedebe3157682f54eb396de49dc1a"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D",
+          "bytes": 50472,
+          "sha256": "b901c246042d1eb71ab0d098ca0331726b41eec8339ccc3ba8a0a46f9040577b"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_cli",
+          "bytes": 1168976,
+          "sha256": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_dxf_cli",
+          "bytes": 211536,
+          "sha256": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_euler_cli",
+          "bytes": 343176,
+          "sha256": "15694a77760952cb1f0a705b0a3f0f4f215f2702827fa55c2cc533b654bb85e8"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_flow_cli",
+          "bytes": 456592,
+          "sha256": "bd501a39113d1f47e16d361065bf54e8adf405e5d89c900ead3ae6e3333e341b"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_hybrid_cli",
+          "bytes": 1385032,
+          "sha256": "220d552cd70b76c89824271434b0d8b23466d48bd57197bf84826291a9907c5c"
+        },
+        {
+          "path": "outputs/thermal-periodic/package-carrier-fixed/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_transport_cli",
+          "bytes": 574200,
+          "sha256": "737aad12973f45eba70cbbe26c8447a046ae4eccd579b570539fba9a30d3e978"
+        }
+      ],
+      "nativeBinaryMatchesPeriodicStudy": true
+    }
+  },
+  "validation": {
+    "compiler": "/usr/bin/clang++",
+    "buildType": "Release",
+    "nativeTestsPassed": 7,
+    "nativeTests": [
+      "flow_linear",
+      "transient_flow_cli",
+      "thermal_flow",
+      "scalar_transport",
+      "scalar_workspace",
+      "thermal_control_cli",
+      "thermal_flow_cli"
+    ],
+    "frontendTestsPassed": 225,
+    "mainJsSyntaxChecked": true,
+    "wholeRepositoryRegressionRun": false,
+    "crossPlatformRun": false
+  },
+  "limitations": [
+    "Current native 2D incompressible laminar, constant-property passive temperature only; no temperature feedback into flow.",
+    "Actual adaptive time grids differ, so same-control mesh differences do not prove time-independent spatial order or physical qualification.",
+    "Last-cycle field repeat difference is reported, not compared to an invented universal periodicity tolerance.",
+    "Fundamental amplitude mesh differences are nonmonotone and smaller than the tested time-step difference on the fine pair.",
+    "The GUI cavity uses its upwind scalar convection and its saved thermal boundaries; it is an operation case separate from the limited-linear periodic study.",
+    "Future sustained unsteady-flow/temperature evidence and final delivery closeout remain; old 16212-cell bounded Pe=30 run is still separate and not counted complete.",
+    "Windows/Linux GUI, signed release and a new cancellation/kill workflow were not tested in this increment."
+  ],
+  "source": {
+    "baseCommit": "3b4e57b46675d2b84fd1dd5e08e93cdff8176e29",
+    "branch": "codex/transient-thermal-workflow",
+    "workingSourceManifest": "outputs/thermal-periodic/source-files.json",
+    "workingSourceManifestSha256": "398c2c8823560eda4292efe8c0afec18d23b122f28638a4a7b547c09aba43765",
+    "workingPatch": "outputs/thermal-periodic/source-working.patch",
+    "workingPatchSha256": "b6483083653de47454b0a562fa21e991e860918e157ac8d62119bada12aa7635"
+  },
+  "rawManifest": {
+    "path": "outputs/thermal-periodic/raw-manifest.json",
+    "sha256": "9f14bd4f196f9d1e8991f01f875596b860ffee595cc2a8fa4d21f220a6562c19",
+    "count": 3619,
+    "bytes": 444223254,
+    "readbackVerified": true
+  },
+  "figures": [
+    {
+      "path": "artifacts/current/native-thermal-periodic.png",
+      "sha256": "12f06133f7ba0d0b5bd43361493c861e7c0b4ec97cb3a7b2caa3febdd599b170",
+      "visuallyInspected": true
+    },
+    {
+      "path": "artifacts/current/native-thermal-periodic-app.png",
+      "sha256": "49dfdc290d817fd105b5c90c80263505c4b1df63322c0f177ce0ad0bba4d0987",
+      "visuallyInspected": true
+    }
+  ]
+}

@@ -133,6 +133,36 @@ ThermalFlowState2D advanceAccepted(const FvMesh2D& mesh, const FlowControls2D& f
     return state;
 }
 
+void coupledCarrierContinuityBudget() {
+    const auto mesh=cavityMesh(12);auto fc=flowControls();fc.maxIterations=1000;
+    auto before=ThermalFlowState2D{initialIncompressibleState2D(mesh,fc),std::vector<double>(mesh.cells.size(),300.)};
+    const auto original=advanceIncompressible2D(mesh,fc,before.flow,.05);
+    check(original.converged,"carrier regression starts with a converged standalone flow");
+    std::vector<double> balance(mesh.cells.size()),scale(mesh.cells.size());
+    for(std::size_t id=0;id<mesh.faces.size();++id) {
+        const auto& f=mesh.faces[id];const double q=original.flux[id];
+        balance[f.owner]+=q;scale[f.owner]+=std::abs(q);
+        if(f.neighbour){balance[*f.neighbour]-=q;scale[*f.neighbour]+=std::abs(q);}
+    }
+    double defect=0,total=0;for(std::size_t i=0;i<balance.size();++i){defect=std::max(defect,std::abs(balance[i]));total=std::max(total,scale[i]);}
+    check(defect>0 && total>0,"carrier regression resolves a nonzero pressure projection residual");
+    // A deliberately stricter downstream budget (integrated volume flux),
+    // relative to this actual small-grid residual, exercises the coupling
+    // mismatch without a large fixture or a new default physical threshold.
+    auto sc=scalarControls();sc.carrierAbsoluteTolerance=.1*defect;
+    sc.carrierRelativeTolerance=std::min(1e-8,.1*defect/total);
+    const auto snapshot=before;const auto thermal=advanceThermalFlow2D(mesh,fc,setup(mesh,0.),sc,before,.05);
+    check(thermal.accepted.has_value(),"joint step satisfies the unchanged stricter downstream carrier budget");
+    check(thermal.flow.converged && thermal.scalar.converged,"both equations converge after carrier refinement");
+    compareState(before,snapshot,"carrier refinement preserves input state");
+    ThermalTimeControls2D limits;limits.limits.maximumStep=.05;limits.limits.targetTime=.05;
+    limits.limits.minimumStep=1e-7;limits.limits.maximumRetries=24;limits.estimateError=true;
+    const auto controlled=advanceControlledThermalFlow2D(mesh,fc,setup(mesh,0.),sc,before,limits);
+    check(controlled.step.accepted.has_value(),"joint time estimator uses compatible carriers for its trials");
+    compareState(before,snapshot,"controlled carrier refinement preserves input state");
+    if(thermal.accepted)for(double t:thermal.accepted->scalar)check(std::abs(t-300.)<1e-8,"refined conservative carrier preserves uniform temperature");
+}
+
 void uniformSourceAndEvolution() {
     const auto mesh = cavityMesh();
     const auto fc = flowControls();
@@ -445,6 +475,7 @@ void controllerHistoryPreservesTerminalInterval() {
 
 int main() {
     try {
+        coupledCarrierContinuityBudget();
         controllerHistoryPreservesTerminalInterval();
         steadyTimeInvariance();
         controlledTimeAndEvents();controlledTimeAndEvents(ScalarFluxCorrection2D::Bounded);restartMatchesContinuous(ScalarFluxCorrection2D::Bounded);

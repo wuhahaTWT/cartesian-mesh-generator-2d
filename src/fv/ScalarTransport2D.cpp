@@ -183,8 +183,9 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         finite(carrier[i]); finite(carrierScale[i]);
         if (!p.sinkRate.empty() && p.sinkRate[i]>0) anchored[i]=true;
         r.maxCarrierImbalance=std::max(r.maxCarrierImbalance,std::abs(carrier[i]));
-        require(std::abs(carrier[i])<=finite(c.carrierAbsoluteTolerance+c.carrierRelativeTolerance*carrierScale[i]),
-            "Scalar transport carrier flux violates cell continuity");
+        const double carrierLimit=finite(c.carrierAbsoluteTolerance+c.carrierRelativeTolerance*carrierScale[i]);
+        if(std::abs(carrier[i])>carrierLimit)
+            throw ScalarCarrierContinuityError2D(i,carrier[i],carrierLimit);
         if (transient) r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*carrierScale[i]/mesh.cells[i].area));
         if (anchored[i]) queue.push_back(i);
     }

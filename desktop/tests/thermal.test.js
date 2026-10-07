@@ -346,6 +346,10 @@ test('thermal failure explains the native time budget and minimum step', () => {
   const old=thermalFailureMessage({acceptedTime:.5,failedStage:'joint-controller'},0);
   assert.match(old,/0\.5 s/);
   assert.doesNotMatch(old,/最小步长|重试预算/);
+  for(const reason of ['carrier','carrier-half']) {
+    const text=thermalFailureMessage({acceptedTime:.5,controller:{reason}},0);
+    assert.match(text,/载流面通量.*温度连续性/);assert.match(text,/0\.5 s/);
+  }
 });
 
 test('thermal job failure retains old state and does not invent a startup checkpoint', async t => {

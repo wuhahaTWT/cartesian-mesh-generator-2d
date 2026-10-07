@@ -47,17 +47,37 @@ ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
             throw std::invalid_argument("Thermal step crosses event; split at event time");
     }
     ThermalFlowResult2D result;
-    result.flow=advanceIncompressible2D(mesh,flowControls,previous.flow,timeStep,progress);
-    if (!result.flow.converged) return result;
-    ScalarTransportProblem2D scalar;
-    scalar.diffusivity=setup.diffusivity;
-    scalar.sourceDensity=*sources;
-    scalar.boundaryData=*boundary;
-    scalar.volumeFlux=result.flow.flux;
-    result.scalar=solveScalarTransport2D(mesh,scalar,scalarControls,previous.scalar,timeStep);
-    if (result.scalar.converged)
-        result.accepted=ThermalFlowState2D{
-            {result.flow.time,result.flow.u,result.flow.v,result.flow.p,result.flow.flux},result.scalar.values,{}};
+    auto carrierControls=flowControls;
+    for(unsigned refinement=0;refinement<2;++refinement) {
+        result.flow=advanceIncompressible2D(mesh,carrierControls,previous.flow,timeStep,progress);
+        if (!result.flow.converged) return result;
+        ScalarTransportProblem2D scalar;
+        scalar.diffusivity=setup.diffusivity;
+        scalar.sourceDensity=*sources;
+        scalar.boundaryData=*boundary;
+        scalar.volumeFlux=result.flow.flux;
+        try {
+            result.scalar=solveScalarTransport2D(mesh,scalar,scalarControls,previous.scalar,timeStep);
+            result.carrierCompatible=true;
+        } catch(const ScalarCarrierContinuityError2D& error) {
+            result.carrierCompatible=false;
+            result.scalar.maxCarrierImbalance=std::abs(error.imbalance);
+            // A pinned pressure row inherits the sum of all remaining row
+            // residuals. Cauchy-Schwarz bounds that sum by sqrt(n-1)*||r||2.
+            // Reserve half the existing absolute carrier budget for rounding;
+            // the exact original face-continuity gate still checks the result.
+            const double count=static_cast<double>(mesh.cells.size());
+            const double cap=.5*scalarControls.carrierAbsoluteTolerance/std::sqrt(std::max(1.,count-1));
+            if(refinement || !std::isfinite(cap) || !(cap>0) || !(cap<carrierControls.pressureResidualNormStop))
+                return result;
+            carrierControls.pressureResidualNormStop=cap;
+            continue; // Repeat this same BE step from the immutable accepted state.
+        }
+        if (result.scalar.converged)
+            result.accepted=ThermalFlowState2D{
+                {result.flow.time,result.flow.u,result.flow.v,result.flow.p,result.flow.flux},result.scalar.values,{}};
+        return result;
+    }
     return result;
 }
 }
@@ -108,17 +128,20 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
         auto r=advanceThermalFlow2D(mesh,trialFlow,setup,trialScalar,start,h,[&](const FlowIteration2D&){checkCancel();});
         checkCancel(); return r;
     };
+    const auto reasonFor=[](const ThermalFlowResult2D& r) {
+        return !r.flow.converged?"flow":!r.carrierCompatible?"carrier":!r.scalar.converged?"scalar":"accepted";
+    };
     for (std::size_t retry=0;;++retry) {
         auto full=run(previous,dt);
         double error=0, courant=std::max(full.flow.maxCourant,full.scalar.maxCourant);
-        std::string reason=!full.flow.converged?"flow":!full.scalar.converged?"scalar":"accepted";
+        std::string reason=reasonFor(full);
         if (full.accepted && (!std::isfinite(courant) || courant>limits.maximumCourant)) reason="courant";
         if (reason=="accepted" && c.estimateError) {
             const auto half=run(previous,.5*dt);
-            if (!half.accepted) reason=half.flow.converged?"scalar-half":"flow-half";
+            if (!half.accepted) reason=std::string(reasonFor(half))+"-half";
             else {
                 const auto second=run(*half.accepted,.5*dt);
-                if (!second.accepted) reason=second.flow.converged?"scalar-half":"flow-half";
+                if (!second.accepted) reason=std::string(reasonFor(second))+"-half";
                 else {
                     courant=std::max({courant,half.flow.maxCourant,second.flow.maxCourant});
                     const double ts=c.temperatureAbsoluteTolerance+c.relativeTolerance*c.temperatureScale;

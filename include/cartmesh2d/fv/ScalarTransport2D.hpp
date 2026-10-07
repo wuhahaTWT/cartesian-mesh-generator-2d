@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include <optional>
 #include <memory>
@@ -38,6 +40,15 @@ struct ScalarBoundary2D {
     double value = 0;
     // Required on an inflowing DiffusiveFlux boundary; never invent a backflow value.
     std::optional<double> inflowValue;
+};
+// Distinguish a recoverable carrier-accuracy mismatch from invalid scalar
+// inputs and failed linear algebra. Frozen-carrier callers still receive an error.
+struct ScalarCarrierContinuityError2D : std::runtime_error {
+    std::size_t cell;
+    double imbalance, tolerance;
+    ScalarCarrierContinuityError2D(std::size_t i,double value,double limit)
+        : std::runtime_error("Scalar transport carrier flux violates cell continuity"),
+          cell(i),imbalance(value),tolerance(limit) {}
 };
 struct ScalarTransportProblem2D {
     // d(s)/dt + div(U*s - D grad(s)) + sinkRate*s = source, fixed density.

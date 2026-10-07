@@ -824,10 +824,30 @@ void ilu0SelectionAndCacheRegression() {
     }, "invalid linear solve method is rejected");
 }
 
+void pressureResidualNormLimit() {
+    SparsePattern2D pattern(2,{{0,1}});SparseSystem2D system(pattern);
+    system.diag={2.,2.};system.add(0,1,-1.);system.add(1,0,-1.);
+    system.rhs={5e-14,-3e-14};LinearWorkspace2D workspace(2);
+    std::vector<double> original(2);
+    check(system.solvePressure(original,workspace,LinearPressureMethod2D::IC0)==0,
+          "default pressure stop retains its original absolute floor");
+    for(auto method:{LinearPressureMethod2D::Jacobi,LinearPressureMethod2D::IC0,LinearPressureMethod2D::Aggregation}) {
+        std::vector<double> x(2);const auto count=system.solvePressure(x,workspace,method,1e-11,1e-15);
+        std::vector<double> residual(2);system.apply(x,residual);
+        for(std::size_t i=0;i<2;++i)residual[i]-=system.rhs[i];
+        check(count>0 && linearNorm(residual)<=1e-15,
+              "explicit downstream norm budget overrides the pressure absolute floor");
+    }
+    for(double limit:{0.,-1.,std::numeric_limits<double>::quiet_NaN()})
+        rejects([&]{(void)system.solvePressure(original,workspace,LinearPressureMethod2D::IC0,1e-11,limit);},
+                "invalid pressure norm budget rejected");
+}
+
 } // namespace
 
 int main() {
     try {
+        pressureResidualNormLimit();
         linearNormRegression();
         tridiagonalPressureRegression();
         irregularGraphRegression();

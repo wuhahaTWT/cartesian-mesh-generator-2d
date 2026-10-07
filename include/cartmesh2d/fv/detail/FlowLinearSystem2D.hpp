@@ -335,8 +335,10 @@ struct SparseSystem2D {
     std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, bool ic0 = true) const {
         return solvePressure(x,w,ic0?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi);
     }
-    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11) const {
+    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11,
+                              double residualNormStop=std::numeric_limits<double>::infinity()) const {
         linearEnsure(std::isfinite(relativeTolerance) && relativeTolerance>0 && relativeTolerance<=1e-2,"Invalid pressure linear relative tolerance");
+        linearEnsure(residualNormStop>0 && !std::isnan(residualNormStop),"Invalid pressure residual norm limit");
         linearEnsure(method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0 ||
                      method==LinearPressureMethod2D::Aggregation || method==LinearPressureMethod2D::SystemCholesky, "Flow pressure preconditioner invalid");
         linearEnsure(method!=LinearPressureMethod2D::SystemCholesky || systemCholeskyAvailable2D(),
@@ -350,7 +352,7 @@ struct SparseSystem2D {
         auto& ax = w.ax;
         apply(x, ax);
         for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
-        const double stop = linearFinite(1e-13 + relativeTolerance * linearNorm(rhs));
+        const double stop = std::min(linearFinite(1e-13 + relativeTolerance * linearNorm(rhs)),residualNormStop);
         if (linearNorm(residual) <= stop) return 0;
         if (method == LinearPressureMethod2D::IC0) factorIC0();
         else if (method == LinearPressureMethod2D::SystemCholesky) {

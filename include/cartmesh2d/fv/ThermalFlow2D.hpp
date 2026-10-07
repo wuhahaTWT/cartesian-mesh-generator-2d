@@ -30,6 +30,9 @@ struct ThermalFlowResult2D {
     ScalarTransportResult2D scalar;
     // Present only after BOTH equations converge at the same new physical time.
     std::optional<ThermalFlowState2D> accepted;
+    // False only when a converged flow still fails the unchanged scalar carrier
+    // gate after a tighter pressure solve. The controller must reject this trial.
+    bool carrierCompatible = true;
 };
 struct ThermalTimeControls2D {
     FlowTimeStepControls2D limits;

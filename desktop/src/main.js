@@ -856,6 +856,16 @@ async function runSmoke() {
       await new Promise(resolve=>setTimeout(resolve,200));
     }
     if (shot) {
+      // The completed renderer state can precede the compositor's last busy
+      // frame. Capture the actual completed view after it has been painted.
+      report.captureState=await mainWindow.webContents.executeJavaScript(`(async()=>{
+        await document.fonts.ready;
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        if(window.__smoke.state.busy)throw new Error('Project screenshot is still busy');
+        return {busy:false,status:document.getElementById('statusTitle').textContent,
+          thermalTimelineVisible:!document.getElementById('thermalTimeline').hidden};
+      })()`);
+      await new Promise(resolve=>setTimeout(resolve,200));
       await fs.writeFile(shot,(await mainWindow.webContents.capturePage()).toPNG());
       await fs.writeFile(shot+'.json',JSON.stringify(report,null,2));
     }
@@ -1224,9 +1234,9 @@ async function runSmoke() {
     }
     if (${JSON.stringify(argument('thermal-adaptive') === 'true')}) {
       const thermalCase=${JSON.stringify(argument('thermal-case') || 'channel')};
-      if(!['channel','external'].includes(thermalCase))throw new Error('Unsupported adaptive thermal smoke case');
+      if(!['channel','external','cavity'].includes(thermalCase))throw new Error('Unsupported adaptive thermal smoke case');
       for(const [id,value] of Object.entries({flowCase:thermalCase,flowNu:${JSON.stringify(argument('flow-nu') || '.1')},flowSpeed:${JSON.stringify(argument('flow-speed') || '.2')},flowConvection:'limited-linear',
-        flowPressurePreconditioner:'ic0',flowOutletBackflow:'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
+        flowPressurePreconditioner:'ic0',flowOutletBackflow:thermalCase==='cavity'?'reject':'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
         flowMinDt:${JSON.stringify(argument('flow-min-dt') || '.000001')},flowMaxCourant:'1',
         flowMaxRetries:${JSON.stringify(argument('flow-max-retries') || '18')},flowMaxSteps:'100000',
         thermalDiffusivity:${JSON.stringify(argument('thermal-diffusivity') || '.1')},thermalInitial:'300',thermalWallValue:'301',

@@ -483,6 +483,8 @@ static FlowResult2D solveFlow(
     ensure(std::isfinite(c.manufacturedPressureSlope) &&
                (c.scenario == "manufactured" || c.manufacturedPressureSlope == 0),
            "Manufactured pressure slope is only valid for the verification case");
+    ensure(c.pressureResidualNormStop>0 && !std::isnan(c.pressureResidualNormStop),
+           "Flow pressure residual limit must be positive");
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
@@ -594,7 +596,7 @@ static FlowResult2D solveFlow(
         const auto iterations = pressure ? system.solvePressure(field, workspace,
             c.pressurePreconditioner == PressurePreconditioner2D::SystemCholesky ? detail::LinearPressureMethod2D::SystemCholesky :
             c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
-            (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi),linearRelativeTolerance)
+            (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi),linearRelativeTolerance,c.pressureResidualNormStop)
             : system.solve(field, workspace, momentumRowStop,std::numeric_limits<double>::infinity(),detail::LinearSolveMethod2D::Jacobi,linearRelativeTolerance);
         if(c.profile && pressure) {
             for(std::size_t i=0;i<n;++i)workspace.ax[i]=system.compensatedResidualRow(i,field);

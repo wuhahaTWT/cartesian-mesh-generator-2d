@@ -125,6 +125,34 @@ python3 tools/thermal/workflow.py --case cylinder --level 4 --dt .05 --end .3 --
 
 `outputs/thermal-startup/` 保存冻结实际状态的整步／两半步比较、96 格固定场面通量诊断、正式方法的长时与时间步对照、热核原生求解及 App 项目链。`run-long.py` 和 `run-time.py` 复用 Pe=30 的原命令，只显式修改方法、最大步长、二进制及输出前缀；重算须换目录。`analyze.py` 只读取已完成的原生场、通量和历史，不重建方程。`spatial-candidate-*`、`full-spatial/`、`halves-spatial/` 和 `spatial-startup/` 是隔离研究程序，它曾复用旧模式标记，不能作为正式新方法的续算文件；正式程序输出必须明确为 `bounded-spatial`。方法及实际范围见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)；展示素材为[原生对照图](../artifacts/current/native-thermal-spatial-bounds.png)和[真实项目续算](../artifacts/current/native-thermal-spatial-bounds-app.png)，来源见[关键证据](../artifacts/current/native-thermal-spatial-bounds.json)。
 
+### 周期腔体与联合载流精度
+
+原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。
+
+`outputs/thermal-periodic/` 保存原／新冻结程序、三档最终网格、事件表、每半周期的新进程命令及完整原生输出。`run-fixed.py` 每 2 s 读回上一接受状态，周期目标 48 s、完整事件规律到 64 s；重算必须换输出目录。`analyze.py` 只读实际 CSV，比较同相位场、积分原生热流、计算热增量基频与相位，并比较未修复的通过例和失败恢复；不重建 PDE。壁流积分按原生接受步的右端值乘 dt，基频按接受历史梯形积分，输入基频为每周期前半段热壁的正弦分量。离散采样和时间误差保留在报告中。
+
+以下命令从现有原生工具生成同物理控制的一次连续运行；示例目录须尚未使用，已有接受检查点的输出前缀不能复用：
+
+```sh
+mkdir -p outputs/periodic-cavity-repeat
+python3 - <<'PYINPUT'
+from pathlib import Path
+p=Path('outputs/periodic-cavity-repeat/geometry.xy')
+p.write_text('0 0\n1 0\n1 1\n0 1\n')
+PYINPUT
+build/cartmesh2d_cli outputs/periodic-cavity-repeat/geometry.xy outputs/periodic-cavity-repeat/mesh 6 0.07142857142857142 .1 interior outputs/periodic-cavity-repeat/openfoam 6 0
+python3 - <<'PYINPUT'
+from pathlib import Path
+from tools.thermal.workflow import configure
+p=Path('outputs/periodic-cavity-repeat')
+configure(p/'mesh.solver.cm2d','cavity',p,speed='.2')
+(p/'events.csv').write_text('time,target,type,value,inflowValue\n'+''.join(f'{2*k},lid,value,{300 if k%2 else 301},300\n' for k in range(1,33)))
+PYINPUT
+build/cartmesh2d_transport_cli --mesh outputs/periodic-cavity-repeat/mesh.solver.cm2d --output outputs/periodic-cavity-repeat/result --evolve-flow custom --flow-boundary outputs/periodic-cavity-repeat/flow.boundaries --boundary outputs/periodic-cavity-repeat/thermal.csv --flow-nu .01 --flow-speed .2 --flow-velocity-relaxation .6 --diffusivity .02 --initial 300 --dt .025 --end-time 48 --flow-max-iterations 1500 --flow-convection limited-linear --convection limited-linear --flux-correction bounded-spatial --min-dt 1e-7 --max-courant 1 --max-step-retries 24 --max-time-steps 100000 --time-error on --temperature-scale 1 --velocity-scale .2 --time-rtol .01 --thermal-events outputs/periodic-cavity-repeat/events.csv
+```
+
+把网格两处 level 改为 4／5 得到 196／784 格，保留其他控制；同 784 格把最大 dt 改为 .1／.05／.025 s 比较时间敏感性，分别使用新目录。真实 App 的既有验收入口现支持 `--thermal-case=cavity`；配合单位方腔几何、`--flow-nu=.01 --flow-speed=.2 --thermal-diffusivity=.02 --thermal-flux-correction=bounded-spatial --thermal-events=true --flow-min-dt=1e-7 --flow-max-retries=24`，通过实际 renderer／IPC 完成事件、失败续算、项目保存；项目重开参数沿用[项目恢复入口](#完整桌面项目)。状态与实际测试范围见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)，素材为[周期对照图](../artifacts/current/native-thermal-periodic.png)。
+
 ### 有界圆柱长期响应复现
 
 原生同控制长时对照沿用前述云端恢复归档中的 `outputs/thermal/qualified/cylinder-{coarse,fine}/` 网格、原始热/流边界和事件文件，使用保存的命令，仅更换二进制/路径及 `--flux-correction`。`outputs/bounded-long/run.py` 串行运行两种方法，`outputs/bounded-long-time/run.py` 对细档有界方法将最大 dt 连续减半；活动输出在独立临时目录，进程关闭后保留并导入工作区。输入、二进制、命令及闭合输出哈希均在 `artifacts/current/native-thermal-bounded-long.json`，不覆盖原云端场。

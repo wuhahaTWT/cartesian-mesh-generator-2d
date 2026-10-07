@@ -3,6 +3,7 @@
 #include "cartmesh2d/fv/FvMesh2D.hpp"
 
 #include <functional>
+#include <limits>
 #include <string>
 
 namespace cartmesh2d::fv {
@@ -51,6 +52,10 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
+    // Optional cap on the true pressure-correction residual norm [area/time].
+    // A downstream transport solve may require tighter face continuity than
+    // the standalone flow gates. Infinity preserves the original linear stop.
+    double pressureResidualNormStop = std::numeric_limits<double>::infinity();
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
     // Explicit opt-ins preserve existing API/checkpoint and verification cases.
