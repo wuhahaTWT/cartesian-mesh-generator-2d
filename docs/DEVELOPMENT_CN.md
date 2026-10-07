@@ -125,6 +125,20 @@ python3 tools/thermal/workflow.py --case cylinder --level 4 --dt .05 --end .3 --
 
 `outputs/thermal-startup/` 保存冻结实际状态的整步／两半步比较、96 格固定场面通量诊断、正式方法的长时与时间步对照、热核原生求解及 App 项目链。`run-long.py` 和 `run-time.py` 复用 Pe=30 的原命令，只显式修改方法、最大步长、二进制及输出前缀；重算须换目录。`analyze.py` 只读取已完成的原生场、通量和历史，不重建方程。`spatial-candidate-*`、`full-spatial/`、`halves-spatial/` 和 `spatial-startup/` 是隔离研究程序，它曾复用旧模式标记，不能作为正式新方法的续算文件；正式程序输出必须明确为 `bounded-spatial`。方法及实际范围见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)；展示素材为[原生对照图](../artifacts/current/native-thermal-spatial-bounds.png)和[真实项目续算](../artifacts/current/native-thermal-spatial-bounds-app.png)，来源见[关键证据](../artifacts/current/native-thermal-spatial-bounds.json)。
 
+### 联合温度局部涡初值
+
+`cartmesh2d_transport_cli` 的新起算可传入 `--initial-vortex-x X --initial-vortex-y Y --initial-vortex-radius R --initial-vortex-speed V`，四项同时填写。X/Y/R 单位 m，V 单位 m/s，正值逆时针；仅适用于实际物理流动联算的零时刻，不能和 `--restart` 或解析验证混用。实现直接复用 `withInitialVortex2D` 的紧支撑流函数；圆盘须严格处于可分辨的流体区域，不能穿墙或接触开口。`.initial.checkpoint` 是零时刻流动诊断，联合物理状态仍只在接受正时间步后写出。
+
+桌面沿用“初始局部涡扰动”控件；`thermalRequest`、CLI 调用、结果元数据与项目文件共同保留四项参数。联合状态导入核对使用已存载流场，同时保留原请求作为初值来源；继续计算不重复施加扰动。原生接受步 JSON 进度增加守恒受力 `forceX/forceY`（m³/s²），乘密度才成为单位深度作用力，与 `thermal-time-step` 同时刻；现有 CSV 格式不变。
+
+原生回归包括连续／分段逐字节一致、零时刻与首步失败语义、不合法初值及重复施加拒绝，可运行：
+
+```sh
+python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli --mesh-cli build/cartmesh2d_cli --output outputs/thermal-seed-check
+```
+
+App 既有腔体自动联算 smoke 加 `--thermal-initial-vortex=true`，使用中心 (.5,.5) m、半径 .2 m、峰值 .05 m/s；仍走真实 renderer／IPC／原生程序，文件选择由 smoke 参数代入。`outputs/thermal-wake/` 保存打包 App、904 格完整项目、CLI 逐字节对照和首段原生载入核对。独立 5168 格 Re=100／Pe=100 尾迹研究使用另一组初值，完整输入见 `protocol.json`；`run.py NEW_LABEL END_TIME [ACCEPTED_CHECKPOINT]` 使用冻结程序和新目录，已有输出不得覆盖。真实周期发展尚按[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)判断。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。
@@ -194,7 +208,7 @@ pulse 的步数 200/400/800 对应 dt=.001/.0005/.00025 s，模式为 unrestrict
 
 Pe=30 代表例使用上节同一 64 点夹具与 level 5/6 网格，保持入口 .2 m/s、ν=.1 m²/s、301/300 K 壁温阶跃，仅将 D 改为 .002 m²/s；最大 dt=.05 s、温升尺度 1 K、相对时间容差 .01、有界修正。`outputs/thermal-advection/protocol.json` 和各目录的 `command.json` 保存完整参数，`run.py`、`run-time.py` 编排同一原生二进制；`analyze-completed.py` 只读取闭合的真实 CSV，计算热量、已输出通量积分与同网格场差。原生数值未在 Python 重建。重算必须使用新目录，不能覆盖接受检查点前缀。
 
-16212 格原首步失败保存在 `finest-dt005/`；`run-finest-resolved.py` 显式使用最小 dt=1e-7 s、24 次重试，先真实积分至 1e-6 s，再以该接受状态续至 25 s。若完成，累计量必须拼接 `finest-start/` 与 `finest-resolved/`，之前失败的计算成本另列，不能当作零成本初始化。改变分段终点造成实际时间网格变化，不能宣称与一次直达轨迹相同。
+16212 格原首步失败保存在 `finest-dt005/`；`run-finest-resolved.py` 显式使用最小 dt=1e-7 s、24 次重试，先真实积分至 1e-6 s，再以该接受状态续至 25 s。现已完成；累计量拼接 `finest-start/` 与 `finest-resolved/`，之前失败的计算成本另列，不能当作零成本初始化。闭合后的三档分析与新增原始文件索引在 `finest-completion/`，早先两档分析及原哈希索引保留。改变分段终点造成实际时间网格变化，不能宣称与一次直达轨迹相同。
 
 `cartmesh2d_transport_cli` 在自适应步未接受时输出 `controller`：`reason`、`attempts`、`maximumRetries`、`timeStep`、`minimumTimeStep`、`errorRatio`、`courant`、`maximumCourant`；非有限误差/CFL 写 JSON null，原尝试 CSV 保留。值来自既有控制器回调，仅记录信息，不参与接受。`core/thermal.js::thermalFailureMessage` 形成原因和操作建议，`thermal-job.js` 根据实际保留的正时间状态描述续算能力；renderer 完整显示原因、折行而非省略，日志保留文件路径。旧 JSON 缺少详情时仍可报告已接受时间，不猜测原因。
 

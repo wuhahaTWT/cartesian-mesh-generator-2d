@@ -145,3 +145,20 @@ test('thermal failure status exposes controller cause and preserved state while 
     assert.equal(logs.at(-1),message,'full diagnostic path remains available in the log');
   }
 });
+
+
+test('fresh thermal startup allows the existing vortex control and joint resume omits it', () => {
+  const elements=new Proxy({}, {get:(target,key)=>target[key] ||= {value:'0',checked:false,hidden:false}});
+  elements.flowMode.value='adaptive';elements.flowCase.value='external';elements.flowInitialVortex.checked=true;
+  elements.flowVortexX.value='3';elements.flowVortexY.value='0';elements.flowVortexRadius.value='1';elements.flowVortexSpeed.value='.05';
+  elements.flowDt.value='.05';elements.flowSteps.value='2';elements.thermalTemperatureScale.value='1';elements.thermalTimeRtol.value='.01';
+  const context={$:id=>elements[id],state:{result:{},busy:false},document:{querySelectorAll:()=>[]},
+    updateThermalEventEditor(){},thermalPatches:[],thermalEventRows:()=>[]};
+  vm.createContext(context);vm.runInContext(functionSource('updateThermalMode')+'\n'+functionSource('thermalRequest'),context);
+  context.updateThermalMode();assert.equal(elements.runThermal.disabled,false);
+  assert.match(elements.thermalTimeHint.textContent,/仅在零时刻施加/);
+  assert.equal(context.thermalRequest().initialVortex.peakSpeed,.05);
+  context.state.thermalRestart={time:.5};elements.thermalResume.checked=true;
+  context.updateThermalMode();assert.equal(context.thermalRequest().initialVortex,undefined);
+  assert.doesNotMatch(elements.thermalTimeHint.textContent,/仅在零时刻施加/);
+});

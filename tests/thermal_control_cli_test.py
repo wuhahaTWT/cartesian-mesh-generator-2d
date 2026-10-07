@@ -7,12 +7,51 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'/'thermal'))
 from workflow import run,configure
 
+def vortex_initial_condition(a,root,mesh,flow,bc):
+    common=[a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
+        '--initial','300','--flow-speed','.2','--flow-nu','.1','--diffusivity','.1',
+        '--dt','.01','--flow-convection','limited-linear','--convection','limited-linear',
+        '--flux-correction','bounded-spatial']
+    seed=['--initial-vortex-x','.5','--initial-vortex-y','.5','--initial-vortex-radius','.2','--initial-vortex-speed','.05']
+    def invoke(label,steps=4,extra=(),code=0):
+        out=root/label;r=run([*common,'--output',out,'--steps',str(steps),*extra],root/(label+'.log'))
+        assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
+        return out
+    full=invoke('seed-full',extra=seed);first=invoke('seed-first',steps=2,extra=seed)
+    initial=full.with_suffix('.initial.checkpoint');joint=first.with_suffix('.thermal.checkpoint');snapshot=joint.read_bytes()
+    assert '\nTIME 0\n' in initial.read_text()
+    assert initial.read_bytes()==first.with_suffix('.initial.checkpoint').read_bytes()
+    summary=json.loads(full.with_suffix('.json').read_text())
+    assert summary['initialVortex']=={'definition':'compact-cubic-v1','centre':[.5,.5],'radius':.2,'peakSpeed':.05,'checkpointSuffix':'.initial.checkpoint'}
+    resumed=invoke('seed-resumed',steps=2,extra=['--restart',joint])
+    for suffix in ['.thermal.checkpoint','.carrier.checkpoint','.cells.csv','.faces.csv']:
+        assert full.with_suffix(suffix).read_bytes()==resumed.with_suffix(suffix).read_bytes(),suffix
+    assert not resumed.with_suffix('.initial.checkpoint').exists()
+    assert 'initialVortex' not in json.loads(resumed.with_suffix('.json').read_text())
+    zero=invoke('seed-zero')
+    assert full.with_suffix('.carrier.checkpoint').read_bytes()!=zero.with_suffix('.carrier.checkpoint').read_bytes()
+    def progress(label):
+        data=[json.loads(line) for line in (root/(label+'.log')).read_text().splitlines() if line.startswith('{')]
+        return [{k:v for k,v in r.items() if k!='step'} for r in data if r.get('type')=='thermal-time-step']
+    observed=progress('seed-full');assert len(observed)==4
+    assert observed==progress('seed-first')+progress('seed-resumed')
+    assert all(math.isfinite(r[key]) for r in observed for key in ['forceX','forceY'])
+    failed=invoke('seed-first-failed',extra=[*seed,'--flow-max-iterations','1'],code=2)
+    assert failed.with_suffix('.initial.checkpoint').exists() and not failed.with_suffix('.thermal.checkpoint').exists()
+    for label,args in [('seed-repeat',[*seed,'--restart',joint]),('seed-partial',seed[:2]),
+                       ('seed-duplicate',seed+seed[:2]),('seed-radius',seed[:5]+['-1']+seed[6:]),
+                       ('seed-outside',['--initial-vortex-x','-1',*seed[2:]]),
+                       ('seed-as-restart',['--restart',initial])]:
+        out=invoke(label,extra=args,code=1);assert not out.with_suffix('.thermal.checkpoint').exists()
+    assert joint.read_bytes()==snapshot
+
 def main(a):
     base=Path(a.output).resolve();base.mkdir(parents=True,exist_ok=True)
     root=Path(tempfile.mkdtemp(prefix='run-',dir=base))
     geom=root/'square.xy';geom.write_text('0 0\n1 0\n1 1\n0 1\n')
     assert run([a.mesh_cli,geom,root/'mesh','4',str(1/14),'.1','interior',root/'openfoam','4','0'],root/'mesh.log')['code']==0
     mesh=root/'mesh.solver.cm2d';flow,bc,event,_=configure(mesh,'cavity',root)
+    vortex_initial_condition(a,root,mesh,flow,bc)
     common=[a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
         '--thermal-events',event,'--initial','300','--flow-speed','.2','--flow-nu','.1','--diffusivity','.1',
         '--dt','.1','--end-time','6','--min-dt','.000001','--flow-convection','limited-linear','--convection','limited-linear']

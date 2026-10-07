@@ -1284,26 +1284,26 @@ function updateThermalMode() {
   updateThermalEventEditor();
   const automatic=$('flowMode').value==='adaptive';
   for(const id of ['thermalTemperatureScale','thermalTimeRtol','thermalTimeError'])$(id).disabled=Boolean(state.busy||!automatic);
-  const vortex=$('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
-  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || vortex);
+  const vortex=!resuming && $('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
+  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom');
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
   $('thermalRestartInfo').textContent = restart
     ? `联合续算状态：t=${Number(restart.time).toPrecision(6)} s。物性、源项与边界锁定；可调整时间步和迭代控制。`
     : '每个流动与温度均收敛的时间步保存联合状态；取消后可续算。';
   const start = resuming ? Number(restart.time) : 0;
   const duration = Number($('flowDt').value) * Number($('flowSteps').value);
-  $('thermalTimeHint').textContent = vortex ? '温度联合推进尚不支持初始局部涡；请先关闭该初始条件。' : $('flowMode').value==='adaptive'
+  $('thermalTimeHint').textContent = (vortex ? '从所填局部涡速度初值开始；仅在零时刻施加。' : '') + ($('flowMode').value==='adaptive'
     ? `联合自动步长：目标 ${$('flowEndTime').value} s；任一方失败回退重试。${$('thermalTimeError').checked?'用指定温升尺度控制时间误差。':'CFL 与收敛控制不保证时间精度。'}`
     : Number.isFinite(duration) && duration > 0
     ? `温度始终非定常：本次 ${start.toPrecision(5)} → ${(start + duration).toPrecision(5)} s。温度积分需乘 ρcp 才是单位深度热量。`
-    : '请在上方填写时间步长与本次步数。';
+    : '请在上方填写时间步长与本次步数。');
 }
 function applyThermalRestartControls() {
   const request = state.thermalRestart?.request;
   if (request && $('thermalResume').checked) {
     $('flowResume').checked = false;
-    // The joint checkpoint supplies the carrier state. A leftover standalone
-    // vortex would otherwise be locked on while disabling the thermal button.
+    // The joint checkpoint supplies the carrier state; never reapply a
+    // fresh initial vortex when continuing an accepted thermal trajectory.
     $('flowInitialVortex').checked = false;
     applySharedFlowControls(request);
     for (const [field, id] of Object.entries({ diffusivity:'thermalDiffusivity', initial:'thermalInitial', source:'thermalSource', scalarConvection:'thermalConvection' }))
@@ -1334,6 +1334,8 @@ function thermalRequest() {
     timeError:$('thermalTimeError').checked,temperatureScale:Number($('thermalTemperatureScale').value),timeRtol:Number($('thermalTimeRtol').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, fluxCorrection:$('thermalFluxCorrection').value, boundaries,
+    ...(!$('thermalResume').checked && !$('flowResume').checked && $('flowMode').value!=='steady' && $('flowInitialVortex').checked
+      ? {initialVortex:{centre:[Number($('flowVortexX').value),Number($('flowVortexY').value)],radius:Number($('flowVortexRadius').value),peakSpeed:Number($('flowVortexSpeed').value)}} : {}),
     events:thermalEventRows().map(event=>({...event,time:Number(event.time),value:Number(event.value),inflowValue:Number(event.inflowValue)})) };
 }
 function validThermalInputs() {

@@ -393,3 +393,40 @@ test('spatial bounded mode reaches the native CLI and keeps its v4 method identi
     assert.throws(()=>thermalCheckpointTime(record.replace(`upwind ${mode}`, 'upwind unknown')),/有界温度状态配置/);
   }
 });
+
+test('thermal initial vortex reaches native invocation and cannot disappear from the result', () => {
+  const initialVortex={centre:[.5,.5],radius:.2,peakSpeed:.05};
+  const r=request({initialVortex});
+  const invocation=buildThermalInvocation('mesh.solver.cm2d','out','bc.csv',r);
+  assert.deepEqual(invocation.args.slice(-8),['--initial-vortex-x','0.5','--initial-vortex-y','0.5','--initial-vortex-radius','0.2','--initial-vortex-speed','0.05']);
+  assert.throws(()=>validateThermalRequest({...r,resume:true}),/续算不可重复施加/);
+  const f=thermalContractFixture();f.input.initialVortex=initialVortex;
+  const validate=()=>validateThermalOutput(f.summary,f.cells,f.history,f.joint,f.mesh,f.input);
+  assert.throws(validate,/初始局部涡结果与请求不一致/);
+  f.summary.temporalDiscretization='backward-euler';
+  f.summary.initialVortex={...initialVortex,definition:'compact-cubic-v1',checkpointSuffix:'.initial.checkpoint'};
+  assert.equal(validate().request.initialVortex.peakSpeed,.05);
+  f.summary.initialVortex.peakSpeed=-.05;assert.throws(validate,/初始局部涡结果与请求不一致/);
+});
+
+
+test('saved seeded thermal state validates without reapplying its initial vortex', async t => {
+  const fs=require('node:fs/promises'),os=require('node:os'),path=require('node:path');
+  const {checkThermalRestart}=require('../src/core/thermal-job');
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'thermal-seeded-restart-'));
+  t.after(()=>fs.rm(root,{recursive:true,force:true}));
+  const original=request({initialVortex:{centre:[.5,.5],radius:.2,peakSpeed:.05}});
+  const snapshot=JSON.stringify(original),checkpoint=path.join(root,'accepted.thermal.checkpoint');
+  const currentResult={outputDirectory:root,cm2dPath:path.join(root,'mesh.solver.cm2d'),mesh:parseCm2d(RECTANGLE)};
+  let calls=0;
+  const meta=await checkThermalRestart({currentResult,checkpoint,request:original,executable:name=>name,
+    signal:new AbortController().signal,runProcess:async(_exe,args)=>{
+      ++calls;
+      assert.equal(args[args.indexOf('--restart')+1],checkpoint);
+      assert.deepEqual(args.slice(-2),['--check-restart','on']);
+      assert.ok(!args.some(arg=>arg.startsWith('--initial-vortex-')));
+      return {stdout:JSON.stringify({format:'cartmesh2d-thermal-restart-check-v1',status:'valid',cells:1,time:.2})};
+    }});
+  assert.equal(meta.time,.2);assert.equal(calls,1);
+  assert.equal(JSON.stringify(original),snapshot,'startup provenance must stay in the saved request');
+});

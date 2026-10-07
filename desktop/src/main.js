@@ -1244,6 +1244,14 @@ async function runSmoke() {
         thermalTemperatureScale:'1',thermalTimeRtol:'.01',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}}))document.getElementById(id).value=value;
       document.getElementById('thermalTopKind').value=thermalCase==='external'?'flux':'value';
       document.getElementById('thermalBottomKind').value=thermalCase==='external'?'flux':'value';
+      const thermalInitialVortex=${JSON.stringify(argument('thermal-initial-vortex') === 'true')};
+      if(thermalInitialVortex) {
+        for(const [id,value] of Object.entries({flowVortexX:thermalCase==='external'?'3':'.5',flowVortexY:thermalCase==='external'?'0':'.5',
+          flowVortexRadius:thermalCase==='external'?'1':'.2',flowVortexSpeed:'.05'}))document.getElementById(id).value=value;
+        document.getElementById('flowInitialVortex').checked=true;
+        document.getElementById('flowResume').checked=false;
+        document.getElementById('flowInitialVortex').dispatchEvent(new Event('change'));
+      }
       const heatedBoundary=thermalCase==='external'?'wall':'top';
       if(${JSON.stringify(argument('thermal-events') === 'true')})smoke.setThermalEvents([
         {time:.137,target:'source',kind:'source',value:.2},
@@ -1280,6 +1288,9 @@ async function runSmoke() {
         if(smoke.state.thermal?.summary.time!==.5 || smoke.state.thermal.summary.timeStepControl!=='joint-cfl-be-error-retry')
           throw new Error('Joint adaptive/error controller did not reach actual renderer');
         const first=smoke.state.thermal;
+        if(thermalInitialVortex && (!first.request.initialVortex || !first.summary.initialVortex ||
+           !first.files['.initial.checkpoint'] || document.getElementById('flowInitialVortex').checked))
+          throw new Error('Thermal vortex did not reach native startup or was not cleared for joint resume');
         if(${JSON.stringify(argument('thermal-events') === 'true')}) {
           if(first.summary.thermalEventCount!==6 || ![.137,.243,.337].every(t=>first.history.some(row=>row.time===t)))
             throw new Error('Thermal event controls did not reach exact native event times');
@@ -1306,7 +1317,7 @@ async function runSmoke() {
         if(smoke.state.thermal?.summary.time!==1.3)throw new Error('Resume after adaptive budget exhaustion failed');
         document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
         if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
-        smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,startupFailure,firstTime:first.summary.time,changedStepResume:true,
+        smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,startupFailure,initialVortexChecked:thermalInitialVortex,initialVortex:first.summary.initialVortex || null,firstTime:first.summary.time,changedStepResume:true,
           failedBudgetRetained:true,resumeAfterFailure:true,continuousHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0].time,lastTime:smoke.state.thermalHistory.at(-1).time,segments:smoke.state.thermalHistoryInfo.segments},finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
       }
     }

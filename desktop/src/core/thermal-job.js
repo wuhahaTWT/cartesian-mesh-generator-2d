@@ -21,7 +21,7 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
       if(JSON.stringify(normalized[key])!==JSON.stringify(selected.metadata.request[key]))
         throw new Error('联合续算必须保持工况、物性、温度源、边界和对流格式。');
   }
-  const suffixes=[...SUFFIXES,...(normalized.mode==='adaptive'?['.attempt-history.csv']:[]),...(normalized.events.length?['.events.csv']:[])];
+  const suffixes=[...SUFFIXES,...(normalized.initialVortex?['.initial.checkpoint']:[]),...(normalized.mode==='adaptive'?['.attempt-history.csv']:[]),...(normalized.events.length?['.events.csv']:[])];
   const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'thermal-run-'));
   const prefix=path.join(directory,'thermal'), boundaryPath=path.join(directory,'boundary.csv');
   const previousRestart=currentResult.thermalRestart;
@@ -85,7 +85,9 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
   }
 }
 async function checkThermalRestart({currentResult,checkpoint,request,executable,runProcess,signal}) {
-  const r=validateThermalRequest({...request,resume:true});
+  // The checkpoint already contains the carrier; original startup metadata
+  // is retained in the project but must not reapply a fresh vortex on validation.
+  const r=validateThermalRequest({...request,initialVortex:undefined,resume:true});
   const mesh=currentResult.mesh;
   const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'thermal-check-'));
   const boundary=path.join(directory,'boundary.csv'),events=r.events.length?path.join(directory,'events.csv'):null;

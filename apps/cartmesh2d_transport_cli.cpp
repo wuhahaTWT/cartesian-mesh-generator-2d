@@ -1,6 +1,7 @@
 #include "cartmesh2d/fv/ScalarTransport2D.hpp"
 #include "cartmesh2d/fv/ThermalCheckpoint2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
+#include "cartmesh2d/fv/FlowInitialization2D.hpp"
 #include <csignal>
 #include <map>
 #include <array>
@@ -190,6 +191,7 @@ int main(int argc,char**argv) {
         double startTime=0;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
         bool explicitVelocityRelaxation=false,checkRestartOnly=false;
+        fv::FlowInitialVortex2D initialVortex;unsigned vortexOptions=0;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
         fv::ScalarTransportControls2D controls;controls.stopRequested=[]{return stopSignal!=0;};
         for(int i=1;i<argc;++i) {
@@ -214,6 +216,9 @@ int main(int argc,char**argv) {
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --check-restart on: validate complete restart binding without advancing or writing outputs.\n"
+                    "  --initial-vortex-x X --initial-vortex-y Y --initial-vortex-radius R --initial-vortex-speed V:\n"
+                    "    compact interior flow vortex at t=0; all four required, no joint restart or verification.\n"
+                    "    .initial.checkpoint is diagnostic initial flow only, never an accepted joint state.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
                     "  --end-time T: joint CFL/retry controller; --dt is maximum step.\n"
                     "  --min-dt DT --max-courant C --max-step-retries N; --time-error on|off.\n"
@@ -231,6 +236,14 @@ int main(int argc,char**argv) {
             else if(arg=="--evolve-flow")evolve=value;
             else if(arg=="--restart")restart=value;
             else if(arg=="--check-restart") {require(value=="on"||value=="off","invalid restart-check switch");checkRestartOnly=value=="on";}
+            else if(arg=="--initial-vortex-x" || arg=="--initial-vortex-y" ||
+                    arg=="--initial-vortex-radius" || arg=="--initial-vortex-speed") {
+                const unsigned bit=arg=="--initial-vortex-x"?1:arg=="--initial-vortex-y"?2:arg=="--initial-vortex-radius"?4:8;
+                require(!(vortexOptions&bit),"duplicate initial vortex option");vortexOptions|=bit;
+                const double v=number(value);
+                if(bit==1)initialVortex.centre.x=v;else if(bit==2)initialVortex.centre.y=v;
+                else if(bit==4)initialVortex.radius=v;else initialVortex.peakSpeed=v;
+            }
             else if(arg=="--thermal-events")eventPath=value;
             else if(arg=="--flow-boundary")flowBoundaryPath=value;
             else if(arg=="--end-time") {timeControls.limits.targetTime=number(value);adaptive=true;}
@@ -313,6 +326,11 @@ int main(int argc,char**argv) {
         require(flowBoundaryPath.empty()||evolve=="custom","flow-boundary requires custom flow");
         require(evolve!="custom"||!flowBoundaryPath.empty(),"custom flow requires flow-boundary");
         require(restart.empty()||evolving,"joint restart requires evolving flow");
+        if(vortexOptions) {
+            require(vortexOptions==15 && evolving && dt>0 && restart.empty() && verification.empty(),
+                    "initial vortex requires all four options and a fresh physical thermal-flow case, without restart or verification");
+            fv::validateFlowInitialVortex2D(initialVortex);
+        }
         require(!checkRestartOnly||!restart.empty(),"restart check requires a joint checkpoint");
         require(verification.empty()?((!flowPath.empty()||evolving)&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
         require(!steadySine||dt==0,"sine verification is steady");
@@ -373,6 +391,7 @@ int main(int argc,char**argv) {
             fv::validateThermalSetup2D(mesh,thermalSetup);
             if(restart.empty()) {
                 state.flow=fv::initialIncompressibleState2D(mesh,flowControls);
+                if(vortexOptions)state.flow=fv::withInitialVortex2D(mesh,state.flow,initialVortex);
                 state.scalar.assign(mesh.cells.size(),initial);
                 if(verification=="thermal-vortex")for(std::size_t i=0;i<mesh.cells.size();++i)state.scalar[i]=exact(mesh.cells[i].centre);
             } else {
@@ -410,6 +429,10 @@ int main(int argc,char**argv) {
             // Initial guesses are not physical checkpoints. An imported accepted
             // state may be copied, but zero-time startup writes nothing.
             if(state.flow.time>0)saveAccepted(state);
+            if(vortexOptions) {
+                auto initialFlow=output(prefix,".initial.checkpoint");
+                fv::writeFlowCheckpoint2D(initialFlow,mesh,flowControls,state.flow);
+            } else std::filesystem::remove(prefix+".initial.checkpoint");
             if(adaptive) {
                 attemptHistory=output(prefix,".attempt-history.csv");
                 attemptHistory<<"step,startTime,dt,error,courant,velocityRelaxation,reason\n";
@@ -493,7 +516,8 @@ int main(int argc,char**argv) {
                     <<",\"momentumResidual\":"<<fh.momentumResidual<<",\"continuity\":"<<fh.continuity
                     <<",\"scalarIterations\":"<<result.history.size()<<",\"scalarResidual\":"<<result.history.back().residualNorm
                     <<",\"heatContent\":"<<heat<<",\"globalBalance\":"<<result.globalBalance
-                    <<",\"maxCourant\":"<<attempt.flow.maxCourant<<"}\n"<<std::flush;
+                    <<",\"maxCourant\":"<<attempt.flow.maxCourant
+                    <<",\"forceX\":"<<attempt.flow.forceX<<",\"forceY\":"<<attempt.flow.forceY<<"}\n"<<std::flush;
                 p.volumeFlux=state.flow.flux;carrierTime=state.flow.time;
             } else result=fv::solveScalarTransport2D(mesh,p,controls,previous,dt);
             for(const auto& h:result.history)history<<step<<','<<time<<','<<h.iteration<<','<<h.linearIterations<<','<<h.residualNorm<<','<<h.relativeResidual<<','<<h.maxCellImbalance<<','<<h.maxDiagonalScaledImbalance<<'\n';
@@ -566,6 +590,9 @@ int main(int argc,char**argv) {
             <<",\n\"limitedFaces\":"<<result.limitedFaces<<",\n\"minimumFluxCorrection\":"<<result.minimumFluxCorrection
             <<",\n\"maxBoundViolation\":"<<result.maxBoundViolation;
         if(result.lowerBound)json<<",\n\"lowerBound\":"<<*result.lowerBound<<",\n\"upperBound\":"<<*result.upperBound;
+        if(vortexOptions)json<<",\n\"temporalDiscretization\":\"backward-euler\",\n\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
+            <<initialVortex.centre.x<<','<<initialVortex.centre.y<<"],\"radius\":"<<initialVortex.radius
+            <<",\"peakSpeed\":"<<initialVortex.peakSpeed<<",\"checkpointSuffix\":\".initial.checkpoint\"}";
         if(!p.faceDiffusivity.empty())json<<",\n\"diffusivityModel\":\"face-values\",\n\"diffusivityFile\":"<<quote(diffusivityPath);
         json<<",\n\"nativeTopologyRevalidated\":true,\n\"solverQualityPassed\":true,\n\"externalCheckMesh\":\"not run\"\n}\n";
         cells.close();faces.close();vtk.close();history.close();json.close();

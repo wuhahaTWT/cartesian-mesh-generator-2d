@@ -1,5 +1,6 @@
 'use strict';
 const { validateFlowRequest } = require('./flow');
+const {validateInitialVortexOutput}=require('./initial-vortex');
 const GROUPS = ['wall','inlet','outlet','top','bottom'];
 const SUFFIXES = ['.json','.vtk','.cells.csv','.faces.csv','.history.csv','.thermal-history.csv','.thermal.checkpoint','.carrier.checkpoint','.heat-history.csv','.boundary-heat-history.csv'];
 const requireValue = (ok, message) => { if (!ok) throw new Error(`热输运：${message}`); };
@@ -107,6 +108,10 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null,events=n
     '--time-error',r.timeError?'on':'off','--temperature-scale',String(r.temperatureScale),
     '--velocity-scale',String(r.speed),'--time-rtol',String(r.timeRtol));
   else args.push('--steps',String(r.steps));
+  if(r.initialVortex) {
+    const v=r.initialVortex;args.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
+      '--initial-vortex-radius',String(v.radius),'--initial-vortex-speed',String(v.peakSpeed));
+  }
   if(r.events.length) {requireValue(typeof events==='string'&&events.length>0,'缺少完整时间事件文件。');args.push('--thermal-events',events);}
   if(r.resume)args.push('--restart',restart);
   return {executable:'cartmesh2d_transport_cli',request:r,args};
@@ -203,6 +208,7 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
     && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
   requireValue((summary.fluxCorrection ?? 'unrestricted')===r.fluxCorrection,'温度通量修正与请求不符。');
+  validateInitialVortexOutput(summary,r,startTime);
   if(r.fluxCorrection!=='unrestricted') {
     for(const key of ['lowerBound','upperBound','maxBoundViolation'])finite(summary[key],key);
     requireValue(summary.lowerBound<=summary.upperBound&&summary.maxBoundViolation>=0&&summary.maxBoundViolation<=1e-9,'有界温度场未达停止条件。');
