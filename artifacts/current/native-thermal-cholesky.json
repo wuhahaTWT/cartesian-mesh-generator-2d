@@ -1,0 +1,735 @@
+{
+  "format": "cartmesh2d-thermal-cholesky-v1",
+  "branch": "codex/transient-thermal-workflow",
+  "sourceBase": "a65ca30e1647d21bcb93a074e1d448b0839c51d2",
+  "frozenAtUtc": "2026-10-07T02:30:33.608949+00:00",
+  "scope": "Expose the existing macOS system sparse pressure preconditioner to native constant-property coupled passive temperature and desktop restart. Original matrix residual, carrier continuity, scalar and joint acceptance gates remain; IC0 stays the default.",
+  "sourceNote": "The isolated worktree includes inherited cleanup and topology research edits. Only the entrypoint, desktop, regression, existing docs and compact evidence of this increment are staged; tested source and immutable binaries are bound by hashes. No main integration.",
+  "sourceSha256": {
+    "apps/cartmesh2d_transport_cli.cpp": "f54a9509f72d3518331abf659ce385c7359fd43fd474c44991649e5a0cd45b7b",
+    "desktop/src/core/thermal.js": "33ee9881439fbea83f286e267de3554b59e60f6d67b6061fa55b4bced101f8ef",
+    "desktop/src/main.js": "651b4b9d2031ec0fea89514a9abb1c42b10c392cb9bb4090f1babd8902641ddf",
+    "desktop/src/renderer/app.js": "908f4048e5b9ecdcddfd7eeddae20920229658df082e8f00490f44d340fed795",
+    "desktop/tests/thermal-renderer.test.js": "9e52574b21c788e6cc9b9db9e287a8c48c8dfce3941a2089ae660d083cdae7ae",
+    "desktop/tests/thermal.test.js": "2462152f42da97736d3020e5e379584dfe935e9ef068f285eec43d7351d1b5b8",
+    "tests/thermal_control_cli_test.py": "f8f5b76a7e631a77567d738f374a5d04180c89481700623a581b682a0fb2a5fb",
+    "include/cartmesh2d/fv/detail/FlowCholesky2D.hpp": "fffd27c04b26a2cb2b5e0f3c52c548409a64facb51fd1abcfd8ed217cbca1001",
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "9a279e2f9def6e48d5461bfced688cda8adea289b3f07e89389057c1604523e8",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "a35dce04d96adc5bac777ecdd305990339f3c16c21bb191e4975da0e697d71e2",
+    "src/fv/Incompressible2D.cpp": "f1eea3f9b67eab2aa6350fed76a28c8cda28ad176e11b4f520c34dfd95ebe622",
+    "src/fv/ThermalFlow2D.cpp": "6757e9e84dcc2e494e9fb7aca8902d030be569fd47d6a6fd64153b19ba63780f",
+    "src/fv/ScalarTransport2D.cpp": "002a2664a95892c24932151db161ed867b0e2172cdaa1b657e67eba4d9ccaed0"
+  },
+  "binaries": {
+    "paths": {
+      "frozen": "outputs/thermal-cholesky/cartmesh2d_transport_cli",
+      "build": "build/cartmesh2d_transport_cli",
+      "desktop": "desktop/runtime/bin/cartmesh2d_transport_cli",
+      "packaged": "outputs/thermal-cholesky/package/mac-arm64/CartMesh2D.app/Contents/Resources/bin/cartmesh2d_transport_cli"
+    },
+    "sha256": {
+      "frozen": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+      "build": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+      "desktop": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+      "packaged": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701"
+    },
+    "packagedAppAsarSha256": "b27ffffcda67cc7b1a2f21cc5e3aa9fc56246ac666cb8e7a179feb04ff0dc766"
+  },
+  "verification": {
+    "compiler": "/usr/bin/clang++",
+    "platform": "macOS arm64 Release",
+    "nativeCtest": {
+      "passed": 3,
+      "tests": [
+        "cartmesh2d_flow_cholesky",
+        "cartmesh2d_flow_linear",
+        "cartmesh2d_thermal_flow"
+      ],
+      "log": "outputs/thermal-cholesky/native-tests.log"
+    },
+    "choleskyControlCli": {
+      "pressurePreconditioner": "cholesky",
+      "readOnlyNativeCheckpointValidation": true,
+      "frozenCustomCarrierExact": true,
+      "frozenCrLfSupported": true,
+      "frozenMalformedRejected": true,
+      "boundedMethodsRestartedExactly": [
+        "bounded",
+        "bounded-spatial"
+      ],
+      "passed": true,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-cholesky/full-control-cholesky/run-rk_44nrn",
+      "existingAcceptedOutputNotOverwritten": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.0070532957049636025,
+      "integratedHeatGain": 0.007053221261656695,
+      "integratedBudgetDefect": 7.444353670846638e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "replacedLiveOutputFailsClosedAndResumesIdentically": true,
+      "continuousCheckpointSha256": "fa4225bc0df243cf5982008097f81cae65d637ca74906a688efccbcd3afd4eab"
+    },
+    "defaultControlCli": {
+      "readOnlyNativeCheckpointValidation": true,
+      "frozenCustomCarrierExact": true,
+      "frozenCrLfSupported": true,
+      "frozenMalformedRejected": true,
+      "boundedMethodsRestartedExactly": [
+        "bounded",
+        "bounded-spatial"
+      ],
+      "passed": true,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-cholesky/native-regression/run-uuhl2rss",
+      "existingAcceptedOutputNotOverwritten": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.0070532956411852865,
+      "integratedHeatGain": 0.007053221260278254,
+      "integratedBudgetDefect": 7.438106338824277e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "replacedLiveOutputFailsClosedAndResumesIdentically": true,
+      "continuousCheckpointSha256": "a9e1203501610d9c0b2766f642308e681bbd8457451ba52bf935d862d4d05359"
+    },
+    "frontend": {
+      "passed": 229,
+      "total": 229,
+      "log": "outputs/thermal-cholesky/frontend-all.log"
+    },
+    "beforeFailures": {
+      "native": "unknown pressure preconditioner",
+      "frontend": "thermal request rejected the existing system backend",
+      "logs": [
+        "outputs/thermal-cholesky/native-before.log",
+        "outputs/thermal-cholesky/frontend-before.log"
+      ]
+    },
+    "defaultFixedStepOutputs": {
+      "before": "outputs/thermal-cholesky/before-regression/run-3vl_hhhh/seed-zero",
+      "after": "outputs/thermal-cholesky/native-regression/run-uuhl2rss/seed-zero",
+      "files": [
+        {
+          "suffix": ".thermal.checkpoint",
+          "byteEqual": true,
+          "bytes": 93622,
+          "sha256": "82905c2bcc13d0ebdec82e956712a785d54c6443b005330778612e980c2d3f93"
+        },
+        {
+          "suffix": ".carrier.checkpoint",
+          "byteEqual": true,
+          "bytes": 88143,
+          "sha256": "e433f598ddd58ff162688557d6de4913e43dc58a4e22f68d578ec5706da05332"
+        },
+        {
+          "suffix": ".cells.csv",
+          "byteEqual": true,
+          "bytes": 24902,
+          "sha256": "dd8c7cf0a566b61d1bb888b78c65d4eaf68f5ef7196dabc864027abed4979af9"
+        },
+        {
+          "suffix": ".faces.csv",
+          "byteEqual": true,
+          "bytes": 30161,
+          "sha256": "01546c9b9b40ecaa1d6e5e8284a74a1253036b0e27dc3a116ac2c0433055cd64"
+        },
+        {
+          "suffix": ".heat-history.csv",
+          "byteEqual": true,
+          "bytes": 667,
+          "sha256": "6f1c9c1ae60f016ea716dfc27f02967fcc0711c8dc8173b24a7be8a7111c889f"
+        },
+        {
+          "suffix": ".thermal-history.csv",
+          "byteEqual": true,
+          "bytes": 768,
+          "sha256": "e3ece50d8c3e10d33914c0fc46001f2fa722b16423bd0d0b5f39fdcf6852b526"
+        },
+        {
+          "suffix": ".boundary-heat-history.csv",
+          "byteEqual": true,
+          "bytes": 616,
+          "sha256": "0d58fc77ec1d9f09eac2a9f12ce623ea12cb672b208eb7407768047b14e50aaf"
+        }
+      ],
+      "completed": true,
+      "scope": "Fixed steps have no attempt history; defaults and equations unchanged."
+    },
+    "regressionScope": [
+      "Seeded fixed-step continuous/split native fields, carrier, checkpoint and accepted-force progress are identical.",
+      "Initial diagnostics remain zero time; first-step failures publish no joint physical checkpoint.",
+      "Full-step/two-half-step error control, exact events, bounded/bounded-spatial operator identity and input immutability.",
+      "SIGTERM cancellation, step/retry/minimum-dt exhaustion, and live history-path replacement fail closed and resume identically."
+    ]
+  },
+  "desktop": {
+    "packagedMacArm64": true,
+    "cells": 904,
+    "pressurePreconditioner": "cholesky",
+    "checks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "startupFailure": null,
+      "initialVortexChecked": true,
+      "initialVortex": {
+        "definition": "compact-cubic-v1",
+        "centre": [
+          0.5,
+          0.5
+        ],
+        "radius": 0.2,
+        "peakSpeed": 0.05,
+        "checkpointSuffix": ".initial.checkpoint"
+      },
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "continuousHistory": {
+        "rows": 102,
+        "firstTime": 0.0001953125,
+        "lastTime": 1.3,
+        "segments": 4
+      },
+      "finalTime": 1.3,
+      "eventsChecked": true,
+      "firstEventTimes": [
+        0.137,
+        0.243,
+        0.337
+      ]
+    },
+    "comparison": {
+      "format": "cartmesh2d-cholesky-thermal-app-comparison-v1",
+      "pressurePreconditioner": "cholesky",
+      "completed": true,
+      "cells": 904,
+      "displayedTimeBefore": 1.3,
+      "recoveredTime": 1.3,
+      "finalTime": 1.4,
+      "events": 7,
+      "eventTimes": [
+        1.337
+      ],
+      "sourceCheckpointUnchanged": true,
+      "sourceManifestValidated": true,
+      "sourceZipValidated": true,
+      "sourceZipUnchangedDuringRead": true,
+      "sourceZipSha256": "a1ffe73b8f80e35f17e2293d332e0c994fdbedd228aabd937c1b3dacdcc7c4aa",
+      "oldDisplayUnchanged": true,
+      "fieldSha256": "25a17658006d14bace9fd48b312eb2d7e19dd1dbcf2075ddf2e981dda99635c8",
+      "inputSha256": "29daa8dbf379da5f8bc9b9bf61ffc1ae94d61a5440e6e2d9b390fe24e21eb977",
+      "history": {
+        "availableSteps": 107,
+        "segments": 5,
+        "gaps": [],
+        "firstTime": 0.0001953125,
+        "lastTime": 1.4
+      },
+      "files": [
+        {
+          "suffix": ".thermal.checkpoint",
+          "bytes": 452721,
+          "sha256": "6af7646946f743a1129dc9bd27f8b6ea5c1a67a32e3a9a761b0c93c2effe0b6a",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 118365,
+          "sha256": "833540cb615148126b319872c941f0c241c531c97e58134c27b7b2398c51ae39",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 151995,
+          "sha256": "8044a8e1b787212596041fded6ff56a0123b6ec9100cb48339f4e753f9569ef4",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".heat-history.csv",
+          "bytes": 958,
+          "sha256": "bbb88ac506aca61f62767ae0f7a0cd7c35402fe4ec2d088452b3194693813868",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".thermal-history.csv",
+          "bytes": 905,
+          "sha256": "28fe86facb47a286aa69c6db199e70f93fffa733b9ac01f278522e57d48089ae",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".boundary-heat-history.csv",
+          "bytes": 73,
+          "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "bytes": 567,
+          "sha256": "e20cdb9f5a8fc4ab0f87e1eb6c8a9149f620df92eb054af6feecbccac3ce0a10",
+          "byteEqual": true
+        }
+      ]
+    },
+    "captureState": {
+      "busy": false,
+      "status": "温度时间推进完成",
+      "thermalTimelineVisible": true
+    },
+    "visualReadback": "Completed 1.4 s temperature field, 904 cells and native quality pass visible in actual screenshot.",
+    "screenshot": "artifacts/current/native-thermal-cholesky-app.png",
+    "fileSelection": "Smoke supplies file-dialog paths; actual renderer, IPC, native process, project serializer and reopening are exercised."
+  },
+  "sameStatePressureBackendComparison": {
+    "format": "cartmesh2d-thermal-pressure-backend-comparison-v1",
+    "intervalS": [
+      2,
+      2.2
+    ],
+    "cells": 6721,
+    "meshSha256": "99d067d1837ddb76918ca733db6db8a8da7347650b72ad371bdebbcb8cc94b38",
+    "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+    "sameInputSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e",
+    "inputUnchanged": true,
+    "commonControls": {
+      "flowTolerance": 1e-08,
+      "velocityRelaxation": 0.6,
+      "maximumDtS": 0.05,
+      "maxCourant": 1,
+      "jointBeError": true,
+      "temperatureScaleK": 1,
+      "velocityScaleMS": 1,
+      "relativeTimeTolerance": 0.01
+    },
+    "runs": [
+      {
+        "backend": "aggregation",
+        "directory": "outputs/thermal-wake-resolved/medium-aggregation-2to2p2",
+        "seconds": 55.163097459007986,
+        "accepted": 15,
+        "rejected": 0
+      },
+      {
+        "backend": "cholesky",
+        "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+        "seconds": 22.5511317079945,
+        "accepted": 15,
+        "rejected": 0
+      }
+    ],
+    "differences": {
+      "temperatureMaxK": 3.68913788406644e-11,
+      "temperatureAreaL2K": 1.4087941953121006e-13,
+      "faceVolumeFluxMaxM2S": 2.5757174171303632e-14,
+      "uMaxMS": 9.631184738623233e-14,
+      "vMaxMS": 1.8879646110359083e-13,
+      "pressureOverDensityMaxM2S2": 8.90138657227979e-13,
+      "forceM3S2": [
+        6.232792060245629e-13,
+        3.591918429357577e-14
+      ]
+    },
+    "costScope": "Sequential whole CLI processes include loading, factorization, all full/half candidate solves and output. Fine-grid startup overlapped part of this comparison; this is a short-window measurement, not isolated hardware or general performance qualification."
+  },
+  "wakeRoute": {
+    "legacyCompletedSegments": [
+      {
+        "directory": "outputs/thermal-wake/growth-50s",
+        "seconds": 2650.4187270830153,
+        "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+        "inputSha256": "9d1052dc6c6c15146af042bb8baaae86dc8b26ab05fd3f53627dc893a311f461",
+        "inputUnchanged": true,
+        "startTimeS": 5,
+        "endTimeS": 50,
+        "cells": 5168,
+        "accepted": 901,
+        "rejected": 0,
+        "temperatureRangeK": [
+          299.9999999999878,
+          300.97931137606236
+        ],
+        "finalHeatGainKm2": 16.16835318312591,
+        "finalForceM3S2": [
+          1.1452487737522121,
+          3.1405123793034825e-06
+        ],
+        "integratedBudgetDefectKm2": -1.3719516250160344e-08
+      },
+      {
+        "directory": "outputs/thermal-wake-near-seed/startup-20s",
+        "seconds": 1768.9682173750189,
+        "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+        "inputSha256": null,
+        "inputUnchanged": true,
+        "startTimeS": 0,
+        "endTimeS": 20,
+        "cells": 5168,
+        "accepted": 420,
+        "rejected": 5,
+        "temperatureRangeK": [
+          299.999999999988,
+          300.9742728648218
+        ],
+        "finalHeatGainKm2": 8.62670308520483,
+        "finalForceM3S2": [
+          1.2119043862055185,
+          -0.010411401679424727
+        ],
+        "integratedBudgetDefectKm2": -5.414006147586444e-09
+      }
+    ],
+    "legacyWeakPilot": "0 to 5 s pilot (120 accepts, 5 rejects) remains in initial-vortex evidence; subsequent segment completes 50 s cumulatively at 1021 accepts, 5 rejects.",
+    "legacyLimit": "32-sided geometry, near-wake spacing .328125 m at D=2 m; not sufficient to qualify developed shedding. Stronger seed changes startup; it is not ongoing forcing. Neither legacy case forms a third spatial level of the new domain/geometry.",
+    "resolvedMeshProtocol": {
+      "format": "cartmesh2d-resolved-thermal-wake-meshes-v1",
+      "sourceCommit": "a65ca30e1647d21bcb93a074e1d448b0839c51d2",
+      "geometry": {
+        "file": "outputs/thermal-wake-resolved/cylinder128.xy",
+        "sha256": "5b28239486e4431c3e792043f16e8c6c7dbcba5297708c571e3503f938020f27",
+        "points": 128,
+        "centre": [
+          0.07,
+          0.03
+        ],
+        "radius": 1,
+        "domainBounds": [
+          -63.93,
+          64.07,
+          -63.97,
+          64.03
+        ]
+      },
+      "purpose": "Fresh common 128-sided cylinder for two-level wall/wake refinement. The legacy 32-sided 5168-cell pilot is kept as startup/workflow evidence, not treated as a spatial-convergence level for this geometry/domain. No boundary smoothing or topology gate changes.",
+      "meshes": [
+        {
+          "label": "medium",
+          "exitCode": 0,
+          "seconds": 1.4827017079805955,
+          "requestedWallSpacingM": 0.0625,
+          "nearWakeSpacingM": 0.125,
+          "farWakeSpacingM": 0.25,
+          "cells": 6721,
+          "mesh": "outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "meshSha256": "99d067d1837ddb76918ca733db6db8a8da7347650b72ad371bdebbcb8cc94b38",
+          "flowBoundary": "outputs/thermal-wake-resolved/medium/flow.boundaries",
+          "thermalBoundary": "outputs/thermal-wake-resolved/medium/thermal.csv",
+          "constructionQuality": {
+            "quality_class": "construction_quality",
+            "metric_semantics": {
+              "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+              "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+            },
+            "valid": true,
+            "counts": {
+              "vertices": 7102,
+              "edges": 13699,
+              "cells": 6597,
+              "internal_edges": 13411,
+              "boundary_edges": 288,
+              "source_cut_cells": 124,
+              "source_full_cells": 6513,
+              "source_small_cells": 40
+            },
+            "quality": {
+              "min_cell_area": 0.0006685815493934987,
+              "min_edge_length": 0.00728366302699267,
+              "max_cell_edge_length_ratio": 8.580847269894285,
+              "max_centroid_vertex_mean_offset_normalized": 0.21491326036936678,
+              "min_cut_cell_area_fraction": 0.013410935592218086
+            },
+            "level_distribution": {
+              "4": 232,
+              "5": 52,
+              "6": 72,
+              "7": 153,
+              "8": 365,
+              "9": 1883,
+              "10": 3076,
+              "11": 804
+            },
+            "topology_audit": {
+              "duplicate_vertices": 0,
+              "duplicate_edges": 0,
+              "orphan_internal_edges": 0,
+              "non_manifold_edges": 0,
+              "unclassified_boundary_edges": 0,
+              "open_cell_loops": 0,
+              "area_mismatches": 0
+            },
+            "issue_count": 0
+          },
+          "solverQuality": {
+            "quality_class": "solver_quality",
+            "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 63.00879767999031,
+              "max_internal_skewness": 1.051580796966544,
+              "max_boundary_skewness": 3.8231392386954064,
+              "max_concavity_deg": 0,
+              "max_cell_aspect": 14.569797928809692,
+              "min_interior_angle_deg": 9.045231307669377,
+              "min_face_length": 0.00728366302699267,
+              "min_face_weight": 0.06413513321974995,
+              "min_volume_ratio": 0.026824297086730738,
+              "min_compactness": 0.2067745857717898
+            },
+            "issue_count": 0,
+            "issues": []
+          }
+        },
+        {
+          "label": "fine",
+          "exitCode": 0,
+          "seconds": 10.362605125003029,
+          "requestedWallSpacingM": 0.03125,
+          "nearWakeSpacingM": 0.0625,
+          "farWakeSpacingM": 0.125,
+          "cells": 23569,
+          "mesh": "outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "meshSha256": "e5c2130312ba5a264f835c8ca04c31077c26071d93fbe96eb1bbe1aac9380104",
+          "flowBoundary": "outputs/thermal-wake-resolved/fine/flow.boundaries",
+          "thermalBoundary": "outputs/thermal-wake-resolved/fine/thermal.csv",
+          "constructionQuality": {
+            "quality_class": "construction_quality",
+            "metric_semantics": {
+              "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+              "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+            },
+            "valid": true,
+            "counts": {
+              "vertices": 24255,
+              "edges": 47682,
+              "cells": 23427,
+              "internal_edges": 47282,
+              "boundary_edges": 400,
+              "source_cut_cells": 252,
+              "source_full_cells": 23231,
+              "source_small_cells": 56
+            },
+            "quality": {
+              "min_cell_area": 0.00010462315326959654,
+              "min_edge_length": 0.0006613926559023708,
+              "max_cell_edge_length_ratio": 49.02465166451673,
+              "max_centroid_vertex_mean_offset_normalized": 0.3653658630215007,
+              "min_cut_cell_area_fraction": 0.0005420431968152214
+            },
+            "level_distribution": {
+              "4": 232,
+              "5": 52,
+              "6": 64,
+              "7": 166,
+              "8": 199,
+              "9": 1109,
+              "10": 7093,
+              "11": 11904,
+              "12": 2664
+            },
+            "topology_audit": {
+              "duplicate_vertices": 0,
+              "duplicate_edges": 0,
+              "orphan_internal_edges": 0,
+              "non_manifold_edges": 0,
+              "unclassified_boundary_edges": 0,
+              "open_cell_loops": 0,
+              "area_mismatches": 0
+            },
+            "issue_count": 0
+          },
+          "solverQuality": {
+            "quality_class": "solver_quality",
+            "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 67.5043999413858,
+              "max_internal_skewness": 1.6576023983983579,
+              "max_boundary_skewness": 3.8756060941674466,
+              "max_concavity_deg": 2.8125000000006253,
+              "max_cell_aspect": 15.83512278654081,
+              "min_interior_angle_deg": 9.343042471707905,
+              "min_face_length": 0.0006613926559035921,
+              "min_face_weight": 0.05747679924079488,
+              "min_volume_ratio": 0.02937438820966319,
+              "min_compactness": 0.19109342268450322
+            },
+            "issue_count": 0,
+            "issues": []
+          }
+        }
+      ]
+    },
+    "mediumColdStartup": {
+      "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+      "seconds": 1064.1839589999872,
+      "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+      "inputSha256": null,
+      "inputUnchanged": true,
+      "startTimeS": 0,
+      "endTimeS": 2,
+      "cells": 6721,
+      "accepted": 210,
+      "rejected": 8,
+      "temperatureRangeK": [
+        299.9999999999878,
+        300.99372340132066
+      ],
+      "finalHeatGainKm2": 1.5836162926068422,
+      "finalForceM3S2": [
+        1.5338747119663365,
+        0.033521896738041304
+      ],
+      "integratedBudgetDefectKm2": -1.121996695416698e-07
+    },
+    "cflStartupWindowComparison": {
+      "format": "cartmesh2d-thermal-cfl-window-comparison-v1",
+      "intervalS": [
+        2.2,
+        4
+      ],
+      "commonControls": {
+        "maxDtS": 0.05,
+        "jointBeError": true,
+        "timeRtol": 0.01,
+        "temperatureScaleK": 1,
+        "velocityScaleMS": 1,
+        "pressureBackend": "cholesky",
+        "fluxCorrection": "bounded-spatial"
+      },
+      "changedControl": "Maximum Courant 1 versus 4 only. Native controller resets its suggestion when this numerical control changes.",
+      "runs": [
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl1-2p2to4",
+          "seconds": 156.61101979098748,
+          "meshSha256": "99d067d1837ddb76918ca733db6db8a8da7347650b72ad371bdebbcb8cc94b38",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "accepted": 126,
+          "rejected": 0,
+          "dtRangeS": [
+            0.012951645547653268,
+            0.014856525835072014
+          ],
+          "acceptedMaximumCourant": 0.7995567529647568,
+          "maximumBeErrorRatio": 0.006231067750342847,
+          "acceptedTemperatureRangeK": [
+            299.9999999999763,
+            300.99588563239433
+          ],
+          "finalHeatGainKm2": 2.490994416998365,
+          "finalWallFluxKm2S": -0.4398105386676055,
+          "integratedWallFluxKm2": -0.8122240848794786,
+          "finalForceM3S2": [
+            1.5201842161336256,
+            -0.005342409862630587
+          ]
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl4-2p2to4",
+          "seconds": 50.45982670801459,
+          "meshSha256": "99d067d1837ddb76918ca733db6db8a8da7347650b72ad371bdebbcb8cc94b38",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "accepted": 36,
+          "rejected": 0,
+          "dtRangeS": [
+            0.05,
+            0.05000000000000604
+          ],
+          "acceptedMaximumCourant": 2.9133133194465435,
+          "maximumBeErrorRatio": 0.07042037685479058,
+          "acceptedTemperatureRangeK": [
+            299.99999999998647,
+            300.995875420342
+          ],
+          "finalHeatGainKm2": 2.490718415487245,
+          "finalWallFluxKm2S": -0.43987914009422696,
+          "integratedWallFluxKm2": -0.8119479854121527,
+          "finalForceM3S2": [
+            1.5195432909385709,
+            -0.004822427506497266
+          ]
+        }
+      ],
+      "differences": {
+        "maxTemperatureK": 0.003191656985904956,
+        "maxVelocityMS": 0.006998979067489396,
+        "heatGainKm2": -0.0002760015111200609,
+        "wallFluxKm2S": -6.860142662146185e-05,
+        "forceM3S2": [
+          -0.0006409251950547645,
+          0.0005199823561333212
+        ]
+      },
+      "interpretation": "This startup-window sensitivity guides a separately declared long-run protocol. It is not an overall time-error guarantee, a developed-wake comparison, or a change of product defaults. All original native convergence, carrier and bounded-scalar gates remained active."
+    },
+    "continuationProtocol": "Use existing joint error gate and bounded-spatial operator, maximum dt .05 s and CFL 4 to develop wake; save 20 s, then advance to 60 s. Compare developed-window dt halving and common-geometry mesh levels before qualification.",
+    "activeAtFreeze": [
+      {
+        "directory": "outputs/thermal-wake-resolved/fine-start-2s",
+        "state": "running",
+        "lastAcceptedTimeS": 0.7983386488853491,
+        "includedInClosedEvidence": false
+      },
+      {
+        "directory": "outputs/thermal-wake-resolved/medium-growth-4to20",
+        "state": "running",
+        "lastAcceptedTimeS": 16.450000000000106,
+        "includedInClosedEvidence": false
+      },
+      {
+        "directory": "outputs/thermal-wake-resolved/medium-growth-20to60",
+        "state": "queued after previous successful segment"
+      }
+    ]
+  },
+  "limitations": [
+    "macOS system backend only; no Windows/Linux backend or App qualification in this increment. Unsupported-platform guard is exercised only on those platforms by the default regression.",
+    "System Cholesky retains its existing memory/factorization limits and raises explicit errors; no fallback, coefficient shift or weaker residual gate is introduced.",
+    "Full-process times are finite short-window measurements under background load, not universal performance ratios.",
+    "CFL startup comparison does not bound accumulated long-run phase/amplitude error. Developed wake, temporal refinement and spatial sensitivity remain unfinished.",
+    "No forced-kill App rerun, signed release or main merge in this increment; prior recovery evidence is retained.",
+    "Existing native two-dimensional incompressible laminar, one-way constant-property passive-temperature scope only."
+  ],
+  "rawEvidence": {
+    "manifest": "outputs/thermal-cholesky/raw-manifest.json",
+    "manifestSha256": "2a7a62b866130abd7731e5789843105172a04de5d3bcc60f84061002646f7460",
+    "count": 1399,
+    "bytes": 141421993,
+    "allMatched": true,
+    "activeFilesExcluded": true
+  }
+}

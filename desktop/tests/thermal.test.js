@@ -245,8 +245,14 @@ test('thermal frontend cannot silently discard standalone flow acceleration cont
   assert.throws(()=>validateThermalRequest(request({velocityRelaxation:.8})),/独立层流/);
 });
 
-test('thermal coupling explicitly refuses the standalone system pressure backend',()=>{
-  assert.throws(()=>validateThermalRequest(request({pressurePreconditioner:'cholesky'})),/独立层流|macOS/);
+test('thermal coupling forwards the selected pressure backend without changing numerical gates',()=>{
+  for(const pressurePreconditioner of ['ic0','aggregation','cholesky']) {
+    const r=request({pressurePreconditioner});
+    const q=validateThermalRequest(r);assert.equal(q.pressurePreconditioner,pressurePreconditioner);
+    assert.equal(q.tolerance,1e-8);assert.equal(q.linearPolicy,'strict');
+    const call=buildThermalInvocation('/tmp/mesh.solver.cm2d','/tmp/out','/tmp/boundary.csv',r);
+    assert.equal(call.args[call.args.indexOf('--pressure-preconditioner')+1],pressurePreconditioner);
+  }
 });
 
 test('thermal adaptive invocation carries joint CFL, error scales and budgets', () => {

@@ -3,6 +3,7 @@
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowInitialization2D.hpp"
 #include <csignal>
+#include <cstdlib>
 #include <map>
 #include <array>
 #include <set>
@@ -183,6 +184,14 @@ std::vector<double> faceDiffusivity(const std::string& path,std::size_t count) {
 }
 }
 int main(int argc,char**argv) {
+#ifdef __APPLE__
+    // Match the standalone flow CLI before any Accelerate call so a restarted
+    // coupled trajectory uses the same deterministic sparse factorization.
+    if (setenv("VECLIB_MAXIMUM_THREADS", "1", 1) != 0) {
+        std::cerr << "Cannot configure deterministic system sparse solver\n";
+        return 1;
+    }
+#endif
     std::string prefix; bool started=false; double acceptedTime=0;
     try {
         std::signal(SIGINT,stopHandler);std::signal(SIGTERM,stopHandler);
@@ -212,7 +221,7 @@ int main(int argc,char**argv) {
                     "Evolving flow: --evolve-flow external|channel|duct|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
                     "  --flow-velocity-relaxation 0.6: evolving carrier only; (0,1], larger may be unstable.\n"
-                    "  --flow-convection upwind|limited-linear|face-limited-linear --pressure-preconditioner ic0|aggregation\n"
+                    "  --flow-convection upwind|limited-linear|face-limited-linear --pressure-preconditioner ic0|aggregation|cholesky (cholesky: macOS)\n"
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --check-restart on: validate complete restart binding without advancing or writing outputs.\n"
@@ -281,8 +290,9 @@ int main(int argc,char**argv) {
                 require(value=="reject"||value=="normal-inlet","unknown outlet backflow model");
                 flowControls.outletBackflow=value=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
             } else if(arg=="--pressure-preconditioner") {
-                require(value=="ic0"||value=="aggregation","unknown pressure preconditioner");
-                flowControls.pressurePreconditioner=value=="ic0"?fv::PressurePreconditioner2D::IncompleteCholesky0:fv::PressurePreconditioner2D::Aggregation;
+                require(value=="ic0"||value=="aggregation"||value=="cholesky","unknown pressure preconditioner");
+                flowControls.pressurePreconditioner=value=="cholesky"?fv::PressurePreconditioner2D::SystemCholesky:
+                    value=="ic0"?fv::PressurePreconditioner2D::IncompleteCholesky0:fv::PressurePreconditioner2D::Aggregation;
             }
             else if(arg=="--diffusivity")diffusivity=number(value);
             else if(arg=="--face-diffusivity")diffusivityPath=value;

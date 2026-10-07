@@ -162,3 +162,13 @@ test('fresh thermal startup allows the existing vortex control and joint resume 
   context.updateThermalMode();assert.equal(context.thermalRequest().initialVortex,undefined);
   assert.doesNotMatch(elements.thermalTimeHint.textContent,/仅在零时刻施加/);
 });
+
+
+test('thermal renderer permits system Cholesky on macOS and explains unsupported hosts',()=>{
+  const elements={flowMode:{value:'adaptive'},flowLinearPolicy:{value:'strict'},flowVelocityRelaxation:{value:'.6'},flowPressureCorrections:{value:'4'},flowPressurePreconditioner:{value:'cholesky'}};
+  const messages=[];const context={$:id=>elements[id],thermalEventRows:()=>[],document:{querySelectorAll:()=>[]},window:{cartmesh:{platform:'darwin'}},status:(...args)=>messages.push(args)};
+  vm.createContext(context);vm.runInContext(functionSource('validThermalInputs'),context);
+  assert.equal(context.validThermalInputs(),true);assert.equal(messages.length,0);
+  context.window.cartmesh.platform='win32';assert.equal(context.validThermalInputs(),false);assert.match(messages.at(-1).join(' '),/macOS/);
+  elements.flowPressurePreconditioner.value='aggregation';assert.equal(context.validThermalInputs(),true);
+});

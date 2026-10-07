@@ -1345,8 +1345,8 @@ function validThermalInputs() {
   if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
     status('温度联算的迭代设置需要调整','请恢复固定线性精度、0.6速度松弛和4次压力校正。');return false;
   }
-  if($('flowPressurePreconditioner').value==='cholesky') {
-    status('温度联算的压力求解设置需要调整','系统稀疏 Cholesky 暂仅用于独立层流；请选择 IC0 或多重网格。');return false;
+  if($('flowPressurePreconditioner').value==='cholesky' && window.cartmesh.platform!=='darwin') {
+    status('当前平台不支持系统稀疏 Cholesky','此压力后端仅限 macOS；请选择 IC0 或多重网格。');return false;
   }
   for (const input of document.querySelectorAll('#flowBlock input[type=number], #thermalBlock input[type=number]')) {
     if (!input.disabled && (!input.value.trim() || !input.checkValidity())) {

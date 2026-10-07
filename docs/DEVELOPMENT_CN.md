@@ -139,6 +139,18 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 App 既有腔体自动联算 smoke 加 `--thermal-initial-vortex=true`，使用中心 (.5,.5) m、半径 .2 m、峰值 .05 m/s；仍走真实 renderer／IPC／原生程序，文件选择由 smoke 参数代入。`outputs/thermal-wake/` 保存打包 App、904 格完整项目、CLI 逐字节对照和首段原生载入核对。独立 5168 格 Re=100／Pe=100 尾迹研究使用另一组初值，完整输入见 `protocol.json`；`run.py NEW_LABEL END_TIME [ACCEPTED_CHECKPOINT]` 使用冻结程序和新目录，已有输出不得覆盖。真实周期发展尚按[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)判断。
 
+### 温度联算的系统压力后端
+
+`cartmesh2d_transport_cli --pressure-preconditioner cholesky` 在 macOS 复用 `detail/FlowCholesky2D.hpp` 的系统稀疏分解作为 PCG 预条件器；仍由原 CSR 矩阵的真实残差判定接受。程序在首次 Accelerate 调用前设置 `VECLIB_MAXIMUM_THREADS=1`，保持同控制跨进程轨迹可复现。默认 IC0、聚合多重网格及原物理身份保持；后端是数值选项，续算可更换，但不同后端只比较实际误差，不要求不同后端的字节相同。平台不可用或分解失败明确报错，没有隐藏降级。
+
+```sh
+python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli --mesh-cli build/cartmesh2d_cli --output outputs/thermal-cholesky-check --pressure cholesky
+```
+
+该入口在 macOS 对所选后端运行完整原生交易、事件、取消和有界续算回归；默认调用另包含 Cholesky 的固定步局部涡恢复例。非 macOS 默认回归验证不可用后端被拒绝。真实 App 的自动温度 smoke 可加 `--flow-pressure-preconditioner=cholesky`；本次完整包、904 格项目和同控制 CLI 对照保留在 `outputs/thermal-cholesky/`。
+
+`outputs/thermal-wake-resolved/mesh-protocol.json` 绑定新 128 边形／两级局部加密、原生质量报告和输入哈希；`prepare.py` 记录生成方式，不能用旧 32 边形算例补作第三网格。`run.py` 保留原程序基线，`run-cholesky.py MESH NEW_LABEL END_TIME --restart ACCEPTED_CHECKPOINT --max-courant CFL` 使用冻结的新程序；`MESH` 为 `medium` 或 `fine`，不传 restart 才施加协议中的零时刻初值。后端比较从同一 2 s 状态出发，CFL 比较从同一 2.2 s 状态出发；原始命令在各目录的 `command.json`。`compare-cfl.py` 只读取原生输出作敏感性汇总，不重建方程。重跑须换目录，保留原输入及检查点。实际长算与精度边界见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。

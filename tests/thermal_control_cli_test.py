@@ -7,11 +7,11 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'/'thermal'))
 from workflow import run,configure
 
-def vortex_initial_condition(a,root,mesh,flow,bc):
+def vortex_initial_condition(a,root,mesh,flow,bc,pressure="ic0"):
     common=[a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
         '--initial','300','--flow-speed','.2','--flow-nu','.1','--diffusivity','.1',
         '--dt','.01','--flow-convection','limited-linear','--convection','limited-linear',
-        '--flux-correction','bounded-spatial']
+        '--flux-correction','bounded-spatial','--pressure-preconditioner',pressure]
     seed=['--initial-vortex-x','.5','--initial-vortex-y','.5','--initial-vortex-radius','.2','--initial-vortex-speed','.05']
     def invoke(label,steps=4,extra=(),code=0):
         out=root/label;r=run([*common,'--output',out,'--steps',str(steps),*extra],root/(label+'.log'))
@@ -51,10 +51,22 @@ def main(a):
     geom=root/'square.xy';geom.write_text('0 0\n1 0\n1 1\n0 1\n')
     assert run([a.mesh_cli,geom,root/'mesh','4',str(1/14),'.1','interior',root/'openfoam','4','0'],root/'mesh.log')['code']==0
     mesh=root/'mesh.solver.cm2d';flow,bc,event,_=configure(mesh,'cavity',root)
-    vortex_initial_condition(a,root,mesh,flow,bc)
+    vortex_initial_condition(a,root,mesh,flow,bc,pressure=a.pressure)
+    if sys.platform=='darwin' and a.pressure!='cholesky':
+        cholesky=root/'system-cholesky';cholesky.mkdir()
+        vortex_initial_condition(a,cholesky,mesh,flow,bc,pressure='cholesky')
+    elif sys.platform!='darwin':
+        unsupported=root/'system-cholesky-unsupported'
+        result=run([a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
+            '--output',unsupported,'--initial','300','--diffusivity','.1','--flow-nu','.1','--flow-speed','.2',
+            '--dt','.01','--steps','1','--pressure-preconditioner','cholesky'],root/'system-cholesky-unsupported.log')
+        assert result['code']==1
+        assert 'available only on macOS' in (root/'system-cholesky-unsupported.log').read_text()
+        assert not unsupported.with_suffix('.thermal.checkpoint').exists()
     common=[a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
         '--thermal-events',event,'--initial','300','--flow-speed','.2','--flow-nu','.1','--diffusivity','.1',
-        '--dt','.1','--end-time','6','--min-dt','.000001','--flow-convection','limited-linear','--convection','limited-linear']
+        '--dt','.1','--end-time','6','--min-dt','.000001','--flow-convection','limited-linear','--convection','limited-linear',
+        '--pressure-preconditioner',a.pressure]
     def invoke(label,extra=(),code=0):
         out=root/label;r=run([*common,'--output',out,*extra],root/(label+'.log'))
         assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
@@ -193,11 +205,11 @@ def main(a):
             assert not rejected.with_suffix('.thermal.checkpoint').exists()
         assert partial.with_suffix('.thermal.checkpoint').read_bytes()==saved
         bounded_methods.append(mode)
-    report={'readOnlyNativeCheckpointValidation':True,'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'boundedMethodsRestartedExactly':bounded_methods,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+    report={'pressurePreconditioner':a.pressure,'readOnlyNativeCheckpointValidation':True,'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'boundedMethodsRestartedExactly':bounded_methods,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
             'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
             'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
             'changedStepTime':meta['acceptedTime'],'replacedLiveOutputFailsClosedAndResumesIdentically':replaced_path_checked,
             'continuousCheckpointSha256':hashlib.sha256(continuous.with_suffix('.thermal.checkpoint').read_bytes()).hexdigest()}
     (root/'evidence.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--cli',required=True);p.add_argument('--mesh-cli',required=True);p.add_argument('--output',required=True);main(p.parse_args())
+    p=argparse.ArgumentParser();p.add_argument('--cli',required=True);p.add_argument('--mesh-cli',required=True);p.add_argument('--output',required=True);p.add_argument('--pressure',choices=['ic0','aggregation','cholesky'],default='ic0');main(p.parse_args())

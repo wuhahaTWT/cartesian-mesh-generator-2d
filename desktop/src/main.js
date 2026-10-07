@@ -1236,7 +1236,7 @@ async function runSmoke() {
       const thermalCase=${JSON.stringify(argument('thermal-case') || 'channel')};
       if(!['channel','external','cavity'].includes(thermalCase))throw new Error('Unsupported adaptive thermal smoke case');
       for(const [id,value] of Object.entries({flowCase:thermalCase,flowNu:${JSON.stringify(argument('flow-nu') || '.1')},flowSpeed:${JSON.stringify(argument('flow-speed') || '.2')},flowConvection:'limited-linear',
-        flowPressurePreconditioner:'ic0',flowOutletBackflow:thermalCase==='cavity'?'reject':'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
+        flowPressurePreconditioner:${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')},flowOutletBackflow:thermalCase==='cavity'?'reject':'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
         flowMinDt:${JSON.stringify(argument('flow-min-dt') || '.000001')},flowMaxCourant:'1',
         flowMaxRetries:${JSON.stringify(argument('flow-max-retries') || '18')},flowMaxSteps:'100000',
         thermalDiffusivity:${JSON.stringify(argument('thermal-diffusivity') || '.1')},thermalInitial:'300',thermalWallValue:'301',
