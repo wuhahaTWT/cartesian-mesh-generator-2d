@@ -65,12 +65,15 @@ struct CellData {
     P1System base;Lift lift;
     CellData(const FvMesh2D& mesh,std::size_t t,int order):base(P1Local(mesh,t,diameter(mesh,t),order)),lift(mesh,t,base.a,order){}
 };
+struct BoundaryLoadData {std::array<double,4> prescribed{};Mat transpose{0,0};};
 struct Problem {
     FvMesh2D mesh;const CompatibleFlowControls2D& control;
     std::vector<CellData> cells;std::vector<bool> open,mixed;std::vector<Vector2D> normals;std::vector<std::size_t> boundary,map;
     Vec known,areas;std::size_t count=0;bool outlet=false;double nu;
-    Problem(const FvMesh2D& original,const CompatibleFlowControls2D& c):mesh(original),control(c),open(mesh.faces.size()),mixed(mesh.faces.size()),normals(mesh.faces.size()),boundary(mesh.faces.size(),absent),map(4*mesh.faces.size()+mesh.cells.size(),absent),known(map.size()),nu(c.viscosity/c.referenceVelocity/c.referenceLength) {
+    std::vector<BoundaryLoadData> loadData;Vector2D volumeForce{};
+    Problem(const FvMesh2D& original,const CompatibleFlowControls2D& c,bool prepareLoads=false):mesh(original),control(c),open(mesh.faces.size()),mixed(mesh.faces.size()),normals(mesh.faces.size()),boundary(mesh.faces.size(),absent),map(4*mesh.faces.size()+mesh.cells.size(),absent),known(map.size()),nu(c.viscosity/c.referenceVelocity/c.referenceLength) {
         require(std::isfinite(nu)&&nu>0,"Compatible dimensionless viscosity out of range");
+        if(prepareLoads)loadData.resize(c.boundaries.size());
         const double L=c.referenceLength,U=c.referenceVelocity;
         for(auto& x:mesh.cells){x.centre.x/=L;x.centre.y/=L;x.area/=L*L;areas.push_back(x.area);}
         for(auto& f:mesh.faces){f.centre.x/=L;f.centre.y/=L;f.areaVector.x/=L;f.areaVector.y/=L;f.correction.x/=L;f.correction.y/=L;}
@@ -89,15 +92,23 @@ struct Problem {
         for(std::size_t t=0;t<mesh.cells.size();++t){poll(c);cells.emplace_back(mesh,t,c.quadratureOrder);auto& e=cells.back().base;const auto& a=e.a;const auto m=a.m;
             for(std::size_t i=0;i<2*m;++i)for(std::size_t j=0;j<2*m;++j)e.matrix(i,j)*=nu;
             e.rhs=liftedBodyForce(a,cells.back().lift,c.quadratureOrder,[&](Point2D p){const auto force=value(c.acceleration,{p.x*L,p.y*L});return Vector2D{force.x/U/U*L,force.y/U/U*L};});
+            if(prepareLoads){
+                Vector2D total{e.rhs[0],e.rhs[m]};
+                for(std::size_t l=0;l<mesh.cells[t].faces.size();++l){total.x+=e.rhs[3+2*l];total.y+=e.rhs[m+3+2*l];}
+                volumeForce.x+=total.x;volumeForce.y+=total.y;
+            }
             for(std::size_t l=0;l<mesh.cells[t].faces.size();++l){const auto id=mesh.cells[t].faces[l];if(!open[id])continue;const auto& f=mesh.faces[id];const auto& b=c.boundaries[boundary[id]];const auto S=f.areaVector;const double length=std::hypot(S.x,S.y);
+                if(prepareLoads&&b.kind==CompatibleBoundaryKind2D::PseudoTraction)loadData[boundary[id]].transpose=Mat(4,2*m);
                 for(auto [z,w]:gauss(c.quadratureOrder)){const double s=z-.5;const Point2D p{f.centre.x-s*S.y,f.centre.y+s*S.x};Vector2D traction{};
                     if(mixed[id]){const auto n=normals[id];const double shear=scalarValue(b.tangentialTraction,{p.x*L,p.y*L});traction={-n.y*shear,n.x*shear};}
                     else traction=value(b.value,{p.x*L,p.y*L});
                     const auto phi=a.basis.phi(p);
                     for(std::size_t k=0;k<2;++k){const double test=w*(k?s:1);const auto rx=3+2*l+k,ry=m+rx;
                         e.rhs[rx]+=test*length*traction.x/U/U;e.rhs[ry]+=test*length*traction.y/U/U;
+                        if(prepareLoads){auto& load=loadData[boundary[id]].prescribed;load[k]+=test*length*traction.x/U/U;load[2+k]+=test*length*traction.y/U/U;}
                         if(b.kind==CompatibleBoundaryKind2D::PseudoTraction)for(std::size_t j=0;j<m;++j){double gx=0,gy=0;for(std::size_t q=0;q<3;++q){gx+=phi[q]*a.gx(q,j);gy+=phi[q]*a.gy(q,j);}
-                            e.matrix(rx,j)-=test*nu*gx*S.x;e.matrix(rx,m+j)-=test*nu*gx*S.y;e.matrix(ry,j)-=test*nu*gy*S.x;e.matrix(ry,m+j)-=test*nu*gy*S.y;}
+                            e.matrix(rx,j)-=test*nu*gx*S.x;e.matrix(rx,m+j)-=test*nu*gx*S.y;e.matrix(ry,j)-=test*nu*gy*S.x;e.matrix(ry,m+j)-=test*nu*gy*S.y;
+                            if(prepareLoads){auto& correction=loadData[boundary[id]].transpose;correction(k,j)+=test*nu*gx*S.x;correction(k,m+j)+=test*nu*gx*S.y;correction(2+k,j)+=test*nu*gy*S.x;correction(2+k,m+j)+=test*nu*gy*S.y;}}
                     }
                 }
             }
@@ -172,6 +183,55 @@ struct Problem {
             for(double s:{-.5,.5}){const double normal=((state[offset]+s*state[offset+1])*face.areaVector.x+(state[offset+2]+s*state[offset+3])*face.areaVector.y)/length;
                 if(normal < -1e-12)return "Backflow at ordinary compatible pressure outlet face "+std::to_string(b.face)+"; trial not accepted";}}
         return std::nullopt;
+    }
+    CompatibleFlowLoads2D loads(const Vec& state,Point2D origin)const {
+        CompatibleFlowLoads2D out;out.momentOrigin=origin;out.absolutePressureReference=outlet;
+        const double U=control.referenceVelocity,L=control.referenceLength,forceScale=U*U*L;
+        require(std::isfinite(forceScale)&&forceScale>0,"Compatible load scale out of range");
+        const auto scale=[&](Vector2D v){return Vector2D{linearFinite(v.x*forceScale),linearFinite(v.y*forceScale)};};
+        out.bodyForce=scale(volumeForce);
+        for(std::size_t t=0;t<cells.size();++t){poll(control);
+            // Context and volume forcing cover every cell; only physical
+            // boundary owners need an additional transport/traction assembly.
+            if(std::none_of(mesh.cells[t].faces.begin(),mesh.cells[t].faces.end(),[&](auto f){return !mesh.faces[f].neighbour;}))continue;
+            const auto e=equations(t,state);const auto v=local(t,state);const auto m=e.a.m;
+            for(std::size_t l=0;l<mesh.cells[t].faces.size();++l){const auto id=mesh.cells[t].faces[l];const auto& face=mesh.faces[id];if(face.neighbour)continue;
+                CompatibleBoundaryLoad2D load;load.face=id;const auto& data=loadData[boundary[id]];
+                for(std::size_t k=0;k<2;++k)for(std::size_t c=0;c<2;++c){const auto row=c*m+3+2*l+k;double value=-e.rhs[row];
+                    for(std::size_t j=0;j<v.size();++j)value+=e.matrix(row,j)*v[j];
+                    value+=data.prescribed[2*c+k];
+                    for(std::size_t j=0;j<data.transpose.nc;++j)value+=data.transpose(2*c+k,j)*v[j];
+                    (c?load.tractionMoments[k].y:load.tractionMoments[k].x)=linearFinite(value);
+                }
+                // The conservative transport form omits physical advective
+                // boundary flux only on prescribed full-velocity faces. Put
+                // that flux back before reporting a physical traction.
+                const auto S=face.areaVector;
+                for(auto [z,w]:gauss(control.quadratureOrder)){const double s=z-.5;const Vector2D u{v[3+2*l]+s*v[4+2*l],v[m+3+2*l]+s*v[m+4+2*l]};
+                    const double volume=dot(u,S),flux=control.equation==CompatibleEquation2D::NavierStokes?volume:0;
+                    load.volumeFlux+=w*volume;load.momentumFlux.x+=w*flux*u.x;load.momentumFlux.y+=w*flux*u.y;
+                    const auto phi=e.a.basis.phi({face.centre.x-s*S.y,face.centre.y+s*S.x});double p=0;
+                    for(std::size_t j=0;j<3;++j)p+=phi[j]*v[2*m+j];
+                    for(std::size_t k=0;k<2;++k){const double test=w*(k?s:1);
+                        load.pressureMoments[k].x-=test*p*S.x;load.pressureMoments[k].y-=test*p*S.y;
+                        if(!open[id]){load.tractionMoments[k].x+=test*flux*u.x;load.tractionMoments[k].y+=test*flux*u.y;}
+                    }
+                }
+                for(auto& moment:load.tractionMoments)moment=scale(moment);
+                for(auto& moment:load.pressureMoments)moment=scale(moment);
+                load.momentumFlux=scale(load.momentumFlux);load.volumeFlux=linearFinite(load.volumeFlux*U*L);
+                const Vector2D arm{face.centre.x*L-origin.x,face.centre.y*L-origin.y},tangent{-S.y*L,S.x*L};
+                const auto mean=load.tractionMoments[0],first=load.tractionMoments[1];
+                load.torqueOnFluid=linearFinite(arm.x*mean.y-arm.y*mean.x+tangent.x*first.y-tangent.y*first.x);
+                out.boundaryTraction.x+=mean.x;out.boundaryTraction.y+=mean.y;out.boundaryTorqueOnFluid+=load.torqueOnFluid;
+                out.boundaryMomentumFlux.x+=load.momentumFlux.x;out.boundaryMomentumFlux.y+=load.momentumFlux.y;out.boundaryVolumeFlux+=load.volumeFlux;
+                out.boundaries.push_back(load);
+            }
+        }
+        std::sort(out.boundaries.begin(),out.boundaries.end(),[](const auto& a,const auto& b){return a.face<b.face;});
+        for(double x:{out.boundaryTraction.x,out.boundaryTraction.y,out.boundaryMomentumFlux.x,out.boundaryMomentumFlux.y,out.boundaryVolumeFlux,out.boundaryTorqueOnFluid})linearFinite(x);
+        out.momentumImbalance={linearFinite(out.boundaryTraction.x+out.bodyForce.x-out.boundaryMomentumFlux.x),linearFinite(out.boundaryTraction.y+out.bodyForce.y-out.boundaryMomentumFlux.y)};
+        return out;
     }
     CompatibleFlowMetrics2D metrics(const Vec& state)const {
         CompatibleFlowMetrics2D out;Vec residual(state.size());
@@ -289,6 +349,16 @@ CompatibleFlowResult2D run(const FvMesh2D& mesh,const CompatibleFlowControls2D& 
     catch(const std::exception& e){result.stop=CompatibleFlowStop2D::NumericalFailure;result.reason=e.what();}
     return result;
 }
+}
+CompatibleFlowLoads2D evaluateCompatibleFlowLoads2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const CompatibleFlowCheckpoint2D& checkpoint,Point2D origin) {
+    validate(mesh,c,std::nullopt);require(std::isfinite(origin.x)&&std::isfinite(origin.y),"Nonfinite compatible load moment origin");
+    try {
+        poll(c);Problem problem(mesh,c,true);const auto& saved=detail::CompatibleCheckpointAccess2D::get(checkpoint);
+        if(!saved.context||*saved.context!=*problem.checkpointContext(mesh)||saved.normalizedState.size()!=9*mesh.cells.size()+4*mesh.faces.size())
+            throw IncompatibleCheckpoint("Compatible load checkpoint mesh, scales, equation, boundary or native load differs");
+        auto result=problem.loads(saved.normalizedState,origin);poll(c);result.acceptedIterations=saved.acceptedIterations;return result;
+    }catch(const UserException& e){std::rethrow_exception(e.exception);}
+    catch(const Cancelled&){throw std::runtime_error("Compatible load evaluation cancelled; no report published");}
 }
 CompatibleFlowResult2D solveCompatibleIncompressible2D(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::optional<CompatibleFlowState2D>& initial) {
     return run(mesh,c,initial,nullptr);

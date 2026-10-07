@@ -96,6 +96,35 @@ struct CompatibleFlowControls2D {
     // It may publish a checkpoint atomically; exceptions propagate.
     std::function<void(const CompatibleFlowCheckpoint2D&)> checkpointAccepted;
 };
+// Integrals against 1 and face coordinate s in [-1/2,1/2], in the same
+// orientation as the face state. Positive traction acts ON THE FLUID with
+// its outward normal. Force on the adjacent body is its negative.
+struct CompatibleBoundaryLoad2D {
+    std::size_t face=0;
+    std::array<Vector2D,2> tractionMoments{},pressureMoments{}; // m^3/s^2
+    // tractionMoments - pressureMoments includes viscosity, stabilization,
+    // transport reconstruction and lifted-load effects; not pure wall shear.
+    Vector2D momentumFlux{}; // m^3/s^2; zero for Stokes
+    double volumeFlux=0; // m^2/s
+    double torqueOnFluid=0; // m^4/s^2 about momentOrigin
+};
+struct CompatibleFlowLoads2D {
+    std::size_t acceptedIterations=0;
+    Point2D momentOrigin{};
+    bool absolutePressureReference=false;
+    std::vector<CompatibleBoundaryLoad2D> boundaries;
+    Vector2D bodyForce{},boundaryTraction{},boundaryMomentumFlux{},momentumImbalance{};
+    double boundaryVolumeFlux=0,boundaryTorqueOnFluid=0;
+};
+// Re-evaluate the ORIGINAL steady equations of a context-matching accepted
+// checkpoint, including incomplete accepted iterates. Never accepts a seed or
+// rejected trial and does not grant convergence/accuracy qualification. Uses
+// kinematic loads per unit depth: multiply forces by density for N/m and
+// torques by density for N. Closed-domain pressure uses the saved gauge.
+// Cancellation throws; no partial report is returned. User exceptions propagate.
+[[nodiscard]] CompatibleFlowLoads2D evaluateCompatibleFlowLoads2D(
+    const FvMesh2D&,const CompatibleFlowControls2D&,const CompatibleFlowCheckpoint2D&,
+    Point2D momentOrigin={});
 enum class CompatibleFlowStop2D { Converged, Cancelled, NonlinearBudget, LinearBudget, BacktrackingBudget, NumericalFailure, BoundaryFailure };
 struct CompatibleFlowResult2D {
     CompatibleFlowStop2D stop=CompatibleFlowStop2D::NonlinearBudget;

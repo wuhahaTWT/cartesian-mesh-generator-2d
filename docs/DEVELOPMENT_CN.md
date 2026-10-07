@@ -729,6 +729,21 @@ CLI在每个原生接受步写 `.checkpoint.tmp`，显式关闭后同目录重�
 
 本批四项CTest、带单位缩放的7步与2＋5步实际轨迹、64格曲壁外流15步与3＋12步完整场/检查点，以及真实CLI信号恢复见 `native-laminar-compatible-checkpoint.json`。其中 `1e-18` 仅是一次追加迭代的刻意不可达、无量纲动量/散度/场变化负对照，用来证实不会沿用旧收敛标记；不新增物理精度标准。次正规数读写在正常量级主流加极小正交边界分量上验证；全场只有次正规量级的旧试探在原Krylov中失败，保留原记录，没有以修改数值阈值解决它。这不是极端幅值PDE资格。桌面、载荷、物理时间、曲壁局部精度、中档稳定性与其他平台仍需按目标推进。
 
+### 相容接受检查点的守恒载荷
+
+`evaluateCompatibleFlowLoads2D(mesh, controls, checkpoint, momentOrigin)` 核对与续算相同的原生离散上下文，再以原始稳态方程求载荷，不推进流场。输入是不可变接受检查点，预算尚未完成的检查点也可评估；返回值的接受步数只是来源，不能解释为收敛或精度证书。错网格/物性/边界/实际载荷拒绝，取消不返回部分报告。闭域不自动去均值，`absolutePressureReference=false` 明确保留原规范。
+
+每个原始边界面返回牵引和直接压力的两个积分矩 `∫t ds、∫s t ds`，其中面点为 `centre+s*(-Sy,Sx)`、`s∈[-1/2,1/2]`。P1牵引系数是 `moment0/length、12*moment1/length`，力矩必须同时包含质心臂与第一矩的贡献。正牵引作用于流体；物体力取负。体力、边界动量通量、净体积通量与整体动量余量分列；Stokes不加入惯性通量。总牵引减压力还包括稳定项、输运重构和相容载荷贡献，不直接作为纯壁剪。力与力矩分别以 `m³/s²、m⁴/s²` 给出，乘密度转成单位厚度的 `N/m、N`。
+
+显式相容CLI自动将结果写入 `.loads.json.tmp`，关闭后同目录重命名为 `.loads.json`，摘要给出 `boundaryLoadsAvailable`。文件同时保存接受步数、是否数值收敛和明确未作空间资格的标记。无接受场/种子/拒绝场不生成载荷；取消不开始新的载荷评估，评估中取消保留检查点且不能宣称导出完成。末端原生准备和评估成本记入现有导出计时，不能从完整成本中扣除。桌面原载荷面板尚未接入这种P1格式。
+
+```sh
+cmake --build build --target cartmesh2d_flow_cli cartmesh2d_compatible_flow_loads_tests -j 2
+ctest --test-dir build -R '^cartmesh2d_compatible_flow_loads$' --output-on-failure
+```
+
+解析、真实Cut-cell、旧检查点及CLI来源/取消验证见 `native-laminar-compatible-loads.json`。这些控制保证接口与守恒算法接通，不能替代曲壁空间/几何/外域细化或一般默认稳定性。
+
 ### 相容方程的解析 Newton 与残差回溯
 
 `native-laminar-newton.cpp` 包含现有开放边界入口，通过模板微分同一保守 RT1 体积、径向内面、原始共享面及出口对流。令 `F(u)=K_Picard(u)u-f`，增加 `D_beta C(u)[δu]u`，求解 `J(u_k)u_candidate=f+D_beta C(u_k)[u_k]u_k`，等价于 `Jδu=-F`。压力约束、弱边界及静态凝聚自由度保持；内部8×8消元使用真实J重新计算。上风积分仍按当前P1通量的真实零点分段，零点处沿原符号分支取导数；没有宣称全局光滑。

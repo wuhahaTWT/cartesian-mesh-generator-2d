@@ -156,11 +156,13 @@ void help() {
         "Pressure outlet uses pseudo-traction -p*n and rejects backflow; it does not separately impose p and all normal velocity derivatives.\n"
         "--restart FILE: restore a matching accepted steady checkpoint and next pseudo-step; iteration budget is additional.\n"
         "No variable material, physical time, pressure opening, smooth moving wall or App integration yet.\n"
-        "Outputs retain full P1 cell/face states. Seed and rejected trials are never accepted flow fields.\n"
+        "Outputs retain full P1 cell/face states and conservative boundary loads from accepted checkpoints.\n"
+        "Loads act on the fluid; force on an adjacent body has opposite sign. Multiply kinematic force by density for N/m.\n"
+        "Seed and rejected trials are never accepted flow fields.\n"
         "Numerical convergence is not a spatial/physical accuracy certificate. SIGINT/SIGTERM cancel cooperatively.\n";
 }
 void ensureFresh(const std::string& prefix) {
-    for (const auto* suffix : {".checkpoint", ".checkpoint.tmp", ".json", ".summary.json", ".summary.json.tmp", ".cells.csv", ".faces.csv", ".fields.json", ".residuals.csv", ".vtk", ".boundaries", ".seed.json", ".accepted.json", ".rejected.json"})
+    for (const auto* suffix : {".checkpoint", ".checkpoint.tmp", ".loads.json", ".loads.json.tmp", ".json", ".summary.json", ".summary.json.tmp", ".cells.csv", ".faces.csv", ".fields.json", ".residuals.csv", ".vtk", ".boundaries", ".seed.json", ".accepted.json", ".rejected.json"})
         if (std::filesystem::exists(prefix + suffix) || std::filesystem::is_symlink(prefix + suffix))
             throw std::invalid_argument("Output already exists: " + prefix + suffix);
     const auto parent = std::filesystem::path(prefix).parent_path();
@@ -214,6 +216,29 @@ void history(const Options& opt, const CompatibleFlowResult2D& result) {
         out << '\n';
     }
     out.close();
+}
+bool boundaryLoads(const Options& opt,const FvMesh2D& mesh,const CompatibleFlowResult2D& result) {
+    if(!result.checkpoint||result.stop==CompatibleFlowStop2D::Cancelled)return true;
+    CompatibleFlowLoads2D report;
+    try {report=evaluateCompatibleFlowLoads2D(mesh,opt.controls,*result.checkpoint);}
+    catch(const std::exception&){if(cancelled)return false;throw;}
+    auto out=output(opt.prefix+".loads.json.tmp");
+    const auto vector=[&](Vector2D v){out<<'['<<v.x<<','<<v.y<<']';};
+    const auto moments=[&](const std::array<Vector2D,2>& m){out<<'[';vector(m[0]);out<<',';vector(m[1]);out<<']';};
+    out<<"{\"format\":\"cartmesh2d-compatible-loads-v1\",\"sourceState\":\"last-accepted\",\"acceptedIterations\":"<<report.acceptedIterations
+        <<",\"numericallyConverged\":"<<(result.converged()?"true":"false")<<",\"physicalAccuracyQualified\":false,\"absolutePressureReference\":"<<(report.absolutePressureReference?"true":"false")
+        <<",\"tractionConvention\":\"on fluid with outward fluid normal; adjacent body load has opposite sign\",\"momentBasis\":\"integrals against 1 and s, s in [-1/2,1/2], point=face.centre+s*(-Sy,Sx)\""
+        <<",\"units\":{\"forceAndTractionMoments\":\"m^3/s^2\",\"torque\":\"m^4/s^2\",\"volumeFlux\":\"m^2/s\",\"densityConversion\":\"multiply force by density for N/m, torque by density for N\"}"
+        <<",\"nonPressureMeaning\":\"traction minus pressure includes viscosity, stabilization, transport reconstruction and lifted-load effects; not pure wall shear\""
+        <<",\"momentOrigin\":["<<report.momentOrigin.x<<','<<report.momentOrigin.y<<"],\"bodyForce\":";vector(report.bodyForce);
+    out<<",\"boundaryTraction\":";vector(report.boundaryTraction);out<<",\"boundaryMomentumFlux\":";vector(report.boundaryMomentumFlux);
+    out<<",\"momentumImbalance\":";vector(report.momentumImbalance);
+    out<<",\"boundaryVolumeFlux\":"<<report.boundaryVolumeFlux<<",\"boundaryTorqueOnFluid\":"<<report.boundaryTorqueOnFluid<<",\"boundaries\":[";
+    bool first=true;for(const auto& b:report.boundaries){if(!first)out<<',';first=false;
+        out<<"{\"face\":"<<b.face<<",\"embeddedBoundary\":"<<(mesh.faces[b.face].patch==BoundaryPatch2D::EmbeddedBoundary?"true":"false")<<",\"tractionMoments\":";moments(b.tractionMoments);
+        out<<",\"pressureMoments\":";moments(b.pressureMoments);out<<",\"momentumFlux\":";vector(b.momentumFlux);
+        out<<",\"volumeFlux\":"<<b.volumeFlux<<",\"torqueOnFluid\":"<<b.torqueOnFluid<<'}';}
+    out<<"]}\n";out.close();std::filesystem::rename(opt.prefix+".loads.json.tmp",opt.prefix+".loads.json");return true;
 }
 void fields(const Options& opt, const TopologyMesh2D& topology, const FvMesh2D& mesh, const CompatibleFlowResult2D& result) {
     if (!result.lastAccepted) return;
@@ -270,6 +295,7 @@ void summary(const Options& opt, const FvMesh2D& mesh, const CompatibleFlowResul
         << ",\"mesh\":"; jsonString(out,opt.mesh);
     out << ",\"case\":"; jsonString(out,opt.scenario);
     out << ",\"cells\":" << mesh.cells.size() << ",\"faces\":" << mesh.faces.size()
+        << ",\"boundaryLoadsAvailable\":" << (std::filesystem::is_regular_file(opt.prefix+".loads.json") ? "true" : "false")
         << ",\"lastAcceptedAvailable\":" << (result && result->lastAccepted ? "true" : "false") << ",\"lastRejectedAvailable\":" << (result && result->lastRejected ? "true" : "false")
         << ",\"sourceState\":" << (result && result->lastAccepted ? "\"last-accepted\"" : "null")
         << ",\"attemptedIterations\":" << (result ? result->iterations.size() : 0)
@@ -342,8 +368,10 @@ int run(int argc, char** argv) {
         auto boundary = output(opt.prefix + ".boundaries");
         writeFlowBoundaryConditions2D(boundary,mesh,boundaries); boundary.close();
         fields(opt,read.topology,mesh,result);
+        const bool loadsComplete=boundaryLoads(opt,mesh,result);
+        if(!loadsComplete){result.stop=CompatibleFlowStop2D::Cancelled;result.reason="Cancelled during boundary-load evaluation; accepted checkpoint retained";}
         const auto exported = Clock::now();
-        summary(opt,mesh,&result,stopName(result.stop),result.reason,true,readSeconds,solveSeconds,std::chrono::duration<double>(exported-solved).count(),std::chrono::duration<double>(exported-start).count());
+        summary(opt,mesh,&result,stopName(result.stop),result.reason,loadsComplete,readSeconds,solveSeconds,std::chrono::duration<double>(exported-solved).count(),std::chrono::duration<double>(exported-start).count());
         std::cout << "{\"type\":\"compatible-flow-result\",\"status\":"; jsonString(std::cout,stopName(result.stop));
         std::cout << ",\"converged\":" << (result.converged() ? "true" : "false") << ",\"reason\":"; jsonString(std::cout,result.reason); std::cout << "}\n";
         return result.converged() ? 0 : result.stop == CompatibleFlowStop2D::Cancelled ? 130 : 2;

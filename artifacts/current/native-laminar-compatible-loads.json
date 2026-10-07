@@ -1,0 +1,397 @@
+{
+  "schema": "cartmesh2d-compatible-boundary-loads-v1",
+  "baseCommit": "dc89828dc89e82d7c421f9889ccc725ce343609a",
+  "implementation": {
+    "api": "evaluateCompatibleFlowLoads2D(mesh, controls, acceptedCheckpoint, momentOrigin)",
+    "source": "Original uncondensed steady equations, same native pressure/viscosity/RT1 transport and actual lifted body-load integration; no Newton tangent or pseudo mass in the reported load.",
+    "physicalTraction": "Face residual + prescribed traction + implicit transpose-gradient correction; add advective face momentum flux on prescribed full-velocity boundaries only. Mixed boundaries retain Cartesian reactions before constraint projection.",
+    "moments": "Integrals against 1 and s in [-1/2,1/2], with physical face tangent (-Sy,Sx). P1 traction coefficients are moment0/length and 12*moment1/length.",
+    "convention": "Positive on fluid with its outward normal. Opposite is force on adjacent body. Pressure moment is the direct -p*n integral; total-minus-pressure includes stabilization, transport reconstruction and lifted-load effects as well as viscosity.",
+    "units": {
+      "force": "m^3/s^2",
+      "torque": "m^4/s^2",
+      "volumeFlux": "m^2/s",
+      "densityConversion": "Multiplying by density gives N/m force and N torque, both per unit out-of-plane depth."
+    },
+    "boundContext": "Same native discrete-context check as restart; arbitrary seed/rejected state is not a load-API input. Closed domains keep checkpoint pressure gauge and explicitly lack absolute pressure reference.",
+    "cli": "Atomically publishes .loads.json from the last accepted checkpoint. Budget-limited reports remain nonconverged; no accepted state means no load file, cancellation skips new load work and preserves checkpoint. Existing load files are protected.",
+    "defaultChange": false,
+    "spatialAccuracyChange": false
+  },
+  "analyticControls": [
+    {
+      "mode": 0,
+      "angle": 0.61,
+      "U": 1,
+      "L": 1,
+      "normalizedTractionMomentError": 3.887989544710952e-13,
+      "normalizedPressureMomentError": 4.3759785566429716e-13,
+      "normalizedTorqueError": 1.0541567618815861e-13,
+      "normalizedMomentumImbalance": 3.4581453480617316e-13
+    },
+    {
+      "mode": 1,
+      "angle": 0.61,
+      "U": 1,
+      "L": 1,
+      "normalizedTractionMomentError": 1.1933473040197656e-13,
+      "normalizedPressureMomentError": 1.4795386370117813e-13,
+      "normalizedTorqueError": 4.894695759816159e-14,
+      "normalizedMomentumImbalance": 4.0474291560255673e-14
+    },
+    {
+      "mode": 2,
+      "angle": 0.61,
+      "U": 1,
+      "L": 1,
+      "normalizedTractionMomentError": 1.1380316058838584e-13,
+      "normalizedPressureMomentError": 1.3757238741737375e-13,
+      "normalizedTorqueError": 3.7164715749327115e-14,
+      "normalizedMomentumImbalance": 1.2356843361105976e-14
+    },
+    {
+      "mode": 3,
+      "angle": 0.61,
+      "U": 1,
+      "L": 1,
+      "normalizedTractionMomentError": 1.1642299260294072e-13,
+      "normalizedPressureMomentError": 1.2147252072560482e-13,
+      "normalizedTorqueError": 4.618527782440651e-14,
+      "normalizedMomentumImbalance": 2.608528003606055e-14
+    },
+    {
+      "mode": 1,
+      "angle": 0.37,
+      "U": 3.25,
+      "L": 2.3,
+      "normalizedTractionMomentError": 1.298079573575841e-13,
+      "normalizedPressureMomentError": 1.5421287106477722e-13,
+      "normalizedTorqueError": 4.9554635378398735e-14,
+      "normalizedMomentumImbalance": 3.1881035892759095e-14
+    },
+    {
+      "mode": 2,
+      "angle": 0,
+      "U": 1,
+      "L": 1,
+      "normalizedTractionMomentError": 1.7016931839234206e-13,
+      "normalizedPressureMomentError": 1.9459434064117434e-13,
+      "normalizedTorqueError": 2.103178742274281e-14,
+      "normalizedMomentumImbalance": 6.19993956212768e-15
+    }
+  ],
+  "maximumNormalizedTractionMomentError": 3.887989544710952e-13,
+  "maximumNormalizedPressureMomentError": 4.3759785566429716e-13,
+  "maximumNormalizedTorqueError": 1.0541567618815861e-13,
+  "maximumNormalizedMomentumImbalance": 3.4581453480617316e-13,
+  "regressionAllowance": "Existing 1e-7 normalized polynomial-regression allowance, above the 1e-9 nonlinear stop; no new mesh, geometry or physical acceptance threshold.",
+  "nativeLifecycle": [
+    "Changed viscosity/context rejected",
+    "Cancelled preparation throws without partial load result",
+    "Budget-limited accepted checkpoint can be evaluated without a convergence claim",
+    "Checkpoint serialization yields bit-identical traction moments",
+    "Torque origin translation follows the exact force moment identity"
+  ],
+  "ctest": {
+    "passed": 6,
+    "total": 6,
+    "regex": "^cartmesh2d_compatible_flow($|_)",
+    "seconds": 4.77,
+    "tests": [
+      "loads",
+      "checkpoint",
+      "boundary",
+      "flow",
+      "element",
+      "cli"
+    ],
+    "cliChecks": [
+      "Full/restarted load JSON equality",
+      "Failed resume preserves previous checkpoint loads",
+      "Linear failure before acceptance produces no load",
+      "Signal cancellation and SIGKILL restart remain valid",
+      "Existing load file protected",
+      "Legacy default/explicit collocated fields agree"
+    ],
+    "finalBoundaryOwnerAssemblyRerun": {
+      "passed": 2,
+      "total": 2,
+      "tests": [
+        "loads",
+        "cli"
+      ],
+      "seconds": 3.14
+    }
+  },
+  "realCutCellCylinder": {
+    "cells": 64,
+    "faces": 152,
+    "coldAcceptedIterations": 15,
+    "runs": [
+      {
+        "variant": "baseline",
+        "command": [
+          "/tmp/cartmesh-compatible-loads/baseline-flow-cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads/cylinder-0-baseline",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur"
+        ],
+        "code": 0,
+        "processSeconds": null,
+        "checkpointByteIdentical": true,
+        "physicalCoefficientsIdentical": true,
+        "timingSeconds": {
+          "readAndPrepare": 0.000594542,
+          "solve": 1.004501291,
+          "exportBeforeSummary": 0.006101709,
+          "elapsedBeforeSummary": 1.011622167
+        }
+      },
+      {
+        "variant": "current",
+        "command": [
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads/cylinder-1-current",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur"
+        ],
+        "code": 0,
+        "processSeconds": 0.9638589170062914,
+        "checkpointByteIdentical": true,
+        "physicalCoefficientsIdentical": true,
+        "timingSeconds": {
+          "readAndPrepare": 0.000913041,
+          "solve": 0.911638166,
+          "exportBeforeSummary": 0.040912459,
+          "elapsedBeforeSummary": 0.953881125
+        },
+        "loads": {
+          "wallForceOnBody": [
+            2.1488845613221383,
+            -5.910723299695775e-14
+          ],
+          "wallPressureForceOnBody": [
+            1.1386826122750147,
+            -8.1303019872081e-14
+          ],
+          "globalMomentumImbalance": [
+            2.149391775674303e-13,
+            4.114417140321791e-14
+          ],
+          "globalVolumeFlux": 6.425970866530406e-13,
+          "boundaryCount": 56,
+          "wallCount": 40
+        }
+      },
+      {
+        "variant": "current",
+        "command": [
+          "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads/cylinder-2-current",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur"
+        ],
+        "code": 0,
+        "processSeconds": 0.9624302919837646,
+        "checkpointByteIdentical": true,
+        "physicalCoefficientsIdentical": true,
+        "timingSeconds": {
+          "readAndPrepare": 0.00062175,
+          "solve": 0.910925166,
+          "exportBeforeSummary": 0.0413215,
+          "elapsedBeforeSummary": 0.953336666
+        },
+        "loads": {
+          "wallForceOnBody": [
+            2.1488845613221383,
+            -5.910723299695775e-14
+          ],
+          "wallPressureForceOnBody": [
+            1.1386826122750147,
+            -8.1303019872081e-14
+          ],
+          "globalMomentumImbalance": [
+            2.149391775674303e-13,
+            4.114417140321791e-14
+          ],
+          "globalVolumeFlux": 6.425970866530406e-13,
+          "boundaryCount": 56,
+          "wallCount": 40
+        }
+      },
+      {
+        "variant": "baseline",
+        "command": [
+          "/tmp/cartmesh-compatible-loads/baseline-flow-cli",
+          "--discretization",
+          "compatible",
+          "--mesh",
+          "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+          "--output",
+          "/tmp/cartmesh-compatible-loads/cylinder-3-baseline",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--compatible-pressure-inverse",
+          "schur"
+        ],
+        "code": 0,
+        "processSeconds": 0.9501898330054246,
+        "checkpointByteIdentical": true,
+        "physicalCoefficientsIdentical": true,
+        "timingSeconds": {
+          "readAndPrepare": 0.001132125,
+          "solve": 0.93338725,
+          "exportBeforeSummary": 0.005497292,
+          "elapsedBeforeSummary": 0.940462083
+        }
+      }
+    ],
+    "repeatedLoadsByteIdentical": true,
+    "sourceArchive": "outputs/laminar-stability/krylov-target/native-compatible-krylov-target.tar.gz",
+    "sourceInputHashReadback": true,
+    "oldCheckpointReadback": {
+      "command": [
+        "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--discretization",
+        "compatible",
+        "--mesh",
+        "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+        "--output",
+        "/tmp/cartmesh-compatible-loads/old-checkpoint-budget",
+        "--case",
+        "external",
+        "--nu",
+        ".1",
+        "--compatible-pressure-inverse",
+        "schur",
+        "--restart",
+        "/tmp/cartmesh-compatible-loads/inputs/candidate/cylinder64.checkpoint",
+        "--linear-restarts",
+        "1",
+        "--krylov-directions",
+        "1"
+      ],
+      "code": 2,
+      "processSeconds": 0.13135545799741521,
+      "oldCheckpointAndLoadMomentsUnchanged": true,
+      "newConvergenceNotInferred": true
+    }
+  },
+  "costInterpretation": "New terminal load export re-prepares and evaluates the native operator once, counted in CLI export time: about 0.041 s versus 0.0055-0.0061 s before this feature on the small cylinder. Four serial old/new/new/old runs are not exclusive-machine or general performance evidence. Initial old full child-process timing was lost to an orchestration metadata-comparison assertion; its complete CLI summary timings remain. No changed field/checkpoint or solver failure occurred. Final source control overlapped a strict syntax check: export 0.0447 s, complete process 1.181 s; recorded for completeness, not as an isolated performance comparison.",
+  "orchestrationNote": {
+    "initialComparisonFailure": "Compared complete accepted JSON bytes including a changed input mesh path; native checkpoint and all field coefficients were unchanged. Initial baseline outputs reused, no solver failure. Initial complete child-process timing was not retained after assertion; summary timings preserved."
+  },
+  "limits": [
+    "This integrates conservative numerical loads; it does not repair curved-wall spatial pressure error.",
+    "The old scalar-centred solver/default and compatible physical equations are unchanged.",
+    "No original 4716/17260-cell cloud rerun, full regression, frontend/App or other-platform validation in this batch.",
+    "No pure wall-shear or dimensional force claim is inferred from total minus pressure without accounting for the nonpressure numerical terms."
+  ],
+  "finalSourceControl": {
+    "command": [
+      "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--discretization",
+      "compatible",
+      "--mesh",
+      "/tmp/cartmesh-compatible-loads/inputs/cylinder64.solver.cm2d",
+      "--output",
+      "/tmp/cartmesh-compatible-loads/cylinder-final",
+      "--case",
+      "external",
+      "--nu",
+      ".1",
+      "--compatible-pressure-inverse",
+      "schur"
+    ],
+    "processSeconds": 1.1807299999636598,
+    "code": 0,
+    "fieldCheckpointLoadsByteIdentical": true,
+    "timingSeconds": {
+      "readAndPrepare": 0.001961125,
+      "solve": 1.121992875,
+      "exportBeforeSummary": 0.044685292,
+      "elapsedBeforeSummary": 1.169382792
+    },
+    "change": "Only physical boundary owners need added transport/traction assembly; preparation, discrete context and volume forcing still cover every original cell."
+  },
+  "build": {
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "relatedTargetsBuilt": true,
+    "modifiedCppStrictSyntaxCheck": "-std=c++20 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+    "strictFinalOutputEmpty": true,
+    "preexistingWarnings": "Normal library build retains existing FlowAggregation2D signed-conversion warnings; no new-source warning observed."
+  },
+  "sourceSha256": {
+    "CMakeLists.txt": "433b89283b0e16caba5451bf9d8179d50f0a7eabc433c9355a7582cc5239a1c7",
+    "apps/CompatibleFlowCLI.cpp": "44835373a86ecba16e5160151ff5891724da77efbb911ac4c0443432f7c43cf1",
+    "include/cartmesh2d/fv/CompatibleIncompressible2D.hpp": "4e05cea2c36258356ed2d2bd1926e12d36a71288687c38613560b063f817dad1",
+    "src/fv/CompatibleIncompressible2D.cpp": "8048b7769549111c5d4ffc79c9443b5b1df8ce1b0a28ed8c655b2e554227b35d",
+    "tests/compatible_flow_loads_test.cpp": "1303a4114a3502f30bde695d2b2b1938f10f020e073eefd5e81f3ee3302abc64",
+    "tests/compatible_flow_cli_test.py": "06c3070d88dd6d5ee8714a93525527939f6a5e71d478770de24256c453709ba0",
+    "docs/CURRENT_STATE_CN.md": "7f5f6d481368b49d9b11c29696819686d4016d9c89e93e9d851bb9a273fcf9ec",
+    "docs/DEVELOPMENT_CN.md": "17f8527e3ed2022cd7ed63856f84b25354eb886e289a8f103174aad3ff04747a"
+  },
+  "rawArchive": {
+    "path": "outputs/laminar-stability/native-loads/native-compatible-loads.tar.gz",
+    "bytes": 1453897,
+    "sha256": "fa956f186ab372d8b109b9ebd2317330ff63758b70631f328b3e2f8629995cce",
+    "contentFiles": 114,
+    "uncompressedContentBytes": 4186405,
+    "memberReadbackVerified": true,
+    "cloudDurableCopyConfirmed": false,
+    "retention": "Keep this unique raw archive until a durable cloud copy has been confirmed. Source/evidence is pushed separately."
+  },
+  "temporaryCleanup": {
+    "files": 100,
+    "bytes": 2353051,
+    "rootRemoved": true,
+    "allowlist": [
+      "/tmp/cartmesh-compatible-loads",
+      "/tmp/cartmesh-compatible-loads-build.log",
+      "/tmp/cartmesh-compatible-loads-cli-edit.py",
+      "/tmp/cartmesh-compatible-loads-configure.log",
+      "/tmp/cartmesh-compatible-loads-ctest.log",
+      "/tmp/cartmesh-compatible-loads-edit.py",
+      "/tmp/cartmesh-compatible-loads-evidence.py",
+      "/tmp/cartmesh-compatible-loads-final-build.log",
+      "/tmp/cartmesh-compatible-loads-final-ctest.log",
+      "/tmp/cartmesh-compatible-loads-final-strict-build.log",
+      "/tmp/cartmesh-compatible-loads-native.log",
+      "/tmp/cartmesh-compatible-loads-product-build.log",
+      "/tmp/cartmesh-compatible-loads-runs.py",
+      "/tmp/cartmesh-compatible-loads-strict-build.log",
+      "/tmp/cartmesh-compatible-loads-test.cpp",
+      "/tmp/cartmesh-compatible-loads-finalize.py"
+    ],
+    "checks": "All archived members read back and hashed; temporary files unchanged and unused before removing exactly the archived temporary allowlist. Existing unique archives preserved."
+  }
+}

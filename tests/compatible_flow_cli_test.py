@@ -59,6 +59,18 @@ def exported(prefix, expected):
     assert len(accepted['cells']) == summary['cells'] and len(accepted['faces']) == summary['faces']
     assert all(len(c) == 9 for c in accepted['cells'])
     assert all(len(f) == 4 for f in accepted['faces'])
+    if expected == 'cancelled':
+        assert not summary['boundaryLoadsAvailable'] and not Path(str(prefix) + '.loads.json').exists()
+    else:
+        assert summary['boundaryLoadsAvailable']
+        loads = read(prefix, '.loads.json')
+        assert loads['sourceState'] == 'last-accepted'
+        assert loads['acceptedIterations'] == summary['totalAcceptedIterations']
+        assert loads['numericallyConverged'] == summary['numericallyConverged']
+        assert not loads['physicalAccuracyQualified']
+        assert loads['units']['forceAndTractionMoments'] == 'm^3/s^2'
+        assert loads['boundaries'] and all(len(b['tractionMoments']) == 2 for b in loads['boundaries'])
+        assert not Path(str(prefix) + '.loads.json.tmp').exists()
     if summary['resumed']:
         assert not Path(str(prefix) + '.seed.json').exists()
     else:
@@ -102,6 +114,7 @@ try:
     assert read(linear)['status'] == 'linear-budget' and not read(linear)['lastAcceptedAvailable']
     assert not Path(str(linear) + '.fields.json').exists() and not Path(str(linear) + '.accepted.json').exists()
     assert read(linear, '.seed.json')['kind'] == 'seed'
+    assert not read(linear)['boundaryLoadsAvailable'] and not Path(str(linear) + '.loads.json').exists()
 
     custom = run('custom', case='custom', extra=('--boundary', str(cavity) + '.boundaries'))
     exported(custom, 'converged')
@@ -113,6 +126,7 @@ try:
     assert resumed_summary['resumed'] and resumed_summary['acceptedIterationsBefore'] == 1
     assert resumed_summary['totalAcceptedIterations'] == solved['acceptedIterations']
     assert Path(str(continued) + '.checkpoint').read_bytes() == Path(str(cavity) + '.checkpoint').read_bytes()
+    assert read(continued, '.loads.json') == read(cavity, '.loads.json')
     assert read(continued, '.accepted.json')['cells'] == read(cavity, '.accepted.json')['cells']
     assert read(continued, '.accepted.json')['faces'] == read(cavity, '.accepted.json')['faces']
     failed_resume = run('failed-resume', extra=('--restart', str(budget) + '.checkpoint',
@@ -152,6 +166,9 @@ try:
     run('legacy', code=1)
     assert legacy.read_text() == legacy_text
     assert not (root / 'legacy.summary.json').exists()
+    (root / 'protected-load.loads.json').write_text('preserve existing load')
+    run('protected-load', code=1)
+    assert (root / 'protected-load.loads.json').read_text() == 'preserve existing load'
     before = snapshot(cavity)
     repeat = subprocess.run([cli, '--discretization', 'compatible', '--mesh', str(mesh),
                              '--output', str(cavity), '--case', 'cavity', '--nu', '.1'],
