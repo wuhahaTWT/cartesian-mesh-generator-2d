@@ -68,23 +68,25 @@ test('thermal export uses saved backend fields when renderer has been cleared', 
 });
 
 test('thermal resume deselects flow resume, restores thermal physics and preserves editable time controls', () => {
-  const {context, elements, counts} = controls();
-  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection','thermalFluxCorrection','thermalWallKind','thermalWallValue','thermalWallInflow']) elements[id] = {value:''};
-  elements.flowDt = {value:'0.005'}; elements.flowSteps = {value:'7'};
-  elements.thermalResume.checked = true;
-  context.thermalPatches = ['wall']; context.thermalPatchId = ()=>'thermalWall';
-  context.state.thermalRestart = {request:{case:'external',nu:.02,speed:1,convection:'upwind',diffusivity:.1,initial:300,source:2,scalarConvection:'limited-linear',fluxCorrection:'bounded',boundaries:{wall:{kind:'value',value:350,inflowValue:300}}}};
-  vm.runInContext(functionSource('applyThermalRestartControls'), context);
-  context.applyThermalRestartControls();
-  assert.equal(elements.flowResume.checked, false);
-  assert.equal(elements.thermalResume.checked, true);
-  assert.equal(elements.flowNu.value, .02);
-  assert.equal(elements.thermalDiffusivity.value, .1);
-  assert.equal(elements.thermalWallValue.value, 350);
-  assert.equal(elements.thermalFluxCorrection.value, 'bounded');
-  assert.equal(elements.flowDt.value, '0.005');
-  assert.equal(elements.flowSteps.value, '7');
-  assert.deepEqual(counts, {flow:1,thermal:1});
+  for(const method of ['bounded','bounded-spatial']) {
+    const {context, elements, counts} = controls();
+    for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection','thermalFluxCorrection','thermalWallKind','thermalWallValue','thermalWallInflow']) elements[id] = {value:''};
+    elements.flowDt = {value:'0.005'}; elements.flowSteps = {value:'7'};
+    elements.thermalResume.checked = true;
+    context.thermalPatches = ['wall']; context.thermalPatchId = ()=>'thermalWall';
+    context.state.thermalRestart = {request:{case:'external',nu:.02,speed:1,convection:'upwind',diffusivity:.1,initial:300,source:2,scalarConvection:'limited-linear',fluxCorrection:method,boundaries:{wall:{kind:'value',value:350,inflowValue:300}}}};
+    vm.runInContext(functionSource('applyThermalRestartControls'), context);
+    context.applyThermalRestartControls();
+    assert.equal(elements.flowResume.checked, false);
+    assert.equal(elements.thermalResume.checked, true);
+    assert.equal(elements.flowNu.value, .02);
+    assert.equal(elements.thermalDiffusivity.value, .1);
+    assert.equal(elements.thermalWallValue.value, 350);
+    assert.equal(elements.thermalFluxCorrection.value, method);
+    assert.equal(elements.flowDt.value, '0.005');
+    assert.equal(elements.flowSteps.value, '7');
+    assert.deepEqual(counts, {flow:1,thermal:1});
+  }
 });
 
 test('loading a thermal restart clears a locked vortex and preserves supported adaptive controls', () => {

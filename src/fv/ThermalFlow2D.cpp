@@ -81,6 +81,7 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
     // Preserve legacy unrestricted signatures/checkpoints byte-for-byte. The
     // bounded operator has a distinct signature, including in-memory restarts.
     if(sc.fluxCorrection==ScalarFluxCorrection2D::Bounded)signature.push_back(1.);
+    else if(sc.fluxCorrection==ScalarFluxCorrection2D::BoundedSpatial)signature.push_back(2.);
     const bool reuse=previous.controller && previous.controller->controls==signature;
     auto predictionLimits=limits;
     if(reuse) {

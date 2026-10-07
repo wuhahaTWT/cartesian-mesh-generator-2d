@@ -376,3 +376,16 @@ test('thermal job failure retains old state and does not invent a startup checkp
   });
   assert.equal(currentResult.thermalRestart,old);assert.equal(currentResult.thermal,display);
 });
+
+
+test('spatial bounded mode reaches the native CLI and keeps its v4 method identity with LF and CRLF', () => {
+  const {thermalCheckpointTime}=require('../src/core/thermal');
+  for(const mode of ['bounded','bounded-spatial']) {
+    const invocation=buildThermalInvocation('/tmp/mesh.solver.cm2d','/tmp/out','/tmp/boundary.csv',request({fluxCorrection:mode}));
+    assert.equal(invocation.args[invocation.args.indexOf('--flux-correction')+1],mode);
+    const record=`CARTMESH2D_THERMAL_CHECKPOINT 4\nCOUPLING new-time-flux-Euler-v1\nTHERMAL_CONFIG 0.1 upwind ${mode}\nCONTROLLER_PRESENT 0\nEVENTS 0\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.1\nFLUX 1 0\n`;
+    assert.equal(thermalCheckpointTime(record),.1);
+    assert.equal(thermalCheckpointTime(record.replace(/\n/g,'\r\n')),.1);
+    assert.throws(()=>thermalCheckpointTime(record.replace(`upwind ${mode}`, 'upwind unknown')),/有界温度状态配置/);
+  }
+});

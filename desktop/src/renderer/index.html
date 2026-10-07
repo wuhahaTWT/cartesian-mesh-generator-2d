@@ -347,9 +347,9 @@
         <label class="field">初始温度<span class="unit"><input id="thermalInitial" type="number" step="any" value="300"><i>K</i></span></label>
       </div>
       <label class="field">温度范围控制
-        <select id="thermalFluxCorrection"><option value="unrestricted" selected>原有空间修正</option><option value="bounded">守恒有界修正（试验）</option></select>
+        <select id="thermalFluxCorrection"><option value="unrestricted" selected>原有空间修正</option><option value="bounded">守恒有界修正（试验）</option><option value="bounded-spatial">空间守恒有界修正（试验）</option></select>
       </label>
-      <p class="note">有界修正抑制热启动时的非物理过冲，保留热源和指定热流；陡峭温度前沿可能更耗散。方法随项目保存，续算时保持一致。</p>
+      <p class="note">有界修正抑制热启动时的非物理过冲，保留热源和指定热流；陡峭温度前沿可能更耗散。热启动反复缩步时可从新工况试用空间版本；仍需比较温度和热流。方法随项目保存，续算时保持一致。</p>
       <details><summary>联合时间误差控制（自动步长）</summary>
         <label><input id="thermalTimeError" type="checkbox">启用整步／两半步误差估计</label>
         <label class="field">特征温升<span class="unit"><input id="thermalTemperatureScale" type="number" min="0.000000001" step="any" value="1"><i>K</i></span></label>

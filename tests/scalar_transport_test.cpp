@@ -237,7 +237,7 @@ void manufacturedRefinement() {
     }
 }
 
-void transientSineTimeRefinement(bool bounded=false) {
+void transientSineTimeRefinement(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Unrestricted) {
     const auto mesh = fvGrid(16, 16);
     constexpr double diffusivity = .2;
     const auto exact = [](Point2D p, double time) {
@@ -252,7 +252,7 @@ void transientSineTimeRefinement(bool bounded=false) {
     std::vector<double> previous;
     for (const auto& cell : mesh.cells) previous.push_back(exact(cell.centre, 0.));
     ScalarTransportControls2D controls;
-    if(bounded)controls.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+    controls.fluxCorrection=method;
     auto errorAt = [&](int steps) {
         const double finalTime = .5;
         const double dt = finalTime / static_cast<double>(steps);
@@ -797,7 +797,7 @@ void variableFaceDiffusivityManufacturedSkewAffine() {
           "variable-D skew affine flux balance closes");
 }
 
-void boundedNonorthogonalHotStart() {
+void boundedNonorthogonalHotStart(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Bounded) {
     // The hot patch is aligned with neither diffusion stencil direction on
     // this sheared mesh. An unrestricted deferred correction creates new extrema.
     const auto mesh=makeFvMesh2D(grid(12,8,true,1.1));
@@ -807,7 +807,7 @@ void boundedNonorthogonalHotStart() {
     const std::vector<double> previous(mesh.cells.size(),300.);
     ScalarTransportControls2D c;c.maxCorrections=2000;
     const auto unrestricted=solveScalarTransport2D(mesh,p,c,previous,.01);
-    c.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+    c.fluxCorrection=method;
     const auto bounded=solveScalarTransport2D(mesh,p,c,previous,.01);
     ScalarTransportWorkspace2D workspace;
     const auto cached=solveScalarTransport2D(mesh,p,c,previous,.01,&workspace);
@@ -850,7 +850,7 @@ void boundedNonorthogonalHotStart() {
             "bounded transient scheme rejects unsupported steady use explicitly");
 }
 
-void boundedAffineAndPhysicalSources() {
+void boundedAffineAndPhysicalSources(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Bounded) {
     const auto mesh=makeFvMesh2D(grid(5,4,true,.7));
     ScalarTransportProblem2D p;p.diffusivity=.7;p.volumeFlux.assign(mesh.faces.size(),0.);
     p.source=[](Point2D){return 0.;};
@@ -862,7 +862,7 @@ void boundedAffineAndPhysicalSources() {
     };
     std::vector<double> previous;
     for(const auto& cell:mesh.cells)previous.push_back(exact(cell.centre));
-    ScalarTransportControls2D c;c.fluxCorrection=ScalarFluxCorrection2D::Bounded;c.cellTolerance=1e-10;
+    ScalarTransportControls2D c;c.fluxCorrection=method;c.cellTolerance=1e-10;
     for(double dt:{.0001,.1,10.}) {
         const auto r=solveScalarTransport2D(mesh,p,c,previous,dt);
         check(r.converged,"bounded affine mixed-boundary diffusion converges");
@@ -890,7 +890,7 @@ void boundedAffineAndPhysicalSources() {
         "limiter never changes specified Neumann flux");
 }
 
-void boundedSmoothSpatialRefinement() {
+void boundedSmoothSpatialRefinement(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Bounded) {
     // Smooth, time-independent manufactured solution on a sheared physical
     // domain. One BE step from its sampled exact field isolates spatial error.
     constexpr double shear=.6,pi=std::numbers::pi,D=.08;
@@ -905,7 +905,7 @@ void boundedSmoothSpatialRefinement() {
         };
         p.boundary=[&](std::size_t,const Face& f){return valueBoundary(exact(f.centre));};
         std::vector<double> previous;for(const auto& cell:mesh.cells)previous.push_back(exact(cell.centre));
-        ScalarTransportControls2D c;c.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+        ScalarTransportControls2D c;c.fluxCorrection=method;
         const auto r=solveScalarTransport2D(mesh,p,c,previous,.1);
         check(r.converged,"bounded smooth skew diffusion converges");
         double error=0.;for(std::size_t i=0;i<previous.size();++i)error+=mesh.cells[i].area*std::pow(r.values[i]-previous[i],2);
@@ -915,10 +915,32 @@ void boundedSmoothSpatialRefinement() {
     check(errors[0]/errors[1]>3. && errors[1]/errors[2]>3.,"bounded smooth diffusion retains approximately second-order spatial refinement");
 }
 
+void spatialBoundedFluxIgnoresTimeDiagonal() {
+    const auto mesh=makeFvMesh2D(grid(12,8,true,1.1));
+    ScalarTransportProblem2D p;p.diffusivity=.1;
+    p.volumeFlux.assign(mesh.faces.size(),0.);p.source=[](Point2D){return 0.;};
+    p.boundary=[](std::size_t,const Face& f){return valueBoundary(f.centre.y<.01 && f.centre.x<.5?301.:300.);};
+    const std::vector<double> values(mesh.cells.size(),300.01);
+    ScalarTransportControls2D c;c.fluxCorrection=ScalarFluxCorrection2D::BoundedSpatial;
+    const auto small=evaluateScalarTransport2D(mesh,p,values,c,values,.0001);
+    const auto large=evaluateScalarTransport2D(mesh,p,values,c,values,.1);
+    check(small.limitedFaces>0,"spatial flux time-invariance regression exercises the limiter");
+    check(small.lowerBound==large.lowerBound && small.upperBound==large.upperBound,
+          "time-invariance comparison uses exactly the same bound interval");
+    // Identical fields and data, zero temporal change, conservative zero carrier:
+    // only the time diagonal differs. The constitutive spatial flux must not.
+    check(small.diffusiveFlux==large.diffusiveFlux && small.advectiveFlux==large.advectiveFlux,
+          "bounded spatial flux is bitwise independent of an unused time diagonal");
+}
+
 }
 
 int main() {
     try {
+        spatialBoundedFluxIgnoresTimeDiagonal();
+        boundedNonorthogonalHotStart(ScalarFluxCorrection2D::BoundedSpatial);
+        boundedAffineAndPhysicalSources(ScalarFluxCorrection2D::BoundedSpatial);
+        boundedSmoothSpatialRefinement(ScalarFluxCorrection2D::BoundedSpatial);
         boundedNonorthogonalHotStart();
         boundedAffineAndPhysicalSources();
         boundedSmoothSpatialRefinement();
@@ -927,7 +949,7 @@ int main() {
         constantCarrierPreservesConstant();
         boundedUpwindFront();
         manufacturedRefinement();
-        transientSineTimeRefinement();transientSineTimeRefinement(true);
+        transientSineTimeRefinement();transientSineTimeRefinement(ScalarFluxCorrection2D::Bounded);transientSineTimeRefinement(ScalarFluxCorrection2D::BoundedSpatial);
         invalidInputs();
         uniformFaceDiffusivityIsIdentical();
         variableFaceDiffusivityConservesHarmonicInterface();

@@ -132,7 +132,29 @@ def main(a):
         assert replaced.with_suffix('.thermal.checkpoint').read_bytes()==saved
         assert recovery.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
         replaced_path_checked=True
-    report={'readOnlyNativeCheckpointValidation':True,'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+    # Each bounded algorithm is explicit in v4 and cannot silently restart
+    # with another operator. Complete event law and accepted controller survive.
+    bounded_methods=[]
+    for mode in ['bounded','bounded-spatial']:
+        controls=['--flux-correction',mode,'--time-error','on']
+        whole=invoke(mode+'-continuous',controls)
+        partial=invoke(mode+'-partial',[*controls,'--max-time-steps','2'],1)
+        saved=partial.with_suffix('.thermal.checkpoint').read_bytes()
+        assert saved.startswith(b'CARTMESH2D_THERMAL_CHECKPOINT 4\n')
+        config=next(line.split() for line in saved.decode().splitlines() if line.startswith('THERMAL_CONFIG '))
+        assert config[-1]==mode
+        resumed=invoke(mode+'-resumed',[*controls,'--restart',partial.with_suffix('.thermal.checkpoint')])
+        assert partial.with_suffix('.thermal.checkpoint').read_bytes()==saved
+        assert whole.with_suffix('.thermal.checkpoint').read_bytes()==resumed.with_suffix('.thermal.checkpoint').read_bytes()
+        assert whole.with_suffix('.cells.csv').read_bytes()==resumed.with_suffix('.cells.csv').read_bytes()
+        assert json.loads(whole.with_suffix('.json').read_text())['fluxCorrection']==mode
+        for other in ['unrestricted','bounded','bounded-spatial']:
+            if other==mode:continue
+            rejected=invoke(mode+'-as-'+other,['--flux-correction',other,'--restart',partial.with_suffix('.thermal.checkpoint')],1)
+            assert not rejected.with_suffix('.thermal.checkpoint').exists()
+        assert partial.with_suffix('.thermal.checkpoint').read_bytes()==saved
+        bounded_methods.append(mode)
+    report={'readOnlyNativeCheckpointValidation':True,'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'boundedMethodsRestartedExactly':bounded_methods,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
             'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
             'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
             'changedStepTime':meta['acceptedTime'],'replacedLiveOutputFailsClosedAndResumesIdentically':replaced_path_checked,

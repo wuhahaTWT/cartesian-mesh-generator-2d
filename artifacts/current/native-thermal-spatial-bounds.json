@@ -1,0 +1,1083 @@
+{
+  "format": "cartmesh2d-thermal-spatial-bounds-evidence-v1",
+  "status": "validated_increment_goal_ongoing",
+  "branch": "codex/transient-thermal-workflow",
+  "sourceBase": "e6f115f667c5896c303b409939e67f2b897eeae2",
+  "scope": "Native 2D incompressible laminar flow and one-way constant-property passive temperature. New optional conservative bounded-spatial method; original default and old bounded arithmetic retained.",
+  "implementation": {
+    "newMethod": "bounded-spatial",
+    "default": "unrestricted",
+    "change": "Drop only nonnegative temporal slack from each flux-correction allowance. Shared-face flux and original residual, bound and time-error acceptance checks remain. No field clipping or source/Neumann-flux suppression.",
+    "invarianceCondition": "At fixed field, physical data and comparison bounds, the spatial flux has no direct dt dependence. Source/loss/Neumann inputs and measured carrier divergence may still change the comparison bounds with dt.",
+    "restart": {
+      "version": 4,
+      "modeToken": "bounded-spatial",
+      "controllerSignatureLastValue": 2,
+      "crossMethodRestart": "explicitly rejected",
+      "oldBoundedSignatureLastValue": 1,
+      "unrestrictedVersions": [
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "minimalFailure": {
+    "old": {
+      "cells": 96,
+      "maxFluxDifference": 0.045728433333341686,
+      "smallLimitedFaces": 0,
+      "largeLimitedFaces": 3,
+      "equalBounds": true
+    },
+    "spatialCandidate": {
+      "cells": 96,
+      "maxFluxDifference": 0,
+      "smallLimitedFaces": 3,
+      "largeLimitedFaces": 3,
+      "equalBounds": true
+    },
+    "fluxUnit": "K m^2/s",
+    "timeSteps": [
+      0.0001,
+      0.1
+    ],
+    "newRegression": "spatialBoundedFluxIgnoresTimeDiagonal"
+  },
+  "frozenActualState": {
+    "input": {
+      "path": "outputs/thermal-startup/input.thermal.checkpoint",
+      "bytes": 8106363,
+      "sha256": "b91cefb18a37b0c706de94bf28bfb63464b44e6521bdf994882547cd5fa20fce"
+    },
+    "time": 0.000430807649466594,
+    "cells": 16212,
+    "defectToBudget": {
+      "adaptive": {
+        "U": 0.04634363845224505,
+        "V": 0.028942651973567782,
+        "T": 1.4509531030791385,
+        "fullHeat": 0.0002647756999799371,
+        "halvesHeat": 0.0002647862101934967
+      },
+      "spatial": {
+        "U": 0.04634363845224505,
+        "V": 0.028942651973567782,
+        "T": 0.05169308768803273,
+        "fullHeat": 0.00026478780932600926,
+        "halvesHeat": 0.00026480387717564926
+      }
+    },
+    "candidateContinuation": {
+      "exitCode": 0,
+      "seconds": 528.8268663750205,
+      "binarySha256": "06dbfc3f4396ff55f51e09f36d74f4f9a48a2e9ea82956467d78247cc220cfff",
+      "summary": {
+        "format": "cartmesh2d-scalar-transport-v1",
+        "status": "converged",
+        "converged": true,
+        "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/finest/mesh.solver.cm2d",
+        "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/spatial-startup/result.carrier.checkpoint",
+        "carrierTime": 0.05,
+        "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/finest/thermal.csv",
+        "verification": "",
+        "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+        "evolvingFlow": true,
+        "acceptedTime": 0.05,
+        "restart": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/input.thermal.checkpoint",
+        "flowCase": "custom",
+        "cells": 16212,
+        "faces": 32712,
+        "time": 0.05,
+        "timeStep": 0.007062162097836042,
+        "verificationSpeed": 1,
+        "constantSource": 0,
+        "initialValue": 300,
+        "flowNu": 0.1,
+        "flowSpeed": 0.2,
+        "flowVelocityRelaxation": 0.6,
+        "flowTolerance": 1e-08,
+        "flowConvection": "limited-linear",
+        "outletBackflow": "reject",
+        "timeStepControl": "joint-cfl-be-error-retry",
+        "startTime": 0.000430807649466594,
+        "completedSteps": 28,
+        "rejectedAttempts": 0,
+        "maximumTimeStep": 0.05,
+        "temperatureScale": 1,
+        "timeRelativeTolerance": 0.01,
+        "thermalEventCount": 2,
+        "steps": 1,
+        "diffusivity": 0.002,
+        "convection": "limited-linear",
+        "relativeTolerance": 1e-09,
+        "absoluteTolerance": 1e-12,
+        "cellTolerance": 1e-09,
+        "residualNorm": 4.6707914866949605e-11,
+        "maxCellImbalance": 1.279478953342128e-11,
+        "maxDiagonalScaledImbalance": 6.543649417883486e-10,
+        "boundaryFlux": -0.12141478924067717,
+        "sourceIntegral": 0,
+        "temporalIntegral": 0.121414789028658,
+        "globalBalance": -2.1201916611257587e-10,
+        "maxCarrierImbalance": 1.1762834629946983e-14,
+        "minValue": 299.99999999996646,
+        "maxValue": 300.97022175782297,
+        "maxCourant": 0.13717429903474015,
+        "l2Error": null,
+        "fluxCorrection": "bounded",
+        "limitedFaces": 966,
+        "minimumFluxCorrection": 0,
+        "maxBoundViolation": 0,
+        "lowerBound": 299.99999999996413,
+        "upperBound": 301,
+        "nativeTopologyRevalidated": true,
+        "solverQualityPassed": true,
+        "externalCheckMesh": "not run"
+      },
+      "scope": "Research candidate, restarted from original accepted state; not a cold-start cost comparison."
+    },
+    "scope": "Isolated candidate still emitted the old bounded label. These are research diagnostics, not production method checkpoints or cold-start cost evidence."
+  },
+  "numericalResults": {
+    "format": "cartmesh2d-spatial-bounds-analysis-v1",
+    "spatial": [
+      {
+        "grid": "fine",
+        "directory": "outputs/thermal-startup/fine-spatial-dt005",
+        "exitCode": 0,
+        "seconds": 149.87706312499358,
+        "binarySha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71",
+        "summary": {
+          "format": "cartmesh2d-scalar-transport-v1",
+          "status": "converged",
+          "converged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/mesh.solver.cm2d",
+          "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/fine-spatial-dt005/result.carrier.checkpoint",
+          "carrierTime": 25,
+          "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/result.input.thermal.csv",
+          "verification": "",
+          "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+          "evolvingFlow": true,
+          "acceptedTime": 25,
+          "restart": "",
+          "flowCase": "custom",
+          "cells": 1072,
+          "faces": 2220,
+          "time": 25,
+          "timeStep": 0.03562243172489943,
+          "verificationSpeed": 1,
+          "constantSource": 0,
+          "initialValue": 300,
+          "flowNu": 0.1,
+          "flowSpeed": 0.2,
+          "flowVelocityRelaxation": 0.6,
+          "flowTolerance": 1e-08,
+          "flowConvection": "limited-linear",
+          "outletBackflow": "reject",
+          "timeStepControl": "joint-cfl-be-error-retry",
+          "startTime": 0,
+          "completedSteps": 555,
+          "rejectedAttempts": 19,
+          "maximumTimeStep": 0.05,
+          "temperatureScale": 1,
+          "timeRelativeTolerance": 0.01,
+          "thermalEventCount": 2,
+          "steps": 1,
+          "diffusivity": 0.002,
+          "convection": "limited-linear",
+          "relativeTolerance": 1e-09,
+          "absoluteTolerance": 1e-12,
+          "cellTolerance": 1e-09,
+          "residualNorm": 9.915961746059373e-11,
+          "maxCellImbalance": 2.7637795209974753e-11,
+          "maxDiagonalScaledImbalance": 5.909413065253627e-10,
+          "boundaryFlux": -0.006140083889778047,
+          "sourceIntegral": 0,
+          "temporalIntegral": 0.006140083182366203,
+          "globalBalance": -7.074118443806121e-10,
+          "maxCarrierImbalance": 1.619017420129154e-14,
+          "minValue": 299.9999999999994,
+          "maxValue": 300.94026702078554,
+          "maxCourant": 0.27782683735541913,
+          "l2Error": null,
+          "fluxCorrection": "bounded-spatial",
+          "limitedFaces": 0,
+          "minimumFluxCorrection": 1,
+          "maxBoundViolation": 0,
+          "lowerBound": 299.9999999999993,
+          "upperBound": 301,
+          "nativeTopologyRevalidated": true,
+          "solverQualityPassed": true,
+          "externalCheckMesh": "not run"
+        },
+        "heatGain": 0.2102336608371879,
+        "minimum": 299.9999999994671,
+        "maximum": 300.94026702078554,
+        "steps": 555,
+        "finalOutwardWallFlux": -0.017584653560335662,
+        "integratedOutwardWallFlux": -0.3600948487940282,
+        "exactEvents": true
+      },
+      {
+        "grid": "finer",
+        "directory": "outputs/thermal-startup/finer-spatial-dt005",
+        "exitCode": 0,
+        "seconds": 963.77926333301,
+        "binarySha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71",
+        "summary": {
+          "format": "cartmesh2d-scalar-transport-v1",
+          "status": "converged",
+          "converged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/finer/mesh.solver.cm2d",
+          "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/finer-spatial-dt005/result.carrier.checkpoint",
+          "carrierTime": 25,
+          "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/finer/result.input.thermal.csv",
+          "verification": "",
+          "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+          "evolvingFlow": true,
+          "acceptedTime": 25,
+          "restart": "",
+          "flowCase": "custom",
+          "cells": 4104,
+          "faces": 8356,
+          "time": 25,
+          "timeStep": 0.011456297092689027,
+          "verificationSpeed": 1,
+          "constantSource": 0,
+          "initialValue": 300,
+          "flowNu": 0.1,
+          "flowSpeed": 0.2,
+          "flowVelocityRelaxation": 0.6,
+          "flowTolerance": 1e-08,
+          "flowConvection": "limited-linear",
+          "outletBackflow": "reject",
+          "timeStepControl": "joint-cfl-be-error-retry",
+          "startTime": 0,
+          "completedSteps": 582,
+          "rejectedAttempts": 25,
+          "maximumTimeStep": 0.05,
+          "temperatureScale": 1,
+          "timeRelativeTolerance": 0.01,
+          "thermalEventCount": 2,
+          "steps": 1,
+          "diffusivity": 0.002,
+          "convection": "limited-linear",
+          "relativeTolerance": 1e-09,
+          "absoluteTolerance": 1e-12,
+          "cellTolerance": 1e-09,
+          "residualNorm": 1.9531827204920426e-10,
+          "maxCellImbalance": 2.2464918814080193e-11,
+          "maxDiagonalScaledImbalance": 9.022980851582567e-10,
+          "boundaryFlux": -0.006120460158513641,
+          "sourceIntegral": 0,
+          "temporalIntegral": 0.006120456974559673,
+          "globalBalance": -3.1839539676656314e-09,
+          "maxCarrierImbalance": 3.82763482367765e-14,
+          "minValue": 299.99999999995276,
+          "maxValue": 300.98142107542236,
+          "maxCourant": 0.10499789146487098,
+          "l2Error": null,
+          "fluxCorrection": "bounded-spatial",
+          "limitedFaces": 0,
+          "minimumFluxCorrection": 1,
+          "maxBoundViolation": 0,
+          "lowerBound": 299.999999999951,
+          "upperBound": 301,
+          "nativeTopologyRevalidated": true,
+          "solverQualityPassed": true,
+          "externalCheckMesh": "not run"
+        },
+        "heatGain": 0.2160273208245829,
+        "minimum": 299.9999999992829,
+        "maximum": 300.98142107542236,
+        "steps": 582,
+        "finalOutwardWallFlux": -0.017672718449837328,
+        "integratedOutwardWallFlux": -0.36651685920932076,
+        "exactEvents": true
+      }
+    ],
+    "sameGridMethodComparison": [
+      {
+        "cells": 1072,
+        "maxTemperatureDifference": 6.118604824223439e-05,
+        "l2TemperatureDifference": 7.226138660308648e-06,
+        "oldAcceptedSteps": 568,
+        "newAcceptedSteps": 555,
+        "oldRejectedAttempts": 23,
+        "newRejectedAttempts": 19,
+        "heatGainRelativeDifference": 3.565278653106106e-05,
+        "finalOutwardWallFluxRelativeDifference": 9.519677078515778e-07,
+        "integratedOutwardWallFluxRelativeDifference": 8.922628896835752e-05
+      },
+      {
+        "cells": 4104,
+        "maxTemperatureDifference": 1.2207979864342633e-05,
+        "l2TemperatureDifference": 1.4842507072424322e-06,
+        "oldAcceptedSteps": 582,
+        "newAcceptedSteps": 582,
+        "oldRejectedAttempts": 25,
+        "newRejectedAttempts": 25,
+        "heatGainRelativeDifference": 7.2840907211707965e-06,
+        "finalOutwardWallFluxRelativeDifference": 2.416386572744622e-07,
+        "integratedOutwardWallFluxRelativeDifference": 1.396213072554196e-05
+      }
+    ],
+    "time": [
+      {
+        "grid": "fine",
+        "directory": "outputs/thermal-startup/fine-spatial-dt01",
+        "exitCode": 0,
+        "seconds": 133.82596029201522,
+        "binarySha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71",
+        "summary": {
+          "format": "cartmesh2d-scalar-transport-v1",
+          "status": "converged",
+          "converged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/mesh.solver.cm2d",
+          "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/fine-spatial-dt01/result.carrier.checkpoint",
+          "carrierTime": 25,
+          "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/result.input.thermal.csv",
+          "verification": "",
+          "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+          "evolvingFlow": true,
+          "acceptedTime": 25,
+          "restart": "",
+          "flowCase": "custom",
+          "cells": 1072,
+          "faces": 2220,
+          "time": 25,
+          "timeStep": 0.06225063619361748,
+          "verificationSpeed": 1,
+          "constantSource": 0,
+          "initialValue": 300,
+          "flowNu": 0.1,
+          "flowSpeed": 0.2,
+          "flowVelocityRelaxation": 0.6,
+          "flowTolerance": 1e-08,
+          "flowConvection": "limited-linear",
+          "outletBackflow": "reject",
+          "timeStepControl": "joint-cfl-be-error-retry",
+          "startTime": 0,
+          "completedSteps": 316,
+          "rejectedAttempts": 20,
+          "maximumTimeStep": 0.1,
+          "temperatureScale": 1,
+          "timeRelativeTolerance": 0.01,
+          "thermalEventCount": 2,
+          "steps": 1,
+          "diffusivity": 0.002,
+          "convection": "limited-linear",
+          "relativeTolerance": 1e-09,
+          "absoluteTolerance": 1e-12,
+          "cellTolerance": 1e-09,
+          "residualNorm": 6.888640468960962e-11,
+          "maxCellImbalance": 3.0045171157868505e-11,
+          "maxDiagonalScaledImbalance": 7.319265825212133e-10,
+          "boundaryFlux": -0.006256396921032525,
+          "sourceIntegral": 0,
+          "temporalIntegral": 0.006256396704549732,
+          "globalBalance": -2.1648279349695265e-10,
+          "maxCarrierImbalance": 2.4958334010616312e-14,
+          "minValue": 300,
+          "maxValue": 300.94017806062953,
+          "maxCourant": 0.4855058045947991,
+          "l2Error": null,
+          "fluxCorrection": "bounded-spatial",
+          "limitedFaces": 0,
+          "minimumFluxCorrection": 1,
+          "maxBoundViolation": 0,
+          "lowerBound": 299.99999999999994,
+          "upperBound": 301,
+          "nativeTopologyRevalidated": true,
+          "solverQualityPassed": true,
+          "externalCheckMesh": "not run"
+        },
+        "heatGain": 0.209686492372251,
+        "minimum": 299.99999999966155,
+        "maximum": 300.94017806062953,
+        "steps": 316,
+        "finalOutwardWallFlux": -0.01758723686660129,
+        "integratedOutwardWallFlux": -0.3600355827623136,
+        "exactEvents": true
+      },
+      {
+        "grid": "fine",
+        "directory": "outputs/thermal-startup/fine-spatial-dt005",
+        "exitCode": 0,
+        "seconds": 149.87706312499358,
+        "binarySha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71",
+        "summary": {
+          "format": "cartmesh2d-scalar-transport-v1",
+          "status": "converged",
+          "converged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/mesh.solver.cm2d",
+          "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/fine-spatial-dt005/result.carrier.checkpoint",
+          "carrierTime": 25,
+          "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/result.input.thermal.csv",
+          "verification": "",
+          "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+          "evolvingFlow": true,
+          "acceptedTime": 25,
+          "restart": "",
+          "flowCase": "custom",
+          "cells": 1072,
+          "faces": 2220,
+          "time": 25,
+          "timeStep": 0.03562243172489943,
+          "verificationSpeed": 1,
+          "constantSource": 0,
+          "initialValue": 300,
+          "flowNu": 0.1,
+          "flowSpeed": 0.2,
+          "flowVelocityRelaxation": 0.6,
+          "flowTolerance": 1e-08,
+          "flowConvection": "limited-linear",
+          "outletBackflow": "reject",
+          "timeStepControl": "joint-cfl-be-error-retry",
+          "startTime": 0,
+          "completedSteps": 555,
+          "rejectedAttempts": 19,
+          "maximumTimeStep": 0.05,
+          "temperatureScale": 1,
+          "timeRelativeTolerance": 0.01,
+          "thermalEventCount": 2,
+          "steps": 1,
+          "diffusivity": 0.002,
+          "convection": "limited-linear",
+          "relativeTolerance": 1e-09,
+          "absoluteTolerance": 1e-12,
+          "cellTolerance": 1e-09,
+          "residualNorm": 9.915961746059373e-11,
+          "maxCellImbalance": 2.7637795209974753e-11,
+          "maxDiagonalScaledImbalance": 5.909413065253627e-10,
+          "boundaryFlux": -0.006140083889778047,
+          "sourceIntegral": 0,
+          "temporalIntegral": 0.006140083182366203,
+          "globalBalance": -7.074118443806121e-10,
+          "maxCarrierImbalance": 1.619017420129154e-14,
+          "minValue": 299.9999999999994,
+          "maxValue": 300.94026702078554,
+          "maxCourant": 0.27782683735541913,
+          "l2Error": null,
+          "fluxCorrection": "bounded-spatial",
+          "limitedFaces": 0,
+          "minimumFluxCorrection": 1,
+          "maxBoundViolation": 0,
+          "lowerBound": 299.9999999999993,
+          "upperBound": 301,
+          "nativeTopologyRevalidated": true,
+          "solverQualityPassed": true,
+          "externalCheckMesh": "not run"
+        },
+        "heatGain": 0.2102336608371879,
+        "minimum": 299.9999999994671,
+        "maximum": 300.94026702078554,
+        "steps": 555,
+        "finalOutwardWallFlux": -0.017584653560335662,
+        "integratedOutwardWallFlux": -0.3600948487940282,
+        "exactEvents": true
+      },
+      {
+        "grid": "fine",
+        "directory": "outputs/thermal-startup/fine-spatial-dt0025",
+        "exitCode": 0,
+        "seconds": 241.71085383399623,
+        "binarySha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71",
+        "summary": {
+          "format": "cartmesh2d-scalar-transport-v1",
+          "status": "converged",
+          "converged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/mesh.solver.cm2d",
+          "carrierCheckpoint": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-startup/fine-spatial-dt0025/result.carrier.checkpoint",
+          "carrierTime": 25,
+          "boundaryFile": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-advection/fine/result.input.thermal.csv",
+          "verification": "",
+          "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+          "evolvingFlow": true,
+          "acceptedTime": 25,
+          "restart": "",
+          "flowCase": "custom",
+          "cells": 1072,
+          "faces": 2220,
+          "time": 25,
+          "timeStep": 0.017899576052332833,
+          "verificationSpeed": 1,
+          "constantSource": 0,
+          "initialValue": 300,
+          "flowNu": 0.1,
+          "flowSpeed": 0.2,
+          "flowVelocityRelaxation": 0.6,
+          "flowTolerance": 1e-08,
+          "flowConvection": "limited-linear",
+          "outletBackflow": "reject",
+          "timeStepControl": "joint-cfl-be-error-retry",
+          "startTime": 0,
+          "completedSteps": 1045,
+          "rejectedAttempts": 17,
+          "maximumTimeStep": 0.025,
+          "temperatureScale": 1,
+          "timeRelativeTolerance": 0.01,
+          "thermalEventCount": 2,
+          "steps": 1,
+          "diffusivity": 0.002,
+          "convection": "limited-linear",
+          "relativeTolerance": 1e-09,
+          "absoluteTolerance": 1e-12,
+          "cellTolerance": 1e-09,
+          "residualNorm": 3.889255798214471e-10,
+          "maxCellImbalance": 9.083889196404016e-11,
+          "maxDiagonalScaledImbalance": 4.1154093562316363e-10,
+          "boundaryFlux": -0.006075430609954857,
+          "sourceIntegral": 0,
+          "temporalIntegral": 0.006075427435982894,
+          "globalBalance": -3.1739719628595675e-09,
+          "maxCarrierImbalance": 1.529202112160455e-14,
+          "minValue": 299.99999999998823,
+          "maxValue": 300.94031147179425,
+          "maxCourant": 0.13960255839724278,
+          "l2Error": null,
+          "fluxCorrection": "bounded-spatial",
+          "limitedFaces": 0,
+          "minimumFluxCorrection": 1,
+          "maxBoundViolation": 0,
+          "lowerBound": 299.9999999999878,
+          "upperBound": 301,
+          "nativeTopologyRevalidated": true,
+          "solverQualityPassed": true,
+          "externalCheckMesh": "not run"
+        },
+        "heatGain": 0.21051955883137494,
+        "minimum": 299.9999999994671,
+        "maximum": 300.94031147179425,
+        "steps": 1045,
+        "finalOutwardWallFlux": -0.01758338255357799,
+        "integratedOutwardWallFlux": -0.36014201107687993,
+        "exactEvents": true
+      }
+    ],
+    "timeAdjacentDifferences": [
+      {
+        "maxDt": [
+          0.1,
+          0.05
+        ],
+        "maxTemperatureDifference": 0.0024565486326082464,
+        "l2TemperatureDifference": 0.00042555000930255977,
+        "heatGainDifference": 0.0005471684649368813,
+        "finalOutwardWallFluxDifference": 2.5833062656278882e-06,
+        "integratedOutwardWallFluxDifference": 5.926603171457767e-05,
+        "relativeHeatDifference": 0.0026026682062137863
+      },
+      {
+        "maxDt": [
+          0.05,
+          0.025
+        ],
+        "maxTemperatureDifference": 0.0013068717964301868,
+        "l2TemperatureDifference": 0.00022475462954717776,
+        "heatGainDifference": 0.0002858979941870454,
+        "finalOutwardWallFluxDifference": 1.2710067576714168e-06,
+        "integratedOutwardWallFluxDifference": 4.716228285173152e-05,
+        "relativeHeatDifference": 0.0013580590600422464
+      }
+    ],
+    "timeDifferenceRatios": {
+      "maxTemperatureDifference": 1.87971661743599,
+      "l2TemperatureDifference": 1.893398192330599,
+      "heatGainDifference": 1.9138590548449343,
+      "finalOutwardWallFluxDifference": 2.032488222455014
+    },
+    "spatialAdjacentRelativeDifferences": [
+      {
+        "cells": [
+          1072,
+          4104
+        ],
+        "heatGain": 0.026819107718784957,
+        "finalOutwardWallFlux": 0.0049830980871240094,
+        "integratedOutwardWallFlux": 0.0175217326404756
+      }
+    ],
+    "heatKernel": [
+      {
+        "grid": "fine",
+        "exitCode": 0,
+        "seconds": 2.1710784999886528,
+        "directory": "outputs/thermal-startup/pulse-fine-spatial",
+        "metrics": {
+          "format": "cartmesh2d-thermal-spatial-probe-v1",
+          "case": "pulse",
+          "fluxCorrection": "bounded-spatial",
+          "cells": 1072,
+          "wallFaces": 80,
+          "converged": true,
+          "time": 0.2,
+          "dt": 0.0005,
+          "steps": 400,
+          "l2TemperatureError": 0.0006299558665496739,
+          "maxTemperatureError": 0.002902039191667427,
+          "centroidHeatDifference": -0.0007439970706232992,
+          "minimumAcceptedTemperature": 299.9999999999973,
+          "maximumAcceptedTemperature": 300.2838790713785,
+          "exactWallFlux": -0.053925354099842206,
+          "globalBalance": 4.627472294238544e-09,
+          "operatorOnExact": {
+            "integral": -0.05258549555945844,
+            "relativeIntegralError": 0.024846541348676754,
+            "relativeL1FluxError": 0.03183746433727062,
+            "maxFluxDensityError": 0.005539126797776063
+          },
+          "quadraticFitOnExact": {
+            "integral": -0.05433152323970408,
+            "relativeIntegralError": -0.007532062545381885,
+            "relativeL1FluxError": 0.028161623764030624,
+            "maxFluxDensityError": 0.004254361908479437
+          },
+          "solvedFlux": {
+            "integral": -0.056137795714498534,
+            "relativeIntegralError": -0.04102785510800758,
+            "relativeL1FluxError": 0.054442474780340894,
+            "maxFluxDensityError": 0.005477167466524199
+          }
+        }
+      },
+      {
+        "grid": "finer",
+        "exitCode": 0,
+        "seconds": 7.693241625005612,
+        "directory": "outputs/thermal-startup/pulse-finer-spatial",
+        "metrics": {
+          "format": "cartmesh2d-thermal-spatial-probe-v1",
+          "case": "pulse",
+          "fluxCorrection": "bounded-spatial",
+          "cells": 4104,
+          "wallFaces": 96,
+          "converged": true,
+          "time": 0.2,
+          "dt": 0.0005,
+          "steps": 400,
+          "l2TemperatureError": 0.0001499210010443645,
+          "maxTemperatureError": 0.0007247019410669964,
+          "centroidHeatDifference": -0.00016543619058917948,
+          "minimumAcceptedTemperature": 299.99999999999875,
+          "maximumAcceptedTemperature": 300.30848970807307,
+          "exactWallFlux": -0.053925354099842206,
+          "globalBalance": 2.213047384236333e-09,
+          "operatorOnExact": {
+            "integral": -0.053243228605459464,
+            "relativeIntegralError": 0.012649439317909603,
+            "relativeL1FluxError": 0.016983992512382005,
+            "maxFluxDensityError": 0.002488716572450942
+          },
+          "quadraticFitOnExact": {
+            "integral": -0.054225711382866186,
+            "relativeIntegralError": -0.005569871316336136,
+            "relativeL1FluxError": 0.005615320856286324,
+            "maxFluxDensityError": 0.0011562488000392216
+          },
+          "solvedFlux": {
+            "integral": -0.054546151072643406,
+            "relativeIntegralError": -0.011512153849779118,
+            "relativeL1FluxError": 0.022109089719229837,
+            "maxFluxDensityError": 0.002865412452330244
+          }
+        }
+      },
+      {
+        "grid": "finest",
+        "exitCode": 0,
+        "seconds": 57.59657054199488,
+        "directory": "outputs/thermal-startup/pulse-finest-spatial",
+        "metrics": {
+          "format": "cartmesh2d-thermal-spatial-probe-v1",
+          "case": "pulse",
+          "fluxCorrection": "bounded-spatial",
+          "cells": 16212,
+          "wallFaces": 120,
+          "converged": true,
+          "time": 0.2,
+          "dt": 0.0005,
+          "steps": 400,
+          "l2TemperatureError": 4.619160655515529e-05,
+          "maxTemperatureError": 0.00022622292215146445,
+          "centroidHeatDifference": -4.6020088930252956e-05,
+          "minimumAcceptedTemperature": 299.9999999999923,
+          "maximumAcceptedTemperature": 300.3253641092465,
+          "exactWallFlux": -0.053925354099842226,
+          "globalBalance": 6.791656008420244e-09,
+          "operatorOnExact": {
+            "integral": -0.05363030847479512,
+            "relativeIntegralError": 0.005471371119804447,
+            "relativeL1FluxError": 0.009434680887413385,
+            "maxFluxDensityError": 0.001975173260987439
+          },
+          "quadraticFitOnExact": {
+            "integral": -0.054014149412070216,
+            "relativeIntegralError": -0.0016466338276348738,
+            "relativeL1FluxError": 0.0017030459047917509,
+            "maxFluxDensityError": 0.00024876564510694163
+          },
+          "solvedFlux": {
+            "integral": -0.054114114332652695,
+            "relativeIntegralError": -0.003500398578022888,
+            "relativeL1FluxError": 0.014332236128338036,
+            "maxFluxDensityError": 0.005123198708142392
+          }
+        }
+      }
+    ],
+    "heatKernelOldNewFiles": [
+      {
+        "grid": "fine",
+        "suffix": ".cells.csv",
+        "byteEqual": true,
+        "sha256": "e2b68b7aeff80e058037dc4b29cbcb5330d1651eced508cfc2b093fe15fd35f8"
+      },
+      {
+        "grid": "fine",
+        "suffix": ".faces.csv",
+        "byteEqual": true,
+        "sha256": "5f7b82ab7db6bd0657030907fc25cb1c868adef7247b7db1a1ed047711d529ec"
+      },
+      {
+        "grid": "finer",
+        "suffix": ".cells.csv",
+        "byteEqual": true,
+        "sha256": "b4a08be3a9b6686f6195986ac313cb625bb884f6dba5fb806317408493e02b14"
+      },
+      {
+        "grid": "finer",
+        "suffix": ".faces.csv",
+        "byteEqual": true,
+        "sha256": "95fa6cb26a2b8d98a6f149e151961b4d7b6de92d5f6684d6b6c867d353eafea9"
+      },
+      {
+        "grid": "finest",
+        "suffix": ".cells.csv",
+        "byteEqual": true,
+        "sha256": "c149be811f65a77e33a3be649d0bb7983e4bd932a8464e88de9a5f83f2afa7ba"
+      },
+      {
+        "grid": "finest",
+        "suffix": ".faces.csv",
+        "byteEqual": true,
+        "sha256": "8df8119304cfc0355a1ff91864d2bc1c8e5e8f8670140fe82a3fa22282ccde5d"
+      }
+    ],
+    "scope": "Only terminal native outputs. Adaptive time grids differ. Timings overlap other jobs and are not performance benchmarks. The prototype comparison isolates the limiter and does not qualify cold-start cost or global error."
+  },
+  "desktop": {
+    "reopenComparison": {
+      "format": "cartmesh2d-thermal-spatial-bounds-app-comparison-v1",
+      "completed": true,
+      "cells": 4992,
+      "displayedTimeBefore": 1.3,
+      "recoveredTime": 1.3,
+      "finalTime": 1.4,
+      "events": 7,
+      "eventTimes": [
+        1.337
+      ],
+      "sourceCheckpointUnchanged": true,
+      "sourceManifestValidated": true,
+      "sourceZipValidated": true,
+      "sourceZipUnchangedDuringRead": true,
+      "sourceZipSha256": "9a62a24d0a30a6df77897581300f9bf024afc2fe248495bcf9e27f876c122c99",
+      "oldDisplayUnchanged": true,
+      "fieldSha256": "9bec12495dbec18928dd3f8d1504f8fafab3f48c5077770262f9a3a534e09354",
+      "inputSha256": "7ed356c40d717609bc473bdc14f71426f83d490090fd9582c912c8736951df53",
+      "history": {
+        "availableSteps": 167,
+        "segments": 5,
+        "gaps": [],
+        "firstTime": 3.3665129151604943e-07,
+        "lastTime": 1.4
+      },
+      "files": [
+        {
+          "suffix": ".thermal.checkpoint",
+          "bytes": 2798348,
+          "sha256": "b7226c8590c062fcae100332b62dfa983477e37628c5a1afa4326706ed4a20f6",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 771114,
+          "sha256": "7866cc9a629b4756142e2bd4a2897a53ad91c1709c7851b9ab6c9227a3bfca80",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 810139,
+          "sha256": "2a5902c0844d40e5022546422ccd60306feae2411475bb3e83400f318f6731c7",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".heat-history.csv",
+          "bytes": 956,
+          "sha256": "49b3a938b16fff3a2a38f88558afd55f13f45d1ea35be670271819b87807c4a5",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".thermal-history.csv",
+          "bytes": 911,
+          "sha256": "6340757f51ed6909be4f0a9da614569feab93fafed576db375ea29e9db3340a2",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".boundary-heat-history.csv",
+          "bytes": 73,
+          "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "bytes": 565,
+          "sha256": "ad6122857e733180b62b5b45a2c68aae541b620fd95dcd45a97eeb2cd950a6ae",
+          "byteEqual": true
+        }
+      ]
+    },
+    "sameProtocolMethodComparison": {
+      "format": "cartmesh2d-spatial-bounds-real-app-method-comparison-v1",
+      "cells": 4992,
+      "meshSha256": "e64be0aa5a4cd73a20ea97c2f0852290afa1ca5684ac2e9d2d2cfd050e65c2ed",
+      "stages": [
+        {
+          "endTime": 0.5,
+          "maxSteps": 100000,
+          "oldDirectory": "outputs/thermal-advection/app-resolved/mesh-tIBX04/thermal-run-VpNKTd",
+          "newDirectory": "outputs/thermal-startup/app-spatial/mesh-R1PnLE/thermal-run-yGx2B3",
+          "onlyRequestDifference": {
+            "fluxCorrection": [
+              "bounded",
+              "bounded-spatial"
+            ]
+          },
+          "inputByteEquality": {
+            "boundary.csv": true,
+            "thermal.events.csv": true
+          }
+        },
+        {
+          "endTime": 0.8,
+          "maxSteps": 100000,
+          "oldDirectory": "outputs/thermal-advection/app-resolved/mesh-tIBX04/thermal-run-M9Z6Pe",
+          "newDirectory": "outputs/thermal-startup/app-spatial/mesh-R1PnLE/thermal-run-xWHQl4",
+          "onlyRequestDifference": {
+            "fluxCorrection": [
+              "bounded",
+              "bounded-spatial"
+            ]
+          },
+          "inputByteEquality": {
+            "boundary.csv": true,
+            "thermal.events.csv": true
+          }
+        },
+        {
+          "endTime": 1.3,
+          "maxSteps": 100000,
+          "oldDirectory": "outputs/thermal-advection/app-resolved/mesh-tIBX04/thermal-run-sgRH0w",
+          "newDirectory": "outputs/thermal-startup/app-spatial/mesh-R1PnLE/thermal-run-8tr9HZ",
+          "onlyRequestDifference": {
+            "fluxCorrection": [
+              "bounded",
+              "bounded-spatial"
+            ]
+          },
+          "inputByteEquality": {
+            "boundary.csv": true,
+            "thermal.events.csv": true
+          }
+        },
+        {
+          "endTime": 1.3,
+          "maxSteps": 1,
+          "oldDirectory": "outputs/thermal-advection/app-resolved/mesh-tIBX04/thermal-run-IwPss5",
+          "newDirectory": "outputs/thermal-startup/app-spatial/mesh-R1PnLE/thermal-run-PAvns0",
+          "onlyRequestDifference": {
+            "fluxCorrection": [
+              "bounded",
+              "bounded-spatial"
+            ]
+          },
+          "inputByteEquality": {
+            "boundary.csv": true,
+            "thermal.events.csv": true
+          }
+        }
+      ],
+      "coldStartup": {
+        "endTime": 0.5,
+        "oldAcceptedSteps": 309,
+        "newAcceptedSteps": 143,
+        "oldRejectedAttempts": 193,
+        "newRejectedAttempts": 39,
+        "maxTemperatureDifference": 0.0008167888171897175,
+        "l2TemperatureDifference": 5.4713966807399996e-05,
+        "heatDifference": -2.0013508427486072e-05
+      },
+      "final": {
+        "endTime": 1.4,
+        "oldHistory": {
+          "rows": 333,
+          "firstTime": 3.3665129151604943e-07,
+          "lastTime": 1.4
+        },
+        "newHistory": {
+          "rows": 167,
+          "firstTime": 3.3665129151604943e-07,
+          "lastTime": 1.4
+        },
+        "maxTemperatureDifference": 9.051682098970559e-05,
+        "l2TemperatureDifference": 5.3003245734697196e-06,
+        "heatDifference": -6.115252040100309e-06
+      },
+      "scope": "Same mesh, source/boundary law and requested controls, method only differs. Actual accepted time grids differ. Not a runtime speed benchmark or proof of absolute thermal accuracy."
+    },
+    "firstRunChecks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "startupFailure": null,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "continuousHistory": {
+        "rows": 162,
+        "firstTime": 3.3665129151604943e-07,
+        "lastTime": 1.3,
+        "segments": 4
+      },
+      "finalTime": 1.3,
+      "eventsChecked": true,
+      "firstEventTimes": [
+        0.137,
+        0.243,
+        0.337
+      ]
+    },
+    "methodRestoredAndLocked": true,
+    "eventEditor": {
+      "rows": 7,
+      "locked": true
+    },
+    "scope": "Real macOS Electron source App with automated renderer/IPC actions; system file selection is supplied by the existing smoke entry point."
+  },
+  "compatibility": {
+    "legacyMode": "bounded",
+    "input": "outputs/thermal-startup/input.thermal.checkpoint",
+    "completed": true,
+    "files": [
+      {
+        "suffix": ".thermal.checkpoint",
+        "bytes": 8106910,
+        "sha256": "84b8b1cfff7d333b9ac2d96e495619c7bcfe0d61cb26e08658e3600a5daf6973",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".cells.csv",
+        "bytes": 2085286,
+        "sha256": "d7d012b1af896e69aba54d37cdee4758445e7359647d080ba33d4e5617321497",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".faces.csv",
+        "bytes": 2668995,
+        "sha256": "d535a1c0315fa4dbe9e6f59cda6c179ca9e0f587ad6407d767a8d95a20471966",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".heat-history.csv",
+        "bytes": 274,
+        "sha256": "b39b597c9d8406da939e2fe83b56c1080325c8401b8d2922374c8a7080cc2b3c",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".thermal-history.csv",
+        "bytes": 312,
+        "sha256": "911e90959e6140e0e1caf84a1f5bf25d89886cbaa728b21a04d33bac5dc238b3",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".boundary-heat-history.csv",
+        "bytes": 342,
+        "sha256": "e4470d72fb0699e90fc28cee0889af77c4179c2bd200db9aff54aca6b1c9d0a2",
+        "byteEqual": true
+      },
+      {
+        "suffix": ".attempt-history.csv",
+        "bytes": 159,
+        "sha256": "748423e781883fe2edd49a23d253e032d2e4e1ed78f5567eba107d4ec7aa9eaa",
+        "byteEqual": true
+      }
+    ]
+  },
+  "validation": {
+    "nativeRelated": {
+      "passed": 5,
+      "total": 5,
+      "log": {
+        "path": "outputs/thermal-startup/final-native-tests.log",
+        "bytes": 729,
+        "sha256": "427a0ee4588ec9ef7344a121602c2ad5bcdd342978ff01e12ed62774db891013"
+      }
+    },
+    "frontend": {
+      "passed": 225,
+      "total": 225,
+      "log": {
+        "path": "outputs/thermal-startup/final-frontend-tests.log",
+        "bytes": 20221,
+        "sha256": "7b3540f918fc9a1460a2b7e9205944e8287e99bdfe617382e62b44a1dfe5adb0"
+      }
+    },
+    "buildLog": {
+      "path": "outputs/thermal-startup/final-native-build.log",
+      "bytes": 6459,
+      "sha256": "6fcccded88708db6963340832c2e5af875d19cf82df20beac4beea3f505aa281"
+    },
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  },
+  "binaries": {
+    "production": {
+      "path": "outputs/thermal-startup/cartmesh2d_transport_cli",
+      "bytes": 573368,
+      "sha256": "394bb684e7a3905968aac05a5841c8308882becb04730a73cfd3d0c39ec08c71"
+    },
+    "isolatedCandidate": {
+      "path": "build/cartmesh2d_transport_spatial_candidate",
+      "bytes": 573288,
+      "sha256": "06dbfc3f4396ff55f51e09f36d74f4f9a48a2e9ea82956467d78247cc220cfff"
+    },
+    "probe": {
+      "path": "build/cartmesh2d_thermal_spatial_probe",
+      "bytes": 213504,
+      "sha256": "1c140118360c493410a61e5249903546bb73109a3071d97663de88a81c1f2f93"
+    }
+  },
+  "sourceManifest": {
+    "path": "outputs/thermal-startup/build-source-manifest.json",
+    "bytes": 21720,
+    "sha256": "187488d456ec7cac41bcba9cf0d7fcac001c3b5a1a6008354f4496cf3a910490"
+  },
+  "rawManifest": {
+    "path": "outputs/thermal-startup/raw-manifest.json",
+    "bytes": 122967,
+    "sha256": "fd072c89a4f69d5aa93c78996320796edcc81c249423d058061ef5da3b47abb2"
+  },
+  "closedRawFileCount": 567,
+  "closedRawBytes": 325270271,
+  "limits": [
+    "The first velocity-driven cold-start minimum-step requirement remains.",
+    "Two Pe=30 grid heat gains still differ by 2.6819%; no grid-independent heat-transfer qualification.",
+    "Local wall-flux sensitivity and geometric polygon error remain distinct from integral results.",
+    "Adaptive maximum-step comparisons are not global error bounds.",
+    "Overlapping process times are recorded but are not runtime speed benchmarks.",
+    "New mode packaged builds and Windows/Linux App were not run; no added experimental validation.",
+    "The old 16212-cell Pe=30 run to 25 s remains active outside this completed evidence set."
+  ],
+  "nextWork": "Sustained periodic thermal response and delivery acceptance; revisit startup cost only when the practical gain warrants it."
+}

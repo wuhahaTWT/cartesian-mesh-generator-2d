@@ -61,12 +61,12 @@ std::ofstream output(const std::string& prefix,const char* suffix) {
 
 int main(int argc,char** argv) {
     try {
-        if(argc<4 || argc>6)throw std::runtime_error("usage: thermal_spatial_probe FINAL.solver.cm2d PREFIX harmonic|pulse [steps] [unrestricted|bounded]");
+        if(argc<4 || argc>6)throw std::runtime_error("usage: thermal_spatial_probe FINAL.solver.cm2d PREFIX harmonic|pulse [steps] [unrestricted|bounded|bounded-spatial]");
         const std::string kind=argv[3],prefix=argv[2],mode=argc>5?argv[5]:"unrestricted";
         if(kind!="harmonic" && kind!="pulse")throw std::runtime_error("unknown reference case");
-        if(mode!="unrestricted" && mode!="bounded")throw std::runtime_error("unknown flux correction");
+        if(mode!="unrestricted" && mode!="bounded" && mode!="bounded-spatial")throw std::runtime_error("unknown flux correction");
         const bool pulse=kind=="pulse";
-        if(!pulse && (argc>4 || mode=="bounded"))throw std::runtime_error("harmonic probe is steady and unrestricted");
+        if(!pulse && (argc>4 || mode!="unrestricted"))throw std::runtime_error("harmonic probe is steady and unrestricted");
         std::size_t steps=100;
         if(argc>4) {std::size_t used=0;const std::string argument=argv[4];steps=std::stoull(argument,&used);
             if(used!=argument.size() || !steps || steps>100000)throw std::runtime_error("invalid step count");}
@@ -79,6 +79,7 @@ int main(int argc,char** argv) {
         problem.boundary=[&](std::size_t,const Face& f){return ScalarBoundary2D{ScalarBoundaryKind2D::Value,exact.value(f.centre),{}};};
         ScalarTransportControls2D controls;controls.preconditioner=ScalarPreconditioner2D::ILU0;
         if(mode=="bounded")controls.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+        else if(mode=="bounded-spatial")controls.fluxCorrection=ScalarFluxCorrection2D::BoundedSpatial;
         ScalarTransportWorkspace2D workspace;
         auto history=output(prefix,".history.csv");
         history<<"step,time,dt,minValue,maxValue,globalBalance,maxDiagonalScaledImbalance,limitedFaces,minimumFluxCorrection\n";

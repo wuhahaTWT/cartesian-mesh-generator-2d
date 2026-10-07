@@ -97,7 +97,7 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 ## 非定常守恒有界温度修正
 
-入口为 `ScalarTransportControls2D::fluxCorrection`、`ScalarTransport2D.cpp` 和 CLI `--flux-correction bounded|unrestricted`。默认 `unrestricted` 保持原有离散。`bounded` 当前要求非空上一物理层和正 dt；稳态调用明确失败。支持 Upwind/LimitedLinearUpwind、逐面正扩散率和非负隐式损失。算法背景可参阅 [Lipnikov、Svyatskiy、Vassilevski 对非正交网格离散最大值原理的讨论](https://dodo.inm.ras.ru/research/_media/lip-svy-vas-12.pdf)；本仓库采用下述隐式行余量构造，资格依据是原生算例。
+入口为 `ScalarTransportControls2D::fluxCorrection`、`ScalarTransport2D.cpp` 和 CLI `--flux-correction unrestricted|bounded|bounded-spatial`。默认 `unrestricted` 保持原有离散。两种有界方法都要求非空上一物理层和正 dt；稳态调用明确失败。支持 Upwind/LimitedLinearUpwind、逐面正扩散率和非负隐式损失。算法背景可参阅 [Lipnikov、Svyatskiy、Vassilevski 对非正交网格离散最大值原理的讨论](https://dodo.inm.ras.ru/research/_media/lip-svy-vas-12.pdf)；本仓库采用下述隐式行余量构造，资格依据是原生算例。
 
 记低阶 BE 矩阵为 `Aii Ti - Σ cij Tj = bi`，`cij≥0`，来自 TPFA 扩散和一阶迎风；高阶面修正 `Ff` 包含非正交扩散及对流重构。每格 `mi=Vi/dt`、`si=Vi*sinkRate`、`ri=Σ outward volumeFlux`，`Qi=source*Vi-Σ prescribed outward diffusiveFlux*faceLength`。比较值为 `(mi*Told+Qi)/(mi+si+ri)`；分母必须正，仍检查真实载流器连续性。全局 L/U 包含所有上一层、定温/流入值和比较值，因此真实加热/冷却或指定热流可以超出旧场极值。实现使用差值形式减轻 300 K 背景抵消。
 
@@ -105,9 +105,11 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 固定点的最大值判断：若最高格超出 U 且 Bi+≥0，受限右端直接要求该格≤U；若 Bi+<0，正修正为零，正比较锚和低阶矩阵又排除超过所有比较数据的全局最高值。最低值对称。该论证针对收敛离散方程，不保证任意中间候选或非线性迭代次数。返回场必须同时满足原有总残差、逐格失衡与有界偏差检查；后者直接使用已有 `cellTolerance`（温度时单位 K，默认 1e-9），不新增物理精度阈值。每步继承上一场后，求解容差可以累积；实际 100 步约 4e-9 K 的下界漂移单独报告。
 
-`evaluateScalarTransport2D` 使用完全相同的受限面通量，在给定场重新检查守恒；不能以低阶线性候选收敛代替最终非线性方程。JSON 新增方法、受限面数、最小系数、比较上下界和最终超界量。当前算法依赖本步质量与比较界，整步/两半步缺陷也包含限制器响应。限制器未启动的光滑区保持原重构；现有混合边界线性场和正弦空间/时间收敛例通过，尚不宣称任意非正交网格上的线性保持、唯一性或全程误差上界。
+`evaluateScalarTransport2D` 使用完全相同的受限面通量，在给定场重新检查守恒；不能以低阶线性候选收敛代替最终非线性方程。JSON 新增方法、受限面数、最小系数、比较上下界和最终超界量。`bounded` 的余量依赖本步质量与比较界，整步/两半步缺陷也包含限制器响应。限制器未启动的光滑区保持原重构；现有混合边界线性场和正弦空间/时间收敛例通过，尚不宣称任意非正交网格上的线性保持、唯一性或全程误差上界。
 
-有界联合状态采用 thermal checkpoint **v4**：`THERMAL_CONFIG` 增加 `bounded`，`CONTROLLER_PRESENT 0|1` 显式区分固定与自动步，自动控制签名为 11 个数（末项为本方法标识），始终保存 EVENTS。旧方法继续写原 v1/v2/v3 和 10 项签名；新旧方法互相续算明确拒绝。在内存中改方法时重置控制建议。桌面请求、项目清单、结果验证和恢复控件共同绑定此选项；旧项目缺少字段时按 `unrestricted` 恢复。
+`bounded-spatial` 在上述余量中分别去掉 `mi*(U-Told)` 和 `mi*(Told-L)`。比较界包含所有上一层值，故去掉的是非负时间余量，新允许量不大于原行允许量，原有收敛场最大值论证仍成立；共享面系数及源、损失、指定热流保持。给定相同当前场、上一场及比较界时，空间修正不再直接依赖 dt。零净源、零损失且载流器严格守恒时，比较界也不随 dt 改变；有源、损失、指定热流或实际连续性缺陷时，比较界仍可能依赖 dt。它限制得更严格，尖锐前沿可能改变，须比较实际温度和热流，不能推成任意工况的时间精度保证。
+
+两种有界联合状态都采用 thermal checkpoint **v4**：`THERMAL_CONFIG` 明确保存 `bounded` 或 `bounded-spatial`，`CONTROLLER_PRESENT 0|1` 区分固定与自动步；11 项控制签名末项分别为 1 和 2，始终保存完整 EVENTS。`unrestricted` 继续写原 v1/v2/v3 和 10 项签名。三个方法之间互相续算明确拒绝；在内存中改方法会重置控制建议。桌面请求、项目清单、结果验证和恢复控件共同绑定选项，LF/CRLF 都保持方法身份；旧项目缺少字段时按 `unrestricted` 恢复。
 
 ```sh
 cmake --build build --parallel 4 --target cartmesh2d_scalar_transport_tests cartmesh2d_scalar_workspace_tests cartmesh2d_thermal_flow_tests cartmesh2d_transport_cli
@@ -116,6 +118,12 @@ python3 tools/thermal/workflow.py --case cylinder --level 4 --dt .05 --end .3 --
 ```
 
 改成 `--flux-correction unrestricted` 并更换输出目录获得同控制基线。原云端零流速失败输入从已逐项验证的恢复归档取回；本轮完整命令在 `outputs/bounded-transport/*.command.json`，输入 SHA256、数值结果、适用范围见 `artifacts/current/native-thermal-bounded.json`。该零流速研究只比较原生输出，未恢复独立 Python 方程审计链。真实 App 入口追加 `--thermal-flux-correction=bounded`，例如 `--smoke=rectangle --target-cells=1000 --thermal-adaptive=true`；项目重开沿用前节入口。相对输出目录现在在保存时转换包内引用，原失败 ZIP 仍保留。
+
+### 空间有界修正与启动对照
+
+现有 `workflow.py` 支持 `--flux-correction bounded-spatial`；真实 App 使用 `--thermal-flux-correction=bounded-spatial`，其余事件、时间控制和项目重开入口相同。必须从新初始工况起算，不能将旧有界检查点改名后导入。
+
+`outputs/thermal-startup/` 保存冻结实际状态的整步／两半步比较、96 格固定场面通量诊断、正式方法的长时与时间步对照、热核原生求解及 App 项目链。`run-long.py` 和 `run-time.py` 复用 Pe=30 的原命令，只显式修改方法、最大步长、二进制及输出前缀；重算须换目录。`analyze.py` 只读取已完成的原生场、通量和历史，不重建方程。`spatial-candidate-*`、`full-spatial/`、`halves-spatial/` 和 `spatial-startup/` 是隔离研究程序，它曾复用旧模式标记，不能作为正式新方法的续算文件；正式程序输出必须明确为 `bounded-spatial`。方法及实际范围见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)；展示素材为[原生对照图](../artifacts/current/native-thermal-spatial-bounds.png)和[真实项目续算](../artifacts/current/native-thermal-spatial-bounds-app.png)，来源见[关键证据](../artifacts/current/native-thermal-spatial-bounds.json)。
 
 ### 有界圆柱长期响应复现
 
@@ -148,7 +156,7 @@ build/cartmesh2d_thermal_spatial_probe outputs/thermal-spatial-rerun/mesh.solver
 build/cartmesh2d_thermal_spatial_probe outputs/thermal-spatial-rerun/mesh.solver.cm2d outputs/thermal-spatial-rerun/pulse pulse 400 bounded
 ```
 
-pulse 的步数 200/400/800 对应 dt=.001/.0005/.00025 s，模式为 unrestricted 或 bounded；harmonic 为原有稳态 unrestricted。标准输出是指标 JSON，输出前缀旁保存单元、壁面和接受历史 CSV。`operatorOnExact` 是原算子作用在解析场，`quadraticFitOnExact` 只是既有二次拟合诊断，`solvedFlux` 才是实际求解后的热流；不得混为方法收益。失败明确返回非零，保留已经写出的诊断。
+pulse 的步数 200/400/800 对应 dt=.001/.0005/.00025 s，模式为 unrestricted、bounded 或 bounded-spatial；harmonic 为原有稳态 unrestricted。标准输出是指标 JSON，输出前缀旁保存单元、壁面和接受历史 CSV。`operatorOnExact` 是原算子作用在解析场，`quadraticFitOnExact` 只是既有二次拟合诊断，`solvedFlux` 才是实际求解后的热流；不得混为方法收益。失败明确返回非零，保留已经写出的诊断。
 
 三档有流长期工况沿用上一节原始归档的粗/细输入；新增 level 6 保持同几何与物性，按实际最终面导出边界，将上下外域面设为对称 farfield，再写定温壁面/入口和零外热流。入口 .2 m/s、ν=.1、D=.05，7.13 s 壁温 301→300 K、14.23 s 回到 301 K，最大 dt=.05 s、有界与联合时间误差控制开启，终点 25 s。完整 argv、输入和原生 CSV 在 `outputs/thermal-spatial/{coarse,fine,finer}-dt005/`；`run.py`、`run-probes.py` 记录执行方式，所有额外解析调用也各有 command.json。复算请使用新目录，不覆盖原接受场/检查点。
 

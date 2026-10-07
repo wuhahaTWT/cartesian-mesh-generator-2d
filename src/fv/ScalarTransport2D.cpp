@@ -148,9 +148,10 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const bool transient=!previous.empty();
     require(std::isfinite(timeStep) && (transient?(previous.size()==n&&timeStep>0):timeStep==0),
         "Scalar transport invalid previous state or time step");
-    require(c.fluxCorrection==ScalarFluxCorrection2D::Unrestricted || c.fluxCorrection==ScalarFluxCorrection2D::Bounded,
+    require(c.fluxCorrection==ScalarFluxCorrection2D::Unrestricted || c.fluxCorrection==ScalarFluxCorrection2D::Bounded || c.fluxCorrection==ScalarFluxCorrection2D::BoundedSpatial,
         "Scalar transport invalid flux correction");
-    const bool bounded=c.fluxCorrection==ScalarFluxCorrection2D::Bounded;
+    const bool spatialBounds=c.fluxCorrection==ScalarFluxCorrection2D::BoundedSpatial;
+    const bool bounded=spatialBounds || c.fluxCorrection==ScalarFluxCorrection2D::Bounded;
     require(!bounded || transient,"Bounded scalar flux correction requires backward Euler history");
     for (double v:previous) finite(v);
     for (double q:p.volumeFlux) finite(q);
@@ -280,8 +281,12 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         for(std::size_t i=0;i<n;++i) {
             const double mass=mesh.cells[i].area/timeStep;
             const double loss=p.sinkRate.empty()?0:p.sinkRate[i]*mesh.cells[i].area;
-            upperSlack[i]=finite(mass*(upper-previous[i])+(loss+carrier[i])*upper-netSource[i]);
-            lowerSlack[i]=finite(mass*(previous[i]-lower)-(loss+carrier[i])*lower+netSource[i]);
+            // Spatial mode removes only nonnegative temporal slack: comparison
+            // bounds contain every previous value. Its correction allowance is
+            // no larger than the original row allowance, preserving that bound
+            // argument while removing direct dt dependence at fixed bounds.
+            upperSlack[i]=finite((spatialBounds?0:mass*(upper-previous[i]))+(loss+carrier[i])*upper-netSource[i]);
+            lowerSlack[i]=finite((spatialBounds?0:mass*(previous[i]-lower))-(loss+carrier[i])*lower+netSource[i]);
         }
         for(std::size_t id=0;id<nf;++id) {
             const auto& f=mesh.faces[id];if(f.neighbour)continue;

@@ -22,7 +22,7 @@ function validateThermalRequest(input) {
     source:finite(input.source,'温度源'), scalarConvection:input.scalarConvection, fluxCorrection:input.fluxCorrection ?? 'unrestricted', boundaries:{} };
   requireValue(r.diffusivity>0 && r.initial>=0,'热扩散率须为正、初温不得低于 0 K。');
   requireValue(['upwind','limited-linear'].includes(r.scalarConvection),'未知温度对流格式。');
-  requireValue(['unrestricted','bounded'].includes(r.fluxCorrection),'未知温度通量修正。');
+  requireValue(['unrestricted','bounded','bounded-spatial'].includes(r.fluxCorrection),'未知温度通量修正。');
   for (const group of GROUPS) {
     const b=input.boundaries?.[group];
     requireValue(b && ['value','flux'].includes(b.kind),`${group} 边界类型无效。`);
@@ -142,7 +142,7 @@ function thermalCheckpointTime(text, events=[]) {
     requireValue(count && Number(count[1])===expected.length && times.length===expected.length && times.every((time,i)=>time===expected[i]),
       '时间事件与保存的完整规律不一致；须保留原 desktop-state.json 或项目包。');
   } else requireValue(events.length===0,'旧状态缺少时间事件。');
-  if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'))requireValue(/^THERMAL_CONFIG \S+ (?:upwind|limited-linear) bounded$/m.test(text)&&/^CONTROLLER_PRESENT [01]$/m.test(text),'有界温度状态配置缺失。');
+  if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'))requireValue(/^THERMAL_CONFIG \S+ (?:upwind|limited-linear) (?:bounded|bounded-spatial)$/m.test(text)&&/^CONTROLLER_PRESENT [01]$/m.test(text),'有界温度状态配置缺失。');
   const parts=text.split('\nFLOW\n');
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
   const m=parts[1].match(/^TIME (\S+)$/m);
@@ -202,10 +202,11 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
     && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
   requireValue((summary.fluxCorrection ?? 'unrestricted')===r.fluxCorrection,'温度通量修正与请求不符。');
-  if(r.fluxCorrection==='bounded') {
+  if(r.fluxCorrection!=='unrestricted') {
     for(const key of ['lowerBound','upperBound','maxBoundViolation'])finite(summary[key],key);
     requireValue(summary.lowerBound<=summary.upperBound&&summary.maxBoundViolation>=0&&summary.maxBoundViolation<=1e-9,'有界温度场未达停止条件。');
-    requireValue(jointText.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'),'联合状态未绑定有界温度格式。');
+    const savedMode=jointText.replace(/\r\n/g,'\n').match(/^THERMAL_CONFIG \S+ \S+ (\S+)$/m)?.[1];
+    requireValue(jointText.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4')&&savedMode===r.fluxCorrection,'联合状态未绑定请求的有界温度格式。');
   }
   requireValue(summary.flowTolerance===r.tolerance,'流动停止容差与请求不符。');
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');

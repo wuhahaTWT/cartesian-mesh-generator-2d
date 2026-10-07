@@ -22,12 +22,13 @@ inline void writeThermalCheckpoint2D(std::ostream& out,const FvMesh2D& mesh,
         ~RestoreFormat(){s.flags(flags);s.precision(precision);}
     } restore{out,out.flags(),out.precision()};
     out<<std::defaultfloat<<std::dec<<std::noshowpos<<std::noshowbase<<std::setprecision(17);
-    const bool bounded=controls.fluxCorrection==ScalarFluxCorrection2D::Bounded;
+    const bool spatial=controls.fluxCorrection==ScalarFluxCorrection2D::BoundedSpatial;
+    const bool bounded=spatial || controls.fluxCorrection==ScalarFluxCorrection2D::Bounded;
     if(!bounded && controls.fluxCorrection!=ScalarFluxCorrection2D::Unrestricted)
         flow_checkpoint_detail::fail("invalid thermal flux correction");
     out<<"CARTMESH2D_THERMAL_CHECKPOINT "<<(bounded?4:state.controller?3:setup.events.empty()?1:2)<<"\nCOUPLING new-time-flux-Euler-v1\nTHERMAL_CONFIG "
        <<setup.diffusivity<<' '<<flow_checkpoint_detail::convectionName(controls.convection);
-    if(bounded)out<<" bounded";
+    if(bounded)out<<(spatial?" bounded-spatial":" bounded");
     out<<'\n';
     out<<"SOURCES "<<setup.sourceDensity.size();
     for (double s:setup.sourceDensity) out<<' '<<s;
@@ -84,9 +85,14 @@ inline ThermalFlowState2D readThermalCheckpoint2D(std::istream& in,const FvMesh2
     exact(diffusivity,setup.diffusivity,"thermal diffusivity");
     if(scheme!=convectionName(controls.convection))fail("thermal convection mismatch");
     const bool bounded=version=="4";
-    if(bounded)token(in,"bounded");
-    if(controls.fluxCorrection!=(bounded?ScalarFluxCorrection2D::Bounded:ScalarFluxCorrection2D::Unrestricted))
-        fail("thermal flux correction mismatch");
+    auto correction=ScalarFluxCorrection2D::Unrestricted;
+    if(bounded) {
+        std::string mode;if(!(in>>mode))fail("truncated thermal flux correction");
+        if(mode=="bounded")correction=ScalarFluxCorrection2D::Bounded;
+        else if(mode=="bounded-spatial")correction=ScalarFluxCorrection2D::BoundedSpatial;
+        else fail("invalid thermal flux correction");
+    }
+    if(controls.fluxCorrection!=correction)fail("thermal flux correction mismatch");
     token(in,"SOURCES");count(in,setup.sourceDensity.size(),"thermal source");
     for(double expected:setup.sourceDensity) {
         double s=0;if(!(in>>s))fail("truncated thermal sources");exact(s,expected,"thermal source");

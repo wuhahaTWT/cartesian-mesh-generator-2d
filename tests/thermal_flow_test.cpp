@@ -153,9 +153,9 @@ void uniformSourceAndEvolution() {
     check(sameBits(before.scalar, std::vector<double>(mesh.cells.size(), 5.)), "input scalar remains unchanged");
 }
 
-void restartMatchesContinuous(bool bounded=false) {
+void restartMatchesContinuous(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Unrestricted) {
     const auto mesh = cavityMesh();
-    const auto fc = flowControls(); const auto setupData = setup(mesh); auto sc = scalarControls();if(bounded)sc.fluxCorrection=ScalarFluxCorrection2D::Bounded;
+    const auto fc = flowControls(); const auto setupData = setup(mesh); auto sc = scalarControls();sc.fluxCorrection=method;
     const auto start = initial(mesh);
     const auto continuous = advanceAccepted(mesh, fc, setupData, sc, start, 4, .01);
     const auto two = advanceAccepted(mesh, fc, setupData, sc, start, 2, .01);
@@ -303,11 +303,12 @@ void indexedAndCallbackRepresentations() {
     auto ambiguousBoundary = indexed; ambiguousBoundary.boundary = [](std::size_t, const Face&) { return ScalarBoundary2D{}; };
     rejects([&] { (void)solveScalarTransport2D(mesh, ambiguousBoundary); }, "exactly one valid boundary representation", "ambiguous boundary representation rejected");
 }
-void controlledTimeAndEvents(bool bounded=false) {
+void controlledTimeAndEvents(ScalarFluxCorrection2D method=ScalarFluxCorrection2D::Unrestricted) {
+    const bool bounded=method!=ScalarFluxCorrection2D::Unrestricted;
     const auto mesh=cavityMesh(6);auto fc=flowControls();fc.scenario="custom";fc.maxIterations=500;
     for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour)
         fc.boundaryConditions.push_back({id,FlowBoundaryKind2D::Wall,{},0,"wall"});
-    auto sc=scalarControls();if(bounded)sc.fluxCorrection=ScalarFluxCorrection2D::Bounded;auto data=setup(mesh,2.);
+    auto sc=scalarControls();sc.fluxCorrection=method;auto data=setup(mesh,2.);
     ThermalFlowState2D start{initialIncompressibleState2D(mesh,fc),std::vector<double>(mesh.cells.size(),300.)};
     auto next=data;next.sourceDensity.assign(mesh.cells.size(),-1.);
     data.events.push_back({.037,next.sourceDensity,next.boundary});
@@ -344,6 +345,15 @@ void controlledTimeAndEvents(bool bounded=false) {
     const auto other=advanceControlledThermalFlow2D(mesh,fc,data,otherFlux,restored,c);
     const auto otherClean=advanceControlledThermalFlow2D(mesh,fc,data,otherFlux,withoutHistory,c);
     compareState(*other.step.accepted,*otherClean.step.accepted,"in-memory flux mode change resets accepted controller history");
+    for(auto mode:{ScalarFluxCorrection2D::Unrestricted,ScalarFluxCorrection2D::Bounded,ScalarFluxCorrection2D::BoundedSpatial}) {
+        if(mode==method)continue;
+        auto different=sc;different.fluxCorrection=mode;
+        rejects([&]{std::stringstream in(text);(void)readThermalCheckpoint2D(in,mesh,fc,data,different);},
+                "flux correction mismatch","checkpoint distinguishes each conservative flux method");
+        const auto changed=advanceControlledThermalFlow2D(mesh,fc,data,different,restored,c);
+        const auto fresh=advanceControlledThermalFlow2D(mesh,fc,data,different,withoutHistory,c);
+        compareState(*changed.step.accepted,*fresh.step.accepted,"different bounded method resets time-step history");
+    }
     auto changed=data;changed.events[0].sourceDensity[0]+=1.;
     rejects([&]{std::stringstream in(text);(void)readThermalCheckpoint2D(in,mesh,fc,changed,sc);},"event source","complete event law bound to restart");
     rejects([&]{(void)advanceThermalFlow2D(mesh,fc,data,sc,start,.05);},"crosses event","fixed step cannot straddle event");
@@ -437,7 +447,8 @@ int main() {
     try {
         controllerHistoryPreservesTerminalInterval();
         steadyTimeInvariance();
-        controlledTimeAndEvents();controlledTimeAndEvents(true);restartMatchesContinuous(true);
+        controlledTimeAndEvents();controlledTimeAndEvents(ScalarFluxCorrection2D::Bounded);restartMatchesContinuous(ScalarFluxCorrection2D::Bounded);
+        controlledTimeAndEvents(ScalarFluxCorrection2D::BoundedSpatial);restartMatchesContinuous(ScalarFluxCorrection2D::BoundedSpatial);
         uniformSourceAndEvolution(); restartMatchesContinuous(); failureDoesNotMutateInputs();
         transientOutletInflow();
         strictCheckpointValidation(); indexedAndCallbackRepresentations();

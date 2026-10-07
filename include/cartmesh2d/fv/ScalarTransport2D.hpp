@@ -27,7 +27,10 @@ enum class ScalarPreconditioner2D { Jacobi, ILU0 };
 // Conservative nonlinear correction limiting for backward Euler. Bounds include
 // previous values, prescribed inflow/value data, source, loss and Neumann flux.
 // Unrestricted retains the original nonorthogonal diffusion/reconstruction.
-enum class ScalarFluxCorrection2D { Unrestricted, Bounded };
+// Bounded retains the original BE row-budget method for existing restarts.
+// BoundedSpatial omits nonnegative temporal slack from the correction budget;
+// for fixed comparison bounds the spatial flux has no direct dt dependence.
+enum class ScalarFluxCorrection2D { Unrestricted, Bounded, BoundedSpatial };
 struct ScalarBoundary2D {
     ScalarBoundaryKind2D kind = ScalarBoundaryKind2D::Value;
     // Value: scalar at face. DiffusiveFlux: outward -D grad(s).n per unit length.
