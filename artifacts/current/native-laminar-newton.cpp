@@ -109,7 +109,7 @@ template<class Base,class Boundary> int dispatchNewton(int argc,char** argv){
     if(mode=="check")return runOseen<Base,Boundary>(argc,argv);
     return runOseen<NewtonTransport<Base>,Boundary>(argc,argv);
 }
-int main(int argc,char** argv)try{
+int runNewton(int argc,char** argv)try{
     if(argc<2)throw std::runtime_error("newton requires a mode");
     const std::string mode=argv[1];
     if(mode=="blend"){
@@ -125,3 +125,7 @@ int main(int argc,char** argv)try{
     if(boundary=="normal-stress")return dispatchNewton<OpenTransport<OutletForm::NormalStress>,ExplicitOpenBoundary<OutletForm::NormalStress>>(argc,argv);
     return dispatchNewton<Transport,StandardOseenBoundary>(argc,argv);
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+
+#ifndef CARTMESH_NEWTON_NO_MAIN
+int main(int argc,char** argv){return runNewton(argc,argv);}
+#endif

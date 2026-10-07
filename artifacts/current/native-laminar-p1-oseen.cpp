@@ -56,7 +56,7 @@ Vector2D forceAt(Point2D p,const std::string& problem,double nu,bool nonlinear){
 struct Oseen {
     Element e;Lift lift;Mat convection,outletMatrix;Vec beta,outletLoad;std::vector<Vec> bc;int outletModel;double nu;int order;const Fixture& f;int t;std::string problem;
     Oseen(const Fixture& F,int T,const std::string& Problem,double viscosity,bool nonlinear,int OutletModel,int Order,const Vec& previous):
-        e(F,T,Problem,0,false,true,Order),lift(F,T,e.a,Order),convection(2*e.a.m,2*e.a.m),outletMatrix(2*e.a.m,2*e.a.m),beta(localState(F,T,e.a.m,previous)),outletLoad(2*e.a.m),outletModel(OutletModel),nu(viscosity),order(Order),f(F),t(T),problem(Problem){
+        e(F,T,Problem,0,false,true,Order),lift(F,T,e.a,Order),convection(2*e.a.m,2*e.a.m),outletMatrix(2*e.a.m,2*e.a.m),beta(nonlinear?localState(F,T,e.a.m,previous):Vec(2*e.a.m+3)),outletLoad(2*e.a.m),outletModel(OutletModel),nu(viscosity),order(Order),f(F),t(T),problem(Problem){
         auto& a=e.a;int m=a.m;const auto& cell=f.mesh.cells[t];e.rhs.assign(e.rhs.size(),0);
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)*=nu;
         for(std::size_t k=0;k<lift.tri.size();++k){Vec coeff(8);for(int l=0;l<8;++l)for(int j=0;j<2*m;++j)coeff[l]+=lift.coefficients(8*k+l,j)*beta[j];bc.push_back(coeff);
@@ -116,6 +116,7 @@ struct StandardOseenBoundary {
 };
 template<class Operator,class Boundary=StandardOseenBoundary> int runOseen(int argc,char** argv)try{
     constexpr bool linearized=requires {Operator::linearizedNewton;};
+    constexpr bool iterationUsesState=requires {Operator::iterationUsesState;};
     if(argc!=11)throw std::runtime_error("usage: p1-oseen assemble|recover|check mesh n problem nu stokes|ns closed|open|pressure order previous.state|zero prefix");
     std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[10];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double nu=std::stod(argv[5]);bool nonlinear=std::string(argv[6])=="ns";const int outletModel=Boundary::model(argv[7]);const bool open=outletModel!=0;
     if((mode!="assemble"&&mode!="recover"&&mode!="check")||!std::isfinite(nu)||!(nu>0)||order<4||order>12||(std::string(argv[6])!="ns"&&std::string(argv[6])!="stokes"))throw std::runtime_error("invalid research options");
@@ -138,7 +139,7 @@ template<class Operator,class Boundary=StandardOseenBoundary> int runOseen(int a
         cells.open(prefix+"."+mode+".cells.csv.tmp");cells<<std::setprecision(17)<<"cell,x,y,area,u0,uX,uY,v0,vX,vY,p0,pX,pY\n";
     }
     Vec appliedTraction(4*nf),reaction(4*nf),viscousReaction(4*nf),convectionReaction(4*nf),stressReaction(4*nf),exactReaction(4*nf);double residualSquared=0,prescribedTractionWork=0,outletGradientWork=0,bodyForceX=0,bodyForceY=0,area=0,urms=0,prms=0,gauge=0,pressureWork=0,visc=0,conv=0,identity=0,force=0,maxdiv=0,maxspeed=0,pmin=1e300,pmax=-1e300,internal=0,trace=0,delta=0,rtRms=0,rtMax=0,pVertexMin=1e300,pVertexMax=-1e300;
-    for(int t=0;t<nc;++t){Operator o(f,t,problem,nu,nonlinear,outletModel,order,nonlinear?previous:zero);auto& e=o.e;const auto& a=e.a;int m=a.m;area+=mesh.cells[t].area;trace=std::max(trace,o.lift.traceResidual);
+    for(int t=0;t<nc;++t){Operator o(f,t,problem,nu,nonlinear,outletModel,order,(nonlinear||iterationUsesState)?previous:zero);auto& e=o.e;const auto& a=e.a;int m=a.m;area+=mesh.cells[t].area;trace=std::max(trace,o.lift.traceResidual);
         std::vector<int> ids;for(int j:e.outside)if(j==2*m)ids.push_back(4*nf+t);else{int c=j/m,k=j%m;ids.push_back(4*int(mesh.cells[t].faces[(k-3)/2])+2*c+(k-3)%2);}
         if(mode=="assemble"){auto [k,b]=e.condensed();for(std::size_t i=0;i<ids.size();++i){int row=map[ids[i]];if(row<0)continue;rhs[row]+=b[i];for(std::size_t j=0;j<ids.size();++j){int col=map[ids[j]];double v=k(int(i),int(j));if(col<0)rhs[row]-=v*known[ids[j]];else if(v!=0){Entry z{row,col,v};entries.write(reinterpret_cast<char*>(&z),sizeof z);++nnz;}
                     if constexpr(linearized){if(col>=0){const double pv=o.picardCondensed(int(i),int(j));if(pv!=0){Entry z{row,col,pv};picardEntries.write(reinterpret_cast<char*>(&z),sizeof z);}}}}}}

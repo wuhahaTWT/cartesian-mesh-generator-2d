@@ -634,6 +634,24 @@ python3 artifacts/current/native-laminar-oseen-block.py sheared 8 noslip-sheared
 
 `lastAcceptedIterate` 只是研究迭代；线性失败不恢复候选，回溯失败不替换它，预算耗尽不设置 `finalState`。所有试探、真实方程输出、命令、二进制/源码哈希和失败原因留在 `result.json` 与同目录原始文件中。这里未重新验证产品取消/检查点语义。`native-laminar-newton.json` 记录四组完整同场对照及更粗剪切格的失败：低黏度剪切8档9步Newton对36步Picard，但规则8档ν=.1的Newton更慢；剪切4档ν=.01即用直接线性解仍回溯停滞。上述比较不等于新空间精度、曲壁压力或大网格默认资格。
 
+### 相同稳态方程的原生伪时间推进
+
+`native-laminar-pseudo-time.cpp` 复用解析Newton，给两个单元P1速度分量加入原生精确 `3×3` 质量矩阵，面速度与压力继续是代数未知量。绝对状态矩阵加 `M/Δτ`、右端加 `Mu_old/Δτ`，内部8×8重新凝聚，等价于 `[J(u)+M/Δτ]δu=-F(u)`；Picard速度预条件矩阵也含相同质量项。Stokes只在单元内令输运速度为零，同时把当前完整状态按引用传给质量项，避免逐单元复制全局向量。没有独立Python方程或PETSc依赖。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-pseudo-time.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-pseudo-time
+python3 artifacts/current/native-laminar-newton.py sheared 4 noslip-sheared .01 ns closed outputs/laminar-stability/pseudo-time/reproduction --pseudo-step .1 --iterations 60
+python3 artifacts/current/native-laminar-newton.py square 4 outlet-poiseuille .1 ns pressure outputs/laminar-stability/pseudo-time/pressure-schur --pseudo-step .1 --pressure-preconditioner schur-diagonal --iterations 40
+```
+
+先按前文构建原生块求解器和状态读取器。Linux使用系统C++20编译器并去掉Accelerate参数。`--pseudo-step` 默认0，继续原Newton回溯；正值才选择伪时间入口。原生 `assemble/recover` 额外接收有限非负的 `inverse_dt`，0精确退回原Newton矩阵。`check/seed/blend/tangent` 始终走原算子，完成门从不采用带伪质量的残差。它是稳态全局化方法，不是已验证的物理时间积分器。
+
+这里使用单位增长因子的SER：`Δτ_next=min(Δτ_max,Δτ*||F_old||₂/||F_new||₂)`，最大步长显式默认 `1e6`；参考尺度仍为 `U=L=1、p/U²`。可以接受原稳态残差暂时增加的有限伪时间迭代，但每步必须先成功解线性系统；最终NS和Stokes均要求原方程/弱散度最大量及完整场变化通过 `1e-9`，线性相对控制仍为 `1e-13`。零范数或已完成状态避免比值奇点。一次线性Stokes的场变化例外只保留在不含伪时间的原路径。没有参数扫描、自动切换或伪时间重试控制器；线性/总迭代预算失败仍保留原场并明确未完成。方法背景见[伪时间推进手册](https://petsc.org/release/manual/ts/)和[SER实际步长实现](https://petsc.org/main/src/ts/impls/pseudo/posindep.c.html)，不据通用方法理论直接授予本DAE全局收敛保证。
+
+云端新增 `--pressure-preconditioner schur-diagonal`，仅适用于开放边界原生ILU0后端，速度尺度参数须为0。块程序对应 `outlet-schur-diag`：在已凝聚的真实压力耦合D/G上，以所选速度预条件矩阵的正对角构造 `P=D diag(A)⁻¹ G`，施加 `-IC0(P)⁻¹`；若选择Picard速度矩阵，A也来自同一Picard矩阵，并包含伪质量。没有压力正则化、主元替换或静默兜底。原符号约定下D=Gᵀ，新增结构检查沿用原速度检查的 `1e-12 max(1,max|Pij|)` 系数容差，只用于确保IC0的对称结构；原真实线性残差和物理门不变。显式选项不改变原 `viscous/local-oseen` 模式。
+
+`native-laminar-pseudo-time.json` 保存原失败状态恢复、`.01/.1/1` 初始步长同场对照、NS/Stokes/出口完整解、五步Stokes错误完成的最小失败例及云端合并联用。原始 `result.json` 中一次早期Stokes五步 `completed=true` 已明确标为被修复版本的错误判定，不计入当前成功。该粗剪切格的空间误差仍显著；同场、严格残差和较少矩阵乘均不替代曲壁压力或默认产品资格。所有原场/失败/源码版本保留在逐项校验的压缩包中，路径和哈希见该索引。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native analytic Newton with actual-residual backtracking, research only.
+"""Native Newton with backtracking or pseudo-time globalization, research only.
 
 Python orchestrates native equations and linear algebra; it does not implement
 another PDE. U=L=1, pressure U^2. The merit is half the squared L2 norm of all
@@ -27,16 +27,18 @@ def main():
     p.add_argument('viscosity',type=float);p.add_argument('equation',choices=['ns','stokes'])
     p.add_argument('boundary',choices=['closed','open','pressure','traction','pseudo-traction','normal-stress'])
     p.add_argument('output',type=Path)
-    p.add_argument('--transport',type=Path,default=root/'build/native-laminar-newton')
+    p.add_argument('--transport',type=Path)
     p.add_argument('--block',type=Path,default=root/'build/native-laminar-block-precondition')
     p.add_argument('--fields',type=Path,default=root/'build/native-laminar-state-compare')
     p.add_argument('--backend',choices=['ilu0','dense-reference'],default='ilu0')
     p.add_argument('--preconditioner',choices=['picard','newton'],default='picard')
-    p.add_argument('--pressure-preconditioner',choices=['viscous','local-oseen'],default='viscous')
+    p.add_argument('--pressure-preconditioner',choices=['viscous','local-oseen','schur-diagonal'],default='viscous')
     p.add_argument('--transport-speed',type=float,default=0.)
     p.add_argument('--initial-state',default='zero');p.add_argument('--iterations',type=int,default=40)
     p.add_argument('--backtracks',type=int,default=15);p.add_argument('--armijo',type=float,default=1e-4)
     p.add_argument('--no-line-search',action='store_true')
+    p.add_argument('--pseudo-step',type=float,default=0.,help='positive initial pseudo-time step; zero keeps Newton backtracking')
+    p.add_argument('--pseudo-maximum-step',type=float,default=1e6)
     p.add_argument('--tolerance',type=float,default=1e-9);p.add_argument('--linear-tolerance',type=float,default=1e-13)
     p.add_argument('--restarts',type=int,default=50);p.add_argument('--quadrature',type=int,choices=range(4,13),default=6)
     a=p.parse_args()
@@ -44,13 +46,19 @@ def main():
         p.error('positive finite viscosity/tolerances and 0<Armijo<.5 required')
     if min(a.iterations,a.backtracks,a.restarts)<1 or a.linear_tolerance>.01:p.error('invalid iteration budget')
     if not math.isfinite(a.transport_speed) or a.transport_speed<0 or ((a.pressure_preconditioner=='local-oseen')!=(a.transport_speed>0)):
-        p.error('local-oseen requires positive transport speed; viscous mode requires zero')
-    if a.pressure_preconditioner=='local-oseen' and (a.boundary=='closed' or a.backend!='ilu0'):
-        p.error('local-oseen requires an open-boundary ILU0 solve')
+        p.error('local-oseen requires positive transport speed; other modes require zero')
+    if a.pressure_preconditioner!='viscous' and (a.boundary=='closed' or a.backend!='ilu0'):
+        p.error('non-viscous pressure preconditioners require an open-boundary ILU0 solve')
+    if not math.isfinite(a.pseudo_step) or a.pseudo_step<0 or not math.isfinite(a.pseudo_maximum_step) or a.pseudo_maximum_step<=0 or a.pseudo_step>a.pseudo_maximum_step:
+        p.error('finite 0<=pseudo-step<=pseudo-maximum-step and positive maximum required')
+    pseudo=a.pseudo_step>0
+    if pseudo and a.no_line_search:p.error('pseudo-time is a separate globalization, not the no-line-search negative control')
+    if a.transport is None:a.transport=root/('build/native-laminar-pseudo-time' if pseudo else 'build/native-laminar-newton')
+    pseudo_step=a.pseudo_step
     a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
     controls=[a.mesh,str(a.n),a.problem,str(a.viscosity),a.equation,a.boundary,str(a.quadrature)]
     start=time.monotonic()
-    record={'method':'native analytic Newton','controls':controls,'completed':False,'pid':os.getpid(),'backend':a.backend,'velocityPreconditioner':a.preconditioner,'pressurePreconditioner':a.pressure_preconditioner,'transportSpeed':a.transport_speed,'lineSearch':not a.no_line_search,'armijo':a.armijo,'maximumBacktracks':a.backtracks,'maximumIterations':a.iterations,'maximumRestarts':a.restarts,'initialState':a.initial_state,'iterationTolerance':a.tolerance,'linearTolerance':a.linear_tolerance,'iterations':[],'commands':[],'lastAcceptedIterate':None,'finalState':None,'physicalCheckpoint':False}
+    record={'method':'native analytic Newton','controls':controls,'completed':False,'pid':os.getpid(),'backend':a.backend,'velocityPreconditioner':a.preconditioner,'pressurePreconditioner':a.pressure_preconditioner,'transportSpeed':a.transport_speed,'globalization':'pseudo-transient' if pseudo else 'backtracking','initialPseudoStep':a.pseudo_step,'maximumPseudoStep':a.pseudo_maximum_step,'lineSearch':not (a.no_line_search or pseudo),'armijo':a.armijo,'maximumBacktracks':a.backtracks,'maximumIterations':a.iterations,'maximumRestarts':a.restarts,'initialState':a.initial_state,'iterationTolerance':a.tolerance,'linearTolerance':a.linear_tolerance,'iterations':[],'commands':[],'lastAcceptedIterate':None,'finalState':None,'physicalCheckpoint':False}
 
     def save():
         record['totalSeconds']=time.monotonic()-start
@@ -78,6 +86,7 @@ def main():
         if a.backend!='dense-reference':binaries['block']=a.block
         record['nativeBinaries']={k:{'path':str(v),'sha256':sha(v)} for k,v in binaries.items()}
         names=['native-laminar-newton.cpp','native-laminar-newton.py','native-laminar-p1-oseen.cpp','native-laminar-p1-transport.cpp','native-laminar-open-boundary.cpp','native-laminar-p1-stress.cpp','native-laminar-hybrid-stokes-p1.cpp','native-laminar-block-precondition.cpp','native-laminar-state-compare.cpp']
+        if pseudo:names.append('native-laminar-pseudo-time.cpp')
         record['sourceSha256']={n:sha(root/'artifacts/current'/n) for n in names}
         if Path(a.mesh).is_file():record['meshSha256']=sha(a.mesh)
         if a.initial_state!='zero':record['initialStateSha256']=sha(a.initial_state)
@@ -89,7 +98,8 @@ def main():
         for iteration in range(a.iterations):
             label=f'iteration-{iteration:03d}';prefix=a.output/label
             step={'iteration':iteration,'previous':str(current),'previousSha256':sha(current),'previousMerit':.5*oldnorm*oldnorm,'trials':[]};record['iterations'].append(step);save()
-            native_args=[*controls,current,prefix]
+            if pseudo:step['pseudoStep']=pseudo_step
+            native_args=[*controls,current,prefix,*([1./pseudo_step] if pseudo else [])]
             assembly=native([a.transport,'assemble',*native_args],label+'.assemble');step['assembly']=assembly
             if a.backend=='dense-reference':
                 import numpy as np
@@ -107,7 +117,7 @@ def main():
             else:
                 preconditioner_args=['--velocity-preconditioner',str(prefix)+'.picard'] if a.preconditioner=='picard' else []
                 if preconditioner_args:step['preconditionerEntriesSha256']=sha(str(prefix)+'.picard.entries')
-                pressure_mode='outlet-oseen' if a.pressure_preconditioner=='local-oseen' else 'gauge' if a.boundary=='closed' else 'outlet'
+                pressure_mode={'local-oseen':'outlet-oseen','schur-diagonal':'outlet-schur-diag'}.get(a.pressure_preconditioner,'gauge' if a.boundary=='closed' else 'outlet')
                 r=run([a.block,prefix,str(geometry)+'.cells.csv','ilu0',pressure_mode,prefix,a.linear_tolerance,a.restarts,a.viscosity,a.transport_speed,*preconditioner_args],label+'.linear',True)
                 code=r.returncode
                 if Path(str(prefix)+'.json').exists():step['linear']=json.loads(Path(str(prefix)+'.json').read_text())
@@ -117,7 +127,7 @@ def main():
             recovery=native([a.transport,'recover',*native_args],label+'.recover');step['recovery']=recovery
             if not recovery['linearizedNewton'] or recovery['physicalDiagnostics']:raise RuntimeError('linearized candidate was mislabeled')
             candidate=Path(str(prefix)+'.recover.state');accepted=None
-            for bt in range(1 if a.no_line_search else a.backtracks):
+            for bt in range(1 if a.no_line_search or pseudo else a.backtracks):
                 alpha=2.**(-bt);trial_label=f'{label}-trial-{bt:02d}';trial_prefix=a.output/trial_label
                 if bt==0:
                     trial_state=candidate;change=recovery['stateCoefficientChange']
@@ -127,13 +137,23 @@ def main():
                 check=native([a.transport,'check',*controls,trial_state,trial_prefix],trial_label+'.check')
                 equation,norm=metrics(check)
                 if not math.isfinite(change) or change<0:raise RuntimeError('invalid state change')
-                converged=equation<=a.tolerance and (a.equation=='stokes' or change<=a.tolerance)
+                converged=equation<=a.tolerance and ((a.equation=='stokes' and not pseudo) or change<=a.tolerance)
                 merit=.5*norm*norm;bound=(.5-a.armijo*alpha)*oldnorm*oldnorm
                 sufficient=merit<=bound
-                accept=sufficient or converged or a.no_line_search
-                trial={'alpha':alpha,'state':str(trial_state),'stateSha256':sha(trial_state),'stateCoefficientChange':change,'check':check,'equationResidualMax':equation,'merit':merit,'armijoBound':bound,'sufficientDecrease':sufficient,'strictConvergence':converged,'accepted':accept}
+                # A pseudo-time step follows the linearly implicit DAE, and
+                # can temporarily increase the steady residual. It is only a
+                # research iterate; final acceptance always requires F=0.
+                accept=sufficient or converged or a.no_line_search or pseudo
+                trial={'alpha':alpha,'state':str(trial_state),'stateSha256':sha(trial_state),'stateCoefficientChange':change,'check':check,'equationResidualMax':equation,'merit':merit,'armijoBound':bound,'sufficientDecrease':sufficient,'pseudoTimeAcceptance':pseudo,'strictConvergence':converged,'accepted':accept}
                 step['trials'].append(trial);save()
                 if accept:
+                    if pseudo:
+                        # Switched evolution relaxation with unit growth:
+                        # dt_new=dt_old*||F_old||/||F_new||. Keep the real
+                        # unregularized equation norm and an explicit cap.
+                        pseudo_step=a.pseudo_maximum_step if norm==0 or oldnorm==0 or converged else min(a.pseudo_maximum_step,pseudo_step*(oldnorm/norm))
+                        if not math.isfinite(pseudo_step) or pseudo_step<=0:raise RuntimeError('invalid next pseudo step; trial not accepted')
+                        step['nextPseudoStep']=pseudo_step
                     accepted=trial;current=trial_state;oldnorm=norm;record['lastAcceptedIterate']=str(current);step['acceptedState']=str(current);save();break
             if accepted is None:
                 record['failure']='line-search budget exhausted; all trial fields retained, last accepted iterate unchanged';save();return 2

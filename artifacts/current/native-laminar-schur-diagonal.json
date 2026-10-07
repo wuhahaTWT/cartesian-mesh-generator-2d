@@ -1,0 +1,103 @@
+{
+  "schema": "cartmesh2d-native-laminar-schur-diagonal-v1",
+  "scope": "Explicit research pressure preconditioner for retained compatible P1/RT1 matrices; original matrix, right-hand side, geometry, PDE, boundary policy, Krylov products and residual acceptance remain unchanged.",
+  "hypothesis": "Replace a diagonal pressure-mass scale by the sparse coefficient-free approximation P = D diag(A)^{-1} G, then apply -IC0(P)^{-1} in the right block-triangular preconditioner.",
+  "structure": {
+    "matrixBlockOrder": "[retained velocity, cell P0 pressure]",
+    "pressureUnknowns": 4716,
+    "pressureApproximationNonzeros": 23148,
+    "observedDMinusTransposeGMaximum": 0.0,
+    "pressureApproximationSymmetryError": 0.0,
+    "pressureApproximationDiagonalMinimum": 5.703301156577669e-05,
+    "pressureApproximationDiagonalMaximum": 5.542130868504271,
+    "coefficientSweep": false,
+    "newThreshold": true,
+    "factor": "native IC0 on the assembled pressure graph; no diagonal shift, pivot replacement or fallback",
+    "limitations": "diag(A) is not the full Oseen inverse; this is not the exact Schur complement and does not by itself establish mesh-independent iteration counts",
+    "symmetryCheck": {
+      "quantity": "maximum |P_ij-P_ji|",
+      "normalization": "max(1,max |P_ij|) in the existing U=L=1 native coefficient convention; not a universal dimensional criterion",
+      "limit": 1e-12,
+      "basis": "D=G^T in this retained sign convention makes P symmetric; IC0 requires that structure. The observed error on the cloud controls was exactly zero. The 1e-12 convention is inherited from the existing velocity symmetry guard; this application to the pressure approximation is new.",
+      "cost": "Checks the assembled sparse pressure graph once; no extra PDE solve.",
+      "scope": "preconditioner structural guard only; original true-residual and physical qualification criteria unchanged"
+    },
+    "newPhysicalOrConvergenceThreshold": false
+  },
+  "controls": {
+    "linearRelativeTolerance": 1e-12,
+    "gmresDirectionsPerRestart": 60,
+    "maximumRestarts": 50,
+    "velocityApproximateInverse": "native nonsymmetric ILU0",
+    "pressureMode": "outlet-schur-diag",
+    "existingComparators": [
+      "outlet viscous pressure mass",
+      "outlet-oseen local Peclet pressure mass"
+    ],
+    "compatibilityCheck": "The pre-existing 64-cell outlet-oseen solution is byte-identical after adding the new mode."
+  },
+  "smallFixedPressureControls": {
+    "cells": 64,
+    "stokes": {
+      "viscousProducts": 95,
+      "localOseenProducts": 84,
+      "schurDiagonalProducts": 79,
+      "schurRelativeResidual": 1.1389762622855101e-13
+    },
+    "navierStokesFrozenOseen": {
+      "viscousProducts": 93,
+      "localOseenProducts": 93,
+      "schurDiagonalProducts": 74,
+      "schurRelativeResidual": 1.8433955834423317e-13,
+      "legacyLocalSolutionSha256": "faafad2320ea38aba0c50139b4c6d22a851f49cfac2c2bc58f2b64c2f9400c8f",
+      "compatibilitySolutionSha256": "faafad2320ea38aba0c50139b4c6d22a851f49cfac2c2bc58f2b64c2f9400c8f"
+    }
+  },
+  "cylinder4716": {
+    "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+    "equation": "Existing compatible P1/RT1 Re20 frozen Oseen matrices with fixed-static-pressure research outlet",
+    "unknowns": 42092,
+    "matrixNonzeros": 1107704,
+    "nu": 0.1,
+    "firstLinearization": {
+      "matrixSha256": "dfc38ab669e708870a351c09c082df2b8fd0b853711a9fe8502fc2d4fc756fab",
+      "rhsSha256": "8b4a483505a0658f190f986720ba51085a9c906bec0a580252138f203ff42ffa",
+      "viscousProducts": 3305,
+      "localOseenProducts": 2589,
+      "schurDiagonalProducts": 2132,
+      "schurRestarts": 36,
+      "schurRelativeResidual": 3.0521129386140817e-13,
+      "schurSetupSeconds": 0.327551331,
+      "schurTotalSeconds": 25.110468556,
+      "reductionFromLocalOseen": 0.176516029354962,
+      "reductionFromViscous": 0.3549167927382753
+    },
+    "finalLinearization": {
+      "matrixSha256": "64d5f31e6a988b6c2fd257d4804391c8638553386ad25e786a09550b948d2b4b",
+      "rhsSha256": "f95dbf1559667a2c40e321da1257971a397c83dc6a1a11c3d2988fa8dc436fef",
+      "viscousProducts": 3245,
+      "localOseenProducts": 2589,
+      "schurDiagonalProducts": 2132,
+      "schurRestarts": 36,
+      "schurRelativeResidual": 2.5309445499536904e-13,
+      "schurSetupSeconds": 0.232866304,
+      "schurTotalSeconds": 26.540574234,
+      "reductionFromLocalOseen": 0.176516029354962,
+      "reductionFromViscous": 0.3429892141756549,
+      "solutionRmsDifferenceFromLocalOseen": 1.5153362067944362e-12,
+      "solutionMaximumDifferenceFromLocalOseen": 3.6937897185396196e-11,
+      "solutionSha256": "a0b4984dff184bd62d79009fa085bc7322e6b1bcf06c065c3cd73eb98eccba07",
+      "recoveredMaximumDivergence": 1.7333778856709614e-10,
+      "checkedInternalResidual": 5.5650664632089786e-11,
+      "checkedFreeFaceResidual": 5.784456247326375e-12,
+      "recoveredWallFx": 2.067940716836982
+    }
+  },
+  "source": {
+    "path": "artifacts/current/native-laminar-block-precondition.cpp",
+    "sha256": "49d53745f286066dae19ddee0cd89f342322b74138b78cbe09cb4af2111c15b8",
+    "linuxBinarySha256": "0c8a296daba8f674f2cf0c3304befd6cbd84e3a148247edbb83cce1d2c11657a"
+  },
+  "conclusion": "The sparse diagonal-momentum Schur approximation gives a further 17.7 percent product reduction over the local Peclet mass scale on both the first and final real 4716-cell Oseen systems and improves both small controls. At 2132 products it is still not scalable or product-ready; it is a structurally stronger baseline for the next full-Newton and larger-grid preconditioner work, not a new default or physical acceptance criterion.",
+  "mergedFullSolveEvidence": "native-laminar-pseudo-time.json: cloudMergeChecks"
+}
