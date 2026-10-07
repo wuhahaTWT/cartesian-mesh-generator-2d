@@ -1,0 +1,124 @@
+{
+  "schema": "cartmesh2d-native-laminar-pseudo-time-cylinder-v1",
+  "date": "2026-10-07",
+  "scope": "Research-only cold-start globalization and linear-budget evidence on the original Linux 4716-cell fixed-polygon Re=20 cylinder pressure-outlet problem; no product default or acceptance gate changed.",
+  "geometry": {
+    "polygon": "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+    "polygonSha256": "a3c33ea090e7c12b820ba0d4931ff4565245418ec2950e3f854008fbc14571d9",
+    "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+    "meshSha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+    "cells": 4716,
+    "faces": 9632,
+    "unknowns": 42092,
+    "boundaryPolicy": "pressure",
+    "kinematicViscosity": 0.1
+  },
+  "binaries": {
+    "nativeLaminarBlockPreconditionSha256": "0c8a296daba8f674f2cf0c3304befd6cbd84e3a148247edbb83cce1d2c11657a",
+    "nativeLaminarNewtonSha256": "b62a336f6ae11a812619ce3e3631b34a59cea7e9cdc5e93e470ccca86bdbc07b",
+    "nativeLaminarPseudoTimeSha256": "ba6a7f726a2b1a9271a12463dd6d0547fdc5949f251d194a4a6e5a7fe2f683ea",
+    "nativeLaminarStateCompareSha256": "f5adb114f732e563a6e33a248d1cd949bfd113924f71e78a90826bb37b7ee5eb"
+  },
+  "failedControls": [
+    {
+      "name": "pseudo_dt_0.1_schur_50_restarts",
+      "result": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt01/result.json",
+      "resultSha256": "1bd14a08e4d120d55c979bcf88e006a5cf1048261d7e51872f2f02a3ff366aef",
+      "relativeLinearResidual": 0.00034259557421766003,
+      "krylovProducts": 2974,
+      "totalSeconds": 46.851519157999974,
+      "candidateRecovered": false
+    },
+    {
+      "name": "same_dt_0.1_matrix_schur_100_restarts",
+      "result": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt01/iteration-000-schur-r100.json",
+      "resultSha256": "e09c61598734e1031a65fd5de5a5de881e816174dc8516af2ba46ec82040b247",
+      "relativeLinearResidual": 0.0000011213738258421117,
+      "krylovProducts": 5974,
+      "linearSeconds": 70.162827890000003
+    },
+    {
+      "name": "same_dt_0.1_matrix_viscous_pressure_100_restarts",
+      "result": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt01/iteration-000-viscous-r100.json",
+      "resultSha256": "3492778628ea2638126e2b114c94d10122036f4186ced303b4503c530769be93",
+      "relativeLinearResidual": 0.023488842154479717,
+      "krylovProducts": 6000,
+      "linearSeconds": 68.326274112999997
+    },
+    {
+      "name": "pseudo_dt_1_schur_50_restarts",
+      "result": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt1/result.json",
+      "resultSha256": "2f9a95195108074fd8db1be9415b547baee9b9d2739dbd1cc9089633cd6067a2",
+      "relativeLinearResidual": 5.833294953167791e-11,
+      "krylovProducts": 3000,
+      "totalSeconds": 46.47673456199982,
+      "candidateRecovered": false
+    },
+    {
+      "name": "direct_newton_schur_100_restarts",
+      "result": "outputs/laminar-stability/newton/cylinder4716-cold-schur-r100/result.json",
+      "resultSha256": "692f5ea768bdd53999a249c1105e6dd524ff6e56ef03e255c9501330b1b0c3fa",
+      "relativeLinearResidual": 0.04250080062612821,
+      "krylovProducts": 5980,
+      "totalSeconds": 79.67911989200002,
+      "candidateRecovered": false
+    }
+  ],
+  "successfulControl": {
+    "name": "pseudo_dt_1_schur_100_restarts",
+    "result": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt1-r100/result.json",
+    "resultSha256": "2f10e8b2bbdfaad43c84012cb642e613c8a4afbf8bba75324564665edafedee9",
+    "completed": true,
+    "iterations": 9,
+    "totalKrylovProducts": 21285,
+    "linearSeconds": 242.805723363,
+    "totalSeconds": 441.1467176279998,
+    "pseudoSteps": [1.0, 0.17190707512931472, 34.36825400834154, 133.15353015786295, 598.5228022383296, 6285.976278905767, 691869.332820707, 1000000.0, 1000000.0],
+    "finalStateSha256": "49708deda74f32eb6204ada67d44bf37cfc29338a28150cc2f3b901470d4151f",
+    "finalOriginalEquation": {
+      "internalResidual": 5.834362940687621e-15,
+      "freeFaceResidual": 4.501433947812217e-14,
+      "maximumWeakDivergence": 9.237233200565242e-11,
+      "stateCoefficientChange": 5.74473801862041e-11,
+      "energyBalance": 8.368368498157253e-12,
+      "globalMomentumBalanceX": -7.778944155489853e-12,
+      "wallFx": 2.067940716927765,
+      "wallPressureFx": 1.2414932881290213,
+      "wallViscousAndStabilizationFx": 0.8273849422729912,
+      "wallConvectionReconstructionFx": -0.0009375134742469094,
+      "rt1SampledMaximumSpeed": 1.1744676476706928
+    }
+  },
+  "independentPathComparison": {
+    "reference": "previous 18-step product-style pressure-outlet result",
+    "referenceStateSha256": "1c243e62918ef29a96f22eb76d9ce92a0d408b58a0becfdc87547d35d96cc5a4",
+    "comparison": "outputs/laminar-stability/pseudo-time/cylinder4716-cold-schur-pt1-r100/reference-field-compare.json",
+    "comparisonSha256": "330b0d3ea998a1728c9f4b7d21c370fd99fb0695b9c9528e956978dce62903a0",
+    "velocityP1Rms": 4.6267250927814606e-12,
+    "pressureP1RmsAfterGlobalGauge": 2.8763953580407253e-12,
+    "faceVelocityRms": 4.811757325795379e-12,
+    "stateCoefficientMaximum": 7.968281590109427e-11,
+    "referenceWallFx": 2.0679407169384882,
+    "interpretation": "The pseudo-time path globalizes the cold start but reaches the same resolved field; this is not evidence for selecting a different physical branch."
+  },
+  "costContext": {
+    "previousIterativeContinuationKrylovProducts": 55645,
+    "previousIterativeContinuationSeconds": 872.9217257370001,
+    "previousCostScope": "17-step continuation only after one previously accepted step; not a full cold-start runtime",
+    "pseudoKrylovReductionFraction": 0.617485847785066,
+    "pseudoSecondsReductionFraction": 0.494630839950394,
+    "timingCaveat": "Cloud timings were not exclusive; matrix products and complete process times are both retained."
+  },
+  "conclusions": [
+    "Pseudo-mass regularization is essential for this real cold start under the tested native Krylov backend: direct analytic Newton fails at its first linear system.",
+    "A smaller initial pseudo-step is not automatically easier: dt=0.1 produces a much harder pressure-coupled linear system than dt=1 under both pressure preconditioners tested.",
+    "The predeclared 100-restart linear budget is required; the otherwise identical 50-restart dt=1 run misses the linear tolerance and returns no candidate.",
+    "No product API, CLI, desktop flow, default, physical equation, geometry, boundary, or acceptance gate changed in this batch."
+  ],
+  "limitations": [
+    "Only the 4716-cell fixed-polygon coarse geometry has an independent cold-start completion in this batch; the 17260-cell case was intentionally not launched.",
+    "The pseudo-step schedule is not yet a general default and its linear budget remains expensive.",
+    "Convergence, bounded amplitude, energy balance, drag proximity, or agreement with one path do not by themselves establish uniqueness or physical branch selection.",
+    "General curved-wall local pressure and wall-traction accuracy remain unqualified; product cancellation, failure, cancellation, checkpoint, and desktop semantics were not revalidated here."
+  ]
+}

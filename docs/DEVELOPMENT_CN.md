@@ -651,6 +651,14 @@ build/native-laminar-compatible-solver sheared 4 noslip-sheared .01 ns closed ou
 
 macOS使用系统Clang，Linux去掉Accelerate链接选项；本批未作Linux/Windows资格验证。上述库构建中有未改动 `FlowAggregation2D.hpp` 的既有9个转换/遮蔽警告，新实现没有通过关闭警告来隐藏问题。原生测试的 `1e-7` 解析场上限是 `U=L=1`（另有显式物理缩放）的多项式数值回归预算，容纳较严迭代门及条件数放大，不是空间误差阈值。3/3测试、原native算子的完整终场读回、失败保留与原始源码/状态哈希见 `native-laminar-compatible-solver.json`。
 
+云端 `7d02b14` 给研究驱动补充了原圆柱显式边界适配和可选末尾 `linear-restarts` 参数：
+
+```sh
+build/native-laminar-compatible-solver ORIGINAL.solver.cm2d 0 cylinder .1 ns pressure outputs/api-cylinder 1 40 schur 100
+```
+
+该入口要求原网格含DomainBoundary/EmbeddedBoundary，外域为轴对齐矩形，保留全部真实原子面；左入口 `(1,0)`、水平零法向速度/零切向牵引、嵌入壁面零速度、右零伪牵引。研究驱动未启用CLI的出口端点回流拒绝，也没有逐步文件检查点回调，不能与CLI完整策略/成本混为一谈。中档云端冷启动原记录使用本地 `b1768f5` 的Symmetry；合并后的通用NormalVelocity仅新增旋转均匀场回归，中档尚未重跑，详见 `native-laminar-compatible-symmetry.json`。伪步1和100次预算是这批研究的显式控制，不是默认升级；粗档失败与完整场比较见 `native-laminar-pseudo-time-cylinder.json`。
+
 ### 相容混合边界与显式命令行
 
 API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。

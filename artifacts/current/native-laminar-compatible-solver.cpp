@@ -4,17 +4,25 @@
 #include "native-laminar-newton.cpp"
 #include "cartmesh2d/fv/CompatibleIncompressible2D.hpp"
 int main(int argc,char** argv)try {
-    if(argc!=11)throw std::runtime_error("usage: compatible-solver mesh n problem nu stokes|ns closed|traction|pseudo-traction|pressure output-prefix pseudo-step iterations mass|schur");
+    if(argc!=11&&argc!=12)throw std::runtime_error("usage: compatible-solver mesh n problem nu stokes|ns closed|traction|pseudo-traction|pressure output-prefix pseudo-step iterations mass|schur [linear-restarts]");
     const auto start=std::chrono::steady_clock::now();const auto fixture=readFixture(argv[1],std::stoi(argv[2]));const auto& mesh=fixture.mesh;
     const std::string problem=argv[3],boundary=argv[6],prefix=argv[7];const double nu=std::stod(argv[4]),step=std::stod(argv[8]);const bool nonlinear=std::string(argv[5])=="ns";
-    if((!nonlinear&&std::string(argv[5])!="stokes")||(boundary!="closed"&&boundary!="traction"&&boundary!="pseudo-traction"&&boundary!="pressure")||problem=="cylinder")throw std::runtime_error("unsupported research adapter; API requires explicit boundary data");
+    if((!nonlinear&&std::string(argv[5])!="stokes")||(boundary!="closed"&&boundary!="traction"&&boundary!="pseudo-traction"&&boundary!="pressure")||(problem=="cylinder"&&boundary!="pressure"))throw std::runtime_error("unsupported research adapter; API requires explicit boundary data");
     if(std::filesystem::exists(prefix+".json")||std::filesystem::exists(prefix+".accepted.state"))throw std::runtime_error("existing API evidence output");
-    CompatibleFlowControls2D c;c.viscosity=nu;c.maximumIterations=std::stoull(argv[9]);c.equation=nonlinear?CompatibleEquation2D::NavierStokes:CompatibleEquation2D::Stokes;
+    CompatibleFlowControls2D c;c.viscosity=nu;c.maximumIterations=std::stoull(argv[9]);if(argc==12)c.maximumLinearRestarts=std::stoull(argv[11]);c.equation=nonlinear?CompatibleEquation2D::NavierStokes:CompatibleEquation2D::Stokes;
     c.globalization=step>0?CompatibleGlobalization2D::PseudoTime:CompatibleGlobalization2D::Backtracking;if(step>0)c.initialPseudoStep=step;
     c.pressureInverse=std::string(argv[10])=="schur"?CompatiblePressureInverse2D::DiagonalSchur:CompatiblePressureInverse2D::ViscousMass;
     c.acceleration=[=](Point2D p){return forceAt(p,problem,nu,nonlinear);};
     for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour){const auto& face=mesh.faces[id];CompatibleBoundary2D b;b.face=id;
-        if(boundary!="closed"&&face.areaVector.x>0&&std::abs(face.areaVector.y)<128*std::numeric_limits<double>::epsilon()*std::hypot(face.areaVector.x,face.areaVector.y)){
+        if(problem=="cylinder"){const double round=128*std::numeric_limits<double>::epsilon()*std::hypot(face.areaVector.x,face.areaVector.y);
+            if(face.patch==BoundaryPatch2D::EmbeddedBoundary)b.value=[](Point2D){return Vector2D{};};
+            else if(face.patch!=BoundaryPatch2D::DomainBoundary)throw std::runtime_error("cylinder requires explicit domain/embedded patches");
+            else if(std::abs(face.areaVector.y)<=round&&face.areaVector.x>0)b.kind=CompatibleBoundaryKind2D::PseudoTraction;
+            else if(std::abs(face.areaVector.y)<=round)b.value=[](Point2D){return Vector2D{1,0};};
+            else if(std::abs(face.areaVector.x)<=round)b.kind=CompatibleBoundaryKind2D::NormalVelocity;
+            else throw std::runtime_error("cylinder far boundary must be axis aligned");
+        }
+        else if(boundary!="closed"&&face.areaVector.x>0&&std::abs(face.areaVector.y)<128*std::numeric_limits<double>::epsilon()*std::hypot(face.areaVector.x,face.areaVector.y)){
             b.kind=boundary=="traction"?CompatibleBoundaryKind2D::Traction:CompatibleBoundaryKind2D::PseudoTraction;auto n=face.areaVector;const auto length=std::hypot(n.x,n.y);n.x/=length;n.y/=length;
             b.value=[=](Point2D p){const auto e=exactAt(p,problem);Vector2D value{-e.p*n.x,-e.p*n.y};
                 if(boundary=="traction"){const auto gu=e.gradient[0],gv=e.gradient[1];value.x+=nu*(2*gu.x*n.x+(gu.y+gv.x)*n.y);value.y+=nu*((gu.y+gv.x)*n.x+2*gv.y*n.y);}return value;};

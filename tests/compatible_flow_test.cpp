@@ -17,6 +17,12 @@ FvMesh2D grid(int n,double shear=0,double L=1) {
     for(int j=0;j<n;++j)for(int i=0;i<n;++i)cells.push_back({{p(i,j),p(i+1,j),p(i+1,j+1),p(i,j+1)}});
     return makeFvMesh2D(cartmesh2d::test::fromPolygons(cells));
 }
+FvMesh2D rotatedGrid(int n,double angle) {
+    const double c=std::cos(angle),s=std::sin(angle);std::vector<Polygon2D> cells;
+    auto p=[&](int i,int j){const double x=double(i)/n,y=double(j)/n;return Point2D{c*x-s*y,s*x+c*y};};
+    for(int j=0;j<n;++j)for(int i=0;i<n;++i)cells.push_back({{p(i,j),p(i+1,j),p(i+1,j+1),p(i,j+1)}});
+    return makeFvMesh2D(cartmesh2d::test::fromPolygons(cells));
+}
 Vector2D velocity(Point2D p,bool rotation){return rotation?Vector2D{-p.y,p.x}:Vector2D{p.x*p.x-p.y*p.y,-2*p.x*p.y};}
 double pressure(Point2D p){return 1+2*p.x-3*p.y;}
 CompatibleFlowControls2D control(const FvMesh2D& mesh,bool rotation,bool outlet,double U=1,double L=1) {
@@ -38,7 +44,8 @@ std::pair<double,double> errors(const FvMesh2D& mesh,const CompatibleFlowState2D
         for(std::size_t f=0;f<mesh.cells[t].faces.size();++f)for(std::size_t c=0;c<2;++c)for(std::size_t j=0;j<2;++j)local[c*a.m+3+2*f+j]=state.faces[mesh.cells[t].faces[f]][2*c+j];
         for(const auto& q:a.q){const auto theta=a.basis.theta(q.p);const auto phi=a.basis.phi(q.p);Vector2D got{};double pr=0;
             for(std::size_t j=0;j<a.m;++j)for(std::size_t k=0;k<6;++k){got.x+=theta[k]*a.potential(k,j)*local[j];got.y+=theta[k]*a.potential(k,j)*local[a.m+j];}
-            for(std::size_t j=0;j<3;++j)pr+=phi[j]*state.cells[t][6+j];const auto exact=velocity({q.p.x/L,q.p.y/L},rotation);
+            for(std::size_t j=0;j<3;++j)pr+=phi[j]*state.cells[t][6+j];
+            const auto exact=velocity({q.p.x/L,q.p.y/L},rotation);
             ue=std::max(ue,std::hypot(got.x/U-exact.x,got.y/U-exact.y));pe=std::max(pe,std::abs(pr/U/U-pressure({q.p.x/L,q.p.y/L})+gauge));}
     }
     return {ue,pe};
@@ -82,8 +89,21 @@ int main()try {
     const auto square=grid(3);CompatibleFlowControls2D couette;couette.viscosity=.1;
     for(std::size_t f=0;f<square.faces.size();++f)if(!square.faces[f].neighbour){CompatibleBoundary2D b;b.face=f;
         if(square.faces[f].areaVector.x>0&&square.faces[f].areaVector.y==0)b.kind=CompatibleBoundaryKind2D::PseudoTraction;
-        else b.value=[](Point2D q){return Vector2D{q.y,0};};couette.boundaries.push_back(b);}
+        else b.value=[](Point2D q){return Vector2D{q.y,0};};
+        couette.boundaries.push_back(b);}
     auto shear=solveCompatibleIncompressible2D(square,couette);print("pseudo-traction-couette",shear);check(shear.converged(),"Pseudo-traction nonlinear solve failed");double error=0;
     for(std::size_t t=0;t<square.cells.size();++t){error=std::max({error,std::abs(shear.lastAccepted->cells[t][0]-square.cells[t].centre.y),std::abs(shear.lastAccepted->cells[t][3]),std::abs(shear.lastAccepted->cells[t][6])});}check(error<1e-7,"Pseudo-traction transpose-gradient correction lost");
+    // A rotated straight slip wall constrains only its normal trace moments.
+    // Uniform tangential flow must remain exact in physical x/y coefficients.
+    const double angle=.37,ca=std::cos(angle),sa=std::sin(angle);auto slipMesh=rotatedGrid(3,angle);CompatibleFlowControls2D slip;slip.viscosity=.1;slip.equation=CompatibleEquation2D::Stokes;slip.globalization=CompatibleGlobalization2D::Backtracking;slip.pressureInverse=CompatiblePressureInverse2D::DiagonalSchur;
+    for(std::size_t f=0;f<slipMesh.faces.size();++f)if(!slipMesh.faces[f].neighbour){CompatibleBoundary2D b;b.face=f;const auto& face=slipMesh.faces[f];const double ex=face.areaVector.x*ca+face.areaVector.y*sa,ey=-face.areaVector.x*sa+face.areaVector.y*ca;
+        if(ex>0&&std::abs(ey)<1e-13)b.kind=CompatibleBoundaryKind2D::PseudoTraction;
+        else if(std::abs(ex)<1e-13)b.kind=CompatibleBoundaryKind2D::NormalVelocity;
+        else b.value=[=](Point2D){return Vector2D{ca,sa};};
+        slip.boundaries.push_back(std::move(b));}
+    const auto slipResult=solveCompatibleIncompressible2D(slipMesh,slip);print("rotated-symmetry-uniform",slipResult);check(slipResult.converged()&&slipResult.lastAccepted,"Rotated symmetry solve failed");double slipError=0;
+    for(const auto& cell:slipResult.lastAccepted->cells)slipError=std::max({slipError,std::abs(cell[0]-ca),std::abs(cell[3]-sa),std::abs(cell[1]),std::abs(cell[2]),std::abs(cell[4]),std::abs(cell[5]),std::abs(cell[6]),std::abs(cell[7]),std::abs(cell[8])});
+    for(const auto& face:slipResult.lastAccepted->faces)slipError=std::max({slipError,std::abs(face[0]-ca),std::abs(face[2]-sa),std::abs(face[1]),std::abs(face[3])});
+    check(slipError<1e-10,"Rotated symmetry changed uniform tangential flow");
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

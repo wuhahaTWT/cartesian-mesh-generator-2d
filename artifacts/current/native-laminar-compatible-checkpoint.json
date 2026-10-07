@@ -865,5 +865,69 @@
     "status": "completed-after-archive-and-filesystem-readback",
     "openFileCheck": "lsof -t +D: no open files, exit 1, no stderr",
     "removedDuplicateBytes": 4078491
+  },
+  "sourceScope": "The existing sourceSha256 and primary archive describe checkpoint commit 5649fcc before the ordinary cloud merge; merged source and checks are recorded separately below.",
+  "mergeIntegration": {
+    "checkpointParent": "5649fcc8051e96eca40a8504fba7c8279eab4cf5",
+    "cloudParent": "7d02b14316ddedc112c95af4a4319f2bc44249ff",
+    "mode": "ordinary merge; no numerical math change in cloud solver formatting; preserve both histories",
+    "platform": "macOS /usr/bin/clang++",
+    "relatedCTest": "Test project /Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/build\n    Start 16: cartmesh2d_compatible_flow_checkpoint\n1/4 Test #16: cartmesh2d_compatible_flow_checkpoint ...   Passed    2.00 sec\n    Start 17: cartmesh2d_compatible_flow_boundary\n2/4 Test #17: cartmesh2d_compatible_flow_boundary .....   Passed    0.73 sec\n    Start 18: cartmesh2d_compatible_flow\n3/4 Test #18: cartmesh2d_compatible_flow ..............   Passed    0.91 sec\n    Start 30: cartmesh2d_compatible_flow_cli\n4/4 Test #30: cartmesh2d_compatible_flow_cli ..........   Passed    3.44 sec\n\n100% tests passed out of 4\n\nTotal Test time (real) =   7.11 sec\n",
+    "researchDriverBuild": "-std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+    "researchDriverStderr": "",
+    "buildWarnings": "9 existing FlowAggregation2D.hpp signed-conversion/shadow warnings; no warnings from merged checkpoint/compatible implementation",
+    "sameFullField": {
+      "referenceArchive": "outputs/laminar-stability/native-solver/native-compatible-solver.tar.gz",
+      "referenceMember": "final-api-schur.accepted.state",
+      "sameFullStateBytes": true,
+      "currentSha256": "f769552b12ea1fd5d0ae516764ea4ebae7698741aa34424d1d4b31e6054ebebc",
+      "referenceSha256": "f769552b12ea1fd5d0ae516764ea4ebae7698741aa34424d1d4b31e6054ebebc",
+      "bytes": 2456
+    },
+    "nonlinearOutletIterations": 7,
+    "sourceSha256": {
+      "CMakeLists.txt": "3aae741c075666df96c9a0e1433b19e3454ab9aed9d5f7a742538ff622115a4d",
+      "apps/CompatibleFlowCLI.cpp": "4ca0596e9b73c40a9739b9a5cf0d2819fb36e17059d55b40442439852a4743c9",
+      "artifacts/current/native-laminar-compatible-solver.cpp": "dbb5c5ab81d5ed33f38bd5d2820ec1ef132849f7678873c8d017bcf912a64751",
+      "artifacts/current/native-laminar-compatible-symmetry.json": "3b6bc22fd7568c46f79de09024d1a2b014bef94f67ca7c3c5147e1f4c8e8b7f9",
+      "artifacts/current/native-laminar-pseudo-time-cylinder.json": "aaa861479fdbc839e8b2f3f3ebde4a144641d5397186decf8c0da7ad7c533e6f",
+      "docs/CURRENT_STATE_CN.md": "bc42a9cdebff1af5932cdebb1993f06ae860a3733a866fc860ae77c655b54eb4",
+      "docs/DEVELOPMENT_CN.md": "e7a542b463d292e9ab79a6fb286c053f065e549dfa48a04b846d90e13faf895a",
+      "include/cartmesh2d/fv/CompatibleIncompressible2D.hpp": "1fe12750ff17d0912e6121e32c48539b46d8ef974fdd8ac02dd10a14a5655b6e",
+      "include/cartmesh2d/fv/detail/CompatibleFlowCheckpoint2D.hpp": "192241c93ddb6563c3b3a1b5ffa16871cb4baede4cf8541f21df06abf047f82a",
+      "src/fv/CompatibleFlowCheckpoint2D.cpp": "ea7cddba947b4c1af6c48b4daafafc9ac3ad80c0cf1b343f651d6c69cdcce75d",
+      "src/fv/CompatibleIncompressible2D.cpp": "4320725a49264fcceb603e5ca743a632b1c060a2d34ae40b631dd0abf51e7c5e",
+      "tests/compatible_flow_checkpoint_test.cpp": "2c6cba22cd6cc616ffda93c34c0ed4bd41dbc4ffe4799cd4524eaf370c9605b8",
+      "tests/compatible_flow_cli_test.py": "ea948be3a03dc2a9136578f00732168ecc78f5a64bd45cf922f3238c285214ac",
+      "tests/compatible_flow_test.cpp": "d52a579eae2c01b808278b61673dae4e212f970ab2829e28e07ff7fbf24ff788"
+    },
+    "archive": {
+      "path": "outputs/laminar-stability/native-checkpoint/native-compatible-checkpoint-merge.tar.gz",
+      "bytes": 219773,
+      "sha256": "83f142c6bb8f8946f3a3c94c54a6a3f8d65d0912615c32d229ea634521ea18d8",
+      "contentFiles": 28,
+      "verifiedAllBytes": true,
+      "cloudDurableCopyConfirmed": false
+    },
+    "cleanup": {
+      "exactTemporaryFiles": [
+        "/tmp/cartmesh2d-checkpoint-merge-build.log",
+        "/tmp/cartmesh2d-checkpoint-merge-driver.log",
+        "/tmp/cartmesh2d-checkpoint-merge-ctest.log",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet.stdout",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet.stderr",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet.json",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet.seed.state",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet.accepted.state",
+        "/tmp/cartmesh2d-checkpoint-merge-outlet-compare.json",
+        "/tmp/cartmesh2d-checkpoint-merge-docs.py",
+        "/tmp/cartmesh2d-checkpoint-cleanup.py",
+        "/tmp/cartmesh2d-checkpoint-merge-closeout.py"
+      ],
+      "openFileCheck": "lsof explicit-file allowlist: exit 1, no stdout/stderr",
+      "removedDuplicateBytes": 28497,
+      "status": "completed-after-archive-readback"
+    },
+    "limits": "No medium-grid rerun, no local curved-wall spatial qualification, no frontend/App/other-platform validation in this merge check."
   }
 }
