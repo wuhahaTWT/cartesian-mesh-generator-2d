@@ -704,6 +704,24 @@ build/native-laminar-compatible-solver square 16 outlet-poiseuille .1 ns pressur
 
 已有 `CurrentState` 线性初值在CLI显式写作 `--linear-initial-guess current-state`，省略或 `zero` 保持默认。摘要报告选项，`.residuals.csv` 新增 `linearInitialRelativeResidual`；它只是线性代数策略，不绑定物理检查点，续算可切换。旧列名保持，读取历史应按列名；完整入口、实际原圆柱载荷与Linux6/6范围见 `native-laminar-linear-initial-cli.json`。
 
+### 固定多边形无滑移 Stokes 空间精度
+
+研究入口 `artifacts/current/native-laminar-polygon-stokes.cpp` 使用共用原生API与既有网格/状态读写器，解析场仅在研究程序中。输入 `native-laminar-polygon-stokes.xy` 是固定8段旋转多边形；每档必须复用同一文件、padding及small-alpha，只改变max/min level。给CLI一个真实导出目录才能调用已有 `buildSolverTopology2D` 并获得正式 `.solver.cm2d`；传 `-` 只产生施工拓扑，不能据施工报告推断Solver质量。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-polygon-stokes.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-polygon-stokes
+# Linux 使用既有原生库构建命令，省略 macOS 的 -framework Accelerate。
+mkdir -p outputs/polygon-stokes
+build/cartmesh2d_cli artifacts/current/native-laminar-polygon-stokes.xy outputs/polygon-stokes/level3 3 .25 .1 exterior outputs/polygon-stokes/foam3 3
+build/native-laminar-polygon-stokes outputs/polygon-stokes/level3.solver.cm2d artifacts/current/native-laminar-polygon-stokes.xy .25 12 16 outputs/polygon-stokes/level3-q12
+# 完整序列把3同时改为4/5；输出必须是新前缀。更细档由云端执行。
+# 最后两个整数分别是组装积分阶数(4..12)和误差积分阶数(4..16)。
+```
+
+定义每条原多边形边的有向法线距离除以固定1m为 `l_i`，外域半宽/半高为 `hx/hy`，`Q=(x-xmin)(xmax-x)/hx²*(y-ymin)(ymax-y)/hy²`。流函数 `ψ=1m²/s*(Q∏l_i)²`，`u=(ψ_y,-ψ_x)`，`p=1+2x−3y`，`ν=1m²/s`，`f=∇p−νΔu`。总阶三Taylor乘积给出解析导数，并以显式 `x²y³` 系数作控制；不建立第二套PDE。所有边界向API传严格零速度，原生几何容差核对原始线段、外域及总流体面积，实际参考壁速/法向应变只记录舍入误差。闭域压力比较减去最后一格解析均值（仿射p等于中心值），不拟合全局常数。
+
+`.cells.csv` 保存全部P1系数与逐格积分误差；`.walls.csv` 保存实际面长度/法向、直接外推p及完整守恒牵引一次矩，并和精确牵引的P1投影分开。法向反力在此静止无滑移参考下对应压力，切向比较的是完整数值牵引与物理剪切，包含稳定/载荷重构的数值误差，不能把牵引减压力直接称纯黏性项。压力差仿射，顶点/端点最大值覆盖完整单元/壁面；体内RMS以实际流体面积归一化，壁面RMS以完整对应边界长度归一化。原始接受状态/检查点、组装和误差积分敏感性、最初错误入口的拒绝均保存在 `native-laminar-polygon-stokes.json` 所列无损归档。当前三档尚未充分解析，原圆柱、非线性、几何/外域和默认可靠性资格仍独立进行。
+
 ### 相容混合边界与显式命令行
 
 API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。
