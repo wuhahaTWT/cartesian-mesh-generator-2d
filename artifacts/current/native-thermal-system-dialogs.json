@@ -195,7 +195,7 @@
     "fullWindowScreenshotSavedLocally": false
   },
   "limitations": [
-    "Same-process Dock window reopening remains unverified; computer-use provider timed out.",
+    "Direct Dock-icon reactivation is unverified. Same-process close/reopen via Finder, recovery dialog, continuation and native save now pass on the updated package.",
     "Windows/Linux App and signed distribution were not tested.",
     "This observation does not validate the later linear-retry fix in the GUI."
   ],
@@ -206,5 +206,95 @@
     "bytes": 446398737,
     "allMatched": true,
     "activeFilesExcluded": true
+  },
+  "sameProcessWindowRecovery": {
+    "format": "cartmesh2d-thermal-same-process-window-recovery-v1",
+    "sourceCommit": "988d253b57046a6e5069ae81e597264cdb784491",
+    "activation": {
+      "sameProcessAsBeforeWindowClose": true,
+      "processes": [
+        {
+          "pid": 49162,
+          "executable": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-linear-retry-app/package/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D"
+        }
+      ],
+      "activation": "Finder double-click of the exact App bundle after Cmd-W closed all its windows"
+    },
+    "observedUi": {
+      "allAppWindowsClosed": true,
+      "windowReopened": true,
+      "restoredViaRecoveryDialog": true,
+      "restoredTimeS": 1.45,
+      "restoredHistorySteps": 109,
+      "continuedTimeS": 1.5,
+      "continuedHistorySteps": 111,
+      "newAcceptedSteps": 2,
+      "cells": 904,
+      "nativeSaveDialog": true
+    },
+    "savedZipSha256": "a16ff198d6e6abda316c48a49a7559f0fdbc378bf28baec3200a57d3c17c4dda",
+    "savedZipBytes": 2929855,
+    "sourceSavedProjectUnchanged": true,
+    "sourceSavedZipSha256": "5b0a85af11926ddfe3bf0b58a9ca6da0a904bee229bc60dae76e019c7fb3e6e3",
+    "stateMember": "project/thermal-run-h4QNwe/desktop-state.json",
+    "nativeBinarySha256": "e312cc19a3e6ab21ae0b696556ff98137f06e3c9263825031f31530ef981f1cf",
+    "files": [
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.thermal.checkpoint",
+        "bytes": 452680,
+        "sha256": "0755cc16116530b191c890857d72ccdbe6252a3ea426eb4965a00c2c1c7c5ace",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.cells.csv",
+        "bytes": 118211,
+        "sha256": "d45b0278f10d97cc751b6409223f8a7d25eb7385f6b2129db5c724117469a61c",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.faces.csv",
+        "bytes": 152097,
+        "sha256": "971b78d2ee6180c85fa6fb0b58fccd5710a901b708d679d0d13df8c5ebc0109c",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.heat-history.csv",
+        "bytes": 460,
+        "sha256": "a2b954d6883e67f575c1d85f832e963c1ed88e2c10ade72170ed49572e519451",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.thermal-history.csv",
+        "bytes": 448,
+        "sha256": "2e292998fc5d47415fc5014bdcc92c13d2e8e3d855a5eca17382fdba00ad426f",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.boundary-heat-history.csv",
+        "bytes": 73,
+        "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "project/thermal-run-h4QNwe/thermal.attempt-history.csv",
+        "bytes": 268,
+        "sha256": "c17d516d32e09e6f5a450ceb1de286800ae8df595dda8fc8722ca91092358f98",
+        "byteEqualToDirectCli": true
+      }
+    ],
+    "limitations": [
+      "App was reactivated through Finder, not by clicking the Dock icon.",
+      "Normal idle window close/reopen was tested; prior separate evidence covers cancellation/crash recovery.",
+      "Only macOS arm64 is exercised."
+    ],
+    "temperatureScreenshotVisuallyInspected": true,
+    "fullWindowScreenshotSavedLocally": false,
+    "rawEvidence": {
+      "manifest": "outputs/thermal-same-process/raw-manifest.json",
+      "manifestSha256": "702a181a70bfbea236e902a3b76ee06d6a871c56324881b78240f7adab02b683",
+      "count": 19,
+      "bytes": 4068163,
+      "allMatched": true
+    }
   }
 }

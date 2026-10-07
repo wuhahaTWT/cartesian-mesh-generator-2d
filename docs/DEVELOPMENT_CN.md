@@ -155,7 +155,9 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 `python3 outputs/thermal-wake-resolved/compare-time.py medium-at60 medium-dt025-at60 NEW_REPORT` 核对分叉前同一状态、分叉后仅最大步长不同，输出累计相位／幅值差、末态温度／速度差和原生接受误差比。全域面积 RMS 包含远场，不能替代尾迹局部或最大误差。`time60-raw-manifest.json` 封存本次完成的输入链补充、原生结果和后处理，前段输入由已有 Cholesky 清单绑定；活动目录明确排除。继续 60→120 s 时分别读取各自接受态，不覆盖 60 s 结果；实际完成范围见当前状态。图只渲染原生多边形及场，不建立独立方程验证链。
 
-180 s 基准、120 s 时间对照及细档 60 s 结果保存在 `medium-at180`、`medium-at120`、`medium-dt025-at120`、`fine-at60`；各 `analysis.json` 保存完整续算段清单。`compare-time.py medium-at120 medium-dt025-at120 NEW_REPORT` 复现长期时间差；`compare-mesh.py medium-at60 fine-at60 NEW_REPORT` 按命名边界核对物理条件（两档面编号不同），只统计原生响应，不重建方程或跨网格映射场。新的 .025／.0125 s 分叉共同读取 `medium-dt025-60to120/result.thermal.checkpoint`；运行和后处理均使用新目录，不覆盖输入。`time180-raw-manifest.json` 只封存完成部分并绑定此前清单。
+180 s 的两档时间基准在 `medium-at180`、`medium-dt025-at180`，旧 120 s 报告及 `fine-at60` 继续保留；各 `analysis.json` 保存完整续算段清单。`compare-time.py medium-at180 medium-dt025-at180 NEW_REPORT` 复现从同一 20 s 状态出发的长期时间差，正式结果为 `time-at180/`；`compare-mesh.py medium-at60 fine-at60 NEW_REPORT` 按命名边界核对物理条件（两档面编号不同），只统计原生响应，不重建方程或跨网格映射场。`time180-pair-raw-manifest.json` 封存新完成的 .025 s 后段及报告，并绑定原 `time180-raw-manifest.json`。
+
+三档最大 dt=.05／.025／.0125 s 的新对照共同读取 `medium-dt025-60to120/result.thermal.checkpoint`（SHA256 `d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b`），目录依次为 `medium-dt05-from025-120to180`、`medium-dt025-120to180`、`medium-dt0125-120to180`。只改变 `--dt`，保持冻结程序及其他控制；运行与报告均用新目录。三档全部完成后才比较从共同 120 s 状态开始的对应完整周期、未经对齐的过零时刻和末态场；局部缺陷、周期发展、累计相位与平均换热分别解释，当前尚无完整三档精度结论。
 
 ### 联合推进的线性迭代失败恢复
 
@@ -166,6 +168,8 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 真实系统文件选择验收保存在 `outputs/thermal-dialogs/`：`manual-project-1p4.zip` 是通过 NSSavePanel 保存的原包，`verify-save.py` 检查 ZIP、状态和 7 类原生文件，`process-after-reopen.json` 绑定新的 App 进程。`package/mac-arm64/CartMesh2D.app` 已更正 Cholesky 帮助，但物理程序仍为该轮冻结版本；全窗口截图仅在界面工具中查看，未另存本地，不能把导出的场预览当作完整 App 截图。
 
 更新后 App 的实际续算包在 `outputs/thermal-linear-retry-app/project-1p45.zip`，`comparison.json` 绑定新程序哈希、运行进程和 7 类文件字节一致；`run-cli.py` 用正式桌面参数构造器生成同控制参考，`verify-app.py` 读取真实 ZIP 核对。新包完成 1.4→1.45 s／107→109 历史；此前 `outputs/thermal-dialogs/` 包保留原物理版本。原线性失败的松弛系数 1 由 CLI 复现，当前桌面温度只允许 .6，未为了测试开放额外控制。
+
+同进程关窗恢复的真实验收在 `outputs/thermal-same-process/`：Cmd-W 关闭全部窗口后，从 Finder 重开上述新 App，`reactivated-process.json` 确认 PID 未变；通过恢复会话界面读回 1.45 s，再续至 1.5 s／111 个历史时刻并用 NSSavePanel 保存 `same-process-1p5.zip`。`verify.py` 与 `comparison.json` 核对 7 类原生文件、原项目不变和进程身份；`raw-manifest.json` 封存结束后的输入、输出与记录。该过程未点击 Dock，全窗口画面只在界面工具中查看。
 
 ### 周期腔体与联合载流精度
 
