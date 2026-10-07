@@ -77,12 +77,13 @@ std::vector<std::pair<std::size_t,std::size_t>> connections(const Matrix& k,std:
     return result;
 }
 struct Block {
-    const Matrix& matrix;const Vec& volume;std::size_t nv,np;bool corrected,ilu0;double viscosity;
+    const Matrix& matrix;const Vec& volume;std::size_t nv,np;bool corrected,ilu0,oseenScale;double viscosity,transportSpeed;
     SparsePattern2D pattern;SparseSystem2D velocity;LinearWorkspace2D workspace;
     LinearPressureMethod2D method;double asymmetry=0,matrixAsymmetry=0,symmetryCorrection=0;std::size_t applications=0;
-    Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,const Matrix& pk):matrix(k),volume(area),
-        nv(k.n-(area.size()-(pressure=="outlet"?0:1))),np(area.size()-(pressure=="outlet"?0:1)),
-        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),viscosity(nu),
+    Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,double speed,const Matrix& pk):matrix(k),volume(area),
+        nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen")?0:1))),
+        np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen")?0:1)),
+        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),viscosity(nu),transportSpeed(speed),
         pattern(nv,connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
         linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
         for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
@@ -117,8 +118,13 @@ struct Block {
         // An outlet fixes the pressure level: all cell pressures are retained
         // and the mass inverse is diagonal (no mean removal). The nu scale is
         // a viscous Schur approximation, not an exact Oseen Schur inverse.
+        // Explicit outlet-oseen uses nu+|U|*sqrt(V_i), with the same L^2/T
+        // dimensions as viscosity in 2D. Only the approximate inverse changes.
         const double shift=corrected?static_cast<double>(sum/volume.back()):0;
-        for(std::size_t i=nv;i<r.size();++i)z[i]=viscosity*(-r[i]/volume[i-nv]-shift);
+        for(std::size_t i=nv;i<r.size();++i) {
+            const double scale=viscosity+(oseenScale?transportSpeed*std::sqrt(volume[i-nv]):0);
+            z[i]=scale*(-r[i]/volume[i-nv]-shift);
+        }
         for(std::size_t i=0;i<nv;++i) {
             workspace.r[i]=r[i];
             for(auto p=matrix.rows[i];p<matrix.rows[i+1];++p)if(matrix.columns[p]>=nv)
@@ -132,21 +138,34 @@ struct Block {
 };
 
 int main(int argc,char** argv)try {
-    if(argc<6 || argc>10)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1] [velocity_preconditioner_prefix]");
+    if(argc<6 || argc>12)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet|outlet-oseen output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1] [transport_speed=0] [--velocity-preconditioner prefix]");
     const std::string prefix=argv[1],mode=argv[3],gauge=argv[4],output=argv[5];
-    linearEnsure((mode=="ic0"||mode=="ilu0"||mode=="jacobi")&&(gauge=="gauge"||gauge=="plain"||gauge=="outlet"),"invalid preconditioner choice");
+    linearEnsure((mode=="ic0"||mode=="ilu0"||mode=="jacobi")&&(gauge=="gauge"||gauge=="plain"||gauge=="outlet"||gauge=="outlet-oseen"),"invalid preconditioner choice");
     const double tolerance=argc>=7?std::stod(argv[6]):1e-11;const auto maximum=argc>=8?std::stoull(argv[7]):50;
     const double nu=argc>=9?std::stod(argv[8]):1.;
+    // Preserve the published positional transport-speed argument. The
+    // independent velocity matrix uses an explicit flag to avoid ambiguity.
+    int tail=9;double speed=0;std::string preconditionerPrefix;
+    if(tail<argc&&std::string(argv[tail])!="--velocity-preconditioner") {
+        const std::string value=argv[tail++];std::size_t used=0;speed=std::stod(value,&used);
+        linearEnsure(used==value.size(),"invalid transport speed");
+    }
+    if(tail<argc) {
+        linearEnsure(tail+2==argc&&std::string(argv[tail])=="--velocity-preconditioner","invalid velocity preconditioner option");
+        preconditionerPrefix=argv[tail+1];linearEnsure(!preconditionerPrefix.empty(),"empty velocity preconditioner prefix");
+    }
     linearEnsure(std::isfinite(nu)&&nu>0,"invalid viscous Schur scale");
+    linearEnsure(std::isfinite(speed)&&speed>=0&&((gauge=="outlet-oseen")==(speed>0)),"outlet-oseen requires a positive transport speed; other modes require zero");
     linearEnsure(std::isfinite(tolerance)&&tolerance>0&&tolerance<=.01&&maximum>0,"invalid research solve control");
     linearEnsure(!std::filesystem::exists(output+".json") && !std::filesystem::exists(output+".solution") &&
         !std::filesystem::exists(output+".candidate"),"output exists; retain prior evidence and choose another prefix");
     const auto start=std::chrono::steady_clock::now();const auto rhs=binary<double>(prefix+".rhs"),area=areas(argv[2]);
-    linearEnsure(rhs.size()>area.size()-(gauge=="outlet"?0:1),"invalid retained pressure dimension");
+    const bool outlet=gauge=="outlet"||gauge=="outlet-oseen";
+    linearEnsure(rhs.size()>area.size()-(outlet?0:1),"invalid retained pressure dimension");
     for(double v:rhs)linearFinite(v);
     const Matrix matrix(rhs.size(),binary<Entry>(prefix+".entries"));
-    std::optional<Matrix> preconditionerMatrix;if(argc==10)preconditionerMatrix.emplace(rhs.size(),binary<Entry>(std::string(argv[9])+".entries"));
-    Block block(matrix,area,mode,gauge,nu,preconditionerMatrix?*preconditionerMatrix:matrix);
+    std::optional<Matrix> preconditionerMatrix;if(!preconditionerPrefix.empty())preconditionerMatrix.emplace(rhs.size(),binary<Entry>(preconditionerPrefix+".entries"));
+    Block block(matrix,area,mode,gauge,nu,speed,preconditionerMatrix?*preconditionerMatrix:matrix);
     const double setup=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
     const double initial=linearNorm(rhs);Vec x(rhs.size()),r=rhs;std::size_t restarts=0,products=0;std::vector<double> history{initial};
     // Use the existing relative linear tolerance; do not add the product's
@@ -173,7 +192,10 @@ int main(int argc,char** argv)try {
         <<",\"restarts\":"<<restarts<<",\"krylov_products\":"<<products<<",\"preconditioner_applications\":"<<block.applications
         <<",\"velocity_preconditioner_symmetry_correction_max\":"<<block.asymmetry
         <<",\"velocity_matrix_asymmetry_max\":"<<block.matrixAsymmetry<<",\"velocity_preconditioner_input_asymmetry_max\":"<<block.asymmetry<<",\"velocity_preconditioner_entry_change_max\":"<<block.symmetryCorrection
-        <<",\"viscous_pressure_mass_scale\":"<<nu<<",\"ilu0_factor_builds\":"<<block.velocity.ilu0Builds()<<",\"setup_seconds\":"<<setup
+        <<",\"viscous_pressure_mass_scale\":"<<nu<<",\"transport_speed\":"<<speed
+        <<",\"pressure_mass_scale_min\":"<<(nu+(gauge=="outlet-oseen"?speed*std::sqrt(*std::min_element(area.begin(),area.end())):0))
+        <<",\"pressure_mass_scale_max\":"<<(nu+(gauge=="outlet-oseen"?speed*std::sqrt(*std::max_element(area.begin(),area.end())):0))
+        <<",\"ilu0_factor_builds\":"<<block.velocity.ilu0Builds()<<",\"setup_seconds\":"<<setup
         <<",\"total_seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<",\"residual_history\":[";
     for(std::size_t i=0;i<history.size();++i){if(i)record<<',';record<<history[i];}record<<"]}\n";
     std::ofstream log(output+".json");log<<record.str();log.close();linearEnsure(bool(log),"result write failed");

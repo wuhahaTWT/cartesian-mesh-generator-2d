@@ -32,6 +32,8 @@ def main():
     p.add_argument('--fields',type=Path,default=root/'build/native-laminar-state-compare')
     p.add_argument('--backend',choices=['ilu0','dense-reference'],default='ilu0')
     p.add_argument('--preconditioner',choices=['picard','newton'],default='picard')
+    p.add_argument('--pressure-preconditioner',choices=['viscous','local-oseen'],default='viscous')
+    p.add_argument('--transport-speed',type=float,default=0.)
     p.add_argument('--initial-state',default='zero');p.add_argument('--iterations',type=int,default=40)
     p.add_argument('--backtracks',type=int,default=15);p.add_argument('--armijo',type=float,default=1e-4)
     p.add_argument('--no-line-search',action='store_true')
@@ -41,10 +43,14 @@ def main():
     if any(not math.isfinite(v) or v<=0 for v in [a.viscosity,a.tolerance,a.linear_tolerance,a.armijo]) or a.armijo>=.5:
         p.error('positive finite viscosity/tolerances and 0<Armijo<.5 required')
     if min(a.iterations,a.backtracks,a.restarts)<1 or a.linear_tolerance>.01:p.error('invalid iteration budget')
+    if not math.isfinite(a.transport_speed) or a.transport_speed<0 or ((a.pressure_preconditioner=='local-oseen')!=(a.transport_speed>0)):
+        p.error('local-oseen requires positive transport speed; viscous mode requires zero')
+    if a.pressure_preconditioner=='local-oseen' and (a.boundary=='closed' or a.backend!='ilu0'):
+        p.error('local-oseen requires an open-boundary ILU0 solve')
     a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
     controls=[a.mesh,str(a.n),a.problem,str(a.viscosity),a.equation,a.boundary,str(a.quadrature)]
     start=time.monotonic()
-    record={'method':'native analytic Newton','controls':controls,'completed':False,'pid':os.getpid(),'backend':a.backend,'velocityPreconditioner':a.preconditioner,'lineSearch':not a.no_line_search,'armijo':a.armijo,'maximumBacktracks':a.backtracks,'maximumIterations':a.iterations,'maximumRestarts':a.restarts,'initialState':a.initial_state,'iterationTolerance':a.tolerance,'linearTolerance':a.linear_tolerance,'iterations':[],'commands':[],'lastAcceptedIterate':None,'finalState':None,'physicalCheckpoint':False}
+    record={'method':'native analytic Newton','controls':controls,'completed':False,'pid':os.getpid(),'backend':a.backend,'velocityPreconditioner':a.preconditioner,'pressurePreconditioner':a.pressure_preconditioner,'transportSpeed':a.transport_speed,'lineSearch':not a.no_line_search,'armijo':a.armijo,'maximumBacktracks':a.backtracks,'maximumIterations':a.iterations,'maximumRestarts':a.restarts,'initialState':a.initial_state,'iterationTolerance':a.tolerance,'linearTolerance':a.linear_tolerance,'iterations':[],'commands':[],'lastAcceptedIterate':None,'finalState':None,'physicalCheckpoint':False}
 
     def save():
         record['totalSeconds']=time.monotonic()-start
@@ -99,9 +105,10 @@ def main():
                 del z,matrix,rhs,x,residual
                 code=0 if ok else 2
             else:
-                preconditioner_args=[str(prefix)+'.picard'] if a.preconditioner=='picard' else []
+                preconditioner_args=['--velocity-preconditioner',str(prefix)+'.picard'] if a.preconditioner=='picard' else []
                 if preconditioner_args:step['preconditionerEntriesSha256']=sha(str(prefix)+'.picard.entries')
-                r=run([a.block,prefix,str(geometry)+'.cells.csv','ilu0','gauge' if a.boundary=='closed' else 'outlet',prefix,a.linear_tolerance,a.restarts,a.viscosity,*preconditioner_args],label+'.linear',True)
+                pressure_mode='outlet-oseen' if a.pressure_preconditioner=='local-oseen' else 'gauge' if a.boundary=='closed' else 'outlet'
+                r=run([a.block,prefix,str(geometry)+'.cells.csv','ilu0',pressure_mode,prefix,a.linear_tolerance,a.restarts,a.viscosity,a.transport_speed,*preconditioner_args],label+'.linear',True)
                 code=r.returncode
                 if Path(str(prefix)+'.json').exists():step['linear']=json.loads(Path(str(prefix)+'.json').read_text())
             step['linearExitCode']=code;save()

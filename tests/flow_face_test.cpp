@@ -517,7 +517,7 @@ void affineSymmetricStress(const FvMesh2D& mesh, const std::string& label) {
     const std::vector<double> boundary(mesh.faces.size(), 0.0);
     const std::vector<bool> fixed(mesh.faces.size(), true);
     const std::vector<bool> constant(mesh.faces.size(), false);
-    const auto cellField = [&](double ax, double ay, double bx, double by) {
+    const auto cellField = [&](double ax, double ay, double bx, double) {
         std::vector<double> value;
         for (const auto& c : mesh.cells) value.push_back(ax*c.centre.x + ay*c.centre.y + bx);
         return value;

@@ -1,0 +1,123 @@
+{
+  "schema": "cartmesh2d.native-laminar-product-outlet-block.v1",
+  "purpose": "Falsifiable native ILU0/GMRES checks for the compatible P1/RT1 product-style fixed static-pressure outlet. The original condensed matrices and right-hand sides are not changed.",
+  "scope": {
+    "discretization": "research P1 cell/face velocity, P1 static pressure, RT1 load/transport, symmetric viscous stress",
+    "boundary": "Zero-reference weak pseudo-traction (nu G-pI)n=0 with full-gradient implicit nu G^T n in the symmetric-stress formulation; not independent strong p=0 and d_n u=0.",
+    "linearAcceptance": "relative algebraic residual 1e-12",
+    "nonlinearAcceptance": "uncondensed equation residual and state coefficient change both 1e-9",
+    "notProductDefault": true,
+    "notAPhysicalBranchSelector": true
+  },
+  "sourceSha256": {
+    "native-laminar-oseen-block.py": "cd34e24f8d903ff02b6ac06a8a1362ede3add82beb1341b2081ee351f4d24505",
+    "native-laminar-block-precondition.cpp": "8dd578e218368c042b80c7783a0680497b445b97ee56f32b04f139b791e643af",
+    "native-laminar-p1-transport.cpp": "f116582a082ce9cd96a41c2326c3984532febbfb8056e91cb29361f656a3ce57",
+    "native-laminar-p1-oseen.cpp": "3762779497c27d7c9b979cc9c21f0c08f1cf69fc6d4e72ee3c01143516824ad0"
+  },
+  "manufactured": {
+    "mesh": "square 8",
+    "problem": "outlet-poiseuille",
+    "viscosity_m2_per_s": 1.0,
+    "stokes": {
+      "unknowns": 544,
+      "ilu0KrylovProducts": 95,
+      "velocityP1RmsDifference_m_per_s": 4.432927577615088e-12,
+      "absolutePressureP1RmsDifference_m2_per_s2": 5.016257285796891e-11,
+      "faceVelocityMaximumDifference_m_per_s": 8.74336199217597e-12,
+      "iterativeMaximumDivergence_per_s": 2.8880231539574197e-11
+    },
+    "navierStokes": {
+      "picardIterations": 2,
+      "ilu0KrylovProducts": [
+        95,
+        93
+      ],
+      "velocityP1RmsDifference_m_per_s": 6.878525723237664e-12,
+      "absolutePressureP1RmsDifference_m2_per_s2": 8.144891579207493e-11,
+      "faceVelocityMaximumDifference_m_per_s": 1.2382892948693865e-11,
+      "iterativeMaximumDivergence_per_s": 4.696731892295247e-11
+    }
+  },
+  "fixedCylinder4716": {
+    "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+    "cells": 4716,
+    "faces": 9632,
+    "unknowns": 42092,
+    "viscosity_m2_per_s": 0.1,
+    "referenceSpeed_m_per_s": 1.0,
+    "referenceDiameter_m": 2.0,
+    "reynolds": 20.0,
+    "firstBudgetFailure": {
+      "acceptedPicardIterations": 1,
+      "failedPicardIteration": 1,
+      "maximumRestarts": 50,
+      "krylovProducts": 2945,
+      "achievedRelativeResidual": 2.2758787415695286e-11,
+      "requiredRelativeResidual": 1e-12,
+      "candidateRecoveredOrAccepted": false
+    },
+    "continuedWithExplicitBudget": {
+      "initialState": "the sole accepted state from the failed run",
+      "maximumRestarts": 100,
+      "acceptedPicardIterations": 17,
+      "totalKrylovProducts": 55645,
+      "totalProcessSeconds": 872.9217257370001,
+      "assemblyProcessSeconds": 61.83931713999846,
+      "linearProcessSeconds": 633.1357620589988,
+      "recoveryProcessSeconds": 88.90206033600043,
+      "finalInternalResidual": 3.2366290203533765e-11,
+      "finalFreeFaceResidual": 2.721739500444187e-12,
+      "maximumDivergence_per_s": 1.904428004184666e-12,
+      "maximumSpeed_m_per_s": 1.1638728320487932,
+      "staticPressureRange_m2_per_s2": 1.159158584556792,
+      "wallForceX_m3_per_s2": 2.067940716938842,
+      "globalMomentumBalanceX_m3_per_s2": 2.821126665608631e-11,
+      "energyBalance_m4_per_s3": -2.4215296434704214e-11
+    },
+    "versusSparseDirect": {
+      "velocityP1RmsDifference_m_per_s": 1.4891636997971283e-12,
+      "absolutePressureP1RmsDifference_m2_per_s2": 1.9940898380918247e-12,
+      "faceVelocityMaximumDifference_m_per_s": 4.4308786703881274e-12,
+      "stateCoefficientMaximumDifference": 5.649647416561265e-12
+    },
+    "conclusion": "The iterative backend reproduces the direct product-style outlet field, but the current viscous pressure-mass approximation is expensive for the real Oseen matrices and 50 restarts are insufficient on one early Picard step. This is a scalability result, not product qualification."
+  },
+  "rawResultSha256": {
+    "stokesDense": "fed367a18edb297adf2837624f83acc48b07a24d5b6ff5efc8d0a001e6f57dc1",
+    "stokesIlu0": "060b148e2b366d9ff3a2006b819805996114aa20415b1588d7bfb3e63058f2f2",
+    "stokesComparison": "5bb3b05bc358b1ae34d3484f45f7172b68e5f3f0a40ba0820b25014f4662617b",
+    "navierStokesDense": "2dc68adec70944fa1b2e163ca32a4196a74c82bc646ce6197504b35b45b0684a",
+    "navierStokesIlu0": "618da7b4d86976c2f33c0ce4cb9c60e4d1d84dc845c819f1000ae17d44e0e99e",
+    "navierStokesComparison": "3731bb9dba5a37ce45b52f5a110c0f8166ca51abd06227a701067419a47a3a70",
+    "cylinderBudgetFailure": "73ca5ee22cea4d6741d8ffed0c8d03176c3257dc18ef1cad96be63b9384b8b02",
+    "cylinderContinuation": "1765025322f3ed95650284a98eec836d8d2e5e1a2672a775379b61f898dbb6b4",
+    "cylinderDirectComparison": "f76e9653e749e54c0308ada9a3ac21b93ff9a5056f05ffb5d760e84d70d37c46"
+  },
+  "mergedRemoteIntegration": {
+    "remoteParent": "0ed39e6b79e7e627350fc904c50eb0d5929f0e0e",
+    "mergedHead": "d341833e3675d414541415a67d1f0ee217d50405",
+    "oseenBlockSha256": "b4ed93f4c79871f892e71682479d79b0bfb821b40ff20dc7c562f0367625e7b9",
+    "transportSha256": "065d616250d68cee89783ef8b568e064aa19aa874c5a3f634f061bc7f88878f2",
+    "oseenSha256": "8e985736a69e345d173720a180c4de3afc7f1e2d90f51bce779c4cba7d26ce9b",
+    "openBoundarySha256": "cdec75f8c433ebe730c1c5f956343e90a73285bde8383c199600bfcf0f8774c8",
+    "navierStokesResultSha256": "7067eddae2434b8b0603611c516becf324487646e9e047571e08013bd7f77ff9",
+    "smallControlMatchesPreMergeResult": true,
+    "relatedLinuxCtest": "3/3"
+  },
+  "limitations": [
+    "The cylinder run is only the 4716-cell level and does not add a spatial, geometry or external-domain sequence.",
+    "No outlet backflow case was exercised.",
+    "The research solver is not connected to the product API, CLI or desktop defaults.",
+    "The current ILU0 pressure approximation is not yet a scalable inertial Schur preconditioner."
+  ],
+  "integrationClarification": {
+    "deliveryGitCommit": "1cfcbdca5820d63e17f2536be22845dadd8a125b",
+    "originalBoundaryDescription": "fixed outlet static pressure; no primary grad(U).n diffusion; retained transpose-gradient correction",
+    "productEquivalence": "Old product outlet first projects the gradient normally before its transpose correction; no discrete equivalence or old default-branch repair is inferred.",
+    "cost": "872.921725737 seconds covers only the 17-step continuation after the first run accepted one step then failed. The first attempt full cost was not supplied; this is not a complete cold-start runtime.",
+    "historicalBudgets": "The large-field source hashes identify the pre-0ed39e6 implementation. Its reported momentum/energy fields retain their old boundary-accounting definitions; original curved fields have not been reread here with the post-merge split traction/gradient budgets.",
+    "sourceMetadata": "mergedRemoteIntegration is the cloud-reported intermediate build metadata. The fetched Git delivery is 1cfcbdc, parent 0ed39e6; no claim that d341833 is a local ancestor.",
+    "qualification": "This demonstrates one real coarse-grid native iterative NS solve and a cost limitation, not scalable convergence, spatial accuracy or a medium-grid cold start."
+  }
+}
