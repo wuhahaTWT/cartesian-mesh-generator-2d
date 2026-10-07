@@ -364,14 +364,14 @@ if(CARTMESH2D_BUILD_TESTS)
                 $<TARGET_FILE:cartmesh2d_cli> $<TARGET_FILE:cartmesh2d_euler_cli>)
     set_tests_properties(cartmesh2d_compressible_cloud_cli PROPERTIES TIMEOUT 120)
 
-    # Hosted Windows needs longer execution budgets. The native cold Couette
-    # regression passed ny=8/16 but timed out during ny=32 at 180 s; comparable
-    # core/CLI checks took about 3.3 times macOS's time (Couette: 62.54 s).
-    # 300 s allows that measured host difference plus scheduling variation.
+    # Windows cold Couette completed in 196.86 s on an earlier run. A later
+    # run hit 300 s while Euler core rose from 43.22 to 72.30 s; the equivalent
+    # cold-cost estimate is about 329 s. Allow 480 s to finish the same problem.
+    # Scheduling versus platform/source overhead is not yet isolated.
     # All grids, physical endpoints, step budgets and numerical gates stay fixed.
     if(WIN32)
         set_tests_properties(cartmesh2d_euler_core PROPERTIES TIMEOUT 180)
-        set_tests_properties(cartmesh2d_compressible_laminar PROPERTIES TIMEOUT 300)
+        set_tests_properties(cartmesh2d_compressible_laminar PROPERTIES TIMEOUT 480)
     endif()
 
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
