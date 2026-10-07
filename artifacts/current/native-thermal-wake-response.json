@@ -1,9 +1,9 @@
 {
   "format": "cartmesh2d-thermal-wake-response-v1",
   "branch": "codex/transient-thermal-workflow",
-  "sourceBase": "ee0821acb69315f45a26dace9d9d57a69a0fd4b7",
-  "frozenAtUtc": "2026-10-07T08:16:45.051974+00:00",
-  "scope": "Native incompressible Re=100, Pr=1 passive temperature. Three medium maximum-dt .05/.025/.0125 trajectories complete to 180 s from the exact same 120 s accepted state. Developed fine-grid comparison remains pending.",
+  "sourceBase": "6a39c77325ff345cc0ff3c359fa105e4c463fd2c",
+  "frozenAtUtc": "2026-10-07T08:47:31.732052+00:00",
+  "scope": "Native incompressible Re=100, Pr=1 passive temperature. Three shared-state medium time-step trajectories complete to 180 s. Fine-grid trajectory complete to 120 s; the queued extension to 180 s was cancelled at the user-requested round boundary. Overall maturity goal paused, not declared complete.",
   "solverSourceChanged": false,
   "physicalQualificationEstablished": false,
   "meshProtocol": {
@@ -297,6 +297,15 @@
       "processSeconds": 9707.249634834006,
       "inputUnchanged": true,
       "checkpointSha256": "dc4d01085144d6058e36caf3d453c5fbd6dd2f3e0799a1a9c809d31ebcb8f980"
+    },
+    "fine-growth-60p2to120": {
+      "exitCode": 0,
+      "accepted": 1197,
+      "rejected": 0,
+      "endS": 120,
+      "processSeconds": 10684.443634457944,
+      "inputUnchanged": true,
+      "checkpointSha256": "a0e6c5eb8ec58db092b75673231bfeb773b150fc0052d714bea29d766226b4bb"
     }
   },
   "trajectories": {
@@ -2445,6 +2454,266 @@
         "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
         "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
       }
+    },
+    "fine-at120": {
+      "format": "cartmesh2d-thermal-wake-trajectory-v1",
+      "label": "Fine grid, completed trajectory to 120 s",
+      "completedTrajectory": true,
+      "inputChainVerified": true,
+      "physicalQualificationEstablished": false,
+      "cells": 23569,
+      "startS": 0,
+      "endS": 120,
+      "accepted": 2585,
+      "rejected": 11,
+      "seconds": 20024.04684887585,
+      "segments": [
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-start-2s",
+          "startS": 0,
+          "endS": 2,
+          "accepted": 211,
+          "rejected": 11,
+          "seconds": 1371.636786374991,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": null,
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "4dcb9d7caef1af2438786386819fcff4d55829a0617ed17c1325549c55f2c164"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-cfl1-2to2p2",
+          "startS": 2,
+          "endS": 2.2,
+          "accepted": 16,
+          "rejected": 0,
+          "seconds": 94.02652129199123,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "4dcb9d7caef1af2438786386819fcff4d55829a0617ed17c1325549c55f2c164",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "d29fce62cdc48827bc7ee7bcf1a23016fef683060bbd05e3d93a8cf5374c3fdd"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-growth-2p2to20",
+          "startS": 2.2,
+          "endS": 20,
+          "accepted": 356,
+          "rejected": 0,
+          "seconds": 2426.12021574995,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d29fce62cdc48827bc7ee7bcf1a23016fef683060bbd05e3d93a8cf5374c3fdd",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "0f1e09f4c7118f3c1c1b62f8b408dcdd90a3d1b287c6ca1582cc7d7e00d1e085"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-growth-20to60",
+          "startS": 20,
+          "endS": 60,
+          "accepted": 801,
+          "rejected": 0,
+          "seconds": 5423.346550041984,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "0f1e09f4c7118f3c1c1b62f8b408dcdd90a3d1b287c6ca1582cc7d7e00d1e085",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "aedf9764953f5921a82c098ecaa8a18d7fc5364d2cfbf680be420dbf1ae278a0"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-relax06-60to60p2",
+          "startS": 60,
+          "endS": 60.2,
+          "accepted": 4,
+          "rejected": 0,
+          "seconds": 24.473140958987642,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "aedf9764953f5921a82c098ecaa8a18d7fc5364d2cfbf680be420dbf1ae278a0",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "144fc895e84bc5cc45e7455e7e1fab0f24079e7c5f686e44245ff7fd7e066d29"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/fine-growth-60p2to120",
+          "startS": 60.2,
+          "endS": 120,
+          "accepted": 1197,
+          "rejected": 0,
+          "seconds": 10684.443634457944,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "144fc895e84bc5cc45e7455e7e1fab0f24079e7c5f686e44245ff7fd7e066d29",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+          "checkpointSha256": "a0e6c5eb8ec58db092b75673231bfeb773b150fc0052d714bea29d766226b4bb"
+        }
+      ],
+      "temperatureRangeK": [
+        299.99999999998715,
+        300.99890503434983
+      ],
+      "finalHeatGainKm2": 32.25419533739778,
+      "integratedNativeBudgetDefectKm2": 1.3788682423532449e-07,
+      "maxAcceptedCourant": 2.9595633337087976,
+      "cyclesAfterS": 20,
+      "upwardZeroCrossingsS": [
+        25.6259859449801,
+        39.97102833283345,
+        53.15959170520239,
+        65.81788705547245,
+        78.3171004658946,
+        90.72086527397114,
+        103.07497867023991,
+        115.40439564765347
+      ],
+      "cycles": [
+        {
+          "startS": 25.6259859449801,
+          "endS": 39.97102833283345,
+          "periodS": 14.345042387853347,
+          "Strouhal": 0.13942098921181986,
+          "meanCd": 1.1829640682573326,
+          "meanCl": -0.007288336924268571,
+          "ClRms": 0.06322023487555717,
+          "ClHalfRange": 0.08876931949947113,
+          "meanNu": 5.771602222028099,
+          "NuHalfRange": 0.05221761652505075
+        },
+        {
+          "startS": 39.97102833283345,
+          "endS": 53.15959170520239,
+          "periodS": 13.18856337236894,
+          "Strouhal": 0.15164653977325193,
+          "meanCd": 1.2245497266216283,
+          "meanCl": -0.00808287436292579,
+          "ClRms": 0.10654815910016578,
+          "ClHalfRange": 0.1505514077156433,
+          "meanNu": 5.740850395373425,
+          "NuHalfRange": 0.00880181418853443,
+          "changeFromPreviousCycle": {
+            "periodS": -1.1564790154844076,
+            "Strouhal": 0.01222555056143207,
+            "meanCd": 0.04158565836429573,
+            "ClRms": 0.04332792422460861,
+            "meanNu": -0.03075182665467402
+          }
+        },
+        {
+          "startS": 53.15959170520239,
+          "endS": 65.81788705547245,
+          "periodS": 12.658295350270066,
+          "Strouhal": 0.15799915744242213,
+          "meanCd": 1.2667581095303102,
+          "meanCl": -0.006567514347245175,
+          "ClRms": 0.14381268002915776,
+          "ClHalfRange": 0.203278812198031,
+          "meanNu": 5.761814456055832,
+          "NuHalfRange": 0.008576934704591643,
+          "changeFromPreviousCycle": {
+            "periodS": -0.5302680220988734,
+            "Strouhal": 0.006352617669170196,
+            "meanCd": 0.042208382908681896,
+            "ClRms": 0.037264520928991976,
+            "meanNu": 0.020964060682407748
+          }
+        },
+        {
+          "startS": 65.81788705547245,
+          "endS": 78.3171004658946,
+          "periodS": 12.499213410422144,
+          "Strouhal": 0.16001006898020895,
+          "meanCd": 1.2886802959458201,
+          "meanCl": -0.004500887812306866,
+          "ClRms": 0.17051673224932373,
+          "ClHalfRange": 0.2412149074862733,
+          "meanNu": 5.777563778839286,
+          "NuHalfRange": 0.008256911456438587,
+          "changeFromPreviousCycle": {
+            "periodS": -0.15908193984792263,
+            "Strouhal": 0.002010911537786819,
+            "meanCd": 0.021922186415509914,
+            "ClRms": 0.026704052220165975,
+            "meanNu": 0.015749322783453756
+          }
+        },
+        {
+          "startS": 78.3171004658946,
+          "endS": 90.72086527397114,
+          "periodS": 12.403764808076545,
+          "Strouhal": 0.16124136751591153,
+          "meanCd": 1.3023430517958143,
+          "meanCl": -0.0025602314458502153,
+          "ClRms": 0.18721698650944282,
+          "ClHalfRange": 0.26487490050541024,
+          "meanNu": 5.794553691570847,
+          "NuHalfRange": 0.00811145994998208,
+          "changeFromPreviousCycle": {
+            "periodS": -0.09544860234559849,
+            "Strouhal": 0.0012312985357025852,
+            "meanCd": 0.013662755849994213,
+            "ClRms": 0.01670025426011909,
+            "meanNu": 0.01698991273156114
+          }
+        },
+        {
+          "startS": 90.72086527397114,
+          "endS": 103.07497867023991,
+          "periodS": 12.354113396268772,
+          "Strouhal": 0.16188939957472354,
+          "meanCd": 1.3099055424776294,
+          "meanCl": -0.0013586432972227725,
+          "ClRms": 0.19633507676389933,
+          "ClHalfRange": 0.2777612292695918,
+          "meanNu": 5.808459011281057,
+          "NuHalfRange": 0.005648218859022336,
+          "changeFromPreviousCycle": {
+            "periodS": -0.04965141180777266,
+            "Strouhal": 0.0006480320588120037,
+            "meanCd": 0.007562490681815026,
+            "ClRms": 0.009118090254456507,
+            "meanNu": 0.013905319710209696
+          }
+        },
+        {
+          "startS": 103.07497867023991,
+          "endS": 115.40439564765347,
+          "periodS": 12.329416977413558,
+          "Strouhal": 0.16221367187628008,
+          "meanCd": 1.3137738831518897,
+          "meanCl": -0.000706557252866332,
+          "ClRms": 0.20103483043640172,
+          "ClHalfRange": 0.2843990868642689,
+          "meanNu": 5.817315186141052,
+          "NuHalfRange": 0.003321310197116123,
+          "changeFromPreviousCycle": {
+            "periodS": -0.02469641885521412,
+            "Strouhal": 0.0003242723015565441,
+            "meanCd": 0.00386834067426034,
+            "ClRms": 0.004699753672502388,
+            "meanNu": 0.008856174859994681
+          }
+        }
+      ],
+      "referenceContext": {
+        "url": "https://arxiv.org/pdf/2411.16005",
+        "section": "3.1, Newtonian Bn=0 only",
+        "equations": {
+          "22": "Cl_rms=(Re-46.1)^0.6554/56.9401",
+          "28": "Nu=0.5111 Pr^0.358 Re^0.532 (50<=Re<=180)"
+        },
+        "evaluatedAt": {
+          "Re": 100,
+          "Pr": 1
+        },
+        "ClRmsFit": 0.239587993916859,
+        "NuFit": 5.92251106730885,
+        "interpretation": "Primary paper fits are context, not an exact matching-domain or automatic pass threshold. Its reported Nu fit spread is below 5%. Its domain is 25D upstream, 75D downstream, width 50D; ours is 32D in each streamwise direction and width 64D. Its Newtonian model also decouples constant-property flow and temperature. No Bn>0 table value is used."
+      },
+      "definitions": {
+        "forceCoefficients": "C=2*(native F/rho)/(U^2 D), U=1 m/s, nominal D=2 m.",
+        "Nu": "-native outward wall diffusion/(pi alpha DeltaT), alpha=.02 m^2/s, DeltaT=1 K. Nominal circular perimeter is used for literature normalization of the actual 128-sided wall flux.",
+        "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
+        "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
+      }
     }
   },
   "timeComparison": {
@@ -2619,7 +2888,7 @@
       "lastMatchedCrossingDifferenceS": 1.257842666829447,
       "assessment": "Persistent timestep amplitude/frequency effects remain after cycle drift is small. Instantaneous fields, phase and mean heat transfer must be assessed separately; local defect acceptance is not a global error guarantee."
     },
-    "nextEvidence": "Complete the already running fine-grid trajectory and compare developed response at matched controls. The three medium time-step trajectories are now complete; do not repeat their startup or extend them merely to reduce cycle tails.",
+    "nextEvidence": "Paused after closing the running 120 s fine-grid segment, as requested by the user. The queued 120-to-180 s extension never started. Resume only on explicit user instruction; developed fine-grid comparison at 180 s and final maturity qualification remain unfinished.",
     "fieldNorm": "Global area RMS includes the large farfield and must not replace maximum or wake-local differences.",
     "reference": "Literature fits use a different domain and remain context only; no automatic physical-qualification threshold.",
     "threeTimeControl": {
@@ -2680,6 +2949,32 @@
         }
       ],
       "assessment": "Observed three-step differences and cycle drift are reported separately. Adjacent differences and log-ratio orders do not establish an asymptotic global error bound. Phase-aligned cycle amplitudes do not replace instantaneous field or accumulated phase assessment."
+    },
+    "meshAt120": {
+      "lastCycleRelativeDifferencesPercent": {
+        "periodS": 0.2845873760878931,
+        "Strouhal": -0.28377977467327226,
+        "meanCd": -0.3185894382488789,
+        "ClRms": -2.5656861551965298,
+        "meanNu": -0.1849858661574425
+      },
+      "cycleDevelopmentRelativePercent": [
+        {
+          "periodS": -0.22529389810542141,
+          "Strouhal": 0.22478746566157765,
+          "meanCd": 0.32622193550043477,
+          "ClRms": 2.6572407679131276,
+          "meanNu": 0.1664299854818295
+        },
+        {
+          "periodS": -0.200304839234944,
+          "Strouhal": 0.19990442100581118,
+          "meanCd": 0.29444493636757035,
+          "ClRms": 2.33778080261031,
+          "meanNu": 0.15223818164594713
+        }
+      ],
+      "assessment": "Each own last complete cycle uses identical post-startup controls. Latest-cycle lift RMS still changes by 2.657%/2.338% on the medium/fine meshes, comparable to their 2.566% difference; mean heat transfer is also still developing. The two-mesh differences therefore cannot be treated as fully developed spatial error. Actual adaptive time grids and demonstrated BE time sensitivity remain separate; no mesh-independence or general wall-heat-flux qualification."
     }
   },
   "verification": {
@@ -2693,28 +2988,31 @@
       "time-at180",
       "medium-dt05-from025-at180",
       "medium-dt0125-at180",
-      "time-three-at180"
+      "time-three-at180",
+      "fine-at120",
+      "mesh-at120"
     ],
-    "newTests": "No production solver change in this increment; existing native outputs and completed-process input chains were checked. No unrelated regression or platform run was repeated."
+    "newTests": "No solver/frontend change in this round; completed native results, input chains and declared control equality were checked. No unrelated or platform regression repeated."
   },
   "figures": {
     "response": "artifacts/current/native-thermal-wake-response.png",
     "timeComparison": "artifacts/current/native-thermal-wake-time.png",
-    "threeTimeComparison": "artifacts/current/native-thermal-wake-three-time.png"
+    "threeTimeComparison": "artifacts/current/native-thermal-wake-three-time.png",
+    "meshComparisonAt120": "artifacts/current/native-thermal-wake-mesh.png"
   },
   "limitations": [
     "Medium trajectories exhibit material maximum-step sensitivity in amplitude and phase; the native local BE error gate alone is not a long-time accuracy qualification.",
-    "Developed fine-grid statistics are pending.",
+    "Fine-grid evidence ends at 120 s. The planned 180 s fine-grid comparison remains uncompleted and was not counted as passing.",
     "Two spatial levels do not establish mesh independence.",
     "Reported observed temporal orders are finite three-step statistics, not proof of an asymptotic regime, a global error upper bound or local wall-heat-flux qualification.",
     "No change to physical scope or default controls.",
     "Reported process times include concurrent background load."
   ],
   "rawEvidence": {
-    "manifest": "outputs/thermal-wake-resolved/three-time180-raw-manifest.json",
-    "manifestSha256": "a85a0206269054e4216009ee7b385d98c0315fdef7302985b8b45be90c0e8395",
-    "count": 43,
-    "bytes": 36113348,
+    "manifest": "outputs/thermal-wake-resolved/fine120-pause-raw-manifest.json",
+    "manifestSha256": "e549737b8a5791b0cd92f355f482ebec1b049219feb35301a739a0a7fbcd81e1",
+    "count": 24,
+    "bytes": 31502671,
     "allMatched": true,
     "activeFilesExcluded": true
   },
@@ -3328,5 +3626,234 @@
         "observedOrderFromRegionAreaRms": 0.9029566755193993
       }
     }
+  },
+  "meshComparisonAt120": {
+    "format": "cartmesh2d-thermal-wake-mesh-comparison-v1",
+    "completedPostprocessing": true,
+    "physicalQualificationEstablished": false,
+    "reports": [
+      {
+        "directory": "medium-at120",
+        "sha256": "41c98d067d10d745e043fe0e6ad43dcc27d1da24dc13186b7e058e0e2a876b20",
+        "cells": 6721,
+        "endS": 120
+      },
+      {
+        "directory": "fine-at120",
+        "sha256": "578b6f58f4470311cb114862f7b123c7227f4d3d43b02ecb347c93da4a64d0d0",
+        "cells": 23569,
+        "endS": 120
+      }
+    ],
+    "commonGeometrySha256": "5b28239486e4431c3e792043f16e8c6c7dbcba5297708c571e3503f938020f27",
+    "namedBoundaryPhysicsIdentical": true,
+    "boundaryPhysics": [
+      [
+        "pressure-opening",
+        "outlet",
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          "flux",
+          0.0,
+          300.0
+        ]
+      ],
+      [
+        "symmetry",
+        "farfield",
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          "flux",
+          0.0,
+          300.0
+        ]
+      ],
+      [
+        "velocity-inlet",
+        "inlet",
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          "value",
+          300.0,
+          300.0
+        ]
+      ],
+      [
+        "wall",
+        "wall",
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          "value",
+          301.0,
+          300.0
+        ]
+      ]
+    ],
+    "boundaryFaceIdsDifferBetweenMeshes": true,
+    "postStartupControlsIdentical": true,
+    "controlsAfter2p2S": {
+      "--evolve-flow": "custom",
+      "--flow-nu": ".02",
+      "--flow-speed": "1",
+      "--flow-velocity-relaxation": ".6",
+      "--flow-max-iterations": "1500",
+      "--flow-convection": "face-limited-linear",
+      "--pressure-preconditioner": "cholesky",
+      "--convection": "limited-linear",
+      "--flux-correction": "bounded-spatial",
+      "--diffusivity": ".02",
+      "--initial": "300",
+      "--dt": ".05",
+      "--min-dt": "1e-8",
+      "--max-courant": "4",
+      "--max-step-retries": "24",
+      "--max-time-steps": "100000",
+      "--time-error": "on",
+      "--temperature-scale": "1",
+      "--velocity-scale": "1",
+      "--time-rtol": ".01"
+    },
+    "startupPressureBackends": [
+      {
+        "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+        "pressurePreconditioner": "aggregation"
+      },
+      {
+        "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+        "pressurePreconditioner": "cholesky"
+      },
+      {
+        "directory": "outputs/thermal-wake-resolved/fine-start-2s",
+        "pressurePreconditioner": "cholesky"
+      },
+      {
+        "directory": "outputs/thermal-wake-resolved/fine-cfl1-2to2p2",
+        "pressurePreconditioner": "cholesky"
+      }
+    ],
+    "lastCompleteCycles": [
+      [
+        {
+          "startS": 78.68662094645408,
+          "endS": 91.13431539332292,
+          "periodS": 12.447694446868837,
+          "Strouhal": 0.1606723243839819,
+          "meanCd": 1.2970929716658264,
+          "ClRms": 0.18074795309305286,
+          "meanNu": 5.782178826432896
+        },
+        {
+          "startS": 91.13431539332292,
+          "endS": 103.52667681016398,
+          "periodS": 12.392361416841055,
+          "Strouhal": 0.16138974104499781,
+          "meanCd": 1.3053161738933476,
+          "ClRms": 0.19067198658043916,
+          "meanNu": 5.796890128318846
+        },
+        {
+          "startS": 103.52667681016398,
+          "endS": 115.89118175184049,
+          "periodS": 12.364504941676515,
+          "Strouhal": 0.16175334228374033,
+          "meanCd": 1.3095883383176956,
+          "ClRms": 0.19587690762477214,
+          "meanNu": 5.80655397525686
+        }
+      ],
+      [
+        {
+          "startS": 78.3171004658946,
+          "endS": 90.72086527397114,
+          "periodS": 12.403764808076545,
+          "Strouhal": 0.16124136751591153,
+          "meanCd": 1.3023430517958143,
+          "ClRms": 0.18721698650944282,
+          "meanNu": 5.794553691570847
+        },
+        {
+          "startS": 90.72086527397114,
+          "endS": 103.07497867023991,
+          "periodS": 12.354113396268772,
+          "Strouhal": 0.16188939957472354,
+          "meanCd": 1.3099055424776294,
+          "ClRms": 0.19633507676389933,
+          "meanNu": 5.808459011281057
+        },
+        {
+          "startS": 103.07497867023991,
+          "endS": 115.40439564765347,
+          "periodS": 12.329416977413558,
+          "Strouhal": 0.16221367187628008,
+          "meanCd": 1.3137738831518897,
+          "ClRms": 0.20103483043640172,
+          "meanNu": 5.817315186141052
+        }
+      ]
+    ],
+    "actualTimeControlsAndCycleDevelopment": [
+      {
+        "lastCycleDtRangeS": [
+          0.05,
+          0.05
+        ],
+        "lastCycleMaxCourant": 2.3940435338576873,
+        "lastCycleRelativeChangePercent": {
+          "periodS": -0.22529389810542141,
+          "Strouhal": 0.22478746566157765,
+          "meanCd": 0.32622193550043477,
+          "ClRms": 2.6572407679131276,
+          "meanNu": 0.1664299854818295
+        }
+      },
+      {
+        "lastCycleDtRangeS": [
+          0.05,
+          0.05
+        ],
+        "lastCycleMaxCourant": 2.678608405234893,
+        "lastCycleRelativeChangePercent": {
+          "periodS": -0.200304839234944,
+          "Strouhal": 0.19990442100581118,
+          "meanCd": 0.29444493636757035,
+          "ClRms": 2.33778080261031,
+          "meanNu": 0.15223818164594713
+        }
+      }
+    ],
+    "lastCycleCoarseMinusFineRelativeToFinePercent": {
+      "periodS": 0.2845873760878931,
+      "Strouhal": -0.28377977467327226,
+      "meanCd": -0.3185894382488789,
+      "ClRms": -2.5656861551965298,
+      "meanNu": -0.1849858661574425
+    },
+    "interpretation": "These are the two declared wall/wake meshes under identical post-startup controls. Actual adaptive time grids and startup pressure backends are reported separately. Own last complete cycles are phase-aligned only for plotting; development changes and time-step error must be assessed before interpreting differences as spatial accuracy. Two levels do not prove asymptotic mesh convergence. No cross-mesh field interpolation or independent equation audit is performed."
+  },
+  "userRequestedPause": {
+    "requested": "做完这轮就停下来吧",
+    "completedRound": "Running fine-grid 60.2-to-120 s segment, native full-trajectory report, matched-control medium/fine comparison, evidence preservation and documentation.",
+    "notStarted": "fine-growth-120to180",
+    "currentSegmentNativeExitCode": 0,
+    "launcherRetiredAfterNativeCompletion": true,
+    "allRoundCalculationProcessesEnded": true,
+    "overallObjectiveAchieved": false,
+    "resumptionRequiresUserInstruction": true
   }
 }

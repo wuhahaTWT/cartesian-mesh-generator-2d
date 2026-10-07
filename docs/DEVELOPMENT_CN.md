@@ -157,6 +157,8 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 180 s 的两档时间基准在 `medium-at180`、`medium-dt025-at180`，旧 120 s 报告及 `fine-at60` 继续保留；各 `analysis.json` 保存完整续算段清单。`compare-time.py medium-at180 medium-dt025-at180 NEW_REPORT` 复现从同一 20 s 状态出发的长期时间差，正式结果为 `time-at180/`；`compare-mesh.py medium-at60 fine-at60 NEW_REPORT` 按命名边界核对物理条件（两档面编号不同），只统计原生响应，不重建方程或跨网格映射场。`time180-pair-raw-manifest.json` 封存新完成的 .025 s 后段及报告，并绑定原 `time180-raw-manifest.json`。
 
+细网格本轮以 `fine-growth-60p2to120` 完成 60.2→120 s，完整轨迹报告为 `fine-at120/`，其 `analysis.json` 列出全部输入链。`compare-mesh.py medium-at120 fine-at120 NEW_REPORT` 复现正式 `mesh-at120/` 的同控制响应和各自末完整周期，不跨网格映射场。用户要求本轮后停止，因此仅将排队启动器暂停，原生当前段继续正常结束后再退役启动器；未启动 `fine-growth-120to180`。排队启动器的终止状态不能误读成当前原生计算失败，原生 `metrics.json` 为退出码 0、接受时钟 120 s。过程记录在 `pause-after120-orchestration.json`，结束后的原始输出、统计与图由 `fine120-pause-raw-manifest.json` 封存并绑定三档时间证据。保留 120 s 已接受检查点，后续工作等待用户明确恢复。
+
 三档最大 dt=.05／.025／.0125 s 的新对照共同读取 `medium-dt025-60to120/result.thermal.checkpoint`（SHA256 `d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b`），目录依次为 `medium-dt05-from025-120to180`、`medium-dt025-120to180`、`medium-dt0125-120to180`。只改变 `--dt`，保持冻结程序及其他控制；运行与报告均用新目录。三档均已完成到 180 s；完整轨迹报告依次为 `medium-dt05-from025-at180`、`medium-dt025-at180`、`medium-dt0125-at180`。`compare-three-time.py medium-dt05-from025-at180 medium-dt025-at180 medium-dt0125-at180 NEW_REPORT` 复现正式 `time-three-at180/` 对照，核对共同输入 SHA、冻结程序和其余控制，统计对应完整周期、未经对齐的过零时刻和末态场。另按原生单元质心选取 −1≤(x−.07)/2≤10、|(y−.03)/2|≤2 的尾迹区域，给出面积加权 RMS；不跨格映射、不重建方程，也不把区域选择设为精度门。周期统计量仅在相邻差同号时报告其幅值比的 log2；末态另按相邻差范数报告，并列出差向量的面积加权夹角余弦，均不作渐近精度证明。周期发展量单列。`three-time180-raw-manifest.json` 封存新完成的两档分支、报告和统计脚本，并绑定先前已封存的 .025 s 分支；活动细网格文件不进入清单。
 
 ### 联合推进的线性迭代失败恢复
