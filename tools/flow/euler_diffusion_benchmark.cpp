@@ -4,6 +4,7 @@
 #include "cartmesh2d/fv/EulerCheckpoint2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <chrono>
+#include <csignal>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -13,6 +14,8 @@
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 namespace {
+volatile std::sig_atomic_t stopRequested=0;
+void requestStop(int){stopRequested=1;}
 void require(bool b, const char *s) {
   if (!b)
     throw std::runtime_error(s);
@@ -152,7 +155,7 @@ int compareAll(int argc, char **argv) {
     control.maximumRetries = 0;
   }
   control.fluxScheme = EulerFluxScheme2D::Hllc;
-  control.interrupted = [&] { return elapsed() > budget; };
+  control.interrupted = [&] { return stopRequested||elapsed() > budget; };
   try {
     for (size_t i = 0; i < 3; ++i) {
       double t = elapsed();
@@ -361,6 +364,7 @@ int main(int argc, char **argv) {
     auto bc = read(argv[2], m);
     IdealGas2D gas;
     EulerTransport2D physics{.025758750694444447, 1.846e-5};
+    if(const char* value=std::getenv("CARTMESH_RESEARCH_CONDUCTIVITY"))physics.thermalConductivity=std::stod(value);
     std::string prefix = argv[3], name = argv[4],
                 label = "diffusion-research/" + name;
     EulerStepControls2D ctl;
@@ -371,12 +375,15 @@ int main(int argc, char **argv) {
     }
     ctl.fluxScheme = EulerFluxScheme2D::Hllc;
     ctl.order = 2;
+    if(name=="gauss2")ctl.faceQuadrature=EulerFaceQuadrature2D::Gauss2;
     ctl.wallGradient = WallGradient2D::Linear;
     ctl.endTime = std::stod(argv[5]);
     ctl.maximumStep = std::stod(argv[6]);
     double budget = std::stod(argv[7]);
-    ctl.interrupted = [&] { return elapsed() > budget; };
-    if (name == "corrected")
+    std::signal(SIGINT,requestStop);std::signal(SIGTERM,requestStop);
+    if(const char* tolerance=std::getenv("CARTMESH_RESEARCH_NONLINEAR_TOLERANCE"))ctl.nonlinearTolerance=std::stod(tolerance);
+    ctl.interrupted = [&] { return stopRequested||elapsed() > budget; };
+    if (name == "corrected" || name == "gauss2")
       ctl.diffusionScheme = EulerDiffusionScheme2D::Corrected;
     else if (name == "hybrid-heat")
       ctl.diffusionScheme = EulerDiffusionScheme2D::HybridHeat;
@@ -387,7 +394,7 @@ int main(int argc, char **argv) {
     EulerState2D state;
     if (argc == 9) {
       std::ifstream f(argv[8]);
-      state = readEulerCheckpoint2D(f, m, bc, gas, label, physics);
+      state = readEulerCheckpoint2D(f, m, bc, gas, std::getenv("CARTMESH_RESEARCH_CHECKPOINT_CASE")?std::getenv("CARTMESH_RESEARCH_CHECKPOINT_CASE"):label, physics);
     } else {
       auto ref = std::find_if(bc.begin(), bc.end(), [](const auto &b) {
         return b.kind == EulerBoundaryKind2D::Farfield;
@@ -409,20 +416,28 @@ int main(int argc, char **argv) {
     history << std::setprecision(17)
             << "step,time,dt,rejected,spatial,newton,krylov,rhoMin,rhoMax,pMin,"
                "pMax,tMin,tMax,balanceMass,balanceMx,balanceMy,balanceEnergy,"
-               "heat,wallWork,maxCellBalance,elapsed\n";
+               "heat,wallWork,maxCellBalance,elapsed,stageDefect,outputDefect\n";
     bfile << std::setprecision(17)
           << "step,time,name,mass,mx,my,energy,heat,viscousWork\n";
     double construction = 0;
     std::ofstream rejectionLog(prefix + ".rejections.csv");
     size_t spatial = 0, newton = 0, krylov = 0, rejected = 0;
     EulerStepResult2D last;
-    std::string status = "complete", error;
+    std::ofstream nonlinearTrace,failedWork;
+    if(std::getenv("CARTMESH_RESEARCH_IMPLICIT_TRACE")){
+      failedWork.open(prefix+".failed-work.csv");failedWork<<"time,spatial,newton,krylov,reason\n"<<std::setprecision(17);
+      ctl.implicitFailure=[&](std::size_t spatialCalls,std::size_t newtonIterations,std::size_t linearIterations,const std::string& reason){failedWork<<state.time<<','<<spatialCalls<<','<<newtonIterations<<','<<linearIterations<<','<<std::quoted(reason)<<'\n';};
+      nonlinearTrace.open(prefix+".nonlinear.csv");nonlinearTrace<<"time,stage,iteration,h,defect,converged,spatial,krylov\n"<<std::setprecision(17);
+      ctl.implicitIteration=[&](const EulerImplicitIteration2D& e){nonlinearTrace<<state.time<<','<<e.stage<<','<<e.iteration<<','<<e.stageStep<<','<<e.maximumScaledDefect<<','<<e.converged<<','<<e.spatialEvaluations<<','<<e.linearIterations<<'\n';};
+    }
+    const bool readOnly=std::getenv("CARTMESH_RESEARCH_SNAPSHOT")!=nullptr;
+    std::string status = readOnly?"read-only-space-snapshot":"complete", error;
     try {
       double begin = elapsed();
       EulerStepper2D solver(m, bc, gas, physics, ctl.wallGradient,
                             ctl.diffusionScheme);
       construction = elapsed() - begin;
-      while (state.time < *ctl.endTime) {
+      while (!readOnly && state.time < *ctl.endTime) {
         auto old = state;
         auto r = solver.advance(state, ctl);
         require(old.cells == state.cells && old.time == state.time,
@@ -447,7 +462,7 @@ int main(int argc, char **argv) {
         for (double v : r.balanceError)
           history << ',' << v;
         history << ',' << r.boundaryHeat << ',' << r.boundaryViscousWork << ','
-                << r.maximumCellBalanceError << ',' << elapsed() << '\n';
+                << r.maximumCellBalanceError << ',' << elapsed() << ',' << r.maximumAcceptedStageDefect << ',' << r.maximumStageOutputDefect << '\n';
         for (const auto &b : bc) {
           const auto f = b.face;
           bfile << r.state.steps << ',' << r.state.time << ',' << b.name;
@@ -469,10 +484,23 @@ int main(int argc, char **argv) {
     } catch (const std::exception &e) {
       status = elapsed() > budget ? "budget-exhausted-last-accepted"
                                   : "failed-last-accepted";
+      if(stopRequested)status="cancelled-last-accepted";
       error = e.what();
       save();
       std::ofstream failure(prefix + ".failure.txt");
       failure << error << '\n';
+    }
+    if(std::getenv("CARTMESH_RESEARCH_RECONSTRUCTION")){
+      EulerStepper2D diagnosticSolver(m,bc,gas,physics,ctl.wallGradient,ctl.diffusionScheme);
+      const auto snapshot=diagnosticSolver.spatialSnapshot(state,ctl);
+      std::ofstream faceOutput(prefix+".instantaneous-faces.csv");
+      faceOutput<<std::setprecision(17)<<"face,owner,neighbour,x,y,sx,sy,mass,mx,my,energy,heat,viscX,viscY,work\n";
+      for(std::size_t f=0;f<m.faces.size();++f){const auto& face=m.faces[f];faceOutput<<f<<','<<face.owner<<','<<(face.neighbour?std::to_string(*face.neighbour):"-1")<<','<<face.centre.x<<','<<face.centre.y<<','<<face.areaVector.x<<','<<face.areaVector.y;
+        for(double value:snapshot.faceFlux[f])faceOutput<<','<<value;
+        faceOutput<<','<<snapshot.faceHeatFlux[f];for(double value:snapshot.faceViscousFlux[f])faceOutput<<','<<value;faceOutput<<'\n';}
+      std::ofstream output(prefix+".reconstruction.csv");
+      output<<std::setprecision(17)<<"cell,component,rawX,rawY,limitedX,limitedY,thetaLocalFrame\n";
+      for(std::size_t c=0;c<m.cells.size();++c)for(std::size_t k=0;k<4;++k)output<<c<<','<<k<<','<<snapshot.rawGradient[c][k].x<<','<<snapshot.rawGradient[c][k].y<<','<<snapshot.limitedGradient[c][k].x<<','<<snapshot.limitedGradient[c][k].y<<','<<snapshot.limiterTheta[c][k]<<'\n';
     }
     std::ofstream cells(prefix + ".cells.csv");
     cells << std::setprecision(17)
@@ -519,7 +547,7 @@ int main(int argc, char **argv) {
            << ",\"fullSeconds\":" << elapsed() << "}\n";
     std::cout << status << " time=" << state.time << " steps=" << state.steps
               << " seconds=" << elapsed() << " " << error << '\n';
-    return status == "complete" ? 0 : 2;
+    return status == "complete" || status == "read-only-space-snapshot" ? 0 : 2;
   } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
     return 1;

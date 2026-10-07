@@ -114,7 +114,7 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
 int main(int argc,char** argv) {
  try {
     std::string meshPath,prefix,problem="sod",boundaryPath,exportBoundary,restart;
-    bool inspectRestart=false;
+    bool inspectRestart=false,specifiedNonlinearTolerance=false;
     EulerTransport2D transport;HeatBoundaryKind2D wallThermal=HeatBoundaryKind2D::Insulated;double wallValue=0;bool specifiedWall=false;std::string wallModel="slip";bool specifiedWallModel=false;
     IdealGas2D gas;EulerPrimitive2D reference{1,0,0,1};EulerStepControls2D controls;
     double endTime=.2,split=.5,beta=5,maximumSeconds=180;std::size_t maximumSteps=100000,checkpointEvery=25;
@@ -137,6 +137,7 @@ int main(int argc,char** argv) {
                 "--inlet-model characteristic|total (channel; total uses reference entropy, total enthalpy, tangential velocity)\n"
                 "--integrator explicit|sdirk2 (SDIRK2 uniform physical dt from --max-step; time refinement required)\n"
                 "--implicit-preconditioner diagonal|frozen-flux-ilu0 (optional research SDIRK2 right preconditioner; default diagonal)\n"
+                "--nonlinear-tolerance 2e-14 (SDIRK2 only; dimensionless stage defect in (0,1e-10]; not a physical error tolerance)\n"
                 "--time-step-control legacy|stage-guarded (default legacy; optional stage-rate headroom/retry)\n"
                 "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
@@ -173,6 +174,7 @@ int main(int argc,char** argv) {
         else if(arg=="--outlet-pressure")outletPressure=number(value);
         else if(arg=="--integrator") {require(value=="explicit"||value=="sdirk2","unknown integrator");controls.integrator=value=="sdirk2"?EulerTimeIntegrator2D::Sdirk2:EulerTimeIntegrator2D::Explicit;}
         else if(arg=="--implicit-preconditioner") {require(value=="diagonal"||value=="frozen-flux-ilu0","unknown implicit preconditioner");controls.implicitPreconditioner=value=="frozen-flux-ilu0"?EulerImplicitPreconditioner2D::FrozenFluxIlu0:EulerImplicitPreconditioner2D::Diagonal;}
+        else if(arg=="--nonlinear-tolerance") {controls.nonlinearTolerance=number(value);specifiedNonlinearTolerance=true;}
         else if(arg=="--time-step-control") {require(value=="legacy"||value=="stage-guarded","unknown time-step control");controls.timeStepControl=value=="stage-guarded"?EulerTimeStepControl2D::StageGuarded:EulerTimeStepControl2D::Legacy;}
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
         else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic"||value=="face-quadratic","unknown wall gradient scheme");controls.wallGradient=value=="face-quadratic"?WallGradient2D::FaceQuadratic:value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
@@ -197,6 +199,7 @@ int main(int argc,char** argv) {
     }
     require(!meshPath.empty()&&(!prefix.empty()||!exportBoundary.empty()||inspectRestart),"--mesh and --output (or --export-boundaries / --inspect-restart) required");
     require(!inspectRestart||(prefix.empty()&&exportBoundary.empty()),"checkpoint inspection is read-only; omit output and boundary export");
+    require(!specifiedNonlinearTolerance||(controls.integrator==EulerTimeIntegrator2D::Sdirk2&&controls.nonlinearTolerance>0&&controls.nonlinearTolerance<=1e-10),"--nonlinear-tolerance requires SDIRK2 and a stage defect budget in (0,1e-10]");
     require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final *.solver.cm2d");
     require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave"||problem=="sealed"||problem=="channel"||problem=="custom","unknown Euler case");
     require((problem=="channel")==outletPressure.has_value(),"channel requires --outlet-pressure; custom outlet values belong in the boundary file");
@@ -321,6 +324,7 @@ int main(int argc,char** argv) {
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
     std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
     std::size_t cflRejected=0,spatialEvaluations=0,nonlinearIterations=0,linearIterations=0;
+    double maximumAcceptedStageDefect=0,maximumStageOutputDefect=0;
     std::string lastRejectedReason;
     std::optional<EulerResidualDiagnostics2D> previousDiagnostics;
     try {
@@ -333,6 +337,8 @@ int main(int argc,char** argv) {
             step.interrupted=[&]{return stopped||std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()>=maximumSeconds;};
             last=solver.advance(state,step);state=last->state;rejected+=last->rejectedCandidates;
             nonlinearIterations+=last->nonlinearIterations;linearIterations+=last->linearIterations;
+            maximumAcceptedStageDefect=std::max(maximumAcceptedStageDefect,last->maximumAcceptedStageDefect);
+            maximumStageOutputDefect=std::max(maximumStageOutputDefect,last->maximumStageOutputDefect);
             if(!last->lastRejectedReason.empty())lastRejectedReason=last->lastRejectedReason;
             cflRejected+=last->cflRejectedCandidates;spatialEvaluations+=last->spatialEvaluations;
             fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
@@ -435,6 +441,9 @@ int main(int argc,char** argv) {
         <<",\"cflLimit\":"<<controls.acousticCourant<<",\"maximumStep\":"<<controls.maximumStep<<",\"minimumStep\":"<<controls.minimumStep
         <<",\"integrator\":"<<quote(controls.integrator==EulerTimeIntegrator2D::Sdirk2?"sdirk2":"explicit")<<",\"nonlinearIterations\":"<<nonlinearIterations<<",\"linearIterations\":"<<linearIterations
         <<",\"implicitPreconditioner\":"<<quote(controls.implicitPreconditioner==EulerImplicitPreconditioner2D::FrozenFluxIlu0?"frozen-flux-ilu0":"diagonal")
+        <<",\"nonlinearTolerance\":";
+    if(controls.integrator==EulerTimeIntegrator2D::Sdirk2)summary<<controls.nonlinearTolerance;else summary<<"null";
+    summary<<",\"maximumAcceptedStageDefect\":"<<maximumAcceptedStageDefect<<",\"maximumStageOutputDefect\":"<<maximumStageOutputDefect
         <<",\"timeStepControl\":"<<quote(controls.timeStepControl==EulerTimeStepControl2D::StageGuarded?"stage-guarded":"legacy")<<",\"cflRejectedCandidates\":"<<cflRejected<<",\"spatialEvaluations\":"<<spatialEvaluations
         <<",\"maximumSteps\":"<<maximumSteps<<",\"maximumSeconds\":"<<maximumSeconds<<",\"checkpointEvery\":"<<checkpointEvery<<",\"elapsedSeconds\":"<<elapsed
         <<",\"nativeTopologyRevalidated\":true,\"solverQualityPassed\":true,\"externalCheckMesh\":\"not run\""

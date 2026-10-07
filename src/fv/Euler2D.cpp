@@ -174,6 +174,8 @@ EulerPrimitive2D primitiveValues(const PrimitiveValues& q){return {q[0],q[1],q[2
 struct SpatialOperator {
     std::vector<EulerConservative2D> faceFlux,residual;
     std::vector<Vector2D> pressureFlux;
+    std::vector<Gradient> rawGradient,limitedGradient;
+    std::vector<PrimitiveValues> limiterTheta;
     std::vector<double> speed,spectral,heatFlux,heatRate,viscousRate;
     std::vector<std::array<double,3>> viscousFlux;
     std::vector<unsigned char> fallback;
@@ -182,12 +184,20 @@ struct SpatialOperator {
 };
 SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
     const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const EulerDiffusionOperators2D& diffusion,bool pressureDiagnostic=false) {
+    require(control.faceQuadrature==EulerFaceQuadrature2D::Midpoint||control.faceQuadrature==EulerFaceQuadrature2D::Gauss2,"invalid face quadrature");
+    const bool gauss=control.faceQuadrature==EulerFaceQuadrature2D::Gauss2;
+    const auto points=[&](const Face& face){
+        const double offset=gauss?1/(2*std::sqrt(3.)):0;
+        return std::array<Point2D,2>{{{face.centre.x-offset*face.areaVector.y,face.centre.y+offset*face.areaVector.x},
+            {face.centre.x+offset*face.areaVector.y,face.centre.y-offset*face.areaVector.x}}};
+    };
     const auto* heat=diffusion.heat?&*diffusion.heat:nullptr;const auto* viscous=diffusion.viscous?&*diffusion.viscous:nullptr;
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<EulerPrimitive2D> primitive;primitive.reserve(nc);
     for(const auto& u:cells)primitive.push_back(eulerPrimitive2D(u,gas));
     SpatialOperator out;if(pressureDiagnostic)out.pressureFlux.resize(nf);out.faceFlux.resize(nf);out.residual.resize(nc);out.speed.resize(nf);
     out.spectral.resize(nc);out.fallback.resize(nf);out.heatFlux.resize(nf);out.heatRate.resize(nc);out.viscousFlux.resize(nf);out.viscousRate.resize(nc);
+    if(pressureDiagnostic){out.rawGradient.resize(nc);out.limitedGradient.resize(nc);out.limiterTheta.resize(nc,PrimitiveValues{1,1,1,1});}
     // Multidimensional pressure sensor inspired by Simon & Mandal (2018),
     // eqs. 49-50, alpha=3. Our polygon stencil includes every face incident on
     // either adjacent cell and blends ALL conserved flux components, rather
@@ -250,28 +260,36 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
         }
         auto& grad=gradient[i];PrimitiveValues theta{1,1,1,1};
         for(std::size_t k=0;k<4;++k)grad[k]={finite((yy*bx[k]-xy*by[k])/determinant),finite((xx*by[k]-xy*bx[k])/determinant)};
+        if(pressureDiagnostic){auto raw=grad;const auto u=raw[1],v=raw[2];
+            raw[1]={ex*u.x-ey*v.x,ex*u.y-ey*v.y};raw[2]={ey*u.x+ex*v.x,ey*u.y+ex*v.y};out.rawGradient[i]=raw;}
         // Barth-Jespersen face limiter: reconstruct primitive variables inside
         // the cell/neighbour extrema, so positive density/pressure remain positive.
         for(const auto id:cell.faces) {
-            const auto c=mesh.faces[id].centre;const Vector2D d{c.x-cell.centre.x,c.y-cell.centre.y};
+            for(std::size_t sample=0;sample<(gauss?2u:1u);++sample){
+            const auto c=points(mesh.faces[id])[sample];const Vector2D d{c.x-cell.centre.x,c.y-cell.centre.y};
             for(std::size_t k=0;k<4;++k) {
                 const double increment=finite(grad[k].x*d.x+grad[k].y*d.y);
                 if(increment>0)theta[k]=std::min(theta[k],(maximum[k]-centre[k])/increment);
                 else if(increment<0)theta[k]=std::min(theta[k],(minimum[k]-centre[k])/increment);
             }
         }
+        }
+        if(pressureDiagnostic)out.limiterTheta[i]=theta;
         for(std::size_t k=0;k<4;++k){theta[k]=std::clamp(theta[k],0.,1.);grad[k].x*=theta[k];grad[k].y*=theta[k];}
         bool positive=true;
         for(const auto id:cell.faces) {
-            auto q=centre;const auto c=mesh.faces[id].centre;
+            for(std::size_t sample=0;sample<(gauss?2u:1u);++sample){
+            auto q=centre;const auto c=points(mesh.faces[id])[sample];
             for(std::size_t k=0;k<4;++k)q[k]+=grad[k].x*(c.x-cell.centre.x)+grad[k].y*(c.y-cell.centre.y);
             try {primitiveValid(primitiveValues(q));}catch(const std::runtime_error&){positive=false;break;}
+        }
         }
         // Floating-point cancellation at extreme contrasts must not become a floor.
         if(!positive){grad={};++out.reconstructionFallbackCells;}
         const auto normalGradient=grad[1],tangentGradient=grad[2];
         grad[1]={ex*normalGradient.x-ey*tangentGradient.x,ex*normalGradient.y-ey*tangentGradient.y};
         grad[2]={ey*normalGradient.x+ex*tangentGradient.x,ey*normalGradient.y+ex*tangentGradient.y};
+        if(pressureDiagnostic)out.limitedGradient[i]=grad;
     }
     const auto reconstructed=[&](std::size_t i,Point2D faceCentre) {
         if(control.order==1)return cells[i];
@@ -286,10 +304,18 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
         if(boundary&&boundary->partner) {
             const auto& other=mesh.faces[*boundary->partner];neighbour=other.owner;rightCentre=other.centre;
         }
-        const auto left=reconstructed(owner,face.centre);
+        // Integrate the same nonlinear flux, retaining one shared face value.
+        // Max point wave speed controls the complete edge; fallback evaluations
+        // count individual Riemann calls, while the face flag is their union.
+        EulerFaceFlux2D integrated;
+        std::size_t fallbackEvaluations=0;
+        for(std::size_t sample=0;sample<(gauss?2u:1u);++sample){
+        const auto centre=points(face)[sample];
+        const Point2D otherCentre=gauss?Point2D{rightCentre.x+(centre.x-face.centre.x),rightCentre.y+(centre.y-face.centre.y)}:rightCentre;
+        const auto left=reconstructed(owner,centre);
         const double length=std::hypot(face.areaVector.x,face.areaVector.y);
         const Vector2D normal{face.areaVector.x/length,face.areaVector.y/length};
-        const auto right=neighbour?reconstructed(*neighbour,rightCentre):
+        const auto right=neighbour?reconstructed(*neighbour,otherCentre):
             eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
         const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
         auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration,pressureDiagnostic);
@@ -309,12 +335,25 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
             flux.integratedFlux={0,traction*normal.x,traction*normal.y,0};
             flux.pressureFlux={flux.integratedFlux[1],flux.integratedFlux[2]};
         }
+        const double weight=gauss?.5:1.;
+        if(!gauss)integrated=flux;
+        else{
+        for(std::size_t k=0;k<4;++k)integrated.integratedFlux[k]+=weight*flux.integratedFlux[k];
+        integrated.pressureFlux.x+=weight*flux.pressureFlux.x;integrated.pressureFlux.y+=weight*flux.pressureFlux.y;
+        integrated.waveSpeed=std::max(integrated.waveSpeed,flux.waveSpeed);
+        integrated.hllcFallback=integrated.hllcFallback||flux.hllcFallback;
+        }
+        fallbackEvaluations+=flux.hllcFallback?1u:0u;
+        }
+        const auto& flux=integrated;
+        const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+        const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
         out.minimumContactRestoration=std::min(out.minimumContactRestoration,restoration);
         if(pressureDiagnostic){out.pressureFlux[id]=flux.pressureFlux;
         if(boundary&&boundary->partner)out.pressureFlux[*boundary->partner]={-flux.pressureFlux.x,-flux.pressureFlux.y};}
         out.faceFlux[id]=flux.integratedFlux;out.speed[id]=flux.waveSpeed;
         out.fallback[id]=static_cast<unsigned char>(flux.hllcFallback);
-        if(flux.hllcFallback)++out.fallbackEvaluations;
+        out.fallbackEvaluations+=fallbackEvaluations;
         out.spectral[owner]=finite(out.spectral[owner]+flux.waveSpeed*length);
         if(neighbour)out.spectral[*neighbour]=finite(out.spectral[*neighbour]+flux.waveSpeed*length);
         for(std::size_t k=0;k<4;++k) {
@@ -386,7 +425,7 @@ struct ImplicitStage {std::vector<EulerConservative2D> cells;SpatialOperator op;
 ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
     const IdealGas2D& gas,const std::vector<EulerConservative2D>& base,
     const std::vector<EulerConservative2D>& guess,double h,const EulerStepControls2D& control,
-    const EulerDiffusionOperators2D& diffusion,EulerStepResult2D& work) {
+    const EulerDiffusionOperators2D& diffusion,EulerStepResult2D& work,unsigned stageIndex) {
     using namespace detail;const auto n=base.size();NewtonVector scale(4*n),x(4*n);
     for(std::size_t i=0;i<n;++i) {
         const auto p=eulerPrimitive2D(guess[i],gas);const double c=eulerSoundSpeed2D(p,gas);
@@ -408,7 +447,8 @@ ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBo
     auto current=evaluate(x);auto f=defect(current);
     for(std::size_t it=0;it<=control.maximumNewtonIterations;++it) {
         double largest=0;for(double a:f)largest=std::max(largest,std::abs(a));
-        if(largest<=control.nonlinearTolerance)return current;
+        if(control.implicitIteration)control.implicitIteration({stageIndex,it,work.spatialEvaluations,work.linearIterations,h,largest,largest<=control.nonlinearTolerance});
+        if(largest<=control.nonlinearTolerance){work.maximumAcceptedStageDefect=std::max(work.maximumAcceptedStageDefect,largest);return current;}
         require(it<control.maximumNewtonIterations,"implicit Newton budget exhausted; previous accepted state retained");
         ++work.nonlinearIterations;
         NewtonVector diagonal(4*n),rhs=f;
@@ -478,7 +518,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(control.integrator==EulerTimeIntegrator2D::Explicit||control.integrator==EulerTimeIntegrator2D::Sdirk2,"unknown time integrator");
     require(control.implicitPreconditioner==EulerImplicitPreconditioner2D::Diagonal||control.implicitPreconditioner==EulerImplicitPreconditioner2D::FrozenFluxIlu0,"unknown implicit preconditioner");
     const bool implicit=control.integrator==EulerTimeIntegrator2D::Sdirk2;
-    if(implicit)require(std::isfinite(control.nonlinearTolerance)&&control.nonlinearTolerance>0&&control.nonlinearTolerance<=2e-14&&control.maximumNewtonIterations>0&&control.maximumKrylovIterations>0,"invalid implicit solver controls");
+    if(implicit)require(std::isfinite(control.nonlinearTolerance)&&control.nonlinearTolerance>0&&control.nonlinearTolerance<=1e-10&&control.maximumNewtonIterations>0&&control.maximumKrylovIterations>0,"invalid implicit solver controls");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
     require(!control.endTime||(std::isfinite(*control.endTime)&&*control.endTime>initial.time),"invalid integration end time");
@@ -504,6 +544,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     std::vector<double> spectral;
     std::string failure="non-positive stage state";
     for(std::size_t attempt=0;;++attempt) {
+        result.maximumAcceptedStageDefect=0;result.maximumStageOutputDefect=0;
         require(std::isfinite(initial.time+dt)&&initial.time+dt>initial.time,"physical time cannot advance at this step");
         bool valid=implicit?false:positiveUpdate(mesh,initial.cells,first.residual,dt,gas,stage);
         bool cflExceeded=false,positiveStages=valid;
@@ -512,10 +553,10 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
         if(implicit) {
             try {
                 const double gamma=1-1/std::sqrt(2.);
-                const auto a=implicitStage(mesh,lookup,gas,initial.cells,initial.cells,gamma*dt,control,diffusion,result);
+                const auto a=implicitStage(mesh,lookup,gas,initial.cells,initial.cells,gamma*dt,control,diffusion,result,0);
                 auto base=initial.cells;
                 for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<4;++k)base[i][k]-=(1-gamma)*dt/mesh.cells[i].area*a.op.residual[i][k];
-                auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,diffusion,result);
+                auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,diffusion,result,1);
                 combined=b.op;
                 std::fill(combined.spectral.begin(),combined.spectral.end(),0.);
                 for(std::size_t id=0;id<nf;++id) {
@@ -546,10 +587,24 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
                 for(std::size_t i=0;i<nc;++i) {
                     const auto p=eulerPrimitive2D(initial.cells[i],gas);const double c=eulerSoundSpeed2D(p,gas);
                     const EulerConservative2D scale{p.density,p.density*c,p.density*c,initial.cells[i][3]};
-                    // Sum of two stage defects: bound is (1+(1-g)/g)*tol.
-                    for(std::size_t k=0;k<4;++k)require(std::abs(accepted[i][k]-b.cells[i][k])<=8*control.nonlinearTolerance*scale[k],"implicit stage/output defect exceeds nonlinear solve tolerance");
+                    // d2 = Y2-base+gamma*dt*R(Y2)/V. The conservative
+                    // output is base-gamma*dt*R(Y2)/V, hence output-Y2=-d2.
+                    // Stage 2 scales use Y1; this unchanged initial-scale envelope
+                    // also rejects excessive scale growth. It is not an a priori
+                    // bound on propagated trajectory error from both stage defects.
+                    for(std::size_t k=0;k<4;++k){
+                        const double gap=std::abs(accepted[i][k]-b.cells[i][k])/scale[k];
+                        result.maximumStageOutputDefect=std::max(result.maximumStageOutputDefect,gap);
+                        require(gap<=8*control.nonlinearTolerance,"implicit stage/output defect exceeds nonlinear solve tolerance");
+                    }
                 }
-            }catch(const std::runtime_error& e){valid=false;failure=e.what();}
+            }catch(const EulerInterrupted& e){
+                if(control.implicitFailure)control.implicitFailure(result.spatialEvaluations,result.nonlinearIterations,result.linearIterations,e.what());
+                throw;
+            }catch(const std::runtime_error& e){
+                if(control.implicitFailure)control.implicitFailure(result.spatialEvaluations,result.nonlinearIterations,result.linearIterations,e.what());
+                valid=false;failure=e.what();
+            }
         }else if(valid&&control.order==2) {
             try {
                 ++result.spatialEvaluations;
@@ -708,7 +763,7 @@ EulerSpatialSnapshot2D EulerStepper2D::spatialSnapshot(const EulerState2D& state
     std::vector<const EulerBoundary2D*> lookup(mesh_.faces.size(),nullptr);
     for(const auto& b:boundaries_)lookup[b.face]=&b;
     auto op=spatialOperator(mesh_,lookup,gas_,state.cells,control,*diffusion_,true);
-    return {std::move(op.faceFlux),std::move(op.residual),std::move(op.pressureFlux),std::move(op.viscousFlux),std::move(op.heatFlux)};
+    return {std::move(op.faceFlux),std::move(op.residual),std::move(op.pressureFlux),std::move(op.viscousFlux),std::move(op.heatFlux),std::move(op.rawGradient),std::move(op.limitedGradient),std::move(op.limiterTheta)};
 }
 EulerResidualDiagnostics2D EulerStepper2D::diagnostics(const EulerState2D& state,const EulerStepControls2D& control) const {
     require(state.cells.size()==mesh_.cells.size(),"residual state size differs");

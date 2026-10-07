@@ -153,6 +153,8 @@ int main(int argc,char**argv){
     if(!rd.valid())throw std::runtime_error(rd.error);
     auto m=makeFvMesh2D(rd.topology);
     std::string prefix=argv[2],init=argv[3];
+    const bool gauss=init=="gauss-snapshot"||init=="gauss-exact";
+    if(gauss)init=init=="gauss-snapshot"?"snapshot":"exact";
     const bool readOnly=init=="snapshot"||init=="thermal-snapshot";
     thermalReference=init=="thermal-exact"||init=="thermal-rest"||init=="thermal-snapshot";
     if(readOnly)init=thermalReference?"thermal-exact":"exact";
@@ -267,6 +269,8 @@ int main(int argc,char**argv){
     ctl.integrator=EulerTimeIntegrator2D::Sdirk2;
     ctl.fluxScheme=EulerFluxScheme2D::Hllc;
     ctl.order=2;
+    if(const char* tolerance=std::getenv("CARTMESH_RESEARCH_NONLINEAR_TOLERANCE"))ctl.nonlinearTolerance=std::stod(tolerance);
+    if(gauss)ctl.faceQuadrature=EulerFaceQuadrature2D::Gauss2;
     ctl.maximumStep=dt;
     ctl.endTime=end;
     ctl.interrupted=[&]{
@@ -300,6 +304,19 @@ int main(int argc,char**argv){
         for(auto value:op.faceFlux[f])out<<','<<value;
         for(auto value:op.faceViscousFlux[f])out<<','<<value;
         out<<','<<op.faceHeatFlux[f]<<','<<op.facePressureFlux[f].x<<','<<op.facePressureFlux[f].y<<'\n';
+      }
+      std::ofstream reconstruction(prefix+".reconstruction-"+label+".csv");
+      reconstruction<<std::setprecision(17)<<"cell,component,rawX,rawY,limitedX,limitedY,thetaLocalFrame,referenceX,referenceY\n";
+      for(std::size_t c=0;c<m.cells.size();++c){
+        const auto p=m.cells[c].centre;const double r=std::hypot(p.x,p.y),r2=r*r;
+        const double temperature=T(r),pressureValue=norm*pressure(r),density=pressureValue/temperature;
+        const double pressureRadial=pressureValue*v(r)*v(r)/(temperature*r);
+        const double temperatureRadial=thermalReference?.2/(std::log(2.)*r):C/r+2*G/(r*r*r);
+        const double densityRadial=density*(pressureRadial/pressureValue-temperatureRadial/temperature);
+        const double ux=thermalReference?0:.4*p.x*p.y/(r2*r2),uy=thermalReference?0:-.3-.2/r2+.4*p.y*p.y/(r2*r2);
+        const double vx=thermalReference?0:.3+.2/r2-.4*p.x*p.x/(r2*r2),vy=-ux;
+        const std::array<Vector2D,4> reference{{{densityRadial*p.x/r,densityRadial*p.y/r},{ux,uy},{vx,vy},{pressureRadial*p.x/r,pressureRadial*p.y/r}}};
+        for(std::size_t k=0;k<4;++k)reconstruction<<c<<','<<k<<','<<op.rawGradient[c][k].x<<','<<op.rawGradient[c][k].y<<','<<op.limitedGradient[c][k].x<<','<<op.limitedGradient[c][k].y<<','<<op.limiterTheta[c][k]<<','<<reference[k].x<<','<<reference[k].y<<'\n';
       }
       std::ofstream residual(prefix+".residual-"+label+".csv");
       residual<<std::setprecision(17)<<"cell,area,mass,mx,my,energy\n";

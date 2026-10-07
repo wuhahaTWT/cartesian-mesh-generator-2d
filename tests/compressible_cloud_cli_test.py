@@ -24,6 +24,23 @@ with tempfile.TemporaryDirectory(prefix="cartmesh-cloud-") as folder:
     assert tail["targetReached"] and tail["time"] == tail["requestedEndTime"]
     full = run("full")
     assert full["targetReached"] and not full["steadyConverged"]
+    assert full["nonlinearTolerance"] == 2e-14
+    # The optional stage budget must reach the native solver and survive an
+    # accepted-state restart with the same control. This is not a PDE audit.
+    algebraic = ["--nonlinear-tolerance", "1e-10"]
+    candidate = run("algebraic", algebraic)
+    assert candidate["targetReached"] and candidate["nonlinearTolerance"] == 1e-10
+    assert 0 <= candidate["maximumAcceptedStageDefect"] <= 1e-10
+    assert 0 <= candidate["maximumStageOutputDefect"] <= 8e-10
+    run("algebraic-limited", [*algebraic, "--max-steps", "2"], 2)
+    run("algebraic-resumed", [*algebraic, "--restart", str(root/"algebraic-limited.checkpoint")])
+    assert (root/"algebraic.checkpoint").read_bytes() == (root/"algebraic-resumed.checkpoint").read_bytes()
+    for index, options in enumerate((["--nonlinear-tolerance", value] for value in ["0", "-1", "1e-9", "nan", "inf"])):
+        invalid_prefix = root/f"invalid-algebraic-{index}"
+        rejected = subprocess.run([*common, "--output", str(invalid_prefix), *options], capture_output=True, text=True, timeout=30)
+        assert rejected.returncode == 1 and not invalid_prefix.with_suffix(".json").exists()
+    explicit_budget = subprocess.run([*common, "--output", str(root/"explicit-algebraic"), "--integrator", "explicit", *algebraic], capture_output=True, text=True, timeout=30)
+    assert explicit_budget.returncode == 1 and "requires SDIRK2" in explicit_budget.stderr
     limited = run("limited", ["--max-steps", "2"], 2)
     assert limited["acceptedSteps"] == 2 and "budget" in limited["failure"]
     run("resumed", ["--restart", str(root/"limited.checkpoint")])

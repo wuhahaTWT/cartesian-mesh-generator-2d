@@ -32,6 +32,7 @@ struct EulerState2D {
     std::vector<EulerConservative2D> cells;
 };
 enum class EulerFluxScheme2D { Rusanov, Hllc };
+enum class EulerFaceQuadrature2D { Midpoint, Gauss2 };
 enum class EulerTimeStepControl2D { Legacy, StageGuarded };
 enum class EulerTimeIntegrator2D { Explicit, Sdirk2 };
 // FrozenFluxIlu0 approximates only the Newton right preconditioner. The true
@@ -53,11 +54,20 @@ struct EulerFaceFlux2D {
 // vector reverses the flux. HLLC falls back visibly if its star states are invalid.
 [[nodiscard]] EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& left,
     const EulerConservative2D& right, Vector2D areaVector, const IdealGas2D&, EulerFluxScheme2D, double contactRestoration=1,bool pressureDiagnostic=false);
+struct EulerImplicitIteration2D {
+    unsigned stage=0;
+    std::size_t iteration=0,spatialEvaluations=0,linearIterations=0;
+    double stageStep=0,maximumScaledDefect=0;
+    bool converged=false;
+};
 struct EulerStepControls2D {
     // Legacy name: with k>0 this caps the combined acoustic + thermal + viscous rate.
     double maximumStep=1, minimumStep=1e-14, acousticCourant=.4;
     std::size_t maximumRetries=12;
     EulerFluxScheme2D fluxScheme=EulerFluxScheme2D::Rusanov;
+    // Optional inviscid edge quadrature only; diffusion is unchanged. Gauss2
+    // limits and checks reconstructed primitive states at both actual points.
+    EulerFaceQuadrature2D faceQuadrature=EulerFaceQuadrature2D::Midpoint;
     unsigned order=1; // 1: constant/forward Euler; 2: limited linear/SSPRK(2,2).
     WallGradient2D wallGradient=WallGradient2D::Linear;
     EulerDiffusionScheme2D diffusionScheme=EulerDiffusionScheme2D::Corrected;
@@ -71,7 +81,14 @@ struct EulerStepControls2D {
     EulerImplicitPreconditioner2D implicitPreconditioner=EulerImplicitPreconditioner2D::Diagonal;
     // SDIRK uses maximumStep as a uniform physical step, never a local clock.
     // Dimensionless stage defect relative to fixed rho/rho*c/rho*E scales.
+    // Optional algebraic budget up to 1e-10; default remains near-roundoff.
+    // This is not a physical error tolerance. RK output still requires positivity
+    // and the unchanged 8*tolerance output/stage defect envelope.
     double nonlinearTolerance=2e-14;
+    std::function<void(const EulerImplicitIteration2D&)> implicitIteration;
+    // Cumulative work within the current advance, including rejected attempts.
+    // Called before a failed/cancelled implicit attempt leaves its accepted input.
+    std::function<void(std::size_t,std::size_t,std::size_t,const std::string&)> implicitFailure;
     std::size_t maximumNewtonIterations=16, maximumKrylovIterations=240;
     // Optional cancellation/budget callback, checked inside implicit residuals.
     std::function<bool()> interrupted;
@@ -97,6 +114,7 @@ struct EulerStepResult2D {
     EulerConservative2D beforeIntegral{},afterIntegral{},boundaryFlux{},balanceError{};
     double step=0, acousticCourant=0, minimumDensity=0, minimumPressure=0;
     double maximumCellBalanceError=0;
+    double maximumAcceptedStageDefect=0,maximumStageOutputDefect=0;
     std::size_t rejectedCandidates=0;
     std::string lastRejectedReason;
     std::size_t cflRejectedCandidates=0,spatialEvaluations=0;
@@ -108,6 +126,10 @@ struct EulerSpatialSnapshot2D {
     std::vector<Vector2D> facePressureFlux;
     std::vector<std::array<double,3>> faceViscousFlux;
     std::vector<double> faceHeatFlux;
+    // Gradient vectors in global coordinates; theta velocity entries use the
+    // existing cell-first-edge frame. Only read-only snapshots collect them.
+    std::vector<std::array<Vector2D,4>> rawGradient,limitedGradient;
+    std::vector<std::array<double,4>> limiterTheta;
 };
 struct EulerResidualDiagnostics2D {
     double rate=0; // s^-1, maximum component residual with local physical scales.

@@ -276,6 +276,39 @@ snapshot / thermal-snapshot 不做物理时间步，但会向指定新前缀导�
 
 thermal-exact / thermal-rest 的参考为 T=1+.2 ln(r)/ln(2)、u=v=0、常压力，密度 p/T；压力按真实多边形总质量 3π 归一化。壁面静止无滑移，在每面中心给解析温度，实际折线面上以原生 Gauss 积分给出约 ±.17625845 W/m 的参考向外热量，壁功为零；边界采样/求积误差仍属于比较的一部分。thermal-rest 从均匀 1.1 K 静止状态推进。预算失败需以新目录或新前缀载入旧检查点续算，不能当作已稳态；研究入口支持 SIGINT/SIGTERM，已接受场与失败保留。整体算例成本须累加所有失败与续算进程。half-step 稳态比较不等价于瞬态时间精度检验。
 
+### 可选无黏面求积与重构诊断
+
+EulerStepControls2D.faceQuadrature 默认 Midpoint，研究可显式选 Gauss2。求积点为 x_f±(−Sy,Sx)/(2√3)，同一 Riemann 通量等权合成，声学谱率用两点最大波速乘真实面长；热/黏性离散独立保持原形式。限幅与正性检查针对真实求积点，内部和周期面只装配一次；HLLC fallbackEvaluations 计每个 Riemann 调用，面标记为其并集。微例的 1e−13 是单位尺度集成动量通量的浮点预算，不是物理资格门。
+
+只读快照新增 rawGradient / limitedGradient（ρ、u、v、p 各自全局 XY）和 limiterTheta（速度分量采用原单元首面框架）。秩不足和正性退阶需结合原生回退计数，theta 单独不能证明满阶。圆环 driver 支持 gauss-snapshot / gauss-exact；前者导出原生梯度与参照，不做物理推进。
+
+    build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries outputs/new-prefix gauss2 2e-7 2e-9 360
+
+该独立研究模式采用完整 Euler、Corrected 扩散和 SDIRK2；用 corrected 作原面心对照。CARTMESH_RESEARCH_CONDUCTIVITY=.025759 用于匹配既有圆柱物性；通道保持原 .025758750694444447。CARTMESH_RESEARCH_RECONSTRUCTION=1 追加终态梯度与 instantaneous-faces，CARTMESH_RESEARCH_SNAPSHOT=1 读取状态并导出、不推进，状态标为 read-only-space-snapshot；CARTMESH_RESEARCH_CHECKPOINT_CASE 可指定原问题标签，仍完整校验网格、物性及边界。上述变量不改变 all 共同扩散方案模式；新前缀应独立保留旧场。
+
+fullSeconds 包含构造、求解、重做、检查点、导出及所请求的末次快照；acceptedSpatialEvaluations 等仅计返回 advance 的工作，额外快照另有开销。瞬时面输出与 RK 步平均 faces 不能混比。体积 L1 为 sum(area×|差|)/sum(area)，近壁范围由真实无滑移面 owner 指定；跨网格仅比较壁积分，不能按单元索引比较场。固定轮廓细网格仍是数值参考。
+
+### SDIRK2 有限代数预算与诊断
+
+controls.nonlinearTolerance 的默认值为 2e−14，可显式设为 (0, 1e−10]。该上限来自短段圆柱、冷/热壁通道与静止热控制的直接场比较，不是通用精度保证。每阶段固定尺度 ρ、ρc、ρE 来自该阶段猜测：阶段一使用 Un，阶段二使用 Y1。Newton 仅在实际最大归一化缺陷 ≤ tol 时返回，正性、线搜索和预算失败仍拒绝。
+
+设 F(U)=R(U)/V，γ=1−1/√2，h=γΔt。阶段方程为 d1=Y1−Un+hF(Y1)，base=Un−(1−γ)ΔtF(Y1)，d2=Y2−base+hF(Y2)。共享通量终值 Uout=base−hF(Y2)，故 Uout−Y2=−d2（另有浮点累积误差）。继续保留按初态尺度计算的 8×tol 门；阶段二尺度相对初态大幅增长时仍可能拒绝。maximumAcceptedStageDefect 只统计最终接受尝试，maximumStageOutputDefect 记录初态尺度的终值/第二阶段差。
+
+这个恒等式不保证整条轨迹误差。在共同尺度的局部线性化下，设阶段逆映射范数为 K1/K2、F 导数范数为 L1/L2，则 |e1|≤K1|d1|，|e2|≤K2[|d2|+(1−γ)ΔtL1|e1|]，输出扰动≤Δt[(1−γ)L1|e1|+γL2|e2|]；跨步还受真实推进映射放大，尺度变化也要换算。8×tol 门不自动给出这些条件数。因此用共同物理时钟的严格解和严格半步真实场比较确定已测范围，不用 N×8×tol 当任意可压流的全局界，也不保证固定 tol 在任意 Δt 下维持二阶。
+
+在已有完整产品 CLI 命令中显式追加以下控制，保留原网格、物性、初态、边界和物理时间设置：
+
+    --integrator sdirk2 --nonlinear-tolerance 1e-10
+
+其 .json 中 nonlinearTolerance 对显式格式为 null，对隐式格式记录实际值；maximumAcceptedStageDefect / maximumStageOutputDefect 是本次调用全部接受步的最大值，续算时重新统计。非法/非有限/大于 1e−10 的值和显式格式误用在输出前拒绝。数值容差不属于检查点物理绑定；续算显式指定相同控制可逐字节复现，改变控制则是一条新的数值轨迹。App 尚未提供此候选控件，保持严格默认。
+
+研究详细轨迹入口：
+
+    CARTMESH_RESEARCH_NONLINEAR_TOLERANCE=1e-10 CARTMESH_RESEARCH_IMPLICIT_TRACE=1 CARTMESH_RESEARCH_RECONSTRUCTION=1 CARTMESH_RESEARCH_CONDUCTIVITY=.025759 build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries outputs/new-research-prefix corrected 2e-7 2e-9 180
+    python3 tools/flow/read_implicit_budget.py outputs/candidate outputs/strict --half outputs/strict-half
+
+圆柱导热系数用 .025759；原 196 格通道不设覆盖值。implicitIteration 回调记录阶段/迭代/h/最大缺陷和当前 advance 累计工作，阶段编号 0/1 对应第一/第二阶段；implicitFailure 在隐式尝试失败或取消时记录累计残差/Newton/GMRES工作，包含此前重试，不能和接受调用再重复相加。两回调默认关闭，不引入检查点历史。nonlinear.csv / failed-work.csv / rejections.csv 保存对应轨迹；完整进程成本还包含构造、失败和额外只读快照。SIGINT/SIGTERM 在安全检查点退出并保存最后接受场。读取脚本只比较原生导出，不组装另一套 PDE；检查网格与终点匹配，返回实际时钟是否一致以及各变量体积 L1/最大差。原生小回归的 1e−8 是单位尺度四步经验场差上界，64ε 是共享通量恒等式的浮点预算，均不是物理门。
+
 ### 原生曲壁环域与圆柱空间研究
 
 构建 `cartmesh2d_curved_heat_benchmark`，使用 `tools/flow/run_curved_wall.py` 生成两个真实嵌套轮廓、原生共形 Cut-cell/Solver 拓扑。实验固定内/外半径 .5/1 m、壁温 2/2.2 K、k=.37 W/(m K)。耦合演化采用 γ=1.4、R=1 J/(kg K)、μ=.02 Pa s，从 ρ=1、p=2.1、u=v=0 的均匀初场推进；这是人工验证参数，不是空气推荐工况。
