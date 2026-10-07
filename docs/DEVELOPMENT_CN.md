@@ -151,6 +151,10 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 `outputs/thermal-wake-resolved/mesh-protocol.json` 绑定新 128 边形／两级局部加密、原生质量报告和输入哈希；`prepare.py` 记录生成方式，不能用旧 32 边形算例补作第三网格。`run.py` 保留原程序基线，`run-cholesky.py MESH NEW_LABEL END_TIME --restart ACCEPTED_CHECKPOINT --max-courant CFL` 使用冻结的新程序；`MESH` 为 `medium` 或 `fine`，不传 restart 才施加协议中的零时刻初值。后端比较从同一 2 s 状态出发，CFL 比较从同一 2.2 s 状态出发；原始命令在各目录的 `command.json`。`compare-cfl.py` 只读取原生输出作敏感性汇总，不重建方程。重跑须换目录，保留原输入及检查点。实际长算与精度边界见[当前状态](CURRENT_STATE_CN.md#持续目标成熟非定常与被动温度)。
 
+长时间同态对照保留 `medium-growth-4to20/result.thermal.checkpoint` 作为共同 20 s 状态；`medium-growth-20to60` 与 `medium-dt025-20to60` 只改变最大 dt=.05／.025 s，均使用完整 BE 整步／两半步控制。`response-analysis.py --segment SEGMENT --segment NEXT_SEGMENT --output NEW_REPORT --label LABEL` 仅接受已完成的目录，逐段核对物理时刻及输入检查点哈希，合并原生受力、热量和壁面通量；完整的段清单在关键证据的 `trajectories` 中。升阻力系数按 `2(F/ρ)/(U²D)` 定义，总平均 Nu 按 `−Qwall/(π α ΔT)` 定义（U=1、D=2、α=.02、ΔT=1）；128 边形真实通量按名义圆周归一。完整周期由正向升力过零时刻及线性插值确定，周期统计对原生样本作梯形积分，不自动判断稳态。
+
+`python3 outputs/thermal-wake-resolved/compare-time.py medium-at60 medium-dt025-at60 NEW_REPORT` 核对分叉前同一状态、分叉后仅最大步长不同，输出累计相位／幅值差、末态温度／速度差和原生接受误差比。全域面积 RMS 包含远场，不能替代尾迹局部或最大误差。`time60-raw-manifest.json` 封存本次完成的输入链补充、原生结果和后处理，前段输入由已有 Cholesky 清单绑定；活动目录明确排除。继续 60→120 s 时分别读取各自接受态，不覆盖 60 s 结果；实际完成范围见当前状态。图只渲染原生多边形及场，不建立独立方程验证链。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。

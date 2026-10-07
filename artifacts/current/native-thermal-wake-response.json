@@ -1,0 +1,692 @@
+{
+  "format": "cartmesh2d-thermal-wake-response-v1",
+  "branch": "codex/transient-thermal-workflow",
+  "sourceBase": "e877aaca20f3d89838dee74182547a77b62d296a",
+  "frozenAtUtc": "2026-10-07T03:20:13.021032+00:00",
+  "scope": "Native two-dimensional incompressible Re=100 flow and constant-property one-way passive temperature, Pr=1. Completed developing-wake trajectories and same-checkpoint maximum-time-step comparison. No new numerical gate or default control.",
+  "solverSourceChanged": false,
+  "physicalQualificationEstablished": false,
+  "meshProtocol": {
+    "format": "cartmesh2d-resolved-thermal-wake-meshes-v1",
+    "sourceCommit": "a65ca30e1647d21bcb93a074e1d448b0839c51d2",
+    "geometry": {
+      "file": "outputs/thermal-wake-resolved/cylinder128.xy",
+      "sha256": "5b28239486e4431c3e792043f16e8c6c7dbcba5297708c571e3503f938020f27",
+      "points": 128,
+      "centre": [
+        0.07,
+        0.03
+      ],
+      "radius": 1,
+      "domainBounds": [
+        -63.93,
+        64.07,
+        -63.97,
+        64.03
+      ]
+    },
+    "purpose": "Fresh common 128-sided cylinder for two-level wall/wake refinement. The legacy 32-sided 5168-cell pilot is kept as startup/workflow evidence, not treated as a spatial-convergence level for this geometry/domain. No boundary smoothing or topology gate changes.",
+    "meshes": [
+      {
+        "label": "medium",
+        "exitCode": 0,
+        "seconds": 1.4827017079805955,
+        "requestedWallSpacingM": 0.0625,
+        "nearWakeSpacingM": 0.125,
+        "farWakeSpacingM": 0.25,
+        "cells": 6721,
+        "mesh": "outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+        "meshSha256": "99d067d1837ddb76918ca733db6db8a8da7347650b72ad371bdebbcb8cc94b38",
+        "flowBoundary": "outputs/thermal-wake-resolved/medium/flow.boundaries",
+        "thermalBoundary": "outputs/thermal-wake-resolved/medium/thermal.csv",
+        "constructionQuality": {
+          "quality_class": "construction_quality",
+          "metric_semantics": {
+            "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+            "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+          },
+          "valid": true,
+          "counts": {
+            "vertices": 7102,
+            "edges": 13699,
+            "cells": 6597,
+            "internal_edges": 13411,
+            "boundary_edges": 288,
+            "source_cut_cells": 124,
+            "source_full_cells": 6513,
+            "source_small_cells": 40
+          },
+          "quality": {
+            "min_cell_area": 0.0006685815493934987,
+            "min_edge_length": 0.00728366302699267,
+            "max_cell_edge_length_ratio": 8.580847269894285,
+            "max_centroid_vertex_mean_offset_normalized": 0.21491326036936678,
+            "min_cut_cell_area_fraction": 0.013410935592218086
+          },
+          "level_distribution": {
+            "4": 232,
+            "5": 52,
+            "6": 72,
+            "7": 153,
+            "8": 365,
+            "9": 1883,
+            "10": 3076,
+            "11": 804
+          },
+          "topology_audit": {
+            "duplicate_vertices": 0,
+            "duplicate_edges": 0,
+            "orphan_internal_edges": 0,
+            "non_manifold_edges": 0,
+            "unclassified_boundary_edges": 0,
+            "open_cell_loops": 0,
+            "area_mismatches": 0
+          },
+          "issue_count": 0
+        },
+        "solverQuality": {
+          "quality_class": "solver_quality",
+          "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+          "valid": true,
+          "policy": {
+            "max_non_orthogonality_deg": 70,
+            "max_internal_skewness": 4,
+            "max_boundary_skewness": 4,
+            "max_concavity_deg": 80,
+            "max_cell_aspect": 1000,
+            "min_interior_angle_deg": 0.5,
+            "min_face_length": 1.01e-10,
+            "min_face_weight": 0.05,
+            "min_volume_ratio": 0.01
+          },
+          "metrics": {
+            "max_non_orthogonality_deg": 63.00879767999031,
+            "max_internal_skewness": 1.051580796966544,
+            "max_boundary_skewness": 3.8231392386954064,
+            "max_concavity_deg": 0,
+            "max_cell_aspect": 14.569797928809692,
+            "min_interior_angle_deg": 9.045231307669377,
+            "min_face_length": 0.00728366302699267,
+            "min_face_weight": 0.06413513321974995,
+            "min_volume_ratio": 0.026824297086730738,
+            "min_compactness": 0.2067745857717898
+          },
+          "issue_count": 0,
+          "issues": []
+        }
+      },
+      {
+        "label": "fine",
+        "exitCode": 0,
+        "seconds": 10.362605125003029,
+        "requestedWallSpacingM": 0.03125,
+        "nearWakeSpacingM": 0.0625,
+        "farWakeSpacingM": 0.125,
+        "cells": 23569,
+        "mesh": "outputs/thermal-wake-resolved/fine/mesh.solver.cm2d",
+        "meshSha256": "e5c2130312ba5a264f835c8ca04c31077c26071d93fbe96eb1bbe1aac9380104",
+        "flowBoundary": "outputs/thermal-wake-resolved/fine/flow.boundaries",
+        "thermalBoundary": "outputs/thermal-wake-resolved/fine/thermal.csv",
+        "constructionQuality": {
+          "quality_class": "construction_quality",
+          "metric_semantics": {
+            "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+            "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+          },
+          "valid": true,
+          "counts": {
+            "vertices": 24255,
+            "edges": 47682,
+            "cells": 23427,
+            "internal_edges": 47282,
+            "boundary_edges": 400,
+            "source_cut_cells": 252,
+            "source_full_cells": 23231,
+            "source_small_cells": 56
+          },
+          "quality": {
+            "min_cell_area": 0.00010462315326959654,
+            "min_edge_length": 0.0006613926559023708,
+            "max_cell_edge_length_ratio": 49.02465166451673,
+            "max_centroid_vertex_mean_offset_normalized": 0.3653658630215007,
+            "min_cut_cell_area_fraction": 0.0005420431968152214
+          },
+          "level_distribution": {
+            "4": 232,
+            "5": 52,
+            "6": 64,
+            "7": 166,
+            "8": 199,
+            "9": 1109,
+            "10": 7093,
+            "11": 11904,
+            "12": 2664
+          },
+          "topology_audit": {
+            "duplicate_vertices": 0,
+            "duplicate_edges": 0,
+            "orphan_internal_edges": 0,
+            "non_manifold_edges": 0,
+            "unclassified_boundary_edges": 0,
+            "open_cell_loops": 0,
+            "area_mismatches": 0
+          },
+          "issue_count": 0
+        },
+        "solverQuality": {
+          "quality_class": "solver_quality",
+          "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+          "valid": true,
+          "policy": {
+            "max_non_orthogonality_deg": 70,
+            "max_internal_skewness": 4,
+            "max_boundary_skewness": 4,
+            "max_concavity_deg": 80,
+            "max_cell_aspect": 1000,
+            "min_interior_angle_deg": 0.5,
+            "min_face_length": 1.01e-10,
+            "min_face_weight": 0.05,
+            "min_volume_ratio": 0.01
+          },
+          "metrics": {
+            "max_non_orthogonality_deg": 67.5043999413858,
+            "max_internal_skewness": 1.6576023983983579,
+            "max_boundary_skewness": 3.8756060941674466,
+            "max_concavity_deg": 2.8125000000006253,
+            "max_cell_aspect": 15.83512278654081,
+            "min_interior_angle_deg": 9.343042471707905,
+            "min_face_length": 0.0006613926559035921,
+            "min_face_weight": 0.05747679924079488,
+            "min_volume_ratio": 0.02937438820966319,
+            "min_compactness": 0.19109342268450322
+          },
+          "issue_count": 0,
+          "issues": []
+        }
+      }
+    ]
+  },
+  "completedNewSegments": {
+    "medium-growth-4to20": {
+      "accepted": 320,
+      "rejected": 0,
+      "endS": 20,
+      "processSeconds": 409.01914470799966,
+      "checkpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+      "inputUnchanged": true
+    },
+    "medium-growth-20to60": {
+      "accepted": 801,
+      "rejected": 0,
+      "endS": 60,
+      "processSeconds": 1254.3737894170335,
+      "checkpointSha256": "8dd6847cd471e1355794fbf050b1ecc9ddf7cf23f4e80c8a16cc65825d227b5a",
+      "inputUnchanged": true
+    },
+    "medium-dt025-20to60": {
+      "accepted": 1601,
+      "rejected": 0,
+      "endS": 60,
+      "processSeconds": 2478.959185125015,
+      "checkpointSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35",
+      "inputUnchanged": true
+    },
+    "fine-start-2s": {
+      "accepted": 211,
+      "rejected": 11,
+      "endS": 2,
+      "processSeconds": 1371.636786374991,
+      "checkpointSha256": "4dcb9d7caef1af2438786386819fcff4d55829a0617ed17c1325549c55f2c164",
+      "inputUnchanged": true
+    },
+    "fine-cfl1-2to2p2": {
+      "accepted": 16,
+      "rejected": 0,
+      "endS": 2.2,
+      "processSeconds": 94.02652129199123,
+      "checkpointSha256": "d29fce62cdc48827bc7ee7bcf1a23016fef683060bbd05e3d93a8cf5374c3fdd",
+      "inputUnchanged": true
+    }
+  },
+  "trajectories": {
+    "medium-at60": {
+      "format": "cartmesh2d-thermal-wake-trajectory-v1",
+      "label": "Medium mesh: startup to 60 s",
+      "completedTrajectory": true,
+      "physicalQualificationEstablished": false,
+      "cells": 6721,
+      "startS": 0,
+      "endS": 60,
+      "accepted": 1382,
+      "rejected": 8,
+      "seconds": 2800.5878515410295,
+      "segments": [
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+          "startS": 0,
+          "endS": 2,
+          "accepted": 210,
+          "rejected": 8,
+          "seconds": 1064.1839589999872,
+          "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+          "inputSha256": null,
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+          "startS": 2,
+          "endS": 2.2,
+          "accepted": 15,
+          "rejected": 0,
+          "seconds": 22.5511317079945,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl4-2p2to4",
+          "startS": 2.2,
+          "endS": 4,
+          "accepted": 36,
+          "rejected": 0,
+          "seconds": 50.45982670801459,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-growth-4to20",
+          "startS": 4,
+          "endS": 20,
+          "accepted": 320,
+          "rejected": 0,
+          "seconds": 409.01914470799966,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-growth-20to60",
+          "startS": 20,
+          "endS": 60,
+          "accepted": 801,
+          "rejected": 0,
+          "seconds": 1254.3737894170335,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "8dd6847cd471e1355794fbf050b1ecc9ddf7cf23f4e80c8a16cc65825d227b5a"
+        }
+      ],
+      "temperatureRangeK": [
+        299.99999999998647,
+        300.9972236016403
+      ],
+      "finalHeatGainKm2": 23.35623368419383,
+      "integratedNativeBudgetDefectKm2": -5.0121863103187343e-08,
+      "maxAcceptedCourant": 2.9133133194465435,
+      "cyclesAfterS": 20,
+      "upwardZeroCrossingsS": [
+        25.623247717442872,
+        40.06150797002362,
+        53.39909869754116
+      ],
+      "cycles": [
+        {
+          "startS": 25.623247717442872,
+          "endS": 40.06150797002362,
+          "periodS": 14.438260252580747,
+          "Strouhal": 0.13852084427156053,
+          "meanCd": 1.1794241696602294,
+          "meanCl": -0.006590367823882728,
+          "ClRms": 0.0573109109301428,
+          "ClHalfRange": 0.08044470396566641,
+          "meanNu": 5.764767547028794,
+          "NuHalfRange": 0.05531809244422892
+        },
+        {
+          "startS": 40.06150797002362,
+          "endS": 53.39909869754116,
+          "periodS": 13.337590727517544,
+          "Strouhal": 0.14995211960385665,
+          "meanCd": 1.2155548987505382,
+          "meanCl": -0.007970070139636735,
+          "ClRms": 0.09790317617683397,
+          "ClHalfRange": 0.13826238347689698,
+          "meanNu": 5.727998317839076,
+          "NuHalfRange": 0.007805373337048671,
+          "changeFromPreviousCycle": {
+            "periodS": -1.1006695250632035,
+            "Strouhal": 0.011431275332296126,
+            "meanCd": 0.03613072909030879,
+            "ClRms": 0.04059226524669117,
+            "meanNu": -0.03676922918971748
+          }
+        }
+      ],
+      "referenceContext": {
+        "url": "https://arxiv.org/pdf/2411.16005",
+        "section": "3.1, Newtonian Bn=0 only",
+        "equations": {
+          "22": "Cl_rms=(Re-46.1)^0.6554/56.9401",
+          "28": "Nu=0.5111 Pr^0.358 Re^0.532 (50<=Re<=180)"
+        },
+        "evaluatedAt": {
+          "Re": 100,
+          "Pr": 1
+        },
+        "ClRmsFit": 0.239587993916859,
+        "NuFit": 5.92251106730885,
+        "interpretation": "Primary paper fits are context, not an exact matching-domain or automatic pass threshold. Its reported Nu fit spread is below 5%. Its domain is 25D upstream, 75D downstream, width 50D; ours is 32D in each streamwise direction and width 64D. Its Newtonian model also decouples constant-property flow and temperature. No Bn>0 table value is used."
+      },
+      "definitions": {
+        "forceCoefficients": "C=2*(native F/rho)/(U^2 D), U=1 m/s, nominal D=2 m.",
+        "Nu": "-native outward wall diffusion/(pi alpha DeltaT), alpha=.02 m^2/s, DeltaT=1 K. Nominal circular perimeter is used for literature normalization of the actual 128-sided wall flux.",
+        "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
+        "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
+      },
+      "inputChainVerified": true
+    },
+    "medium-dt025-at60": {
+      "format": "cartmesh2d-thermal-wake-trajectory-v1",
+      "label": "Medium grid, max dt 0.025 s after 20 s",
+      "completedTrajectory": true,
+      "inputChainVerified": true,
+      "physicalQualificationEstablished": false,
+      "cells": 6721,
+      "startS": 0,
+      "endS": 60,
+      "accepted": 2182,
+      "rejected": 8,
+      "seconds": 4025.173247249011,
+      "segments": [
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+          "startS": 0,
+          "endS": 2,
+          "accepted": 210,
+          "rejected": 8,
+          "seconds": 1064.1839589999872,
+          "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+          "inputSha256": null,
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+          "startS": 2,
+          "endS": 2.2,
+          "accepted": 15,
+          "rejected": 0,
+          "seconds": 22.5511317079945,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl4-2p2to4",
+          "startS": 2.2,
+          "endS": 4,
+          "accepted": 36,
+          "rejected": 0,
+          "seconds": 50.45982670801459,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-growth-4to20",
+          "startS": 4,
+          "endS": 20,
+          "accepted": 320,
+          "rejected": 0,
+          "seconds": 409.01914470799966,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt025-20to60",
+          "startS": 20,
+          "endS": 60,
+          "accepted": 1601,
+          "rejected": 0,
+          "seconds": 2478.959185125015,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35"
+        }
+      ],
+      "temperatureRangeK": [
+        299.99999999996504,
+        300.99723755978704
+      ],
+      "finalHeatGainKm2": 23.363593975574187,
+      "integratedNativeBudgetDefectKm2": -9.072095571054785e-08,
+      "maxAcceptedCourant": 2.9133133194465435,
+      "cyclesAfterS": 20,
+      "upwardZeroCrossingsS": [
+        25.629863528217516,
+        40.05759858128581,
+        53.29403116760446
+      ],
+      "cycles": [
+        {
+          "startS": 25.629863528217516,
+          "endS": 40.05759858128581,
+          "periodS": 14.427735053068293,
+          "Strouhal": 0.1386218968288212,
+          "meanCd": 1.18055927081265,
+          "meanCl": -0.00718221500307784,
+          "ClRms": 0.05932313512153093,
+          "ClHalfRange": 0.08321710100704843,
+          "meanNu": 5.765190698808207,
+          "NuHalfRange": 0.05434767728373524
+        },
+        {
+          "startS": 40.05759858128581,
+          "endS": 53.29403116760446,
+          "periodS": 13.23643258631865,
+          "Strouhal": 0.15109811400899864,
+          "meanCd": 1.221411134089554,
+          "meanCl": -0.008567753189691081,
+          "ClRms": 0.10352554286267875,
+          "ClHalfRange": 0.14622368352019371,
+          "meanNu": 5.73217719068083,
+          "NuHalfRange": 0.00954136451460208,
+          "changeFromPreviousCycle": {
+            "periodS": -1.1913024667496437,
+            "Strouhal": 0.01247621718017744,
+            "meanCd": 0.04085186327690393,
+            "ClRms": 0.044202407741147816,
+            "meanNu": -0.03301350812737702
+          }
+        }
+      ],
+      "referenceContext": {
+        "url": "https://arxiv.org/pdf/2411.16005",
+        "section": "3.1, Newtonian Bn=0 only",
+        "equations": {
+          "22": "Cl_rms=(Re-46.1)^0.6554/56.9401",
+          "28": "Nu=0.5111 Pr^0.358 Re^0.532 (50<=Re<=180)"
+        },
+        "evaluatedAt": {
+          "Re": 100,
+          "Pr": 1
+        },
+        "ClRmsFit": 0.239587993916859,
+        "NuFit": 5.92251106730885,
+        "interpretation": "Primary paper fits are context, not an exact matching-domain or automatic pass threshold. Its reported Nu fit spread is below 5%. Its domain is 25D upstream, 75D downstream, width 50D; ours is 32D in each streamwise direction and width 64D. Its Newtonian model also decouples constant-property flow and temperature. No Bn>0 table value is used."
+      },
+      "definitions": {
+        "forceCoefficients": "C=2*(native F/rho)/(U^2 D), U=1 m/s, nominal D=2 m.",
+        "Nu": "-native outward wall diffusion/(pi alpha DeltaT), alpha=.02 m^2/s, DeltaT=1 K. Nominal circular perimeter is used for literature normalization of the actual 128-sided wall flux.",
+        "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
+        "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
+      }
+    }
+  },
+  "timeComparison": {
+    "format": "cartmesh2d-thermal-wake-time-comparison-v1",
+    "completed": true,
+    "physicalQualificationEstablished": false,
+    "coarseReport": "medium-at60",
+    "fineReport": "medium-dt025-at60",
+    "commonInitialTimeS": 20,
+    "commonInitialCheckpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+    "endS": 60,
+    "cells": 6721,
+    "maximumDtS": [
+      0.05,
+      0.025
+    ],
+    "otherControlsIdentical": true,
+    "nativeTimeControl": [
+      {
+        "accepted": 801,
+        "rejected": 0,
+        "maximumAcceptedErrorRatio": 0.03731966350788935,
+        "actualAcceptedDtRangeS": [
+          0.02500000000070912,
+          0.05
+        ],
+        "rejectedReasons": {},
+        "processSeconds": 1254.3737894170335
+      },
+      {
+        "accepted": 1601,
+        "rejected": 0,
+        "maximumAcceptedErrorRatio": 0.011903020348203447,
+        "actualAcceptedDtRangeS": [
+          0.012500000001136158,
+          0.025
+        ],
+        "rejectedReasons": {},
+        "processSeconds": 2478.959185125015
+      }
+    ],
+    "cycleCounts": [
+      2,
+      2
+    ],
+    "phaseFromSharedState": [
+      {
+        "crossingIndex": 1,
+        "coarseS": 25.623247717442872,
+        "fineS": 25.629863528217516,
+        "coarseMinusFineS": -0.006615810774643904
+      },
+      {
+        "crossingIndex": 2,
+        "coarseS": 40.06150797002362,
+        "fineS": 40.05759858128581,
+        "coarseMinusFineS": 0.003909388737810104
+      },
+      {
+        "crossingIndex": 3,
+        "coarseS": 53.39909869754116,
+        "fineS": 53.29403116760446,
+        "coarseMinusFineS": 0.10506752993670432
+      }
+    ],
+    "sampledSignalMaxAbsoluteDifference": {
+      "Cd": 0.009022794263934486,
+      "Cl": 0.01769194829533905,
+      "Nu": 0.007779733484767348
+    },
+    "finalState": {
+      "maxTemperatureDifferenceK": 0.02350916659190716,
+      "globalAreaRmsTemperatureDifferenceK": 0.0008163748766204801,
+      "maxVelocityDifferenceMS": 0.06333445940621783,
+      "heatGainDifferenceKm2": -0.007360291380355488
+    },
+    "lastCompleteCycle": [
+      {
+        "startS": 40.06150797002362,
+        "endS": 53.39909869754116,
+        "periodS": 13.337590727517544,
+        "Strouhal": 0.14995211960385665,
+        "meanCd": 1.2155548987505382,
+        "meanCl": -0.007970070139636735,
+        "ClRms": 0.09790317617683397,
+        "ClHalfRange": 0.13826238347689698,
+        "meanNu": 5.727998317839076,
+        "NuHalfRange": 0.007805373337048671
+      },
+      {
+        "startS": 40.05759858128581,
+        "endS": 53.29403116760446,
+        "periodS": 13.23643258631865,
+        "Strouhal": 0.15109811400899864,
+        "meanCd": 1.221411134089554,
+        "meanCl": -0.008567753189691081,
+        "ClRms": 0.10352554286267875,
+        "ClHalfRange": 0.14622368352019371,
+        "meanNu": 5.73217719068083,
+        "NuHalfRange": 0.00954136451460208
+      }
+    ],
+    "scope": "Only maximum time step differs after the same exact native checkpoint. Global signal/field differences include accumulated phase and amplitude effects. These finite-window differences are not a proven global error bound. Developing cycles are not automatically treated as stationary."
+  },
+  "interpretation": {
+    "development": "Both completed cycles after 20 s are still developing: the medium-grid lift RMS grows from 0.05731 to 0.09790 at maximum dt=0.05 s. A completed 60 s process is not a developed-wake acceptance.",
+    "timeControl": "Both maximum dt choices pass every original joint gate. Small local BE defect ratios do not bound accumulated field, phase or amplitude differences. The common 20 s checkpoint is byte-identical, and only maximum dt differs after branching.",
+    "fieldNorm": "The reported global area RMS temperature difference includes the large outer domain and must not replace the maximum or a wake-local accuracy assessment.",
+    "nextEvidence": "Both medium time-step branches are continued to 120 s. The 23569-cell trajectory is continued using the same startup/CFL schedule. Their completion and developed-period comparisons are not established by this artifact.",
+    "reference": "Paper fits are comparison context with a different domain, not an automatic qualification threshold. See the source and definitions embedded in each trajectory."
+  },
+  "verification": {
+    "completedNativeOutputsRead": true,
+    "checkpointInputHashesRechecked": true,
+    "nativeAcceptedHistoryContinuity": true,
+    "comparisonFigureVisuallyInspected": true,
+    "priorRelevantRegression": "e877aac: 3 native tests, complete Cholesky thermal CLI regression, 229 frontend tests and packaged macOS App. Those are prior evidence and were not rerun for this output-only increment.",
+    "newTests": "No production source change; actual completed native runs and output assertions are the relevant checks."
+  },
+  "figures": {
+    "response": "artifacts/current/native-thermal-wake-response.png",
+    "timeComparison": "artifacts/current/native-thermal-wake-time.png"
+  },
+  "limitations": [
+    "The 60 s wake has not reached a stationary periodic amplitude.",
+    "Only two maximum time steps in this developing window; no asymptotic temporal order or global error bound is claimed.",
+    "Two new spatial meshes pass native topology and Solver quality; developed spatial sensitivity is still pending.",
+    "No second-order time method, reacting-flow or feedback temperature model is introduced.",
+    "Local wall-heat-flux accuracy and full field mesh independence are not established.",
+    "Process times include loading, all BE candidates, output and concurrent background load; they are not universal performance results."
+  ],
+  "rawEvidence": {
+    "manifest": "outputs/thermal-wake-resolved/time60-raw-manifest.json",
+    "manifestSha256": "b441ecc14722f9d62a8cf1aedb6f62ab8bf108f272ed23079d1dd850550ed523",
+    "count": 94,
+    "bytes": 91875415,
+    "allMatched": true,
+    "activeFilesExcluded": true,
+    "priorInputEvidence": {
+      "manifest": "outputs/thermal-cholesky/raw-manifest.json",
+      "manifestSha256": "2a7a62b866130abd7731e5789843105172a04de5d3bcc60f84061002646f7460",
+      "count": 1399,
+      "bytes": 141421993,
+      "allMatched": true,
+      "activeFilesExcluded": true
+    }
+  }
+}
