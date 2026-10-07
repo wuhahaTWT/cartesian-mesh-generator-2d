@@ -1,0 +1,187 @@
+{
+  "implementation": {
+    "checkpointBinding": "not bound: this is an algebraic strategy, and either choice may resume the same accepted physical checkpoint",
+    "default": "zero",
+    "historyAddition": "linearInitialRelativeResidual column",
+    "option": "--linear-initial-guess zero|current-state"
+  },
+  "limitations": [
+    "The current-state mode remains explicit because the real solve is still expensive and one 4716-cell nonlinear step previously required more products than zero initialization.",
+    "This batch adds no spatial, curved-wall pressure or physical-branch acceptance criterion.",
+    "No full native suite, frontend, Electron, macOS or packaged application validation was run."
+  ],
+  "linuxValidation": {
+    "logSha256": "75c8d86d2d87b4782cf2591923dcdf5b714a42696a9ed62f5c2d0636e98208cd",
+    "passed": 6,
+    "tests": [
+      "compatible loads",
+      "compatible checkpoint",
+      "compatible boundary",
+      "compatible flow",
+      "compatible element",
+      "compatible CLI lifecycle"
+    ],
+    "total": 6
+  },
+  "realCylinder4716": {
+    "cells": 4716,
+    "conservativeLoads": {
+      "absolutePressureReference": true,
+      "boundaryFaces": 416,
+      "embeddedBoundaryFaces": 160,
+      "globalBoundaryMomentumFlux": [
+        0.48693645232672833,
+        -1.5059006175532165e-05
+      ],
+      "globalBoundaryTractionOnFluid": [
+        0.486936452316187,
+        -1.5059011052439772e-05
+      ],
+      "globalMomentumImbalance": [
+        -1.0541345574210936e-11,
+        -4.876907607137895e-12
+      ],
+      "globalVolumeFlux": 2.467359649926948e-12,
+      "wallBoundaryLength": 6.282554501865546,
+      "wallBoundaryLengthWeightedCentre": [
+        0.06999999999999999,
+        0.030000000000000023
+      ],
+      "wallForceOnBody": [
+        2.067940716928047,
+        6.566077866712042e-05
+      ],
+      "wallPressureForceOnBody": [
+        1.2414932881281269,
+        0.0009256194525737412
+      ],
+      "wallTorqueOnBodyAboutBoundaryCentre": -0.00010380610553700764,
+      "wallTorqueOnBodyAboutReportedOrigin": -0.062137431358871766
+    },
+    "differenceFromPriorResearchDriver": {
+      "coefficientMaximum": 0.0,
+      "coefficientRms": 0.0
+    },
+    "faces": 9632,
+    "history": {
+      "acceptedIterations": 9,
+      "linearInitialRelativeResiduals": [
+        1.0,
+        0.17260401845736587,
+        0.032100162625027316,
+        0.008645939139991746,
+        0.0019607204982804907,
+        0.00018708103473843258,
+        1.736984247817055e-06,
+        1.4485314673443603e-10,
+        1.0063033178770163e-13
+      ],
+      "linearRelativeResiduals": [
+        9.988385500866673e-14,
+        9.979390213840006e-14,
+        9.853878692846417e-14,
+        9.972665150957126e-14,
+        9.964990440827105e-14,
+        9.983906808925142e-14,
+        9.951926194104283e-14,
+        9.999903346302845e-14,
+        9.960408598364093e-14
+      ],
+      "linearRestarts": 296,
+      "matrixProducts": 17035
+    },
+    "mesh": "fixed 128-segment 20D Linux cylinder",
+    "status": "converged",
+    "timingSeconds": {
+      "elapsedBeforeSummary": 259.205484781,
+      "exportBeforeSummary": 2.82085678,
+      "readAndPrepare": 0.016634955,
+      "solve": 256.367714736
+    }
+  },
+  "schema": "cartmesh2d-compatible-linear-initial-cli-v1",
+  "scope": "Explicit CLI exposure of the already validated algebraic current-state initial guess. The default remains zero; K, rhs, nonlinear equations, checkpoint context, conservative loads, tolerances, budgets and acceptance gates are unchanged.",
+  "sha256": {
+    "accepted4716": "dd2bfdc1b1b2de3d4049695bb7dba0c724da37a5b66f5c560b48e0f41cbc40ea",
+    "binary": "4a956ef4f79ad82a5d2b5528a041f23feb952990b9ce623110238a43b7f35c1c",
+    "checkpoint4716": "5301912f3563e7e2d482872d674cae93077157e1b3efc9a245fc065fd1a28043",
+    "cliSource": "bf8b52447ca9bfe5882e6045b03edf13bcfc15a3b0160f6587afe29512f65b07",
+    "cliTest": "c4f2ecf2e1dec3b093b2fee523d78bd5106f1dc1ccdb19a723591626177f161a",
+    "loads4716": "1be5e26eb1f318cadd93ca811afff470946af64ae2f55824a7ccdf75a3f90d35",
+    "mesh4716": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e"
+  },
+  "smallNativeCli": {
+    "boundaryTractionMaximumDifference": 5.953570969552402e-14,
+    "cells": 36,
+    "currentState": {
+      "acceptedIterations": 6,
+      "linearInitialRelativeResiduals": [
+        1.0,
+        0.12743363684442852,
+        0.010270024296754202,
+        0.00021503710476507217,
+        7.79508465567444e-08,
+        5.974907980967101e-14
+      ],
+      "linearRelativeResiduals": [
+        4.412930227849532e-14,
+        8.900965047063946e-14,
+        4.73045765244895e-14,
+        8.49671648245636e-14,
+        5.906291680849239e-14,
+        5.974907980967101e-14
+      ],
+      "linearRestarts": 5,
+      "matrixProducts": 170
+    },
+    "currentStateDifference": {
+      "coefficientMaximum": 3.289812866569264e-12,
+      "coefficientRms": 7.050929487371409e-13
+    },
+    "defaultAndExplicitZeroCheckpointByteIdentical": true,
+    "defaultZero": {
+      "acceptedIterations": 6,
+      "linearInitialRelativeResiduals": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "linearRelativeResiduals": [
+        4.412930227849532e-14,
+        7.416902769819294e-14,
+        9.481714972047855e-14,
+        5.1857135233696885e-14,
+        5.2179474357366856e-14,
+        5.217056070105687e-14
+      ],
+      "linearRestarts": 6,
+      "matrixProducts": 239
+    },
+    "explicitZero": {
+      "acceptedIterations": 6,
+      "linearInitialRelativeResiduals": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "linearRelativeResiduals": [
+        4.412930227849532e-14,
+        7.416902769819294e-14,
+        9.481714972047855e-14,
+        5.1857135233696885e-14,
+        5.2179474357366856e-14,
+        5.217056070105687e-14
+      ],
+      "linearRestarts": 6,
+      "matrixProducts": 239
+    },
+    "invalidChoiceRejected": "Compatible flow CLI: Linear initial guess must be zero or current-state",
+    "restartWithCurrentStateConverged": true
+  }
+}

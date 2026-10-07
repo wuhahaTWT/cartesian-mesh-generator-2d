@@ -33,6 +33,12 @@ def snapshot(prefix):
             for p in root.glob(prefix.name + '.*') if p.is_file()}
 
 
+def maximum_state_difference(left, right):
+    return max(abs(a - b) for key in ('cells', 'faces')
+               for lrow, rrow in zip(left[key], right[key])
+               for a, b in zip(lrow, rrow))
+
+
 def run(label, case='cavity', extra=(), code=0, compatible=True, nu='.1'):
     prefix = root / label
     cmd = [cli, '--mesh', str(mesh), '--output', str(prefix), '--case', case, '--nu', nu]
@@ -106,6 +112,23 @@ try:
 
     cavity = run('cavity')
     solved = exported(cavity, 'converged')
+    assert solved['controls']['linearInitialGuess'] == 'zero'
+    with Path(str(cavity) + '.residuals.csv').open() as stream:
+        cavity_history = list(csv.DictReader(stream))
+    assert cavity_history and all('linearInitialRelativeResidual' in row for row in cavity_history)
+    explicit_zero = run('explicit-zero', extra=('--linear-initial-guess', 'zero'))
+    zero_summary = exported(explicit_zero, 'converged')
+    assert zero_summary['controls']['linearInitialGuess'] == 'zero'
+    assert Path(str(explicit_zero) + '.checkpoint').read_bytes() == Path(str(cavity) + '.checkpoint').read_bytes()
+    assert read(explicit_zero, '.loads.json') == read(cavity, '.loads.json')
+    current = run('current-state', extra=('--linear-initial-guess', 'current-state'))
+    current_summary = exported(current, 'converged')
+    assert current_summary['controls']['linearInitialGuess'] == 'current-state'
+    # Algebraically equivalent initial guesses may change the final rounded
+    # iterate. This is a numerical-regression allowance, not a CFD gate.
+    assert maximum_state_difference(read(current, '.accepted.json'), read(cavity, '.accepted.json')) < 1e-10
+    assert max(abs(a - b) for a, b in zip(read(current, '.loads.json')['boundaryTraction'],
+                                         read(cavity, '.loads.json')['boundaryTraction'])) < 1e-10
     budget = run('budget', extra=('--max-iterations', '1'), code=2)
     limited = exported(budget, 'nonlinear-budget')
     assert limited['acceptedIterations'] == 1 and not limited['numericallyConverged']
@@ -129,6 +152,11 @@ try:
     assert read(continued, '.loads.json') == read(cavity, '.loads.json')
     assert read(continued, '.accepted.json')['cells'] == read(cavity, '.accepted.json')['cells']
     assert read(continued, '.accepted.json')['faces'] == read(cavity, '.accepted.json')['faces']
+    continued_current = run('continued-current', extra=('--restart', str(budget) + '.checkpoint',
+                                                       '--linear-initial-guess', 'current-state'))
+    current_resumed_summary = exported(continued_current, 'converged')
+    assert current_resumed_summary['resumed'] and current_resumed_summary['controls']['linearInitialGuess'] == 'current-state'
+    assert maximum_state_difference(read(continued_current, '.accepted.json'), read(cavity, '.accepted.json')) < 1e-10
     failed_resume = run('failed-resume', extra=('--restart', str(budget) + '.checkpoint',
                                               '--linear-restarts', '1', '--krylov-directions', '1'), code=2)
     failed_summary = exported(failed_resume, 'linear-budget')
@@ -155,6 +183,7 @@ try:
     for label, extra in [('unsupported', ('--time-step', '.1')),
                          ('quadrature', ('--quadrature-order', '2')),
                          ('duplicate', ('--nu', '.2')),
+                         ('bad-linear-initial', ('--linear-initial-guess', 'previous')),
                          ('bad-selector', ('--discretization', 'collocated'))]:
         prefix = run(label, extra=extra, code=1)
         assert not Path(str(prefix) + '.summary.json').exists()

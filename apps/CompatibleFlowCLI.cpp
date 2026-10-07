@@ -130,6 +130,10 @@ Options parse(int argc, char** argv) {
             if (value != "mass" && value != "schur") throw std::invalid_argument("Pressure inverse must be mass or schur");
             c.pressureInverse = value == "mass" ? CompatiblePressureInverse2D::ViscousMass : CompatiblePressureInverse2D::DiagonalSchur;
         }
+        else if (key == "--linear-initial-guess") {
+            if (value != "zero" && value != "current-state") throw std::invalid_argument("Linear initial guess must be zero or current-state");
+            c.linearInitialGuess = value == "zero" ? CompatibleLinearInitialGuess2D::Zero : CompatibleLinearInitialGuess2D::CurrentState;
+        }
         else throw std::invalid_argument("Unsupported compatible option: " + key + "; see --discretization compatible --help");
     }
     const auto& c = opt.controls;
@@ -151,7 +155,7 @@ void help() {
         "--tolerance 1e-9 --state-tolerance 1e-9 --max-iterations 40\n"
         "--pseudo-step .1 (0 selects residual backtracking) --pseudo-maximum-step 1e6\n"
         "--compatible-pressure-inverse mass|schur --linear-tolerance 1e-13\n"
-        "--linear-restarts 50 --krylov-directions 60 --quadrature-order 6\n"
+        "--linear-restarts 50 --krylov-directions 60 --linear-initial-guess zero|current-state --quadrature-order 6\n"
         "Existing explicit boundary values are facewise constant. Symmetry preserves zero normal trace.\n"
         "Pressure outlet uses pseudo-traction -p*n and rejects backflow; it does not separately impose p and all normal velocity derivatives.\n"
         "--restart FILE: restore a matching accepted steady checkpoint and next pseudo-step; iteration budget is additional.\n"
@@ -208,9 +212,9 @@ void saveState(const Options& opt, const std::optional<CompatibleFlowState2D>& s
 }
 void history(const Options& opt, const CompatibleFlowResult2D& result) {
     auto out = output(opt.prefix + ".residuals.csv");
-    out << "iteration,accepted,linearRestarts,matrixProducts,linearRelativeResidual,trials,alpha,pseudoStep,cellMomentum,faceMomentum,divergence,stateChange,residualNorm\n";
+    out << "iteration,accepted,linearRestarts,matrixProducts,linearInitialRelativeResidual,linearRelativeResidual,trials,alpha,pseudoStep,cellMomentum,faceMomentum,divergence,stateChange,residualNorm\n";
     for (const auto& it : result.iterations) {
-        out << it.iteration << ',' << (it.accepted ? 1 : 0) << ',' << it.linearRestarts << ',' << it.matrixProducts << ',' << it.linearRelativeResidual << ',' << it.trials << ',' << it.alpha << ',' << it.pseudoStep;
+        out << it.iteration << ',' << (it.accepted ? 1 : 0) << ',' << it.linearRestarts << ',' << it.matrixProducts << ',' << it.linearInitialRelativeResidual << ',' << it.linearRelativeResidual << ',' << it.trials << ',' << it.alpha << ',' << it.pseudoStep;
         if (it.metrics) { const auto& m = *it.metrics; out << ',' << m.cellMomentum << ',' << m.faceMomentum << ',' << m.divergence << ',' << m.stateChange << ',' << m.residualNorm; }
         else out << ",,,,,";
         out << '\n';
@@ -309,6 +313,7 @@ void summary(const Options& opt, const FvMesh2D& mesh, const CompatibleFlowResul
         << ",\"equation\":\"" << (c.equation == CompatibleEquation2D::Stokes ? "stokes" : "navier-stokes")
         << "\",\"globalization\":\"" << (c.globalization == CompatibleGlobalization2D::PseudoTime ? "pseudo-time" : "backtracking")
         << "\",\"pressureInverse\":\"" << (c.pressureInverse == CompatiblePressureInverse2D::ViscousMass ? "viscous-mass" : "diagonal-schur") << '"'
+        << ",\"linearInitialGuess\":\"" << (c.linearInitialGuess == CompatibleLinearInitialGuess2D::Zero ? "zero" : "current-state") << '"'
         << ",\"equationTolerance\":" << c.equationTolerance << ",\"stateTolerance\":" << c.stateTolerance << ",\"linearTolerance\":" << c.linearTolerance
         << ",\"maximumIterations\":" << c.maximumIterations << ",\"maximumLinearRestarts\":" << c.maximumLinearRestarts << ",\"krylovDirections\":" << c.krylovDirections
         << ",\"quadratureOrder\":" << c.quadratureOrder << ",\"initialPseudoStep\":" << c.initialPseudoStep << ",\"maximumPseudoStep\":" << c.maximumPseudoStep
