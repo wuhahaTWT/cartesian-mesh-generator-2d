@@ -113,6 +113,8 @@ try:
     cavity = run('cavity')
     solved = exported(cavity, 'converged')
     assert solved['controls']['linearInitialGuess'] == 'zero'
+    assert solved['controls']['pressureInverse'] == 'viscous-mass'
+    assert solved['controls']['initialPseudoStep'] == .1 and solved['controls']['maximumLinearRestarts'] == 50
     with Path(str(cavity) + '.residuals.csv').open() as stream:
         cavity_history = list(csv.DictReader(stream))
     assert cavity_history and all('linearInitialRelativeResidual' in row for row in cavity_history)
@@ -138,6 +140,54 @@ try:
     assert not Path(str(linear) + '.fields.json').exists() and not Path(str(linear) + '.accepted.json').exists()
     assert read(linear, '.seed.json')['kind'] == 'seed'
     assert not read(linear)['boundaryLoadsAvailable'] and not Path(str(linear) + '.loads.json').exists()
+
+    # Same pressure-referenced channel, unchanged equation and default cold
+    # controls. Switching only the inverse must preserve full fields and loads.
+    schur = ('--compatible-pressure-inverse', 'schur')
+    aggregation = ('--compatible-pressure-inverse', 'schur-aggregation')
+    channel = run('channel-schur', case='channel', extra=schur)
+    exported(channel, 'converged')
+    channel_aggregation = run('channel-aggregation', case='channel', extra=aggregation)
+    channel_budget = run('channel-budget', case='channel', extra=schur + ('--max-iterations', '1'), code=2)
+    channel_limited = exported(channel_budget, 'nonlinear-budget')
+    assert channel_limited['totalAcceptedIterations'] == 1
+    checkpoint_before = Path(str(channel_budget) + '.checkpoint').read_bytes()
+    aggregation_resume = run('aggregation-resume', case='channel',
+                             extra=aggregation + ('--restart', str(channel_budget) + '.checkpoint'))
+    for candidate in (channel_aggregation, aggregation_resume):
+        report = exported(candidate, 'converged')
+        assert report['controls']['pressureInverse'] == 'diagonal-schur-aggregation'
+        assert report['controls']['linearInitialGuess'] == 'zero'
+        assert report['controls']['initialPseudoStep'] == .1 and report['controls']['maximumLinearRestarts'] == 50
+        # Reuse the initial-guess roundoff allowance for another algebraically
+        # equivalent solve; no new spatial/physical acceptance threshold.
+        assert maximum_state_difference(read(candidate, '.accepted.json'), read(channel, '.accepted.json')) < 1e-10
+        left, right = read(candidate, '.loads.json'), read(channel, '.loads.json')
+        assert left['absolutePressureReference'] and right['absolutePressureReference']
+        assert max(abs(a-b) for a,b in zip(left['boundaryTraction'], right['boundaryTraction'])) < 1e-10
+        assert len(left['boundaries']) == len(right['boundaries'])
+        for a,b in zip(left['boundaries'], right['boundaries']):
+            assert a['face'] == b['face']
+            for key in ('tractionMoments', 'pressureMoments'):
+                assert max(abs(x-y) for am,bm in zip(a[key],b[key]) for x,y in zip(am,bm)) < 1e-10
+    assert read(aggregation_resume)['resumed'] and read(aggregation_resume)['acceptedIterationsBefore'] == 1
+    aggregation_failed = run('aggregation-linear-budget', case='channel',
+                             extra=aggregation + ('--linear-restarts', '1', '--krylov-directions', '1'), code=2)
+    assert read(aggregation_failed)['status'] == 'linear-budget'
+    assert not read(aggregation_failed)['checkpointAvailable'] and not read(aggregation_failed)['lastAcceptedAvailable']
+    assert read(aggregation_failed, '.seed.json')['kind'] == 'seed'
+    for suffix in ('.checkpoint', '.accepted.json', '.fields.json', '.loads.json'):
+        assert not Path(str(aggregation_failed) + suffix).exists()
+    aggregation_failed_resume = run('aggregation-failed-resume', case='channel',
+                                    extra=aggregation + ('--restart', str(channel_budget) + '.checkpoint',
+                                                         '--linear-restarts', '1', '--krylov-directions', '1'), code=2)
+    retained = exported(aggregation_failed_resume, 'linear-budget')
+    assert retained['acceptedIterations'] == 0 and retained['totalAcceptedIterations'] == 1
+    assert Path(str(aggregation_failed_resume) + '.checkpoint').read_bytes() == checkpoint_before
+    assert Path(str(channel_budget) + '.checkpoint').read_bytes() == checkpoint_before
+    closed = run('closed-aggregation', extra=aggregation, code=1)
+    assert read(closed)['status'] == 'failed' and not read(closed)['checkpointAvailable']
+    assert 'traction pressure reference' in read(closed)['reason']
 
     custom = run('custom', case='custom', extra=('--boundary', str(cavity) + '.boundaries'))
     exported(custom, 'converged')
@@ -184,6 +234,7 @@ try:
                          ('quadrature', ('--quadrature-order', '2')),
                          ('duplicate', ('--nu', '.2')),
                          ('bad-linear-initial', ('--linear-initial-guess', 'previous')),
+                         ('bad-pressure-inverse', ('--compatible-pressure-inverse', 'auto')),
                          ('bad-selector', ('--discretization', 'collocated'))]:
         prefix = run(label, extra=extra, code=1)
         assert not Path(str(prefix) + '.summary.json').exists()
@@ -265,6 +316,7 @@ try:
 
     print(json.dumps({'passed': True, 'cavityIterations': solved['acceptedIterations'],
                       'cavityCells': solved['cells'], 'signalTested': os.name == 'posix',
+                      'aggregationColdAndResume': True, 'aggregationFailureRetention': True,
                       'evidenceDirectory': str(root)}))
 except BaseException:
     print(f'Preserved failed CLI evidence: {root}')

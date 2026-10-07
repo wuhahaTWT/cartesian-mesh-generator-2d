@@ -127,8 +127,10 @@ Options parse(int argc, char** argv) {
             c.equation = value == "0" ? CompatibleEquation2D::Stokes : CompatibleEquation2D::NavierStokes;
         }
         else if (key == "--compatible-pressure-inverse") {
-            if (value != "mass" && value != "schur") throw std::invalid_argument("Pressure inverse must be mass or schur");
-            c.pressureInverse = value == "mass" ? CompatiblePressureInverse2D::ViscousMass : CompatiblePressureInverse2D::DiagonalSchur;
+            if (value == "mass") c.pressureInverse = CompatiblePressureInverse2D::ViscousMass;
+            else if (value == "schur") c.pressureInverse = CompatiblePressureInverse2D::DiagonalSchur;
+            else if (value == "schur-aggregation") c.pressureInverse = CompatiblePressureInverse2D::DiagonalSchurAggregation;
+            else throw std::invalid_argument("Pressure inverse must be mass, schur or schur-aggregation");
         }
         else if (key == "--linear-initial-guess") {
             if (value != "zero" && value != "current-state") throw std::invalid_argument("Linear initial guess must be zero or current-state");
@@ -154,7 +156,8 @@ void help() {
         "--nu .01 --speed 1 --reference-length 1 --momentum-inertia 1 (0 selects Stokes)\n"
         "--tolerance 1e-9 --state-tolerance 1e-9 --max-iterations 40\n"
         "--pseudo-step .1 (0 selects residual backtracking) --pseudo-maximum-step 1e6\n"
-        "--compatible-pressure-inverse mass|schur --linear-tolerance 1e-13\n"
+        "--compatible-pressure-inverse mass|schur|schur-aggregation --linear-tolerance 1e-13\n"
+        "Schur pressure inverses require a traction pressure reference.\n"
         "--linear-restarts 50 --krylov-directions 60 --linear-initial-guess zero|current-state --quadrature-order 6\n"
         "Existing explicit boundary values are facewise constant. Symmetry preserves zero normal trace.\n"
         "Pressure outlet uses pseudo-traction -p*n and rejects backflow; it does not separately impose p and all normal velocity derivatives.\n"
@@ -312,7 +315,8 @@ void summary(const Options& opt, const FvMesh2D& mesh, const CompatibleFlowResul
     out << ",\"controls\":{\"viscosity\":" << c.viscosity << ",\"referenceLength\":" << c.referenceLength << ",\"referenceVelocity\":" << c.referenceVelocity
         << ",\"equation\":\"" << (c.equation == CompatibleEquation2D::Stokes ? "stokes" : "navier-stokes")
         << "\",\"globalization\":\"" << (c.globalization == CompatibleGlobalization2D::PseudoTime ? "pseudo-time" : "backtracking")
-        << "\",\"pressureInverse\":\"" << (c.pressureInverse == CompatiblePressureInverse2D::ViscousMass ? "viscous-mass" : "diagonal-schur") << '"'
+        << "\",\"pressureInverse\":\"" << (c.pressureInverse == CompatiblePressureInverse2D::ViscousMass ? "viscous-mass" :
+            c.pressureInverse == CompatiblePressureInverse2D::DiagonalSchur ? "diagonal-schur" : "diagonal-schur-aggregation") << '"'
         << ",\"linearInitialGuess\":\"" << (c.linearInitialGuess == CompatibleLinearInitialGuess2D::Zero ? "zero" : "current-state") << '"'
         << ",\"equationTolerance\":" << c.equationTolerance << ",\"stateTolerance\":" << c.stateTolerance << ",\"linearTolerance\":" << c.linearTolerance
         << ",\"maximumIterations\":" << c.maximumIterations << ",\"maximumLinearRestarts\":" << c.maximumLinearRestarts << ",\"krylovDirections\":" << c.krylovDirections

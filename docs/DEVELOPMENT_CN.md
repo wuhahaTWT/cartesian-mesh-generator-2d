@@ -679,7 +679,7 @@ build/native-laminar-pressure-lsc MATRIX_PREFIX CELL_AREAS.csv outlet .1 lsc ic0
 
 参数可选 `gauge|outlet`、`schur|schur-full|lsc`、`ic0|dense`。dense只把同一个辅助压力矩阵L解得更准确，不是精确原Schur；上限256个压力未知量用于限制稠密参考的立方成本（单份系数256² doubles约0.5MiB），不是物理或质量门。每个程序先验证已知小矩阵的LSC符号/恒等式和完整块逆；浮点额度仅用于这个代数控制。GMRES外层矩阵乘、每次重启额外的真实残差矩阵乘、LSC内部动量块乘、速度/压力逆次数与成本分别记录；`.solution`只表示线性目标满足，失败写 `.candidate` 并退出2，均不能当接受的非线性流场。这批两种尝试未取得默认采用价值，负结果及源输入索引见 `native-laminar-pressure-lsc.json`。
 
-压力多层研究入口 `native-laminar-pressure-aggregation.cpp` 直接调用共享 `PressureSchurDiagonal` / `Block`，只比较同一L的IC0与既有 `AggregationHierarchy2D` 固定V-cycle；无可变内迭代。分片常数P、R=Pᵀ、精确Galerkin粗矩阵、正反Gauss–Seidel及最多32行的小LDLᵀ解均来自已有原生模块。模块要求输入完全对称、非对角非正、合法正主元，失败显式返回，不修整原系数或改物理网格。API选项 `DiagonalSchurAggregation` 和研究驱动 `schur-aggregation` 保留牵引压力参考限制，普通CLI尚未开放该预条件器选项；默认不变。
+压力多层研究入口 `native-laminar-pressure-aggregation.cpp` 直接调用共享 `PressureSchurDiagonal` / `Block`，只比较同一L的IC0与既有 `AggregationHierarchy2D` 固定V-cycle；无可变内迭代。分片常数P、R=Pᵀ、精确Galerkin粗矩阵、正反Gauss–Seidel及最多32行的小LDLᵀ解均来自已有原生模块。模块要求输入完全对称、非对角非正、合法正主元，失败显式返回，不修整原系数或改物理网格。API选项 `DiagonalSchurAggregation`、研究驱动 `schur-aggregation` 和相容CLI的 `--compatible-pressure-inverse schur-aggregation` 使用同一实现，均保留牵引压力参考限制；默认不变。
 
 ```sh
 /usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-pressure-aggregation.cpp -framework Accelerate -o build/native-laminar-pressure-aggregation
@@ -744,6 +744,10 @@ build/cartmesh2d_flow_cli --discretization compatible --mesh FINAL.solver.cm2d -
 
 省略 `--discretization` 或显式 `collocated` 继续走原CLI。新选项仅稳态固定物性，支持冷启动与已绑定检查点续算；`--momentum-inertia 0` 是Stokes，`--pseudo-step 0` 是残差回溯。尺度、数值验收、压力近似与伪时间默认沿用上述API，未新增物理阈值。新入口拒绝不支持的旧选项，不推测旧单元中心/物理时间检查点含义。现有预设 `channel` 入口仍是面中心采样的常值抛物线数据，不能把该离散边界与连续解析入口混为一谈。
 
+压力近似选项为 `--compatible-pressure-inverse mass|schur|schur-aggregation`；省略仍为mass。两种Schur选项都需要牵引压力参考，不自动转换封闭边界或切换算法。聚合只更换既有代数近似逆，不改变网格、方程、出口条件或检查点格式；可从schur检查点以新的输出前缀切换到schur-aggregation续算。摘要分别记录 `viscous-mass/diagonal-schur/diagonal-schur-aggregation`。本轮实际CLI完整场/载荷、失败保留及信号测试见 `native-laminar-aggregation-cli.json`；用 `python3 tests/compatible_flow_cli_test.py --cli build/cartmesh2d_flow_cli --mesh-cli build/cartmesh2d_cli --keep FRESH_DIRECTORY` 可保留同一注册CTest脚本的全部证据，去掉 `--keep` 则成功后清理临时目录。
+
+云端17,260格聚合证据 `native-laminar-linear-initial-scale.json` 来自 `CurrentState`、初始伪步1的研究程序；不能把其成功转换成默认`.1/Zero`或实际CLI大网格资格。50次是每个线性系统的重启上限，9个外步的51次累计重启并不超预算。原IC0首步100→120的失败和同程序聚合成功均保留；旧完整程序的耗时只作历史成本，不与新程序声称严格A/B。
+
 结果约定：
 
 - `.summary.json` 使用 `cartmesh2d-compatible-flow-summary-v1`，运行中先标 `running`；完整输出关闭后发布最终状态，导出失败不写完成。数值收敛、导出完整、物理资格分别记录。退出0只代表数值收敛且导出完整；失败/预算退出2、SIGINT/SIGTERM合作取消退出130、非法输入/导出异常退出1。
@@ -778,7 +782,7 @@ CLI在每个原生接受步写 `.checkpoint.tmp`，显式关闭后同目录重�
 
 相容稀疏 `Matrix::residual(rhs,x)` 使用已有FMA/TwoSum保留乘积舍入尾项并补偿累加原 `b−Kx`，不先形成舍入后的完整Kx再相减。GMRES乘积算子仍是原K；收敛目标、原方程和默认重启预算不改。`CompatibleLinearInitialGuess2D::CurrentState` 是显式代数策略，每次从当前非线性迭代的面/压力保留量出发；混合面按当前法向/切向坐标还原，零默认保持。它不改变检查点的物理/离散身份，也不能使失败候选成为下一轮初猜。`linearInitialRelativeResidual` 与最终真实相对残差分开记录。
 
-研究入口 `native-laminar-compatible-solver` 在原参数末尾可追加 `[linear-restarts] [zero|accepted]`；accepted指当前非线性状态（首轮为种子、后续为接受态）。API可显式选择，产品CLI目前继续用零初猜。本批Linux原4,716格同场成本、严格残差失败与负收益步骤见 `native-laminar-linear-initial-guess.json`；不能把100次预算的成功当作默认50次已完成。
+研究入口 `native-laminar-compatible-solver` 在原参数末尾可追加 `[linear-restarts] [zero|accepted]`；accepted指当前非线性状态（首轮为种子、后续为接受态）。API可显式选择，CLI通过 `--linear-initial-guess zero|current-state` 选择，省略仍用零初猜。本批Linux原4,716格同场成本、严格残差失败与负收益步骤见 `native-laminar-linear-initial-guess.json`；不能把100次预算的成功当作默认50次已完成。
 
 ### 相容接受检查点的守恒载荷
 
