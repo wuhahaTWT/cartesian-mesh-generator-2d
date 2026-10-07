@@ -690,6 +690,18 @@ build/native-laminar-compatible-solver square 16 outlet-poiseuille .1 ns pressur
 
 同矩阵入口还支持 `gauge`：输入已经移除了最后一格压力坐标，传给共享块的是对应剩余面积；不更改原凝聚系统或补回规范行。这只是冻结矩阵对照，不能越过完整API的压力参考限制。每次重启使用当前FMA/TwoSum真残差；输出记录建层/求解代价、各层未知量与系数、压力逆/速度逆调用次数及原场系数，不仅报告外层乘积。9组原始矩阵源于已有LSC归档，SHA逐项读回；原失败状态、新完整接受场、无一致提速的计时和复现脚本见 `native-laminar-pressure-aggregation.json` 及其无损归档。小型全流程与物理/网格精度资格分开，云端原网格的默认预算仍待完成。
 
+速度预条件可在API显式选 `CompatibleVelocityInverse2D::ILU1`，默认ILU0保持。`oneLevelFillConnections` 以原对称联合稀疏图的系数位置为level 0，只有消元主元j的原始较大编号邻点i/k之间新增level 1；新增边不继续产生下一层填充。新位置初值为0，原非对称Picard系数不变，再复用既有数值ILU核。方法定义参考 [PETSc ILU](https://petsc.org/release/manualpages/PC/PCILU/) 与[填充层数](https://petsc.org/release/manualpages/PC/PCFactorSetLevels/)，实现不依赖PETSc；没有改主元、对角加移或自动回退。这是代数策略，不绑定物理检查点或更改边界资格；普通CLI未开放速度预条件选择。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-velocity-fill.cpp -framework Accelerate -o build/native-laminar-velocity-fill
+build/native-laminar-velocity-fill MATRIX_PREFIX CELL_AREAS.csv outlet .1 ilu1 ic0 1e-13 50 FRESH_OUTPUT_PREFIX
+# 同矩阵可选 ilu0/ilu1 和 ic0/aggregation；gauge遵循前述已删除规范行布局。
+# 完整API研究驱动新增最末尾可选 ilu0|ilu1；旧参数数目保持兼容。
+build/native-laminar-compatible-solver square 16 outlet-poiseuille .1 ns pressure outputs/api-fill .1 40 schur 50 zero ilu1
+```
+
+每次结果记录原速度图/填充因子图系数数量、构造时间、全部乘积和真残差；新增非对称星形精确逆及禁止二级传播控制，不是重复PDE审计。冻结矩阵的ILU0基准从上批归档逐SHA读回，完整流则用同一新程序串行交错对照，实测没有一致的成本优势，因此不按次数下降改默认；全部不利场、时间和来源见 `native-laminar-velocity-fill.json`。原始4,716/17,260格及物理精度仍由云端另证，不扩展填充层数扫描。
+
 已有 `CurrentState` 线性初值在CLI显式写作 `--linear-initial-guess current-state`，省略或 `zero` 保持默认。摘要报告选项，`.residuals.csv` 新增 `linearInitialRelativeResidual`；它只是线性代数策略，不绑定物理检查点，续算可切换。旧列名保持，读取历史应按列名；完整入口、实际原圆柱载荷与Linux6/6范围见 `native-laminar-linear-initial-cli.json`。
 
 ### 相容混合边界与显式命令行

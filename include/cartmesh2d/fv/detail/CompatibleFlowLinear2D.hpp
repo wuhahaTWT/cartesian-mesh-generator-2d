@@ -58,6 +58,30 @@ inline std::vector<std::pair<std::size_t,std::size_t>> connections(const Matrix&
     std::sort(result.begin(),result.end());result.erase(std::unique(result.begin(),result.end()),result.end());
     return result;
 }
+// Standard natural-order ILU(1) graph on the same symmetric union pattern.
+// An original entry has level 0; elimination through j gives level
+// level(i,j)+level(j,k)+1. A level-1 fill therefore joins original neighbours
+// i,k>j only. Generated entries cannot create another level-1 entry.
+// The numerical factorization still uses the existing native ILU kernel;
+// added original-matrix coefficients are zero, and K itself is unchanged.
+// https://petsc.org/release/manualpages/PC/PCFactorSetLevels/
+inline std::vector<std::pair<std::size_t,std::size_t>> oneLevelFillConnections(const Matrix& k,std::size_t nv) {
+    const auto original=connections(k,nv);
+    const SparsePattern2D graph(nv,original);
+    std::vector<std::vector<std::size_t>> upper(nv);
+    for(const auto& [i,j]:original)upper[i].push_back(j);
+    for(std::size_t pivot=0;pivot<nv;++pivot) {
+        for(auto a=graph.lowerEnd[pivot];a<graph.rows[pivot+1];++a)
+            for(auto b=a+1;b<graph.rows[pivot+1];++b)
+                upper[graph.columns[a]].push_back(graph.columns[b]);
+    }
+    std::vector<std::pair<std::size_t,std::size_t>> result;
+    for(std::size_t i=0;i<nv;++i) {
+        auto& row=upper[i];std::sort(row.begin(),row.end());row.erase(std::unique(row.begin(),row.end()),row.end());
+        for(auto j:row)result.emplace_back(i,j);
+    }
+    return result;
+}
 struct PressureSchurDiagonal {
     struct Data {
         Vec diag;
@@ -133,8 +157,8 @@ struct Block {
     Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,double speed,const Matrix& pk):matrix(k),volume(area),
         nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1))),
         np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1)),
-        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation"),viscosity(nu),transportSpeed(speed),
-        pattern(nv,connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
+        corrected(pressure=="gauge"),ilu0(mode=="ilu0"||mode=="ilu1"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation"),viscosity(nu),transportSpeed(speed),
+        pattern(nv,mode=="ilu1"?oneLevelFillConnections(pk,nv):connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
         linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
         for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
         for(std::size_t i=0;i<pk.n;++i)for(auto p=pk.rows[i];p<pk.rows[i+1];++p) {

@@ -37,6 +37,9 @@ enum class CompatibleGlobalization2D { Backtracking, PseudoTime };
 // the same diagonal-velocity Schur approximation. It does not change defaults.
 enum class CompatiblePressureInverse2D { ViscousMass, DiagonalSchur, DiagonalSchurAggregation };
 enum class CompatibleLinearInitialGuess2D { Zero, CurrentState };
+// One symbolic fill level is an explicit algebraic research option; original
+// coefficients, natural ordering and positive-pivot failure rules are retained.
+enum class CompatibleVelocityInverse2D { ILU0, ILU1 };
 struct CompatibleFlowState2D {
     // Per cell: u0,uX,uY,v0,vX,vY,p0,pX,pY in basis (1,dx/h,dy/h).
     // Physical velocity and kinematic pressure. h is the actual diameter.
@@ -82,6 +85,7 @@ struct CompatibleFlowControls2D {
     CompatibleEquation2D equation=CompatibleEquation2D::NavierStokes;
     CompatibleGlobalization2D globalization=CompatibleGlobalization2D::PseudoTime;
     CompatiblePressureInverse2D pressureInverse=CompatiblePressureInverse2D::ViscousMass;
+    CompatibleVelocityInverse2D velocityInverse=CompatibleVelocityInverse2D::ILU0;
     // Explicit algebraic strategy only. CurrentState starts each absolute
     // condensed solve from the retained coefficients of the current nonlinear
     // iterate (the seed first, then the last accepted state); it does not alter

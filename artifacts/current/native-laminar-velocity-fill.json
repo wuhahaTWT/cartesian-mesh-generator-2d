@@ -1,0 +1,2691 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "45470ad6f3ae3f3f6b36401cf1422191485796fd",
+  "branch": "codex/incompressible-laminar",
+  "purpose": "Investigate whether missing fill in the Picard velocity ILU0 is a useful structural remedy for compatible linear budgets; retain negative complete-cost evidence.",
+  "method": {
+    "api": "CompatibleVelocityInverse2D::ILU1",
+    "default": "ILU0, unchanged",
+    "sharedCore": "oneLevelFillConnections and existing SparseSystem2D::factorILU0 on the expanded zero-initialized graph",
+    "symbolicRule": "Original union-pattern entries have level 0; new level=level(i,j)+level(j,k)+1. Exactly one fill level connects only original neighbours i,k>pivot j. Generated edges never generate another level-1 edge.",
+    "ordering": "original natural ordering",
+    "numericSafeguards": "existing positive diagonal/pivot and finite rules; no shift, replacement, symmetrization or fallback",
+    "unchanged": [
+      "original K and RHS",
+      "Picard coefficient values",
+      "chosen pressure inverse",
+      "original FMA/TwoSum true residual",
+      "1e-13 linear relative target",
+      "50 restarts x 60 directions",
+      "nonlinear and physical gates",
+      "mesh and boundary data"
+    ],
+    "scope": "Explicit native API/research option; no production CLI velocity selector or default adoption.",
+    "references": [
+      "https://petsc.org/release/manualpages/PC/PCFactorSetLevels/",
+      "https://petsc.org/release/manualpages/PC/PCILU/"
+    ],
+    "dependency": "independently implemented using existing native kernel; no PETSc or external factorization linked for this method"
+  },
+  "frozenInputs": {
+    "archive": "outputs/laminar-stability/pressure-lsc/native-compatible-pressure-lsc.tar.gz",
+    "sha256": "fb582729ffc75542d581bdc67336036faa9c9a953cb584d4bceeaafab5ade1f3",
+    "memberPrefix": "raw/inputs/",
+    "files": {
+      "cylinder64-pt01.cells.csv": {
+        "bytes": 1242,
+        "sha256": "b287d1bd3c7b73ff51245f2689277b8ea1c102e99651a69140d3151397858b82"
+      },
+      "cylinder64-pt01.entries": {
+        "bytes": 291552,
+        "sha256": "fbf1a1cdbe085f185499c0b7e37135ac1a05132a88b9933b379428bcaac1ac21"
+      },
+      "cylinder64-pt01.picard.entries": {
+        "bytes": 291552,
+        "sha256": "c4f4f177873ee97f8049d4373efec4690cc1ade6680e1bf53fb4d71b8a308bb8"
+      },
+      "cylinder64-pt01.rhs": {
+        "bytes": 3840,
+        "sha256": "4a12e2b65260a78f5c847fbe66894928cfcc06dd7be877775602e7991918afcb"
+      },
+      "outlet16-pt01.cells.csv": {
+        "bytes": 3740,
+        "sha256": "120e373d938e459e10be2a7567c4c87f8ee4dcdb38e9d46a6d68dee69adac4c5"
+      },
+      "outlet16-pt01.entries": {
+        "bytes": 1539072,
+        "sha256": "67da51fb22e74c6c65c399e7f0418938f67a77840925cc3a866b04cbba923de8"
+      },
+      "outlet16-pt01.picard.entries": {
+        "bytes": 1539072,
+        "sha256": "0d76b6fc215ed707c2e66389f773381f2b2dc47b779930a3ebb7f22f53f790a2"
+      },
+      "outlet16-pt01.rhs": {
+        "bytes": 17920,
+        "sha256": "4d244366d11e886177e0d46357381f926b3c6177f8e514ea49e00f7f04badd32"
+      },
+      "outlet8-pt01.cells.csv": {
+        "bytes": 768,
+        "sha256": "649b9dfcf43074cbfe5a8a0d66d10c93c9bfad5c998d297b857a28abf64e71bb"
+      },
+      "outlet8-pt01.entries": {
+        "bytes": 352512,
+        "sha256": "2574e3e708c5aa63b782f42c5e5414584be35ea7ac24241d20fddcbb28e2803b"
+      },
+      "outlet8-pt01.picard.entries": {
+        "bytes": 352512,
+        "sha256": "2faae2ad63ef9bcd3695969fa7d937fed35169cd7a4992f5f8b3bfcc0ee4d2b0"
+      },
+      "outlet8-pt01.rhs": {
+        "bytes": 4352,
+        "sha256": "ac67890a80f3933720e4028a3339c933395314b1d93594dc209091b453704829"
+      },
+      "outlet8-pt1.cells.csv": {
+        "bytes": 768,
+        "sha256": "649b9dfcf43074cbfe5a8a0d66d10c93c9bfad5c998d297b857a28abf64e71bb"
+      },
+      "outlet8-pt1.entries": {
+        "bytes": 352512,
+        "sha256": "69b92657e8a243d3fa0f535d81592764a517db142c5b3d5887e1fd0470f68cfd"
+      },
+      "outlet8-pt1.picard.entries": {
+        "bytes": 352512,
+        "sha256": "d5286feb0f42b4ff38cf30573c849a8ab3686e2c451b328416a5d49d5eae1b49"
+      },
+      "outlet8-pt1.rhs": {
+        "bytes": 4352,
+        "sha256": "b2d3d6eca0bb054a3136f76044efccb2cd224812575692ef2d49d5a1f800da46"
+      },
+      "sheared16-pt01.cells.csv": {
+        "bytes": 3982,
+        "sha256": "033a924e078ab3b05b74474f04c7400991861d583a857e19f55249e0995b67e6"
+      },
+      "sheared16-pt01.entries": {
+        "bytes": 1540608,
+        "sha256": "a90814ba0845a3473030162557a4a3f2a5799f288517d2155134014ee8c0f043"
+      },
+      "sheared16-pt01.picard.entries": {
+        "bytes": 1540608,
+        "sha256": "a90814ba0845a3473030162557a4a3f2a5799f288517d2155134014ee8c0f043"
+      },
+      "sheared16-pt01.rhs": {
+        "bytes": 17400,
+        "sha256": "3da9fafa9fb0d8426e004f0fd456f69c5ed922a743d9dc72a13e96544138fa9a"
+      },
+      "sheared4-newton.cells.csv": {
+        "bytes": 188,
+        "sha256": "23b93c6aae513b5cbd2d24ab30d40d2096d5eb1b50c3b27d85a71f94b199f5f6"
+      },
+      "sheared4-newton.entries": {
+        "bytes": 64608,
+        "sha256": "51ee2e411a1b1ce17d3821a2ca0adf61aff928f22a08f87210be8d481fadbec2"
+      },
+      "sheared4-newton.picard.entries": {
+        "bytes": 64608,
+        "sha256": "51ee2e411a1b1ce17d3821a2ca0adf61aff928f22a08f87210be8d481fadbec2"
+      },
+      "sheared4-newton.rhs": {
+        "bytes": 888,
+        "sha256": "300b4e7eb40f468cbdf3529bd7ca7ab7f879f66fe661af43c11546a740f10071"
+      },
+      "sheared4-stalled.cells.csv": {
+        "bytes": 188,
+        "sha256": "23b93c6aae513b5cbd2d24ab30d40d2096d5eb1b50c3b27d85a71f94b199f5f6"
+      },
+      "sheared4-stalled.entries": {
+        "bytes": 64608,
+        "sha256": "c84f23b30ce1cb07096502f52082030e1998584e0dffef6fa38d922d0a62e6aa"
+      },
+      "sheared4-stalled.picard.entries": {
+        "bytes": 64608,
+        "sha256": "2f49a092d331432437f7a3ca84662e26fbcdcb0faf6867a325c8e4a35c85ccd2"
+      },
+      "sheared4-stalled.rhs": {
+        "bytes": 888,
+        "sha256": "56084a295e3bb084ee0a525fd7a47d54005fed983c1edf1b919de80a48679db4"
+      },
+      "sheared8-final.cells.csv": {
+        "bytes": 864,
+        "sha256": "04b6ee1817b9e8567c1b6d299f3061beb10737dcbb37044d80796b11fcc19902"
+      },
+      "sheared8-final.entries": {
+        "bytes": 341760,
+        "sha256": "61c6560102fa5b2d235a58348592dc9d8eef5ee68c74e2a03d8cbd5f2033672b"
+      },
+      "sheared8-final.picard.entries": {
+        "bytes": 341760,
+        "sha256": "2a86c213a677911fc8cc4144c1c99f6cd0dcaa10c5e66b5bcb13162e4c2ac564"
+      },
+      "sheared8-final.rhs": {
+        "bytes": 4088,
+        "sha256": "8702092994bdd000a57edb4b19bf247cb8de7b3f9a27a9d445a356aae443be2a"
+      },
+      "sheared8-pt01.cells.csv": {
+        "bytes": 864,
+        "sha256": "04b6ee1817b9e8567c1b6d299f3061beb10737dcbb37044d80796b11fcc19902"
+      },
+      "sheared8-pt01.entries": {
+        "bytes": 341760,
+        "sha256": "dba230d3b7a6ed37d8842d0cd8d29f66e7a5d80acc72f8b32899f43e0e7c4400"
+      },
+      "sheared8-pt01.picard.entries": {
+        "bytes": 341760,
+        "sha256": "dba230d3b7a6ed37d8842d0cd8d29f66e7a5d80acc72f8b32899f43e0e7c4400"
+      },
+      "sheared8-pt01.rhs": {
+        "bytes": 4088,
+        "sha256": "258545da9ef87a0c85efdde9a154707bf22861ec6eec61959009766bbe9307ca"
+      }
+    }
+  },
+  "reusedBaseline": {
+    "archive": "outputs/laminar-stability/pressure-aggregation/native-compatible-pressure-aggregation.tar.gz",
+    "sha256": "405f448687b8daad754812ef1ce597d8fc39d668be0df43274fd1122f4696890",
+    "memberPrefix": "raw/",
+    "files": {
+      "cylinder64-pt01-aggregation-shared.json": {
+        "bytes": 835,
+        "sha256": "eb34ff43b8c43769f5ce8cadfdae02eac7cb2fd310f54bf759741e0e23eb078e"
+      },
+      "cylinder64-pt01-aggregation-shared.solution": {
+        "bytes": 3840,
+        "sha256": "ef18256a1bc7fbed43dcbf3133cd91c158c523128c54f0b951e14bb54eb5ef68"
+      },
+      "cylinder64-pt01-ic0-shared.json": {
+        "bytes": 788,
+        "sha256": "6e5f1d7d2366e9d48e9e2edc088668fdf92c18d2d11e478c70a349e74354fe77"
+      },
+      "cylinder64-pt01-ic0-shared.solution": {
+        "bytes": 3840,
+        "sha256": "4d3fc2de4e06d61478b25ab16721bd7bf168e5da889c76e807bd3234c6c6a149"
+      },
+      "cylinder64.solver.cm2d": {
+        "bytes": 8224,
+        "sha256": "c9eace929e188b385d1a41fa98276508c9369a8b95a15cb25e1b7caf6063e026"
+      },
+      "outlet16-pt01-aggregation-shared.json": {
+        "bytes": 921,
+        "sha256": "b8b245ebbe0c64efbdf2947f31d473028aedffb7d0b8aa7c33fd1132678cfcc6"
+      },
+      "outlet16-pt01-aggregation-shared.solution": {
+        "bytes": 17920,
+        "sha256": "92fe53597eea5bf13c0c25d60b668d223c171455c727375d42848b739fee5881"
+      },
+      "outlet16-pt01-ic0-shared.json": {
+        "bytes": 759,
+        "sha256": "3ce786ca6f1af0e01e2a1b1ec5cdf390908387c1057cf573c1d9e942689503b6"
+      },
+      "outlet16-pt01-ic0-shared.solution": {
+        "bytes": 17920,
+        "sha256": "d092eda186c791388c91aac8785375ccecc0e23a6172bab98978db569780ea09"
+      },
+      "outlet8-pt01-aggregation-shared.json": {
+        "bytes": 836,
+        "sha256": "63ed8bb469b88bb174e238bb442a0b83c2cb6fd90250e8126633aef98456af09"
+      },
+      "outlet8-pt01-aggregation-shared.solution": {
+        "bytes": 4352,
+        "sha256": "773d7dd0cb4c922ddf7bc434d9add70c75f1266185a6372289b90293583f0075"
+      },
+      "outlet8-pt01-ic0-shared.json": {
+        "bytes": 767,
+        "sha256": "9b75decf0235d6bdd41c81ef81134e3a1dc6e0a6db6a5faeccba05320a466f33"
+      },
+      "outlet8-pt01-ic0-shared.solution": {
+        "bytes": 4352,
+        "sha256": "62fe19d95270d5548e1183888f287335c6e5ac7e364f1ae62be88ffe6ca0ce74"
+      },
+      "outlet8-pt1-aggregation-shared.json": {
+        "bytes": 844,
+        "sha256": "74ea5660d388ecee62f577c59364e27b5c67b9a23758302b1366c6009955a3a1"
+      },
+      "outlet8-pt1-aggregation-shared.solution": {
+        "bytes": 4352,
+        "sha256": "6fab790546441405366cf49d72f7438c7a20bfbc44231ed3be9c28666c5acb98"
+      },
+      "outlet8-pt1-ic0-shared.json": {
+        "bytes": 767,
+        "sha256": "a169714fe041a70a8bae5a80592e01c426555cf8b4f168c0e04d9031719505ed"
+      },
+      "outlet8-pt1-ic0-shared.solution": {
+        "bytes": 4352,
+        "sha256": "55f6d64edec5665f0e070be0848878cec4d87f90b60e63800f9267d0311e98eb"
+      },
+      "sheared16-pt01-aggregation-shared.json": {
+        "bytes": 921,
+        "sha256": "02b14d2db7cd0118ead934d5976e544830ba178ef1addccba671f96a3e8cd076"
+      },
+      "sheared16-pt01-aggregation-shared.solution": {
+        "bytes": 17400,
+        "sha256": "3de09ddffd8df9988f3783ea661a46692985d1378610b43631d92c384c06ef11"
+      },
+      "sheared16-pt01-ic0-shared.json": {
+        "bytes": 781,
+        "sha256": "0b12ec3e94c788ea6d03993e3fdb7615b14e98dcd1a339d3d7039a9dbee586e4"
+      },
+      "sheared16-pt01-ic0-shared.solution": {
+        "bytes": 17400,
+        "sha256": "da53a5b83bc1168be90a4446bcb7d23d79196891069dd9e27a2622cae289ed12"
+      },
+      "sheared4-newton-aggregation-shared.json": {
+        "bytes": 807,
+        "sha256": "21984637eeee7523f4f63f67ec90c36bac508e985e860100aeae87c9e5c1c226"
+      },
+      "sheared4-newton-aggregation-shared.solution": {
+        "bytes": 888,
+        "sha256": "fba235762b390ba885d9c60064668292453f2c08f3a2ae9425cc923d79856e6e"
+      },
+      "sheared4-newton-ic0-shared.json": {
+        "bytes": 755,
+        "sha256": "9bc2286ba255a15da53ea23a777e953ac93e539b2718e7e9ecbcc33956b08744"
+      },
+      "sheared4-newton-ic0-shared.solution": {
+        "bytes": 888,
+        "sha256": "73f7fbf6376d3408ec90f211008b96e328e02f4598ff1088319492dd0ae710c4"
+      },
+      "sheared4-stalled-aggregation-shared.json": {
+        "bytes": 830,
+        "sha256": "3dd06d621e337f971e8473167e705f6e20a6532a7202864ebc8f04447a498dee"
+      },
+      "sheared4-stalled-aggregation-shared.solution": {
+        "bytes": 888,
+        "sha256": "370fbae3408116d0d7e7ec657667acba9b6a100ecee3b5255141035f929f8ba6"
+      },
+      "sheared4-stalled-ic0-shared.json": {
+        "bytes": 777,
+        "sha256": "ba794c6564fa161f97d7d15d40098e8037673e0605511ca25184e2a4d7b72dd0"
+      },
+      "sheared4-stalled-ic0-shared.solution": {
+        "bytes": 888,
+        "sha256": "a71d5e5eb6db1122cf4ab7b00806df136abdd0b0c3382cd0fbc7a950bad8fd0a"
+      },
+      "sheared8-final-aggregation-shared.json": {
+        "bytes": 867,
+        "sha256": "4985283ae7a69ea50c91a7078d2c9f549a2eddabde7777f1c7fe588bdd69f182"
+      },
+      "sheared8-final-aggregation-shared.solution": {
+        "bytes": 4088,
+        "sha256": "dd1ed3013c71d27d8f78f23951e95f8ef53ac5acaadc8a8996d6fa42138d8d0a"
+      },
+      "sheared8-final-ic0-shared.json": {
+        "bytes": 784,
+        "sha256": "4ae250030d31922917eec63f26f5571e9a24cfc9fabec9c687caccc74c85e48e"
+      },
+      "sheared8-final-ic0-shared.solution": {
+        "bytes": 4088,
+        "sha256": "e0c907fe89c60fc5567137589641351135a7caa21cf441e4a5c305ea3074e36e"
+      },
+      "sheared8-pt01-aggregation-shared.json": {
+        "bytes": 846,
+        "sha256": "23e232b34a96515d3a6278044bee4e86299c4cc80100cf18df7e58d924cb615d"
+      },
+      "sheared8-pt01-aggregation-shared.solution": {
+        "bytes": 4088,
+        "sha256": "47906307c8abe3405636ec50df552cdf1a5e74d9f80aede5c9935671d2feb1cc"
+      },
+      "sheared8-pt01-ic0-shared.json": {
+        "bytes": 756,
+        "sha256": "f13e7a5ccfed02a6d805f77b73b3f6d62cccd4220a004a6d3cb0241130980c1b"
+      },
+      "sheared8-pt01-ic0-shared.solution": {
+        "bytes": 4088,
+        "sha256": "bff147938cd9a8d0482ecd812f3c2859e7801a0508d9798ab98216556f2eaa32"
+      }
+    },
+    "note": "SHA-verified original matrices and current compensated-residual ILU0 results, no reassembly or rerun of 18 frozen baselines."
+  },
+  "frozenComparisons": [
+    {
+      "case": "cylinder64-pt01",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 480,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 60,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 62,
+        "velocityILUApplications": 62,
+        "pressureInverseApplications": 62,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.974279483712525,
+        "pressureFineCoefficients": 256,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 7.762927342042224e-14,
+        "setupSecondsIncludingRead": 0.006856084,
+        "totalSeconds": 0.012728792,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          7.345850764024293,
+          9.168159584443666e-13,
+          5.702530574660595e-13
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 480,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 57,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 59,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 9728,
+        "velocityFactorGraphCoefficients": 12576,
+        "velocityILUApplications": 59,
+        "pressureInverseApplications": 59,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.974279483712525,
+        "pressureFineCoefficients": 256,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 5.930320515750983e-14,
+        "setupSecondsIncludingRead": 0.017273083,
+        "totalSeconds": 0.035792625,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          7.345850764024293,
+          8.702427121972378e-13,
+          4.35632494915383e-13
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 2.7312312866619275e-13,
+        "pressureRms": 1.1785144534875346e-12,
+        "maximum": 5.350386800273554e-12
+      }
+    },
+    {
+      "case": "cylinder64-pt01",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 480,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 54,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 55,
+        "velocityILUApplications": 55,
+        "pressureInverseApplications": 55,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.974279483712525,
+        "pressureFineCoefficients": 256,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 256
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 152
+          }
+        ],
+        "aggregationTotalCoefficients": 408,
+        "relativeTrueResidual": 4.8309297977176126e-14,
+        "setupSecondsIncludingRead": 0.00446425,
+        "totalSeconds": 0.010197375,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          7.345850764024293,
+          3.5487289345511646e-13
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 480,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 50,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 51,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 9728,
+        "velocityFactorGraphCoefficients": 12576,
+        "velocityILUApplications": 51,
+        "pressureInverseApplications": 51,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.974279483712525,
+        "pressureFineCoefficients": 256,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 256
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 152
+          }
+        ],
+        "aggregationTotalCoefficients": 408,
+        "relativeTrueResidual": 3.9650543562181507e-14,
+        "setupSecondsIncludingRead": 0.006697125,
+        "totalSeconds": 0.014057041,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          7.345850764024293,
+          2.9126697572022955e-13
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 2.646635453709711e-13,
+        "pressureRms": 1.98477796359225e-12,
+        "maximum": 5.3930193644191604e-12
+      }
+    },
+    {
+      "case": "outlet16-pt01",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 2240,
+        "pressureUnknowns": 256,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 57,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 58,
+        "velocityILUApplications": 58,
+        "pressureInverseApplications": 58,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.02055473411640752,
+        "pressureFineCoefficients": 1216,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 7.973429721200735e-14,
+        "setupSecondsIncludingRead": 0.014423125,
+        "totalSeconds": 0.042897375,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.8512258434294948,
+          1.476061916065563e-13
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 2240,
+        "pressureUnknowns": 256,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 52,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 53,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 52544,
+        "velocityFactorGraphCoefficients": 66944,
+        "velocityILUApplications": 53,
+        "pressureInverseApplications": 53,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.02055473411640752,
+        "pressureFineCoefficients": 1216,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 4.5567535258738435e-14,
+        "setupSecondsIncludingRead": 0.036017666,
+        "totalSeconds": 0.085870083,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.8512258434294948,
+          8.43557988923613e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.0392848478873574e-13,
+        "pressureRms": 7.441640190464024e-13,
+        "maximum": 1.7035262089848402e-12
+      }
+    },
+    {
+      "case": "outlet16-pt01",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 2240,
+        "pressureUnknowns": 256,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 49,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 50,
+        "velocityILUApplications": 50,
+        "pressureInverseApplications": 50,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.02055473411640752,
+        "pressureFineCoefficients": 1216,
+        "aggregationLevels": [
+          {
+            "unknowns": 256,
+            "coefficients": 1216
+          },
+          {
+            "unknowns": 128,
+            "coefficients": 718
+          },
+          {
+            "unknowns": 63,
+            "coefficients": 371
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 177
+          }
+        ],
+        "aggregationTotalCoefficients": 2482,
+        "relativeTrueResidual": 8.841256671126349e-14,
+        "setupSecondsIncludingRead": 0.020231292,
+        "totalSeconds": 0.044032292,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.8512258434294948,
+          1.6367162837982522e-13
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 2240,
+        "pressureUnknowns": 256,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 44,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 45,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 52544,
+        "velocityFactorGraphCoefficients": 66944,
+        "velocityILUApplications": 45,
+        "pressureInverseApplications": 45,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.02055473411640752,
+        "pressureFineCoefficients": 1216,
+        "aggregationLevels": [
+          {
+            "unknowns": 256,
+            "coefficients": 1216
+          },
+          {
+            "unknowns": 128,
+            "coefficients": 718
+          },
+          {
+            "unknowns": 63,
+            "coefficients": 371
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 177
+          }
+        ],
+        "aggregationTotalCoefficients": 2482,
+        "relativeTrueResidual": 4.9508162842035385e-14,
+        "setupSecondsIncludingRead": 0.042474375,
+        "totalSeconds": 0.077710834,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.8512258434294948,
+          9.165079051389173e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 7.144447475445897e-14,
+        "pressureRms": 4.599737538992566e-13,
+        "maximum": 1.2647660696529783e-12
+      }
+    },
+    {
+      "case": "outlet8-pt01",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 31,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 32,
+        "velocityILUApplications": 32,
+        "pressureInverseApplications": 32,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.07677702298918034,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 9.548077066101427e-14,
+        "setupSecondsIncludingRead": 0.006340917,
+        "totalSeconds": 0.00920475,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.577935785884187,
+          1.5066252488981537e-13
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 29,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 30,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11968,
+        "velocityFactorGraphCoefficients": 15104,
+        "velocityILUApplications": 30,
+        "pressureInverseApplications": 30,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.07677702298918034,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 3.9272825706495536e-14,
+        "setupSecondsIncludingRead": 0.011776125,
+        "totalSeconds": 0.016235666,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.577935785884187,
+          6.196999709507173e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.0066256331754892e-13,
+        "pressureRms": 3.4121472328392336e-13,
+        "maximum": 8.810729923425242e-13
+      }
+    },
+    {
+      "case": "outlet8-pt01",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 29,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 30,
+        "velocityILUApplications": 30,
+        "pressureInverseApplications": 30,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.07677702298918034,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 288
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 168
+          }
+        ],
+        "aggregationTotalCoefficients": 456,
+        "relativeTrueResidual": 5.622122143350167e-14,
+        "setupSecondsIncludingRead": 0.003397125,
+        "totalSeconds": 0.006465583,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.577935785884187,
+          8.871347722604135e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 26,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 27,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11968,
+        "velocityFactorGraphCoefficients": 15104,
+        "velocityILUApplications": 27,
+        "pressureInverseApplications": 27,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.07677702298918034,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 288
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 168
+          }
+        ],
+        "aggregationTotalCoefficients": 456,
+        "relativeTrueResidual": 4.665852666192983e-14,
+        "setupSecondsIncludingRead": 0.008299083,
+        "totalSeconds": 0.012441958,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.577935785884187,
+          7.362415893649053e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 8.397758174247155e-14,
+        "pressureRms": 1.8117468832035857e-13,
+        "maximum": 6.004086117172847e-13
+      }
+    },
+    {
+      "case": "outlet8-pt1",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 39,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 40,
+        "velocityILUApplications": 40,
+        "pressureInverseApplications": 40,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.08343743554551102,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 3.708307976606654e-14,
+        "setupSecondsIncludingRead": 0.003453875,
+        "totalSeconds": 0.007580125,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          5.776760389451889e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 35,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 36,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11968,
+        "velocityFactorGraphCoefficients": 15104,
+        "velocityILUApplications": 36,
+        "pressureInverseApplications": 36,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.08343743554551102,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 4.66685097461298e-14,
+        "setupSecondsIncludingRead": 0.011667542,
+        "totalSeconds": 0.017146834,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          7.269967873134615e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 5.009147735665956e-14,
+        "pressureRms": 1.0230443124606197e-13,
+        "maximum": 2.9043434324194095e-13
+      }
+    },
+    {
+      "case": "outlet8-pt1",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 37,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 38,
+        "velocityILUApplications": 38,
+        "pressureInverseApplications": 38,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.08343743554551102,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 288
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 170
+          }
+        ],
+        "aggregationTotalCoefficients": 458,
+        "relativeTrueResidual": 5.1456483212681764e-14,
+        "setupSecondsIncludingRead": 0.00625625,
+        "totalSeconds": 0.009979209,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          8.01583298578995e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 544,
+        "pressureUnknowns": 64,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 33,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 34,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11968,
+        "velocityFactorGraphCoefficients": 15104,
+        "velocityILUApplications": 34,
+        "pressureInverseApplications": 34,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.08343743554551102,
+        "pressureFineCoefficients": 288,
+        "aggregationLevels": [
+          {
+            "unknowns": 64,
+            "coefficients": 288
+          },
+          {
+            "unknowns": 32,
+            "coefficients": 170
+          }
+        ],
+        "aggregationTotalCoefficients": 458,
+        "relativeTrueResidual": 8.608231379657458e-14,
+        "setupSecondsIncludingRead": 0.007620541,
+        "totalSeconds": 0.013569208,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          1.5577887343483279,
+          1.340980586589415e-13
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 9.634002478346346e-14,
+        "pressureRms": 2.1365400375115045e-13,
+        "maximum": 6.377121053446899e-13
+      }
+    },
+    {
+      "case": "sheared16-pt01",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 2175,
+        "pressureUnknowns": 255,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 62,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 64,
+        "velocityILUApplications": 64,
+        "pressureInverseApplications": 64,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.10984312943706649,
+        "pressureFineCoefficients": 1211,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 8.191397028271238e-14,
+        "setupSecondsIncludingRead": 0.01893225,
+        "totalSeconds": 0.05329975,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.23435642704491905,
+          5.581199426046609e-14,
+          1.919706540052015e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 2175,
+        "pressureUnknowns": 255,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 56,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 57,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 50816,
+        "velocityFactorGraphCoefficients": 64736,
+        "velocityILUApplications": 57,
+        "pressureInverseApplications": 57,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.10984312943706649,
+        "pressureFineCoefficients": 1211,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 7.208792995478693e-14,
+        "setupSecondsIncludingRead": 0.039094542,
+        "totalSeconds": 0.086360542,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.23435642704491905,
+          1.6894269697268256e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 6.375115777462626e-14,
+        "pressureRms": 2.0802320930354444e-13,
+        "maximum": 4.138495102168349e-13
+      }
+    },
+    {
+      "case": "sheared16-pt01",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 2175,
+        "pressureUnknowns": 255,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 46,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 47,
+        "velocityILUApplications": 47,
+        "pressureInverseApplications": 47,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.10984312943706649,
+        "pressureFineCoefficients": 1211,
+        "aggregationLevels": [
+          {
+            "unknowns": 255,
+            "coefficients": 1211
+          },
+          {
+            "unknowns": 127,
+            "coefficients": 589
+          },
+          {
+            "unknowns": 63,
+            "coefficients": 277
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 2210,
+        "relativeTrueResidual": 9.052133159286493e-14,
+        "setupSecondsIncludingRead": 0.015660875,
+        "totalSeconds": 0.037894292,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.23435642704491905,
+          2.1214255843452175e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 2175,
+        "pressureUnknowns": 255,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 42,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 43,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 50816,
+        "velocityFactorGraphCoefficients": 64736,
+        "velocityILUApplications": 43,
+        "pressureInverseApplications": 43,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.10984312943706649,
+        "pressureFineCoefficients": 1211,
+        "aggregationLevels": [
+          {
+            "unknowns": 255,
+            "coefficients": 1211
+          },
+          {
+            "unknowns": 127,
+            "coefficients": 589
+          },
+          {
+            "unknowns": 63,
+            "coefficients": 277
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 2210,
+        "relativeTrueResidual": 7.834302499510278e-14,
+        "setupSecondsIncludingRead": 0.032040375,
+        "totalSeconds": 0.062933291,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.23435642704491905,
+          1.8360191421743074e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 9.627542914998285e-14,
+        "pressureRms": 2.148997544194867e-12,
+        "maximum": 2.3260837700433967e-12
+      }
+    },
+    {
+      "case": "sheared4-newton",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 31,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 32,
+        "velocityILUApplications": 32,
+        "pressureInverseApplications": 32,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 2.0382946824499983,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 2.876383985455789e-14,
+        "setupSecondsIncludingRead": 0.00083525,
+        "totalSeconds": 0.001441042,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.72684751176039,
+          2.0906925426959742e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 26,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 27,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 2048,
+        "velocityFactorGraphCoefficients": 2528,
+        "velocityILUApplications": 27,
+        "pressureInverseApplications": 27,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 2.0382946824499983,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 5.850345701139569e-14,
+        "setupSecondsIncludingRead": 0.004826625,
+        "totalSeconds": 0.00555675,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.72684751176039,
+          4.2523092158113894e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 8.368290475312891e-13,
+        "pressureRms": 5.787264068996153e-14,
+        "maximum": 3.594458064526407e-12
+      }
+    },
+    {
+      "case": "sheared4-newton",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 30,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 31,
+        "velocityILUApplications": 31,
+        "pressureInverseApplications": 31,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 2.0382946824499983,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [
+          {
+            "unknowns": 15,
+            "coefficients": 59
+          }
+        ],
+        "aggregationTotalCoefficients": 59,
+        "relativeTrueResidual": 3.154344925762349e-14,
+        "setupSecondsIncludingRead": 0.003729375,
+        "totalSeconds": 0.00434025,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.72684751176039,
+          2.2927277605243752e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 26,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 27,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 2048,
+        "velocityFactorGraphCoefficients": 2528,
+        "velocityILUApplications": 27,
+        "pressureInverseApplications": 27,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 2.0382946824499983,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [
+          {
+            "unknowns": 15,
+            "coefficients": 59
+          }
+        ],
+        "aggregationTotalCoefficients": 59,
+        "relativeTrueResidual": 9.654324101567378e-15,
+        "setupSecondsIncludingRead": 0.001918708,
+        "totalSeconds": 0.002835958,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.72684751176039,
+          7.017221450952611e-15
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 4.2239833549077486e-13,
+        "pressureRms": 1.0766044254928036e-14,
+        "maximum": 1.5640821970919205e-12
+      }
+    },
+    {
+      "case": "sheared4-stalled",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 67,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 69,
+        "velocityILUApplications": 69,
+        "pressureInverseApplications": 69,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 1.354760689001923,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 7.50088617766062e-14,
+        "setupSecondsIncludingRead": 0.002048959,
+        "totalSeconds": 0.003717167,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.8997604406770059,
+          3.555990369369693e-13,
+          6.749000652679981e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 62,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 64,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 2048,
+        "velocityFactorGraphCoefficients": 2528,
+        "velocityILUApplications": 64,
+        "pressureInverseApplications": 64,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 1.354760689001923,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 9.127018448484612e-14,
+        "setupSecondsIncludingRead": 0.00424475,
+        "totalSeconds": 0.006394833,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.8997604406770059,
+          7.396662568942019e-13,
+          8.212130141275677e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 4.2223474122623924e-10,
+        "pressureRms": 1.5950305227361413e-10,
+        "maximum": 1.9712160792551003e-09
+      }
+    },
+    {
+      "case": "sheared4-stalled",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 67,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 69,
+        "velocityILUApplications": 69,
+        "pressureInverseApplications": 69,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 1.354760689001923,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [
+          {
+            "unknowns": 15,
+            "coefficients": 59
+          }
+        ],
+        "aggregationTotalCoefficients": 59,
+        "relativeTrueResidual": 8.320558807678111e-14,
+        "setupSecondsIncludingRead": 0.00078925,
+        "totalSeconds": 0.002442625,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.8997604406770059,
+          4.064860025066583e-13,
+          7.4865096594754e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 111,
+        "pressureUnknowns": 15,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 63,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 65,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 2048,
+        "velocityFactorGraphCoefficients": 2528,
+        "velocityILUApplications": 65,
+        "pressureInverseApplications": 65,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 1.354760689001923,
+        "pressureFineCoefficients": 59,
+        "aggregationLevels": [
+          {
+            "unknowns": 15,
+            "coefficients": 59
+          }
+        ],
+        "aggregationTotalCoefficients": 59,
+        "relativeTrueResidual": 9.398634195045772e-14,
+        "setupSecondsIncludingRead": 0.001615833,
+        "totalSeconds": 0.003797833,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.8997604406770059,
+          4.93573184611204e-13,
+          8.45651924509636e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.0684110400329666e-10,
+        "pressureRms": 4.041908665749774e-11,
+        "maximum": 5.015863280277699e-10
+      }
+    },
+    {
+      "case": "sheared8-final",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 115,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 117,
+        "velocityILUApplications": 117,
+        "pressureInverseApplications": 117,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.4200279093341003,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 7.155995416104762e-14,
+        "setupSecondsIncludingRead": 0.003559041,
+        "totalSeconds": 0.016753541,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.6347946812573863,
+          4.4655799511709496e-08,
+          4.5425878292455393e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 116,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 118,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11136,
+        "velocityFactorGraphCoefficients": 14048,
+        "velocityILUApplications": 118,
+        "pressureInverseApplications": 118,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.4200279093341003,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 5.520776810230167e-14,
+        "setupSecondsIncludingRead": 0.012923084,
+        "totalSeconds": 0.044523667,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.6347946812573863,
+          3.4259531111767794e-08,
+          3.5045597555432284e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 2.242402799258447e-13,
+        "pressureRms": 2.1875040284504183e-13,
+        "maximum": 9.127143485443412e-13
+      }
+    },
+    {
+      "case": "sheared8-final",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 94,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 96,
+        "velocityILUApplications": 96,
+        "pressureInverseApplications": 96,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.4200279093341003,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [
+          {
+            "unknowns": 63,
+            "coefficients": 283
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 416,
+        "relativeTrueResidual": 7.245378603192315e-14,
+        "setupSecondsIncludingRead": 0.005969542,
+        "totalSeconds": 0.016762833,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.6347946812573863,
+          2.745020180745481e-10,
+          4.5993278010025524e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 2,
+        "outerMatrixProducts": 100,
+        "trueResidualEvaluations": 2,
+        "preconditionerApplications": 102,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11136,
+        "velocityFactorGraphCoefficients": 14048,
+        "velocityILUApplications": 102,
+        "pressureInverseApplications": 102,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.4200279093341003,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [
+          {
+            "unknowns": 63,
+            "coefficients": 283
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 416,
+        "relativeTrueResidual": 7.173818396114378e-14,
+        "setupSecondsIncludingRead": 0.013888834,
+        "totalSeconds": 0.037151834,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.6347946812573863,
+          6.125887159488065e-10,
+          4.553901762159801e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.535580691561118e-13,
+        "pressureRms": 1.5185841639772522e-13,
+        "maximum": 5.224501387068869e-13
+      }
+    },
+    {
+      "case": "sheared8-pt01",
+      "pressure": "ic0",
+      "ilu0": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 49,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 50,
+        "velocityILUApplications": 50,
+        "pressureInverseApplications": 50,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.32094783449982955,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 3.5361100514244835e-14,
+        "setupSecondsIncludingRead": 0.006822542,
+        "totalSeconds": 0.011751584,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.443272236979921,
+          1.5674594127021143e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "ic0",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 42,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 43,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11136,
+        "velocityFactorGraphCoefficients": 14048,
+        "velocityILUApplications": 43,
+        "pressureInverseApplications": 43,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.32094783449982955,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [],
+        "aggregationTotalCoefficients": 0,
+        "relativeTrueResidual": 4.0892772625135566e-14,
+        "setupSecondsIncludingRead": 0.016794834,
+        "totalSeconds": 0.02455625,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.443272236979921,
+          1.812663079785512e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.2919731571418297e-13,
+        "pressureRms": 1.780712717141613e-13,
+        "maximum": 6.510902927914231e-13
+      }
+    },
+    {
+      "case": "sheared8-pt01",
+      "pressure": "aggregation",
+      "ilu0": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 41,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 42,
+        "velocityILUApplications": 42,
+        "pressureInverseApplications": 42,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.32094783449982955,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [
+          {
+            "unknowns": 63,
+            "coefficients": 283
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 416,
+        "relativeTrueResidual": 4.0715686308972775e-14,
+        "setupSecondsIncludingRead": 0.003494541,
+        "totalSeconds": 0.008100708,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.443272236979921,
+          1.8048133350351106e-14
+        ]
+      },
+      "ilu1": {
+        "pressureInverse": "aggregation",
+        "converged": true,
+        "unknowns": 511,
+        "pressureUnknowns": 63,
+        "target": 1e-13,
+        "maximumRestarts": 50,
+        "krylovDirections": 60,
+        "restarts": 1,
+        "outerMatrixProducts": 33,
+        "trueResidualEvaluations": 1,
+        "preconditionerApplications": 34,
+        "velocityInverse": "ilu1",
+        "velocityOriginalGraphCoefficients": 11136,
+        "velocityFactorGraphCoefficients": 14048,
+        "velocityILUApplications": 34,
+        "pressureInverseApplications": 34,
+        "pressureSymmetryError": 0,
+        "pressurePositiveOffDiagonalCount": 0,
+        "pressurePositiveOffDiagonalMaximum": 0,
+        "pressureCoefficientMaximum": 0.32094783449982955,
+        "pressureFineCoefficients": 283,
+        "aggregationLevels": [
+          {
+            "unknowns": 63,
+            "coefficients": 283
+          },
+          {
+            "unknowns": 31,
+            "coefficients": 133
+          }
+        ],
+        "aggregationTotalCoefficients": 416,
+        "relativeTrueResidual": 9.303224163393525e-14,
+        "setupSecondsIncludingRead": 0.011198583,
+        "totalSeconds": 0.017114833,
+        "compensatedTrueResidual": true,
+        "trueResidualHistory": [
+          0.443272236979921,
+          4.123860986033102e-14
+        ]
+      },
+      "exitCode": 0,
+      "retainedCoefficientDifference": {
+        "velocityRms": 1.8159551695372312e-13,
+        "pressureRms": 3.276102954458849e-14,
+        "maximum": 9.627854069549358e-13
+      }
+    }
+  ],
+  "fullFlowControls": {
+    "equation": "NavierStokes",
+    "initialGuess": "zero",
+    "pseudoStepInitial": 0.1,
+    "maximumIterations": 40,
+    "maximumLinearRestarts": 50,
+    "krylovDirections": 60,
+    "order": "ILU0 / ILU1 / ILU1 / ILU0, serial; no concurrent test/build in these timings",
+    "cases": {
+      "outlet16": "square 16, manufactured outlet-poiseuille, nu=.1, zero pseudo-traction outlet, Schur/IC0",
+      "sheared8": "sheared 8, noslip-sheared, nu=.01, closed velocity boundary, corrected viscous pressure mass",
+      "cylinder64": "original 64-cell true cut-cell, nu=.1, static embedded wall, inlet (1,0), normal-velocity top/bottom and zero pseudo-traction right, Schur/IC0"
+    },
+    "comparisonCount": 12,
+    "driverLimit": "Research cylinder adapter does not enable production CLI rejectBackflow or per-step checkpoint export; no whole CLI-policy cost claim."
+  },
+  "fullFlowResults": [
+    {
+      "case": "outlet16",
+      "runs": [
+        {
+          "index": 0,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "square",
+            "16",
+            "outlet-poiseuille",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-0-ilu0",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 256,
+          "faces": 544,
+          "converged": true,
+          "iterations": 6,
+          "matrixProducts": 531,
+          "linearRestarts": 11,
+          "apiSecondsIncludingReadAndStateWrite": 2.742944791,
+          "processSeconds": 3.5747556669521146,
+          "lastOriginalMetrics": {
+            "iteration": 5,
+            "restarts": 2,
+            "products": 96,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.54604293891346e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.1441516057384433e-13,
+            "faceMomentum": 2.999822612537173e-13,
+            "divergence": 2.6775668099415607e-12,
+            "residualNorm": 1.7419837262831577e-13,
+            "stateChange": 2.0095036745715333e-14,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 1,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "square",
+            "16",
+            "outlet-poiseuille",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-1-ilu1",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 256,
+          "faces": 544,
+          "converged": true,
+          "iterations": 6,
+          "matrixProducts": 384,
+          "linearRestarts": 11,
+          "apiSecondsIncludingReadAndStateWrite": 2.812755916,
+          "processSeconds": 2.8258990000467747,
+          "lastOriginalMetrics": {
+            "iteration": 5,
+            "restarts": 2,
+            "products": 68,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.336241486627149e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.481659405224491e-13,
+            "faceMomentum": 3.141931159689193e-13,
+            "divergence": 1.3950442349258528e-12,
+            "residualNorm": 1.522114311638087e-13,
+            "stateChange": 1.5765166949677223e-14,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 2,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "square",
+            "16",
+            "outlet-poiseuille",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-2-ilu1",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 256,
+          "faces": 544,
+          "converged": true,
+          "iterations": 6,
+          "matrixProducts": 384,
+          "linearRestarts": 11,
+          "apiSecondsIncludingReadAndStateWrite": 2.683302666,
+          "processSeconds": 2.699356750003062,
+          "lastOriginalMetrics": {
+            "iteration": 5,
+            "restarts": 2,
+            "products": 68,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.336241486627149e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.481659405224491e-13,
+            "faceMomentum": 3.141931159689193e-13,
+            "divergence": 1.3950442349258528e-12,
+            "residualNorm": 1.522114311638087e-13,
+            "stateChange": 1.5765166949677223e-14,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 3,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "square",
+            "16",
+            "outlet-poiseuille",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-3-ilu0",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 256,
+          "faces": 544,
+          "converged": true,
+          "iterations": 6,
+          "matrixProducts": 531,
+          "linearRestarts": 11,
+          "apiSecondsIncludingReadAndStateWrite": 2.738487875,
+          "processSeconds": 2.7507176250219345,
+          "lastOriginalMetrics": {
+            "iteration": 5,
+            "restarts": 2,
+            "products": 96,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.54604293891346e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.1441516057384433e-13,
+            "faceMomentum": 2.999822612537173e-13,
+            "divergence": 2.6775668099415607e-12,
+            "residualNorm": 1.7419837262831577e-13,
+            "stateChange": 2.0095036745715333e-14,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        }
+      ],
+      "fieldComparisons": [
+        {
+          "index": 1,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "square",
+            "16",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-1-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 256,
+            "velocityP1Rms": 5.876934043655371e-13,
+            "pressureP1RmsAbsolute": 9.337187166659662e-13,
+            "pressureP1RmsAfterGlobalGauge": 6.186933828998811e-13,
+            "pressureMeanDifference": 6.993204843333528e-13,
+            "faceVelocityRms": 5.824329654119106e-13,
+            "faceVelocityMaximum": 1.658937818056748e-12,
+            "stateCoefficientMaximum": 1.8065549056700547e-12
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 2,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "square",
+            "16",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-2-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 256,
+            "velocityP1Rms": 5.876934043655371e-13,
+            "pressureP1RmsAbsolute": 9.337187166659662e-13,
+            "pressureP1RmsAfterGlobalGauge": 6.186933828998811e-13,
+            "pressureMeanDifference": 6.993204843333528e-13,
+            "faceVelocityRms": 5.824329654119106e-13,
+            "faceVelocityMaximum": 1.658937818056748e-12,
+            "stateCoefficientMaximum": 1.8065549056700547e-12
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 3,
+          "velocity": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "square",
+            "16",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/outlet16-full-3-ilu0.accepted.state"
+          ],
+          "fields": {
+            "cells": 256,
+            "velocityP1Rms": 0,
+            "pressureP1RmsAbsolute": 0,
+            "pressureP1RmsAfterGlobalGauge": 0,
+            "pressureMeanDifference": 0,
+            "faceVelocityRms": 0,
+            "faceVelocityMaximum": 0,
+            "stateCoefficientMaximum": 0
+          },
+          "byteIdenticalToReference": true
+        }
+      ],
+      "ilu1RepeatByteIdentical": true
+    },
+    {
+      "case": "sheared8",
+      "runs": [
+        {
+          "index": 0,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "sheared",
+            "8",
+            "noslip-sheared",
+            ".01",
+            "ns",
+            "closed",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-0-ilu0",
+            ".1",
+            "40",
+            "mass",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 64,
+          "faces": 144,
+          "converged": true,
+          "iterations": 11,
+          "matrixProducts": 4880,
+          "linearRestarts": 87,
+          "apiSecondsIncludingReadAndStateWrite": 1.867246792,
+          "processSeconds": 1.8790947920060717,
+          "lastOriginalMetrics": {
+            "iteration": 10,
+            "restarts": 13,
+            "products": 750,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.651757685117566e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 1.0880185641326534e-14,
+            "faceMomentum": 7.283063041541027e-14,
+            "divergence": 1.0071534486308476e-12,
+            "residualNorm": 6.130486597022611e-14,
+            "stateChange": 1.78260739502889e-10,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 1,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "sheared",
+            "8",
+            "noslip-sheared",
+            ".01",
+            "ns",
+            "closed",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-1-ilu1",
+            ".1",
+            "40",
+            "mass",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 64,
+          "faces": 144,
+          "converged": true,
+          "iterations": 11,
+          "matrixProducts": 4502,
+          "linearRestarts": 79,
+          "apiSecondsIncludingReadAndStateWrite": 1.87408125,
+          "processSeconds": 1.8871259999577887,
+          "lastOriginalMetrics": {
+            "iteration": 10,
+            "restarts": 12,
+            "products": 703,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.562760707015266e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 1.287858708565181e-14,
+            "faceMomentum": 4.374278717023117e-14,
+            "divergence": 8.046694136457642e-13,
+            "residualNorm": 5.435834992265073e-14,
+            "stateChange": 1.78242975934495e-10,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 2,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "sheared",
+            "8",
+            "noslip-sheared",
+            ".01",
+            "ns",
+            "closed",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-2-ilu1",
+            ".1",
+            "40",
+            "mass",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 64,
+          "faces": 144,
+          "converged": true,
+          "iterations": 11,
+          "matrixProducts": 4502,
+          "linearRestarts": 79,
+          "apiSecondsIncludingReadAndStateWrite": 1.855667334,
+          "processSeconds": 1.8681564169819467,
+          "lastOriginalMetrics": {
+            "iteration": 10,
+            "restarts": 12,
+            "products": 703,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.562760707015266e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 1.287858708565181e-14,
+            "faceMomentum": 4.374278717023117e-14,
+            "divergence": 8.046694136457642e-13,
+            "residualNorm": 5.435834992265073e-14,
+            "stateChange": 1.78242975934495e-10,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 3,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "sheared",
+            "8",
+            "noslip-sheared",
+            ".01",
+            "ns",
+            "closed",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-3-ilu0",
+            ".1",
+            "40",
+            "mass",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 64,
+          "faces": 144,
+          "converged": true,
+          "iterations": 11,
+          "matrixProducts": 4880,
+          "linearRestarts": 87,
+          "apiSecondsIncludingReadAndStateWrite": 1.683337209,
+          "processSeconds": 1.6939998340094462,
+          "lastOriginalMetrics": {
+            "iteration": 10,
+            "restarts": 13,
+            "products": 750,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.651757685117566e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 1.0880185641326534e-14,
+            "faceMomentum": 7.283063041541027e-14,
+            "divergence": 1.0071534486308476e-12,
+            "residualNorm": 6.130486597022611e-14,
+            "stateChange": 1.78260739502889e-10,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        }
+      ],
+      "fieldComparisons": [
+        {
+          "index": 1,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "sheared",
+            "8",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-1-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 1.8408303825007083e-13,
+            "pressureP1RmsAbsolute": 1.6815768480246142e-13,
+            "pressureP1RmsAfterGlobalGauge": 1.3845403676776291e-13,
+            "pressureMeanDifference": -9.54331528392258e-14,
+            "faceVelocityRms": 1.7686339990748568e-13,
+            "faceVelocityMaximum": 5.50719073003834e-13,
+            "stateCoefficientMaximum": 9.693357228002242e-13
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 2,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "sheared",
+            "8",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-2-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 1.8408303825007083e-13,
+            "pressureP1RmsAbsolute": 1.6815768480246142e-13,
+            "pressureP1RmsAfterGlobalGauge": 1.3845403676776291e-13,
+            "pressureMeanDifference": -9.54331528392258e-14,
+            "faceVelocityRms": 1.7686339990748568e-13,
+            "faceVelocityMaximum": 5.50719073003834e-13,
+            "stateCoefficientMaximum": 9.693357228002242e-13
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 3,
+          "velocity": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "sheared",
+            "8",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/sheared8-full-3-ilu0.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 0,
+            "pressureP1RmsAbsolute": 0,
+            "pressureP1RmsAfterGlobalGauge": 0,
+            "pressureMeanDifference": 0,
+            "faceVelocityRms": 0,
+            "faceVelocityMaximum": 0,
+            "stateCoefficientMaximum": 0
+          },
+          "byteIdenticalToReference": true
+        }
+      ],
+      "ilu1RepeatByteIdentical": true
+    },
+    {
+      "case": "cylinder64",
+      "runs": [
+        {
+          "index": 0,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "cylinder",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-0-ilu0",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 64,
+          "faces": 152,
+          "converged": true,
+          "iterations": 15,
+          "matrixProducts": 1209,
+          "linearRestarts": 27,
+          "apiSecondsIncludingReadAndStateWrite": 1.661056708,
+          "processSeconds": 1.672974165994674,
+          "lastOriginalMetrics": {
+            "iteration": 14,
+            "restarts": 2,
+            "products": 96,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.517075881304747e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.4310345592034505e-13,
+            "faceMomentum": 3.1958973103265673e-13,
+            "divergence": 1.0826675381038558e-11,
+            "residualNorm": 3.52227045101946e-13,
+            "stateChange": 8.482103908136196e-13,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 1,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "cylinder",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-1-ilu1",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 64,
+          "faces": 152,
+          "converged": true,
+          "iterations": 15,
+          "matrixProducts": 1116,
+          "linearRestarts": 25,
+          "apiSecondsIncludingReadAndStateWrite": 1.877179167,
+          "processSeconds": 1.9145915829576552,
+          "lastOriginalMetrics": {
+            "iteration": 14,
+            "restarts": 2,
+            "products": 90,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.187794762546554e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.581868032530621e-13,
+            "faceMomentum": 1.547206807117618e-13,
+            "divergence": 6.631791113475657e-12,
+            "residualNorm": 3.0338604874605066e-13,
+            "stateChange": 4.0545344859310717e-13,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 2,
+          "velocityInverse": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "cylinder",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-2-ilu1",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu1"
+          ],
+          "cells": 64,
+          "faces": 152,
+          "converged": true,
+          "iterations": 15,
+          "matrixProducts": 1116,
+          "linearRestarts": 25,
+          "apiSecondsIncludingReadAndStateWrite": 1.741810875,
+          "processSeconds": 1.766086040996015,
+          "lastOriginalMetrics": {
+            "iteration": 14,
+            "restarts": 2,
+            "products": 90,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 8.187794762546554e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.581868032530621e-13,
+            "faceMomentum": 1.547206807117618e-13,
+            "divergence": 6.631791113475657e-12,
+            "residualNorm": 3.0338604874605066e-13,
+            "stateChange": 4.0545344859310717e-13,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        },
+        {
+          "index": 3,
+          "velocityInverse": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/api",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "cylinder",
+            ".1",
+            "ns",
+            "pressure",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-3-ilu0",
+            ".1",
+            "40",
+            "schur",
+            "50",
+            "zero",
+            "ilu0"
+          ],
+          "cells": 64,
+          "faces": 152,
+          "converged": true,
+          "iterations": 15,
+          "matrixProducts": 1209,
+          "linearRestarts": 27,
+          "apiSecondsIncludingReadAndStateWrite": 1.60687025,
+          "processSeconds": 1.624920292000752,
+          "lastOriginalMetrics": {
+            "iteration": 14,
+            "restarts": 2,
+            "products": 96,
+            "linearInitialRelativeResidual": 1,
+            "linearRelativeResidual": 9.517075881304747e-14,
+            "originalEquationsEvaluated": true,
+            "accepted": true,
+            "cellMomentum": 3.4310345592034505e-13,
+            "faceMomentum": 3.1958973103265673e-13,
+            "divergence": 1.0826675381038558e-11,
+            "residualNorm": 3.52227045101946e-13,
+            "stateChange": 8.482103908136196e-13,
+            "trials": 1,
+            "alpha": 1,
+            "pseudoStep": 1000000
+          }
+        }
+      ],
+      "fieldComparisons": [
+        {
+          "index": 1,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-1-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 1.1941982716699095e-13,
+            "pressureP1RmsAbsolute": 3.0914136334016843e-13,
+            "pressureP1RmsAfterGlobalGauge": 1.7567078879312697e-13,
+            "pressureMeanDifference": 2.543779795749206e-13,
+            "faceVelocityRms": 1.497965451045121e-13,
+            "faceVelocityMaximum": 8.014813478674383e-13,
+            "stateCoefficientMaximum": 2.1598833832570108e-12
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 2,
+          "velocity": "ilu1",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-2-ilu1.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 1.1941982716699095e-13,
+            "pressureP1RmsAbsolute": 3.0914136334016843e-13,
+            "pressureP1RmsAfterGlobalGauge": 1.7567078879312697e-13,
+            "pressureMeanDifference": 2.543779795749206e-13,
+            "faceVelocityRms": 1.497965451045121e-13,
+            "faceVelocityMaximum": 8.014813478674383e-13,
+            "stateCoefficientMaximum": 2.1598833832570108e-12
+          },
+          "byteIdenticalToReference": false
+        },
+        {
+          "index": 3,
+          "velocity": "ilu0",
+          "argv": [
+            "/tmp/cartmesh-velocity-fill/compare",
+            "compare",
+            "/tmp/cartmesh-velocity-fill/cylinder64.solver.cm2d",
+            "0",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-0-ilu0.accepted.state",
+            "/tmp/cartmesh-velocity-fill/cylinder64-full-3-ilu0.accepted.state"
+          ],
+          "fields": {
+            "cells": 64,
+            "velocityP1Rms": 0,
+            "pressureP1RmsAbsolute": 0,
+            "pressureP1RmsAfterGlobalGauge": 0,
+            "pressureMeanDifference": 0,
+            "faceVelocityRms": 0,
+            "faceVelocityMaximum": 0,
+            "stateCoefficientMaximum": 0
+          },
+          "byteIdenticalToReference": true
+        }
+      ],
+      "ilu1RepeatByteIdentical": true
+    }
+  ],
+  "validation": {
+    "researchCompiler": "/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter",
+    "ctestRegex": "^cartmesh2d_compatible_flow($|_)",
+    "ctestPassed": 6,
+    "ctestSeconds": 14.38,
+    "analyticVelocityMaximumNormalized": 1.2235001405164534e-13,
+    "analyticPressureMaximumNormalized": 2.3026025530725747e-13,
+    "analyticExistingRegressionAllowance": 1e-07,
+    "allowanceScope": "existing polynomial regression in U,L units; no new physical threshold",
+    "algebraControl": "Nonsymmetric 3-row star becomes an exact solve with one fill level; 4-row graph rejects level-2 propagation; 256*epsilon*(1+rhs norm) is only this known-coefficient roundoff control.",
+    "invalidEnumRejected": true,
+    "defaultFieldsByteIdenticalToPriorCommit": {
+      "outlet16": true,
+      "cylinder64": true
+    },
+    "buildWarnings": "9 inherited conversion/shadow warnings in unchanged FlowAggregation2D.hpp; no product warning suppression added",
+    "notRun": [
+      "original 4716/17260 cloud grid",
+      "curve/geometry/domain accuracy refinement",
+      "complete CTest",
+      "frontend",
+      "actual App",
+      "Linux/Windows"
+    ]
+  },
+  "conclusions": {
+    "defaultAdopted": false,
+    "frozen": "16 product counts decrease, 2 increase; all 18 reach unchanged true residual target. Converged sheared state worsens 115->116 with IC0 and 94->100 with aggregation.",
+    "factorStorage": "factor coefficient count increases by about 23-29%; this is not total process memory",
+    "fullFlow": "same 6/11/15 outer steps; total products 531->384, 4880->4502, 1209->1116",
+    "completeCost": "No consistent wall-clock improvement. Cylinder ILU1 is slower in both sequential observations. Do not use iteration counts as a speedup claim.",
+    "fields": "Max full-flow P1 velocity RMS 5.877e-13 m/s, pressure RMS <=9.338e-13 m2/s2 (absolute for outlets, gauge reported separately for closed); no physical accuracy qualification.",
+    "next": "At most a discriminating matched-budget original-cloud-system comparison, including symbolic/factor cost and storage. Do not sweep more fill levels based on these small controls. If inadequate, pursue the global coupled bottleneck rather than increasing fill by habit.",
+    "matureGoalComplete": false
+  },
+  "executionNotes": [
+    "An initial test compilation missed local namespace qualifiers; fixed before all 6 relevant tests passed.",
+    "Python only launches, serializes, hashes and compares stored coefficients; no independent PDE chain."
+  ],
+  "sourceSha256": {
+    "include/cartmesh2d/fv/CompatibleIncompressible2D.hpp": "bc1df54273844344a2e36606320ae2d20b1974bfbb2fba4682d7c3a34b29feee",
+    "include/cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp": "531db898f31f3033bae29f26aa8662bd3078c523d4a3996ac5bd209b1f293777",
+    "src/fv/CompatibleIncompressible2D.cpp": "29c2a8d2da322bdca66ca1cc4882418d59fedfcc4d4534f53c366806900c8459",
+    "tests/compatible_flow_test.cpp": "c66ef0effafb8b9e16652548aa9a122173363e6eb32fee59129040fbe418c8b2",
+    "artifacts/current/native-laminar-velocity-fill.cpp": "fac15431887396b30f105b9e510200b4a04a96519f6f86dab62dc790d8ab1781",
+    "artifacts/current/native-laminar-compatible-solver.cpp": "234f9a536b4a30ba233f39b601ff1bd2c81180466830dcfc577607333c17c0b3",
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "61080acf8e4da616845587cdd400ae8b1c48be51fa956f0f247a938eb3ea65c4"
+  },
+  "rawEvidenceStatus": "Verified local lossless archive plus existing verified input/baseline archives; no durable cloud copy confirmed.",
+  "archive": {
+    "path": "outputs/laminar-stability/velocity-fill/native-compatible-velocity-fill.tar.gz",
+    "bytes": 1007648,
+    "sha256": "fa0542f0b878abb9dfd87405d87da35f67a8ac59c283e3fcc6b0c021a8fe4977",
+    "files": 169,
+    "uncompressedBytes": 2666453,
+    "readback": "all MANIFEST.json bytes and SHA256 verified",
+    "inputAndBaselineDependencyCount": 73,
+    "sourceArchivesVerifiedThisRun": true,
+    "cloudDurableCopyConfirmed": false
+  }
+}

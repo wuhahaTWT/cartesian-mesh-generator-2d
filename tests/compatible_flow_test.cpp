@@ -57,8 +57,30 @@ void print(const char* name,const CompatibleFlowResult2D& r,double u=std::numeri
     std::cout<<std::setprecision(17)<<"{\"case\":\""<<name<<"\",\"converged\":"<<(r.converged()?"true":"false")<<",\"iterations\":"<<r.iterations.size()<<",\"velocityMax\":"<<number(u)<<",\"pressureMax\":"<<number(p)<<",\"originalEquationsEvaluated\":"<<(!r.iterations.empty()&&r.iterations.back().metrics?"true":"false")<<",\"cellMomentum\":"<<m.cellMomentum<<",\"faceMomentum\":"<<m.faceMomentum<<",\"divergence\":"<<m.divergence<<",\"stateChange\":"<<m.stateChange<<",\"reason\":\""<<r.reason<<"\"}\n";
 }
 bool same(const CompatibleFlowState2D& a,const CompatibleFlowState2D& b){return a.cells==b.cells&&a.faces==b.faces;}
+void oneLevelFillControl() {
+    using detail::SparsePattern2D;using detail::SparseSystem2D;
+    using detail::linearNorm;using detail::linearEnsure;
+    using cartmesh2d::fv::detail::compatible::linear::oneLevelFillConnections;
+    // Nonsymmetric three-row star becomes an exact LU with one fill level.
+    // This detects accidental symmetrization as well as missing numeric fill.
+    const detail::compatible::linear::Matrix a(3,{{0,0,4},{1,1,6},{2,2,5},{0,1,-1},{1,0,-3},{0,2,-2},{2,0,-1}});
+    const SparsePattern2D pattern(3,oneLevelFillConnections(a,3));SparseSystem2D system(pattern);
+    for(std::size_t i=0;i<a.n;++i)for(auto j=a.rows[i];j<a.rows[i+1];++j)
+        if(a.columns[j]==i)system.diag[i]=a.values[j];else system.off[pattern.slot(i,a.columns[j])]=a.values[j];
+    system.factorILU0();const Vec exact{.5,-1,.75},rhs=a.apply(exact);Vec answer(3);
+    system.preconditionILU0(rhs,answer);
+    linearEnsure(linearNorm(a.residual(rhs,answer))<=256*std::numeric_limits<double>::epsilon()*(1+linearNorm(rhs)),
+        "Native one-level ILU failed known nonsymmetric inverse");
+    // A generated (1,2) edge must not then create level-2 edge (2,3).
+    const detail::compatible::linear::Matrix chain(4,{{0,1,1},{0,2,1},{1,3,1}});
+    const auto graph=oneLevelFillConnections(chain,4);
+    const std::vector<std::pair<std::size_t,std::size_t>> expected{{0,1},{0,2},{1,2},{1,3}};
+    linearEnsure(graph==expected,"ILU1 symbolic fill propagated a higher level");
+}
+
 }
 int main()try {
+    oneLevelFillControl();
     // The ordinary product rounds 1e16+1-1e16 before b-Ax.  The strict
     // residual path must retain the unit term without changing K, b or x.
     const detail::compatible::linear::Matrix cancellation(3,{{0,0,1e16},{0,1,1},{0,2,-1e16}});
@@ -89,6 +111,15 @@ int main()try {
     const auto [au,ap]=errors(aggregationMesh,*aggregated.lastAccepted,false,true);
     print("aggregation-schur-polynomial",aggregated,au,ap);
     check(au<1e-7&&ap<1e-7,"Aggregation Schur changed the analytic Stokes field");
+    auto filledControls=aggregationControls;filledControls.velocityInverse=CompatibleVelocityInverse2D::ILU1;
+    const auto filled=solveCompatibleIncompressible2D(aggregationMesh,filledControls);
+    check(filled.converged()&&filled.lastAccepted,"ILU1 velocity global solve failed");
+    const auto [fu,fp]=errors(aggregationMesh,*filled.lastAccepted,false,true);
+    print("ilu1-velocity-polynomial",filled,fu,fp);
+    check(fu<1e-7&&fp<1e-7,"ILU1 velocity changed the analytic Stokes field");
+    auto invalidVelocity=filledControls;invalidVelocity.velocityInverse=static_cast<CompatibleVelocityInverse2D>(99);
+    bool velocityRejected=false;try{(void)solveCompatibleIncompressible2D(aggregationMesh,invalidVelocity);}catch(const std::invalid_argument&){velocityRejected=true;}
+    check(velocityRejected,"Unknown compatible velocity inverse accepted");
     auto closedAggregation=control(boundedMesh,false,false);closedAggregation.pressureInverse=CompatiblePressureInverse2D::DiagonalSchurAggregation;
     bool closedRejected=false;try{(void)solveCompatibleIncompressible2D(boundedMesh,closedAggregation);}catch(const std::invalid_argument&){closedRejected=true;}
     check(closedRejected,"Aggregation silently expanded the API pressure gauge scope");

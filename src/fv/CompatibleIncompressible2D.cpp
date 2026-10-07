@@ -34,6 +34,7 @@ void validate(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::
     require(c.globalization==CompatibleGlobalization2D::Backtracking||c.globalization==CompatibleGlobalization2D::PseudoTime,"Invalid compatible globalization");
     require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur||
         c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation,"Invalid compatible pressure inverse");
+    require(c.velocityInverse==CompatibleVelocityInverse2D::ILU0||c.velocityInverse==CompatibleVelocityInverse2D::ILU1,"Invalid compatible velocity inverse");
     require(c.linearInitialGuess==CompatibleLinearInitialGuess2D::Zero||c.linearInitialGuess==CompatibleLinearInitialGuess2D::CurrentState,"Invalid compatible linear initial guess");
     require(c.linearTolerance<=.01&&c.maximumIterations>0&&c.maximumLinearRestarts>0&&c.krylovDirections>0&&c.maximumBacktracks>0&&c.maximumBacktracks<=static_cast<std::size_t>(std::numeric_limits<double>::max_exponent-std::numeric_limits<double>::min_exponent),"Invalid compatible iteration budget");
     require(c.quadratureOrder>=4&&c.quadratureOrder<=12,"Compatible quadrature must be 4..12");
@@ -300,7 +301,7 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
         pressure=p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation?"outlet-schur-aggregation":
             p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet";
     }
-    sparse::Block block(k,p.areas,"ilu0",pressure,p.nu,0,pk);
+    sparse::Block block(k,p.areas,p.control.velocityInverse==CompatibleVelocityInverse2D::ILU1?"ilu1":"ilu0",pressure,p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
         // This is a strict linear solve, not an inexact Newton direction.
         // Keep the available subspace until the original relative target or
