@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp"
 #include "cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp"
 #include "fixtures/PolygonMesh2D.hpp"
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -13,9 +14,10 @@ using namespace cartmesh2d::fv;
 using namespace cartmesh2d::fv::detail::compatible;
 namespace {
 void check(bool x,const char* message){if(!x)throw std::runtime_error(message);}
-FvMesh2D grid(int n,double shear=0,double L=1) {
+FvMesh2D grid(int n,double shear=0,double L=1,bool reverse=false) {
     std::vector<Polygon2D> cells;auto p=[&](int i,int j){return Point2D{L*(double(i)/n+shear*double(j)/n),L*double(j)/n};};
     for(int j=0;j<n;++j)for(int i=0;i<n;++i)cells.push_back({{p(i,j),p(i+1,j),p(i+1,j+1),p(i,j+1)}});
+    if(reverse)std::reverse(cells.begin(),cells.end());
     return makeFvMesh2D(cartmesh2d::test::fromPolygons(cells));
 }
 FvMesh2D rotatedGrid(int n,double angle) {
@@ -120,10 +122,32 @@ int main()try {
     auto invalidVelocity=filledControls;invalidVelocity.velocityInverse=static_cast<CompatibleVelocityInverse2D>(99);
     bool velocityRejected=false;try{(void)solveCompatibleIncompressible2D(aggregationMesh,invalidVelocity);}catch(const std::invalid_argument&){velocityRejected=true;}
     check(velocityRejected,"Unknown compatible velocity inverse accepted");
-    auto closedAggregation=control(boundedMesh,false,false);closedAggregation.pressureInverse=CompatiblePressureInverse2D::DiagonalSchurAggregation;
-    bool closedRejected=false;try{(void)solveCompatibleIncompressible2D(boundedMesh,closedAggregation);}catch(const std::invalid_argument&){closedRejected=true;}
-    check(closedRejected,"Aggregation silently expanded the API pressure gauge scope");
-    const auto polygonPatch=[&](const std::vector<Polygon2D>& polygons){const auto mesh=makeFvMesh2D(cartmesh2d::test::fromPolygons(polygons));const auto r=solveCompatibleIncompressible2D(mesh,control(mesh,false,false));check(r.converged(),"Actual polygon global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,false);print("actual-polygon-patch",r,u,p);check(u<1e-7&&p<1e-7,"Actual polygon polynomial consistency lost");};
+    // More than 32 retained pressures exercises an actual coarse level.
+    // Reversing cell order changes which cell fixes the pressure constant.
+    for(bool reverse:{false,true})for(auto inverse:{CompatiblePressureInverse2D::DiagonalSchur,CompatiblePressureInverse2D::DiagonalSchurAggregation}) {
+        const auto closedMesh=grid(8,.3,1,reverse);auto closed=control(closedMesh,false,false);closed.pressureInverse=inverse;
+        const auto result=solveCompatibleIncompressible2D(closedMesh,closed);
+        check(result.converged()&&result.lastAccepted,"Closed Schur analytic solve failed");
+        const auto [cu,cp]=errors(closedMesh,*result.lastAccepted,false,false);print("closed-schur-quadratic",result,cu,cp);
+        check(cu<1e-7&&cp<1e-7,"Closed Schur changed polynomial field or pressure gauge");
+        check(result.lastAccepted->cells.back()[6]==0,"Closed Schur removed the prescribed pressure gauge");
+    }
+    // One closed cell with free tangential traces has a nonempty velocity
+    // system but zero retained pressures. No auxiliary pressure solve is needed.
+    const auto single=grid(1);
+    for(auto inverse:{CompatiblePressureInverse2D::DiagonalSchur,CompatiblePressureInverse2D::DiagonalSchurAggregation}) {
+        CompatibleFlowControls2D c;c.equation=CompatibleEquation2D::Stokes;c.globalization=CompatibleGlobalization2D::Backtracking;c.pressureInverse=inverse;
+        for(std::size_t f=0;f<single.faces.size();++f){CompatibleBoundary2D b;b.face=f;const auto S=single.faces[f].areaVector;
+            if(S.x<0)b.value=[](Point2D){return Vector2D{1,0};};
+            else {b.kind=CompatibleBoundaryKind2D::NormalVelocity;const double un=S.x/std::hypot(S.x,S.y);b.normalVelocity=[=](Point2D){return un;};}c.boundaries.push_back(b);}
+        const auto r=solveCompatibleIncompressible2D(single,c);check(r.converged()&&r.lastAccepted,"Empty Schur pressure block failed");
+        const auto& v=r.lastAccepted->cells[0];double error=std::abs(v[0]-1);for(std::size_t j=1;j<v.size();++j)error=std::max(error,std::abs(v[j]));
+        print("closed-single-mixed",r,error,0);check(error<1e-7,"Empty pressure block altered uniform solution");
+    }
+    const auto polygonPatch=[&](const std::vector<Polygon2D>& polygons){const auto mesh=makeFvMesh2D(cartmesh2d::test::fromPolygons(polygons));
+        for(auto inverse:{CompatiblePressureInverse2D::ViscousMass,CompatiblePressureInverse2D::DiagonalSchur,CompatiblePressureInverse2D::DiagonalSchurAggregation}) {
+            auto c=control(mesh,false,false);c.pressureInverse=inverse;const auto r=solveCompatibleIncompressible2D(mesh,c);check(r.converged()&&r.lastAccepted,"Actual polygon global solve failed");
+            const auto [u,p]=errors(mesh,*r.lastAccepted,false,false);print("actual-polygon-patch",r,u,p);check(u<1e-7&&p<1e-7,"Actual polygon polynomial consistency lost");}};
     polygonPatch({{{{0,0},{1,0},{.75,1},{0,1}}}});
     polygonPatch({{{{0,0},{1,0},{1,1},{1,2},{0,2}}},{{{1,0},{2,0},{2,1},{1,1}}},{{{1,1},{2,1},{2,2},{1,2}}}});
     auto mesh=grid(3,.3);auto c=control(mesh,true,false);const auto nonlinear=solveCompatibleIncompressible2D(mesh,c);print("nonlinear-rotation",nonlinear);check(nonlinear.converged(),"Nonlinear rotation failed");auto [u,p]=errors(mesh,*nonlinear.lastAccepted,true,false);print("nonlinear-errors",nonlinear,u,p);check(u<1e-7&&p<1e-7,"Nonlinear analytic field failed");
@@ -131,6 +155,9 @@ int main()try {
     check(warm.iterations.size()>1&&warm.iterations[0].linearInitialRelativeResidual==1&&warm.iterations[1].linearInitialRelativeResidual<1,"Accepted-state initial residual was not applied after the first step");
     auto [wu,wp]=errors(mesh,*warm.lastAccepted,true,false);check(wu<1e-7&&wp<1e-7,"Accepted-state linear initial guess changed analytic accuracy");
     auto scaledMesh=grid(3,.3,2.5);auto scaledControls=control(scaledMesh,true,false,3,2.5);const auto scaled=solveCompatibleIncompressible2D(scaledMesh,scaledControls);check(scaled.converged(),"Physical scaling solve failed");auto [su,sp]=errors(scaledMesh,*scaled.lastAccepted,true,false,3,2.5);print("scaled-nonlinear",scaled,su,sp);check(su<1e-7&&sp<1e-7,"Physical unit conversion failed");
+    scaledControls.pressureInverse=CompatiblePressureInverse2D::DiagonalSchurAggregation;
+    const auto scaledSchur=solveCompatibleIncompressible2D(scaledMesh,scaledControls);check(scaledSchur.converged()&&scaledSchur.lastAccepted,"Closed Schur unit-scaled NS failed");
+    const auto [ssu,ssp]=errors(scaledMesh,*scaledSchur.lastAccepted,true,false,3,2.5);print("scaled-schur-nonlinear",scaledSchur,ssu,ssp);check(ssu<1e-7&&ssp<1e-7,"Closed Schur physical unit conversion failed");
     auto one=c;one.maximumIterations=1;const auto budget=solveCompatibleIncompressible2D(mesh,one);print("nonlinear-budget",budget);check(budget.stop==CompatibleFlowStop2D::NonlinearBudget&&budget.lastAccepted&&budget.seed,"Iteration limit mislabeled");check(!same(*budget.seed,*budget.lastAccepted),"Seed substituted for accepted iteration");
     const auto resumed=solveCompatibleIncompressible2D(mesh,c,budget.lastAccepted);check(resumed.converged(),"Algebraic seed continuation failed");auto [ru,rp]=errors(mesh,*resumed.lastAccepted,true,false);check(ru<1e-7&&rp<1e-7,"Resumed algebraic solve differs");
     bool stop=false;auto cancelled=c;cancelled.stopRequested=[&]{return stop;};cancelled.iterationAccepted=[&](const auto&){stop=true;};const auto stopped=solveCompatibleIncompressible2D(mesh,cancelled);check(stopped.stop==CompatibleFlowStop2D::Cancelled&&stopped.lastAccepted&&same(*stopped.lastAccepted,*budget.lastAccepted),"Cancellation replaced last accepted field");print("cancelled-after-accepted",stopped);
@@ -142,6 +169,10 @@ int main()try {
     for(std::size_t f=0;f<oneCell.faces.size();++f){CompatibleBoundary2D b;b.face=f;if(oneCell.faces[f].areaVector.x>0)b.value=[](Point2D){return Vector2D{1,0};};incompatible.boundaries.push_back(b);}
     const auto massFailure=solveCompatibleIncompressible2D(oneCell,incompatible);print("incompatible-prescribed-flux",massFailure);
     check(!massFailure.converged()&&!massFailure.iterations.empty()&&massFailure.iterations.back().metrics&&massFailure.iterations.back().metrics->divergence>.5,"Pressure gauge omission hid a global continuity failure");
+    for(auto inverse:{CompatiblePressureInverse2D::DiagonalSchur,CompatiblePressureInverse2D::DiagonalSchurAggregation}) {
+        incompatible.pressureInverse=inverse;const auto failedFlux=solveCompatibleIncompressible2D(oneCell,incompatible);print("schur-incompatible-flux",failedFlux);
+        check(!failedFlux.converged()&&!failedFlux.iterations.empty()&&failedFlux.iterations.back().metrics&&failedFlux.iterations.back().metrics->divergence>.5,"Closed Schur hid continuity failure in the gauge cell");
+    }
     auto linear=c;linear.maximumLinearRestarts=1;linear.krylovDirections=1;const auto failed=solveCompatibleIncompressible2D(mesh,linear);print("linear-budget",failed);check(failed.stop==CompatibleFlowStop2D::LinearBudget&&!failed.lastAccepted,"Failed linear trial replaced initial state");
     auto bad=c;bad.acceleration=[](Point2D){return Vector2D{std::numeric_limits<double>::quiet_NaN(),0};};const auto nan=solveCompatibleIncompressible2D(mesh,bad);check(nan.stop==CompatibleFlowStop2D::NumericalFailure&&!nan.lastAccepted,"NaN accepted");
     struct Sentinel{};bad=c;bad.acceleration=[](Point2D)->Vector2D{throw Sentinel{};};bool propagated=false;try{(void)solveCompatibleIncompressible2D(mesh,bad);}catch(const Sentinel&){propagated=true;}check(propagated,"User callback exception swallowed");

@@ -185,9 +185,17 @@ try:
     assert retained['acceptedIterations'] == 0 and retained['totalAcceptedIterations'] == 1
     assert Path(str(aggregation_failed_resume) + '.checkpoint').read_bytes() == checkpoint_before
     assert Path(str(channel_budget) + '.checkpoint').read_bytes() == checkpoint_before
-    closed = run('closed-aggregation', extra=aggregation, code=1)
-    assert read(closed)['status'] == 'failed' and not read(closed)['checkpointAvailable']
-    assert 'traction pressure reference' in read(closed)['reason']
+    closed = run('closed-aggregation', extra=aggregation)
+    closed_resume = run('closed-aggregation-resume', extra=aggregation + ('--restart', str(budget) + '.checkpoint'))
+    for candidate in (closed, closed_resume):
+        exported(candidate, 'converged')
+        assert not read(candidate, '.loads.json')['absolutePressureReference']
+        assert maximum_state_difference(read(candidate, '.accepted.json'), read(cavity, '.accepted.json')) < 1e-10
+        assert read(candidate, '.accepted.json')['cells'][-1][6] == 0
+    closed_failure = run('closed-aggregation-failed-resume', extra=aggregation + ('--restart', str(budget) + '.checkpoint',
+                         '--linear-restarts', '1', '--krylov-directions', '1'), code=2)
+    assert exported(closed_failure, 'linear-budget')['acceptedIterations'] == 0
+    assert Path(str(closed_failure) + '.checkpoint').read_bytes() == Path(str(budget) + '.checkpoint').read_bytes()
 
     custom = run('custom', case='custom', extra=('--boundary', str(cavity) + '.boundaries'))
     exported(custom, 'converged')

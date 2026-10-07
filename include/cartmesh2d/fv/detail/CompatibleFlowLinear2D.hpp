@@ -157,7 +157,7 @@ struct Block {
     Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,double speed,const Matrix& pk):matrix(k),volume(area),
         nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1))),
         np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation")?0:1)),
-        corrected(pressure=="gauge"),ilu0(mode=="ilu0"||mode=="ilu1"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation"),viscosity(nu),transportSpeed(speed),
+        corrected(pressure=="gauge"),ilu0(mode=="ilu0"||mode=="ilu1"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"||pressure=="outlet-schur-aggregation"||pressure=="gauge-schur-diag"||pressure=="gauge-schur-aggregation"),viscosity(nu),transportSpeed(speed),
         pattern(nv,mode=="ilu1"?oneLevelFillConnections(pk,nv):connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
         linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
         for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
@@ -182,8 +182,11 @@ struct Block {
         }
         if(mode=="ic0")velocity.factorIC0();
         if(ilu0)velocity.factorILU0();
-        if(schurDiagonal)pressureSchur=std::make_unique<PressureSchurDiagonal>(matrix,pk,nv,
-            pressure=="outlet-schur-aggregation"?LinearPressureMethod2D::Aggregation:LinearPressureMethod2D::IC0);
+        // Closed-domain Schur uses the matrix with its final pressure already
+        // eliminated. Unlike mean-free mass, it needs no rank-one correction.
+        // A single closed cell may retain tangential velocities but no pressure.
+        if(schurDiagonal&&np)pressureSchur=std::make_unique<PressureSchurDiagonal>(matrix,pk,nv,
+            (pressure=="outlet-schur-aggregation"||pressure=="gauge-schur-aggregation")?LinearPressureMethod2D::Aggregation:LinearPressureMethod2D::IC0);
     }
     Vec apply(const Vec& r) {
         ++applications;Vec z(r.size());long double sum=0;
@@ -198,7 +201,7 @@ struct Block {
         // dimensions as viscosity in 2D. Only the approximate inverse changes.
         const double shift=corrected?static_cast<double>(sum/volume.back()):0;
         if(schurDiagonal) {
-            pressureSchur->apply(r,nv,z);
+            if(np)pressureSchur->apply(r,nv,z);
         } else for(std::size_t i=nv;i<r.size();++i) {
             const double scale=viscosity+(oseenScale?transportSpeed*std::sqrt(volume[i-nv]):0);
             z[i]=scale*(-r[i]/volume[i-nv]-shift);

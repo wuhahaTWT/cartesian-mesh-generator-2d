@@ -34,7 +34,8 @@ struct CompatibleBoundary2D {
 enum class CompatibleEquation2D { Stokes, NavierStokes };
 enum class CompatibleGlobalization2D { Backtracking, PseudoTime };
 // Aggregation is an explicit research option: one fixed native V-cycle for
-// the same diagonal-velocity Schur approximation. It does not change defaults.
+// the same diagonal-velocity Schur approximation. Closed domains retain the
+// existing final-cell pressure gauge. It does not change defaults.
 enum class CompatiblePressureInverse2D { ViscousMass, DiagonalSchur, DiagonalSchurAggregation };
 enum class CompatibleLinearInitialGuess2D { Zero, CurrentState };
 // One symbolic fill level is an explicit algebraic research option; original

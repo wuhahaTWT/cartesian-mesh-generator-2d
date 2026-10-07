@@ -1,0 +1,1063 @@
+{
+  "schema": "cartmesh2d-native-laminar-closed-schur-v1",
+  "baseCommit": "cef44f0a1b6c58c5ca09213de2fb85179e6d43a9",
+  "scope": "Enable the existing pressure Schur IC0 and fixed aggregation inverse for connected closed-domain compatible flow, retaining the original last-cell pressure gauge and complete continuity check. No default, mesh, equation, boundary, checkpoint scheme or tolerance changes.",
+  "method": {
+    "pressureCoordinates": "The original assembly already eliminates the final pressure coordinate in a closed domain. Gauge Schur builds B diag(Apicard)^-1 G on exactly those retained coordinates; it must not apply the mass inverse rank-one correction again.",
+    "emptyPressureBlock": "One closed cell with free tangential traces can have velocity unknowns but zero retained pressure unknowns. Skip the empty auxiliary pressure solve, retaining the actual velocity solve and gauge-cell continuity residual.",
+    "nativeConstraints": "No symmetrization, coefficient clipping, auxiliary iteration or fallback. Original exact-symmetry/nonpositive-off-diagonal hierarchy rules and positive pivot failures remain.",
+    "controls": "nu=1 Stokes or nu=.1/.01 NS; U=L=1. NS initial pseudo step .1, Zero linear initial guess, ILU0, 50x60 linear budget, 1e-13 true linear and 1e-9 original equation/state controls.",
+    "fieldNorms": "Native state comparator integrates all P1 cell components on the actual mesh; absolute pressure difference retains the common final-cell gauge. An additional whole-domain mean-removed norm is separately named.",
+    "roundoffAllowance": "Existing 1e-7 polynomial API allowance in U,L units and existing 1e-10 CLI coefficient allowance are unchanged; neither is a spatial or physical acceptance threshold."
+  },
+  "sourceSha256": {
+    "src/fv/CompatibleIncompressible2D.cpp": "80357f6bf424984e87ca16dcdf3b4a1bf1041d18d3964c0a650d5f61d43d3b08",
+    "include/cartmesh2d/fv/detail/CompatibleFlowLinear2D.hpp": "a2f276903abc41cab6196dcf3d6415db37ba2ffe4def8280bdc4b32953bf80c2",
+    "include/cartmesh2d/fv/CompatibleIncompressible2D.hpp": "5994c117f24ec67670671e8ec9664fc291f4e9681ee95d5846021856b608b98e",
+    "apps/CompatibleFlowCLI.cpp": "20e82b374c0afaaf4637edf044cb5ba75263a846fa5a5d101435efef3083fe7d",
+    "tests/compatible_flow_test.cpp": "bb83ccdbe21e0e9663c6d72f465c83da3c40f9fcf643d3d9993772cefeddd34e",
+    "tests/compatible_flow_cli_test.py": "f4a633651b07bcbfbd8dddfabdc673806b723175fe0ffa3cfec6c6c451d672d0"
+  },
+  "researchRuns": [
+    {
+      "label": "sheared16-stokes",
+      "method": "mass",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/baseline",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-stokes-mass",
+        "0",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 1,
+      "matrixProducts": 116,
+      "linearRestarts": 2,
+      "maximumLinearRelativeResidual": 6.83707561569169e-14,
+      "finalMetrics": {
+        "cellMomentum": 4.0321079808336435e-12,
+        "faceMomentum": 6.02629057766535e-13,
+        "divergence": 5.4201831267396035e-12,
+        "stateChange": 1.267717047338543
+      },
+      "elapsedProcessSeconds": 1.5024988329969347,
+      "solvePrepareAndStateOutputSeconds": 0.273063042,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared16-stokes",
+      "method": "schur",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-stokes-schur",
+        "0",
+        "40",
+        "schur",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 1,
+      "matrixProducts": 141,
+      "linearRestarts": 3,
+      "maximumLinearRelativeResidual": 9.685023981556464e-14,
+      "finalMetrics": {
+        "cellMomentum": 3.5960333530652723e-12,
+        "faceMomentum": 2.5859314689569146e-12,
+        "divergence": 3.728217212004771e-10,
+        "stateChange": 1.2677170473395467
+      },
+      "elapsedProcessSeconds": 0.6135031249723397,
+      "solvePrepareAndStateOutputSeconds": 0.306328375,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 2.2317835432232647e-12,
+        "pressureP1RmsAbsolute": 2.0221934483097117e-09,
+        "pressureP1RmsAfterGlobalGauge": 1.4445365620469157e-10,
+        "pressureMeanDifference": -2.0170273879141576e-09,
+        "faceVelocityRms": 2.3004405811279145e-12,
+        "faceVelocityMaximum": 1.7318749311603612e-11,
+        "stateCoefficientMaximum": 2.0817571277920166e-09
+      }
+    },
+    {
+      "label": "sheared16-stokes",
+      "method": "schur-aggregation",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-stokes-schur-aggregation",
+        "0",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 1,
+      "matrixProducts": 91,
+      "linearRestarts": 2,
+      "maximumLinearRelativeResidual": 8.759753053117429e-14,
+      "finalMetrics": {
+        "cellMomentum": 3.774781743095712e-12,
+        "faceMomentum": 7.887024366937112e-13,
+        "divergence": 4.732621708375443e-13,
+        "stateChange": 1.2677170473396002
+      },
+      "elapsedProcessSeconds": 0.2151455840212293,
+      "solvePrepareAndStateOutputSeconds": 0.2055455,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 7.343537764710719e-13,
+        "pressureP1RmsAbsolute": 6.480802292264088e-11,
+        "pressureP1RmsAfterGlobalGauge": 1.5052606780224704e-11,
+        "pressureMeanDifference": 6.303569515965934e-11,
+        "faceVelocityRms": 7.136003004859289e-13,
+        "faceVelocityMaximum": 1.55563281830459e-12,
+        "stateCoefficientMaximum": 7.989753303405678e-11
+      }
+    },
+    {
+      "label": "sheared8-ns01",
+      "method": "mass",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/baseline",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-mass",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 4880,
+      "linearRestarts": 87,
+      "maximumLinearRelativeResidual": 9.807847829113166e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0880185641326534e-14,
+        "faceMomentum": 7.283063041541027e-14,
+        "divergence": 1.0071534486308476e-12,
+        "stateChange": 1.78260739502889e-10
+      },
+      "elapsedProcessSeconds": 1.482352874998469,
+      "solvePrepareAndStateOutputSeconds": 1.472081208,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared8-ns01",
+      "method": "schur",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-schur",
+        ".1",
+        "40",
+        "schur",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 1019,
+      "linearRestarts": 19,
+      "maximumLinearRelativeResidual": 9.376785103588113e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.3267669557064322e-14,
+        "faceMomentum": 6.317169010117141e-14,
+        "divergence": 9.636581061907565e-13,
+        "stateChange": 1.781997882588371e-10
+      },
+      "elapsedProcessSeconds": 0.9631424580002204,
+      "solvePrepareAndStateOutputSeconds": 0.952666041,
+      "comparisonToMass": {
+        "cells": 64,
+        "velocityP1Rms": 4.793314224795806e-13,
+        "pressureP1RmsAbsolute": 3.983710067452374e-13,
+        "pressureP1RmsAfterGlobalGauge": 3.966241774211933e-13,
+        "pressureMeanDifference": -3.7265545751758753e-14,
+        "faceVelocityRms": 4.582870299693763e-13,
+        "faceVelocityMaximum": 1.2846339231728717e-12,
+        "stateCoefficientMaximum": 2.0060619831951954e-12
+      }
+    },
+    {
+      "label": "sheared8-ns01",
+      "method": "schur-aggregation",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-schur-aggregation",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 828,
+      "linearRestarts": 19,
+      "maximumLinearRelativeResidual": 9.763862205024011e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0744005212648716e-14,
+        "faceMomentum": 6.139533326177116e-14,
+        "divergence": 9.090970718478651e-13,
+        "stateChange": 1.7821655262650893e-10
+      },
+      "elapsedProcessSeconds": 0.9536438750219531,
+      "solvePrepareAndStateOutputSeconds": 0.944029542,
+      "comparisonToMass": {
+        "cells": 64,
+        "velocityP1Rms": 5.484306737867997e-13,
+        "pressureP1RmsAbsolute": 5.28751605369063e-13,
+        "pressureP1RmsAfterGlobalGauge": 4.65603988411431e-13,
+        "pressureMeanDifference": -2.5058169557198243e-13,
+        "faceVelocityRms": 5.230570952627531e-13,
+        "faceVelocityMaximum": 1.4168580052982705e-12,
+        "stateCoefficientMaximum": 2.467803739136798e-12
+      }
+    },
+    {
+      "label": "sheared16-ns1",
+      "method": "mass",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/baseline",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-mass",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 816,
+      "linearRestarts": 18,
+      "maximumLinearRelativeResidual": 9.683670833300485e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.404565683875262e-13,
+        "faceMomentum": 5.540012892879531e-14,
+        "divergence": 3.503122032204799e-12,
+        "stateChange": 4.478084569825569e-12
+      },
+      "elapsedProcessSeconds": 2.543292499962263,
+      "solvePrepareAndStateOutputSeconds": 2.532775458,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared16-ns1",
+      "method": "schur",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-schur",
+        ".1",
+        "40",
+        "schur",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 997,
+      "linearRestarts": 19,
+      "maximumLinearRelativeResidual": 9.980047761020625e-14,
+      "finalMetrics": {
+        "cellMomentum": 4.759526106568046e-13,
+        "faceMomentum": 5.262457136723242e-14,
+        "divergence": 1.166711755251548e-10,
+        "stateChange": 4.441114143105551e-12
+      },
+      "elapsedProcessSeconds": 3.8617908749729395,
+      "solvePrepareAndStateOutputSeconds": 3.818138416,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 6.844816847594406e-13,
+        "pressureP1RmsAbsolute": 6.371732273777054e-11,
+        "pressureP1RmsAfterGlobalGauge": 4.606048784962931e-12,
+        "pressureMeanDifference": 6.355062180230673e-11,
+        "faceVelocityRms": 6.991201676376245e-13,
+        "faceVelocityMaximum": 5.240024399859046e-12,
+        "stateCoefficientMaximum": 6.65535593615081e-11
+      }
+    },
+    {
+      "label": "sheared16-ns1",
+      "method": "schur-aggregation",
+      "matchedExecutable": false,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-schur-aggregation",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 625,
+      "linearRestarts": 14,
+      "maximumLinearRelativeResidual": 9.262386467509025e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.989160480790798e-13,
+        "faceMomentum": 1.1235457009206584e-13,
+        "divergence": 1.5592295891472492e-12,
+        "stateChange": 4.457878510777391e-12
+      },
+      "elapsedProcessSeconds": 3.081944207951892,
+      "solvePrepareAndStateOutputSeconds": 3.062811583,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 2.0869826030097143e-13,
+        "pressureP1RmsAbsolute": 2.026248091110884e-12,
+        "pressureP1RmsAfterGlobalGauge": 3.3638853697808665e-13,
+        "pressureMeanDifference": -1.9981301456412164e-12,
+        "faceVelocityRms": 2.0296007910394316e-13,
+        "faceVelocityMaximum": 4.057014495435867e-13,
+        "stateCoefficientMaximum": 2.5717206142417126e-12
+      }
+    },
+    {
+      "label": "sheared8-ns01-matched0",
+      "method": "mass",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-matched0",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 4880,
+      "linearRestarts": 87,
+      "maximumLinearRelativeResidual": 9.807847829113166e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0880185641326534e-14,
+        "faceMomentum": 7.283063041541027e-14,
+        "divergence": 1.0071534486308476e-12,
+        "stateChange": 1.78260739502889e-10
+      },
+      "elapsedProcessSeconds": 2.2345476250047795,
+      "solvePrepareAndStateOutputSeconds": 2.217788792,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared8-ns01-matched1",
+      "method": "schur-aggregation",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-matched1",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 828,
+      "linearRestarts": 19,
+      "maximumLinearRelativeResidual": 9.763862205024011e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0744005212648716e-14,
+        "faceMomentum": 6.139533326177116e-14,
+        "divergence": 9.090970718478651e-13,
+        "stateChange": 1.7821655262650893e-10
+      },
+      "elapsedProcessSeconds": 1.6681667499942705,
+      "solvePrepareAndStateOutputSeconds": 1.645104666,
+      "comparisonToMass": {
+        "cells": 64,
+        "velocityP1Rms": 5.484306737867997e-13,
+        "pressureP1RmsAbsolute": 5.28751605369063e-13,
+        "pressureP1RmsAfterGlobalGauge": 4.65603988411431e-13,
+        "pressureMeanDifference": -2.5058169557198243e-13,
+        "faceVelocityRms": 5.230570952627531e-13,
+        "faceVelocityMaximum": 1.4168580052982705e-12,
+        "stateCoefficientMaximum": 2.467803739136798e-12
+      }
+    },
+    {
+      "label": "sheared8-ns01-matched2",
+      "method": "schur-aggregation",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-matched2",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 828,
+      "linearRestarts": 19,
+      "maximumLinearRelativeResidual": 9.763862205024011e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0744005212648716e-14,
+        "faceMomentum": 6.139533326177116e-14,
+        "divergence": 9.090970718478651e-13,
+        "stateChange": 1.7821655262650893e-10
+      },
+      "elapsedProcessSeconds": 1.2952411669539288,
+      "solvePrepareAndStateOutputSeconds": 1.283231709,
+      "comparisonToMass": {
+        "cells": 64,
+        "velocityP1Rms": 5.484306737867997e-13,
+        "pressureP1RmsAbsolute": 5.28751605369063e-13,
+        "pressureP1RmsAfterGlobalGauge": 4.65603988411431e-13,
+        "pressureMeanDifference": -2.5058169557198243e-13,
+        "faceVelocityRms": 5.230570952627531e-13,
+        "faceVelocityMaximum": 1.4168580052982705e-12,
+        "stateCoefficientMaximum": 2.467803739136798e-12
+      }
+    },
+    {
+      "label": "sheared8-ns01-matched3",
+      "method": "mass",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared8-ns01-matched3",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 4880,
+      "linearRestarts": 87,
+      "maximumLinearRelativeResidual": 9.807847829113166e-14,
+      "finalMetrics": {
+        "cellMomentum": 1.0880185641326534e-14,
+        "faceMomentum": 7.283063041541027e-14,
+        "divergence": 1.0071534486308476e-12,
+        "stateChange": 1.78260739502889e-10
+      },
+      "elapsedProcessSeconds": 1.9926240839995444,
+      "solvePrepareAndStateOutputSeconds": 1.977754292,
+      "comparisonToMass": {
+        "cells": 64,
+        "velocityP1Rms": 0,
+        "pressureP1RmsAbsolute": 0,
+        "pressureP1RmsAfterGlobalGauge": 0,
+        "pressureMeanDifference": 0,
+        "faceVelocityRms": 0,
+        "faceVelocityMaximum": 0,
+        "stateCoefficientMaximum": 0
+      }
+    },
+    {
+      "label": "sheared16-ns1-matched0",
+      "method": "mass",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-matched0",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 816,
+      "linearRestarts": 18,
+      "maximumLinearRelativeResidual": 9.683670833300485e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.404565683875262e-13,
+        "faceMomentum": 5.540012892879531e-14,
+        "divergence": 3.503122032204799e-12,
+        "stateChange": 4.478084569825569e-12
+      },
+      "elapsedProcessSeconds": 2.9833005410037003,
+      "solvePrepareAndStateOutputSeconds": 2.969185292,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared16-ns1-matched1",
+      "method": "schur-aggregation",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-matched1",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 625,
+      "linearRestarts": 14,
+      "maximumLinearRelativeResidual": 9.262386467509025e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.989160480790798e-13,
+        "faceMomentum": 1.1235457009206584e-13,
+        "divergence": 1.5592295891472492e-12,
+        "stateChange": 4.457878510777391e-12
+      },
+      "elapsedProcessSeconds": 2.99479850003263,
+      "solvePrepareAndStateOutputSeconds": 2.975297209,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 2.0869826030097143e-13,
+        "pressureP1RmsAbsolute": 2.026248091110884e-12,
+        "pressureP1RmsAfterGlobalGauge": 3.3638853697808665e-13,
+        "pressureMeanDifference": -1.9981301456412164e-12,
+        "faceVelocityRms": 2.0296007910394316e-13,
+        "faceVelocityMaximum": 4.057014495435867e-13,
+        "stateCoefficientMaximum": 2.5717206142417126e-12
+      }
+    },
+    {
+      "label": "sheared16-ns1-matched2",
+      "method": "schur-aggregation",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-matched2",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 625,
+      "linearRestarts": 14,
+      "maximumLinearRelativeResidual": 9.262386467509025e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.989160480790798e-13,
+        "faceMomentum": 1.1235457009206584e-13,
+        "divergence": 1.5592295891472492e-12,
+        "stateChange": 4.457878510777391e-12
+      },
+      "elapsedProcessSeconds": 3.1884345410508104,
+      "solvePrepareAndStateOutputSeconds": 3.17632325,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 2.0869826030097143e-13,
+        "pressureP1RmsAbsolute": 2.026248091110884e-12,
+        "pressureP1RmsAfterGlobalGauge": 3.3638853697808665e-13,
+        "pressureMeanDifference": -1.9981301456412164e-12,
+        "faceVelocityRms": 2.0296007910394316e-13,
+        "faceVelocityMaximum": 4.057014495435867e-13,
+        "stateCoefficientMaximum": 2.5717206142417126e-12
+      }
+    },
+    {
+      "label": "sheared16-ns1-matched3",
+      "method": "mass",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns1-matched3",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 7,
+      "matrixProducts": 816,
+      "linearRestarts": 18,
+      "maximumLinearRelativeResidual": 9.683670833300485e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.404565683875262e-13,
+        "faceMomentum": 5.540012892879531e-14,
+        "divergence": 3.503122032204799e-12,
+        "stateChange": 4.478084569825569e-12
+      },
+      "elapsedProcessSeconds": 3.062725916970521,
+      "solvePrepareAndStateOutputSeconds": 3.051068792,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 0,
+        "pressureP1RmsAbsolute": 0,
+        "pressureP1RmsAfterGlobalGauge": 0,
+        "pressureMeanDifference": 0,
+        "faceVelocityRms": 0,
+        "faceVelocityMaximum": 0,
+        "stateCoefficientMaximum": 0
+      }
+    },
+    {
+      "label": "sheared16-ns01-matched0",
+      "method": "mass",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns01-matched0",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 8878,
+      "linearRestarts": 152,
+      "maximumLinearRelativeResidual": 9.997812936782179e-14,
+      "finalMetrics": {
+        "cellMomentum": 5.041742073139664e-14,
+        "faceMomentum": 4.5075054799781356e-14,
+        "divergence": 1.566069925272522e-12,
+        "stateChange": 3.415301375042645e-11
+      },
+      "elapsedProcessSeconds": 8.28231149999192,
+      "solvePrepareAndStateOutputSeconds": 8.271616333,
+      "comparisonToMass": null
+    },
+    {
+      "label": "sheared16-ns01-matched1",
+      "method": "schur-aggregation",
+      "matchedExecutable": true,
+      "command": [
+        "/tmp/cartmesh-closed-schur/candidate",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-closed-schur/raw/sheared16-ns01-matched1",
+        ".1",
+        "40",
+        "schur-aggregation",
+        "50",
+        "zero"
+      ],
+      "returncode": 0,
+      "completed": true,
+      "outerIterations": 11,
+      "matrixProducts": 1134,
+      "linearRestarts": 24,
+      "maximumLinearRelativeResidual": 9.983690481226365e-14,
+      "finalMetrics": {
+        "cellMomentum": 4.8876319055365997e-14,
+        "faceMomentum": 6.983302824892235e-14,
+        "divergence": 9.948944531833789e-13,
+        "stateChange": 3.371147805353303e-11
+      },
+      "elapsedProcessSeconds": 4.242175208986737,
+      "solvePrepareAndStateOutputSeconds": 4.231552292,
+      "comparisonToMass": {
+        "cells": 256,
+        "velocityP1Rms": 1.2703484575589043e-12,
+        "pressureP1RmsAbsolute": 1.1600134119488101e-12,
+        "pressureP1RmsAfterGlobalGauge": 1.0436407965277418e-12,
+        "pressureMeanDifference": -5.064039926028048e-13,
+        "faceVelocityRms": 1.2345311840717787e-12,
+        "faceVelocityMaximum": 2.875845604970481e-12,
+        "stateCoefficientMaximum": 4.033551270765656e-12
+      }
+    }
+  ],
+  "sameMethodRepeatStateBytesEqual": [
+    [
+      "sheared8-ns01-matched0.accepted.state",
+      "sheared8-ns01-matched3.accepted.state"
+    ],
+    [
+      "sheared8-ns01-matched1.accepted.state",
+      "sheared8-ns01-matched2.accepted.state"
+    ],
+    [
+      "sheared16-ns1-matched0.accepted.state",
+      "sheared16-ns1-matched3.accepted.state"
+    ],
+    [
+      "sheared16-ns1-matched1.accepted.state",
+      "sheared16-ns1-matched2.accepted.state"
+    ]
+  ],
+  "productReadback": {
+    "command": [
+      "/tmp/cartmesh-closed-schur/product",
+      "sheared",
+      "16",
+      "noslip-sheared",
+      ".01",
+      "ns",
+      "closed",
+      "/tmp/cartmesh-closed-schur/raw/product-sheared16-ns01",
+      ".1",
+      "40",
+      "schur-aggregation",
+      "50",
+      "zero"
+    ],
+    "completed": true,
+    "outerIterations": 11,
+    "matrixProducts": 1134,
+    "candidateAcceptedStateByteIdentical": true,
+    "existingCompatibleCliCasesExactExceptVerifiedInputPath": [
+      {
+        "label": "cavity",
+        "completeStateExactAfterInputPathRemoval": true,
+        "unchangedBytes": [
+          ".checkpoint",
+          ".loads.json",
+          ".cells.csv",
+          ".faces.csv"
+        ],
+        "metadata": {
+          "previousMeshSource": "/tmp/cartmesh-compatible-aggregation-cli/square.solver.cm2d",
+          "currentMeshSource": "/tmp/cartmesh-closed-schur/cli/square.solver.cm2d"
+        }
+      },
+      {
+        "label": "channel-schur",
+        "completeStateExactAfterInputPathRemoval": true,
+        "unchangedBytes": [
+          ".checkpoint",
+          ".loads.json",
+          ".cells.csv",
+          ".faces.csv"
+        ],
+        "metadata": {
+          "previousMeshSource": "/tmp/cartmesh-compatible-aggregation-cli/square.solver.cm2d",
+          "currentMeshSource": "/tmp/cartmesh-closed-schur/cli/square.solver.cm2d"
+        }
+      },
+      {
+        "label": "channel-aggregation",
+        "completeStateExactAfterInputPathRemoval": true,
+        "unchangedBytes": [
+          ".checkpoint",
+          ".loads.json",
+          ".cells.csv",
+          ".faces.csv"
+        ],
+        "metadata": {
+          "previousMeshSource": "/tmp/cartmesh-compatible-aggregation-cli/square.solver.cm2d",
+          "currentMeshSource": "/tmp/cartmesh-closed-schur/cli/square.solver.cm2d"
+        }
+      },
+      {
+        "label": "aggregation-resume",
+        "completeStateExactAfterInputPathRemoval": true,
+        "unchangedBytes": [
+          ".checkpoint",
+          ".loads.json",
+          ".cells.csv",
+          ".faces.csv"
+        ],
+        "metadata": {
+          "previousMeshSource": "/tmp/cartmesh-compatible-aggregation-cli/square.solver.cm2d",
+          "currentMeshSource": "/tmp/cartmesh-closed-schur/cli/square.solver.cm2d"
+        }
+      }
+    ],
+    "collocatedCsvByteIdenticalWithPrevious": true,
+    "readbackNote": "Whole accepted JSON byte comparison rejected the expected new meshSource path. All numerical state/metadata other than that verified input path were exactly equal; raw CSV/checkpoint/loads also byte-identical. No allowance changed."
+  },
+  "validation": {
+    "buildCompiler": "/usr/bin/clang++",
+    "buildType": "Release",
+    "buildPassed": true,
+    "buildWarnings": "9 existing FlowAggregation2D sign-conversion/shadow warnings; that file was not changed.",
+    "ctest": "4/4 native compatible API, checkpoint, loads and boundary passed; after adding irregular polygon coverage only the changed API test was rebuilt and rerun, 1/1 passed. Final raw API output archived.",
+    "cli": "Full registered compatible CLI test script passed once with --keep; cold and resumed closed cavity, failure retention, open outlet cases, cancellation/kill recovery and original collocated default included.",
+    "newApiCoverage": [
+      "64-cell quadratic Stokes in both cell orders, IC0 and aggregation; exact final-cell pressure gauge",
+      "single closed cell with mixed traces and no pressure unknowns",
+      "irregular one/three-polygon quadratic fields with all three pressure inverses",
+      "closed NS with physical unit scaling",
+      "incompatible prescribed net flux remains a failure, including gauge cell"
+    ],
+    "closedCli": [
+      {
+        "label": "closed-aggregation",
+        "status": "converged",
+        "acceptedIterations": 6,
+        "totalAcceptedIterations": 6,
+        "lastAcceptedMetrics": {
+          "cellMomentum": 1.805962786723588e-14,
+          "faceMomentum": 2.3581137043038325e-13,
+          "divergence": 1.282532583789378e-12,
+          "stateChange": 8.970602038971265e-14,
+          "residualNorm": 1.3871081482118778e-13
+        },
+        "checkpointAvailable": true,
+        "controls": {
+          "viscosity": 0.1,
+          "referenceLength": 1,
+          "referenceVelocity": 1,
+          "equation": "navier-stokes",
+          "globalization": "pseudo-time",
+          "pressureInverse": "diagonal-schur-aggregation",
+          "linearInitialGuess": "zero",
+          "equationTolerance": 1e-09,
+          "stateTolerance": 1e-09,
+          "linearTolerance": 1e-13,
+          "maximumIterations": 40,
+          "maximumLinearRestarts": 50,
+          "krylovDirections": 60,
+          "quadratureOrder": 6,
+          "initialPseudoStep": 0.1,
+          "maximumPseudoStep": 1000000,
+          "maximumBacktracks": 15,
+          "armijo": 0.0001
+        }
+      },
+      {
+        "label": "closed-aggregation-resume",
+        "status": "converged",
+        "acceptedIterations": 5,
+        "totalAcceptedIterations": 6,
+        "lastAcceptedMetrics": {
+          "cellMomentum": 2.0132044179869506e-14,
+          "faceMomentum": 2.3359092438113294e-13,
+          "divergence": 1.2847530298386282e-12,
+          "stateChange": 8.998357614586894e-14,
+          "residualNorm": 1.3878252627961787e-13
+        },
+        "checkpointAvailable": true,
+        "controls": {
+          "viscosity": 0.1,
+          "referenceLength": 1,
+          "referenceVelocity": 1,
+          "equation": "navier-stokes",
+          "globalization": "pseudo-time",
+          "pressureInverse": "diagonal-schur-aggregation",
+          "linearInitialGuess": "zero",
+          "equationTolerance": 1e-09,
+          "stateTolerance": 1e-09,
+          "linearTolerance": 1e-13,
+          "maximumIterations": 40,
+          "maximumLinearRestarts": 50,
+          "krylovDirections": 60,
+          "quadratureOrder": 6,
+          "initialPseudoStep": 0.1,
+          "maximumPseudoStep": 1000000,
+          "maximumBacktracks": 15,
+          "armijo": 0.0001
+        }
+      },
+      {
+        "label": "closed-aggregation-failed-resume",
+        "status": "linear-budget",
+        "acceptedIterations": 0,
+        "totalAcceptedIterations": 1,
+        "lastAcceptedMetrics": {
+          "cellMomentum": 5.001229026420179,
+          "faceMomentum": 0.05601930434741986,
+          "divergence": 1.8965769320764177e-12,
+          "stateChange": 4.775263158635397,
+          "residualNorm": 0.26574176082007406
+        },
+        "checkpointAvailable": true,
+        "controls": {
+          "viscosity": 0.1,
+          "referenceLength": 1,
+          "referenceVelocity": 1,
+          "equation": "navier-stokes",
+          "globalization": "pseudo-time",
+          "pressureInverse": "diagonal-schur-aggregation",
+          "linearInitialGuess": "zero",
+          "equationTolerance": 1e-09,
+          "stateTolerance": 1e-09,
+          "linearTolerance": 1e-13,
+          "maximumIterations": 40,
+          "maximumLinearRestarts": 1,
+          "krylovDirections": 1,
+          "quadratureOrder": 6,
+          "initialPseudoStep": 0.1,
+          "maximumPseudoStep": 1000000,
+          "maximumBacktracks": 15,
+          "armijo": 0.0001
+        }
+      }
+    ]
+  },
+  "interpretation": [
+    "Low-nu sheared NS gains persist at 64 and 256 cells: 4880->828 and 8878->1134 products, 11 outer steps unchanged.",
+    "At nu=.1 on 256 cells, products 816->625 but same-executable ABBA elapsed times are 2.983/3.063s mass versus 2.995/3.188s aggregation. No consistent complete-cost benefit or automatic default change.",
+    "At nu=.01 on 64 cells ABBA complete process times are 2.235/1.993s mass versus 1.668/1.295s aggregation. Timings include native preparation, iterations and raw field export; ordinary host load still varies.",
+    "The 256-cell low-nu same-executable single A/B is 8.282->4.242s, not a repeated cross-platform performance qualification.",
+    "Schur IC0 at 256-cell Stokes costs 141 versus 116 mass products and changes fixed-gauge pressure RMS by 2.02e-9; retain this less favorable result. Aggregation uses91 and changes pressure by6.48e-11.",
+    "The first three-case pilot used separately linked baseline/candidate executables; only the explicitly matched rows support controlled cost comparisons.",
+    "Original large-mesh default controls, curve local pressure/traction, spatial/geometry/domain errors and App/platform qualification remain open. Local meshes at most256 cells."
+  ],
+  "storage": {
+    "archive": "outputs/laminar-stability/closed-schur/native-laminar-closed-schur.tar.gz",
+    "cloudRawCopyConfirmed": false,
+    "archiveBytes": 1114769,
+    "archiveSha256": "636b07c3ac08fa5489cce3d2b5516a9e6e6b7deb7a0afd769cbfa946c285a54c",
+    "archivedFiles": 441,
+    "archivedRawBytes": 3921207,
+    "readbackAllFilesVerified": true,
+    "exactShaAllowlistTemporaryFilesRemoved": 445,
+    "temporaryBytesRemoved": 6412823,
+    "noOpenFilesVerified": true,
+    "temporaryRootRemoved": true,
+    "regenerableBinaryHashes": {
+      "baseline": {
+        "bytes": 766232,
+        "sha256": "563e9e676fcd154c66b1e766cc4af2a5317a590c7b414fe4d7d0ab97b6bc8402"
+      },
+      "candidate": {
+        "bytes": 750584,
+        "sha256": "3ee706d744d7da4b7ed55bddd2753fdd0adc0e3fb87962a590aa11831555f344"
+      },
+      "compare": {
+        "bytes": 208568,
+        "sha256": "ca004812ec9e8e96a46de26df0700bd205803f07f83a966cd420f7d8884b5d18"
+      },
+      "product": {
+        "bytes": 766232,
+        "sha256": "5dd2aa16aa3abca84c87eb0ec9c918691ead2d15efe7a8876b85accfccacd44e"
+      }
+    }
+  }
+}

@@ -157,7 +157,7 @@ void help() {
         "--tolerance 1e-9 --state-tolerance 1e-9 --max-iterations 40\n"
         "--pseudo-step .1 (0 selects residual backtracking) --pseudo-maximum-step 1e6\n"
         "--compatible-pressure-inverse mass|schur|schur-aggregation --linear-tolerance 1e-13\n"
-        "Schur pressure inverses require a traction pressure reference.\n"
+        "Closed domains retain the existing final-cell pressure gauge.\n"
         "--linear-restarts 50 --krylov-directions 60 --linear-initial-guess zero|current-state --quadrature-order 6\n"
         "Existing explicit boundary values are facewise constant. Symmetry preserves zero normal trace.\n"
         "Pressure outlet uses pseudo-traction -p*n and rejects backflow; it does not separately impose p and all normal velocity derivatives.\n"

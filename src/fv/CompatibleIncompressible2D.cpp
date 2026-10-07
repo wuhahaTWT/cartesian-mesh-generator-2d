@@ -40,16 +40,15 @@ void validate(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::
     require(c.quadratureOrder>=4&&c.quadratureOrder<=12,"Compatible quadrature must be 4..12");
     require(std::isfinite(c.armijo)&&c.armijo>0&&c.armijo<.5,"Invalid compatible Armijo control");
     require(std::isfinite(c.initialPseudoStep)&&c.initialPseudoStep>0&&std::isfinite(c.maximumPseudoStep)&&c.maximumPseudoStep>=c.initialPseudoStep,"Invalid compatible pseudo-time interval");
-    std::vector<bool> seen(mesh.faces.size());std::size_t velocityFaces=0,openFaces=0;
+    std::vector<bool> seen(mesh.faces.size());std::size_t velocityFaces=0;
     for(const auto& b:c.boundaries){require(b.face<mesh.faces.size()&&!mesh.faces[b.face].neighbour&&!seen[b.face],"Compatible boundary coverage/ownership conflict");seen[b.face]=true;
         require(b.kind==CompatibleBoundaryKind2D::Velocity||b.kind==CompatibleBoundaryKind2D::Traction||b.kind==CompatibleBoundaryKind2D::PseudoTraction||b.kind==CompatibleBoundaryKind2D::NormalVelocity,"Invalid compatible boundary kind");
         const bool mixed=b.kind==CompatibleBoundaryKind2D::NormalVelocity;
         require(mixed?!b.value:(!b.normalVelocity&&!b.tangentialTraction),"Conflicting compatible boundary data");
         require(!b.rejectBackflow||(b.kind==CompatibleBoundaryKind2D::Traction||b.kind==CompatibleBoundaryKind2D::PseudoTraction),"Backflow rejection requires a traction boundary");
-        if(b.kind==CompatibleBoundaryKind2D::Velocity)++velocityFaces;else if(!mixed)++openFaces;}
+        if(b.kind==CompatibleBoundaryKind2D::Velocity)++velocityFaces;}
     for(std::size_t f=0;f<mesh.faces.size();++f)require(mesh.faces[f].neighbour.has_value()||seen[f],"Compatible boundary missing");
     require(velocityFaces>0,"Compatible solver requires a velocity boundary to fix rigid motion");
-    require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||openFaces>0,"Diagonal Schur currently requires a traction pressure reference");
     // A single pressure gauge cannot anchor disconnected components. Report
     // this unsupported input; do not solve an unanchored saddle system.
     std::vector<bool> visited(mesh.cells.size());std::vector<std::size_t> pending{0};visited[0]=true;
@@ -296,11 +295,11 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
     if(guess)r=k.residual(a.rhs,x);
     record.linearInitialRelativeResidual=record.linearRelativeResidual=linearNorm(r)/initial;
     if(record.linearRelativeResidual<=p.control.linearTolerance)return x;
-    const char* pressure="gauge";
-    if(p.outlet) {
-        pressure=p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation?"outlet-schur-aggregation":
-            p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet";
-    }
+    const char* pressure=p.outlet?"outlet":"gauge";
+    if(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchurAggregation)
+        pressure=p.outlet?"outlet-schur-aggregation":"gauge-schur-aggregation";
+    else if(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur)
+        pressure=p.outlet?"outlet-schur-diag":"gauge-schur-diag";
     sparse::Block block(k,p.areas,p.control.velocityInverse==CompatibleVelocityInverse2D::ILU1?"ilu1":"ilu0",pressure,p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
         // This is a strict linear solve, not an inexact Newton direction.
