@@ -33,6 +33,7 @@ void validate(const FvMesh2D& mesh,const CompatibleFlowControls2D& c,const std::
     require(c.equation==CompatibleEquation2D::Stokes||c.equation==CompatibleEquation2D::NavierStokes,"Invalid compatible equation");
     require(c.globalization==CompatibleGlobalization2D::Backtracking||c.globalization==CompatibleGlobalization2D::PseudoTime,"Invalid compatible globalization");
     require(c.pressureInverse==CompatiblePressureInverse2D::ViscousMass||c.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur,"Invalid compatible pressure inverse");
+    require(c.linearInitialGuess==CompatibleLinearInitialGuess2D::Zero||c.linearInitialGuess==CompatibleLinearInitialGuess2D::CurrentState,"Invalid compatible linear initial guess");
     require(c.linearTolerance<=.01&&c.maximumIterations>0&&c.maximumLinearRestarts>0&&c.krylovDirections>0&&c.maximumBacktracks>0&&c.maximumBacktracks<=static_cast<std::size_t>(std::numeric_limits<double>::max_exponent-std::numeric_limits<double>::min_exponent),"Invalid compatible iteration budget");
     require(c.quadratureOrder>=4&&c.quadratureOrder<=12,"Compatible quadrature must be 4..12");
     require(std::isfinite(c.armijo)&&c.armijo>0&&c.armijo<.5,"Invalid compatible Armijo control");
@@ -156,6 +157,18 @@ struct Problem {
     std::vector<std::size_t> retained(std::size_t t,const P1System& e)const {std::vector<std::size_t> ids;const auto m=e.a.m;
         for(auto j:e.outside)if(j==2*m)ids.push_back(4*mesh.faces.size()+t);else{const auto c=j/m,k=j%m;ids.push_back(4*mesh.cells[t].faces[(k-3)/2]+2*c+(k-3)%2);}
         return ids;}
+    Vec reduced(const Vec& state)const {
+        Vec out(count);const auto offset=9*cells.size();
+        for(std::size_t f=0;f<mesh.faces.size();++f){
+            if(mixed[f]){const auto n=normals[f];for(std::size_t j=0;j<2;++j){
+                const auto id=map[4*f+2+j];require(id!=absent,"Internal compatible mixed map");
+                out[id]=-n.y*state[offset+4*f+j]+n.x*state[offset+4*f+2+j];
+            }}else for(std::size_t j=0;j<4;++j)if(map[4*f+j]!=absent)out[map[4*f+j]]=state[offset+4*f+j];
+        }
+        for(std::size_t t=0;t<cells.size();++t)if(map[4*mesh.faces.size()+t]!=absent)out[map[4*mesh.faces.size()+t]]=state[9*t+6];
+        for(auto x:out)linearFinite(x);
+        return out;
+    }
     // Orthogonal face coordinates affect both test and trial functions:
     // K_frame=W^T K_cart W, f_frame=W^T f_cart. Stored fields stay Cartesian.
     std::array<std::pair<std::size_t,double>,2> project(std::size_t raw)const {
@@ -215,9 +228,12 @@ Assembly assemble(const Problem& p,const Vec& state,double inverseStep) {
     for(auto x:out.rhs)linearFinite(x);
     return out;
 }
-std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlowIteration2D& record) {
-    const double initial=linearNorm(a.rhs);Vec x(p.count),r=a.rhs;record.linearRelativeResidual=initial==0?0:1;if(initial==0)return x;
+std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlowIteration2D& record,const Vec* guess) {
+    const double initial=linearNorm(a.rhs);Vec x=guess?*guess:Vec(p.count),r=a.rhs;if(initial==0)return Vec(p.count);
     const sparse::Matrix k(p.count,a.entries),pk(p.count,a.picard);
+    if(guess)r=k.residual(a.rhs,x);
+    record.linearInitialRelativeResidual=record.linearRelativeResidual=linearNorm(r)/initial;
+    if(record.linearRelativeResidual<=p.control.linearTolerance)return x;
     sparse::Block block(k,p.areas,"ilu0",p.outlet?(p.control.pressureInverse==CompatiblePressureInverse2D::DiagonalSchur?"outlet-schur-diag":"outlet"):"gauge",p.nu,0,pk);
     for(std::size_t it=0;it<p.control.maximumLinearRestarts;++it){poll(p.control);
         // This is a strict linear solve, not an inexact Newton direction.
@@ -227,7 +243,7 @@ std::optional<Vec> linearSolve(const Problem& p,const Assembly& a,CompatibleFlow
         const auto d=detail::newtonKrylovDirection2D([&](const Vec& v){poll(p.control);++record.matrixProducts;return k.apply(block.apply(v));},r,p.control.krylovDirections,remaining);
         if(!d)return std::nullopt;
         const auto step=block.apply(*d);for(std::size_t i=0;i<x.size();++i)x[i]+=step[i];
-        const auto ax=k.apply(x);for(std::size_t i=0;i<x.size();++i)r[i]=a.rhs[i]-ax[i];++record.linearRestarts;
+        r=k.residual(a.rhs,x);++record.linearRestarts;
         record.linearRelativeResidual=linearNorm(r)/initial;if(record.linearRelativeResidual<=p.control.linearTolerance)return x;
     }
     return std::nullopt;
@@ -256,7 +272,8 @@ CompatibleFlowResult2D run(const FvMesh2D& mesh,const CompatibleFlowControls2D& 
         auto old=problem.metrics(current);
         const bool pseudo=c.globalization==CompatibleGlobalization2D::PseudoTime;
         for(std::size_t it=0;it<c.maximumIterations;++it){poll(c);result.iterations.emplace_back();auto& record=result.iterations.back();record.iteration=result.acceptedIterationsBefore+it;record.pseudoStep=pseudo?step:0;
-            const auto assembly=assemble(problem,current,pseudo?1/step:0);const auto solved=linearSolve(problem,assembly,record);
+            const auto assembly=assemble(problem,current,pseudo?1/step:0);const auto guess=c.linearInitialGuess==CompatibleLinearInitialGuess2D::CurrentState?std::optional<Vec>(problem.reduced(current)):std::nullopt;
+            const auto solved=linearSolve(problem,assembly,record,guess?&*guess:nullptr);
             if(!solved){result.stop=CompatibleFlowStop2D::LinearBudget;result.reason="Sparse linear solve did not meet its true residual target; no candidate recovery";return result;}
             const auto candidate=recover(problem,assembly,*solved);bool accepted=false;
             for(std::size_t bt=0;bt<(pseudo?1:c.maximumBacktracks);++bt){poll(c);const double alpha=std::ldexp(1.,-static_cast<int>(bt));auto trial=current;double change=0;

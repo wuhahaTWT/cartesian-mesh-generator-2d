@@ -29,6 +29,25 @@ struct Matrix {
         for(auto v:y)linearFinite(v);
         return y;
     }
+    // Recompute the true residual of the original assembled matrix without
+    // first rounding A*x.  Near a strict target, separately rounded products
+    // and sums can otherwise make iterative refinement stagnate above the
+    // requested gate even though the retained double solution is accurate.
+    // This changes neither K nor b nor the target; it mirrors the portable
+    // FMA/TwoSum residual already used by the product sparse flow solver.
+    Vec residual(const Vec& rhs,const Vec& x)const {
+        linearEnsure(rhs.size()==n&&x.size()==n,"native residual size mismatch");Vec r(n);
+        for(std::size_t i=0;i<n;++i) {
+            LinearTwofold2D value{rhs[i],0};
+            for(auto k=rows[i];k<rows[i+1];++k) {
+                const double product=linearFinite(-values[k]*x[columns[k]]);
+                value.add(product);
+                value.add(std::fma(-values[k],x[columns[k]],-product));
+            }
+            r[i]=value.high;
+        }
+        return r;
+    }
 };
 inline std::vector<std::pair<std::size_t,std::size_t>> connections(const Matrix& k,std::size_t nv) {
     std::vector<std::pair<std::size_t,std::size_t>> result;

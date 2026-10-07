@@ -78,7 +78,8 @@ CompatibleFlowCheckpoint2D readCompatibleFlowCheckpoint2D(std::istream& in,const
     token(in,"NEXT_STEP");data.nextPseudoStep=number();
     token(in,"METRICS");data.metrics={number(),number(),number(),number(),number()};
     token(in,"CONTEXT");auto context=std::make_shared<std::vector<std::uint64_t>>();context->reserve(expected[2]);
-    for(std::size_t i=0;i<expected[2];++i)context->push_back(word());data.context=std::move(context);
+    for(std::size_t i=0;i<expected[2];++i)context->push_back(word());
+    data.context=std::move(context);
     token(in,"STATE");data.normalizedState.reserve(expected[3]);
     for(std::size_t i=0;i<expected[3];++i)data.normalizedState.push_back(number());
     token(in,"CHECKSUM");if(integer(in,16)!=hash)fail("checksum mismatch");
