@@ -1,0 +1,1261 @@
+{
+  "schema": "native-laminar-potential-lift-v1",
+  "baseCommit": "536aaad926b23d2f417a0f1cbe627a07baf1fc17",
+  "status": "Research comparison completed; do not replace the original reconstruction or add a production option.",
+  "hypothesis": "The RT1 field currently minimizes distance to the P1 cell field under the original normal-trace and weak-divergence constraints. Targeting the existing P2 velocity potential might reduce curvature-related source and transport error without changing those constraints.",
+  "method": {
+    "original": "R1(v)=argmin_z ||z-v_T||_L2 subject to every original face P1 normal trace, radial normal continuity and triangle P1 divergence equal to the original cell weak divergence.",
+    "candidate": "R2(v)=argmin_z ||z-r_T^2(v)||_L2 under exactly the same constraints; r_T^2 is the existing P2 potential. Only the objective RHS changes; matrix, constraint coefficients/targets, pressure B/-B^T, viscous operator and quality gate stay unchanged.",
+    "patchFile": "artifacts/current/native-laminar-potential-lift.patch",
+    "source": {
+      "baseSha256": "13e10da27510c87612910035f515e120b96a88608a05a032090883905854810f",
+      "candidateSha256": "82527aa52fc543d7a6a2d28a601a67949edbe05dc036d764d1d414da7d0e4468",
+      "onlyChange": "L2 closest target inside RT1 constraints: original P1 cell polynomial to existing P2 potential",
+      "productFilesChanged": false
+    },
+    "pressureCompatibilityReason": "Difference R2-R1 has zero divergence and normal trace, so its integral against a gradient is zero by integration by parts (up to the actual quadrature/roundoff). This is a structural derivation, not a proof of general new-method convergence.",
+    "nonlinearScope": "Candidate R2 was consistently used for source, advecting/transported/test velocity, and original load evaluation in the experimental executable. NS gains cannot be attributed to the source or transport change separately.",
+    "reference": {
+      "url": "https://arxiv.org/html/2203.07180v3",
+      "use": "Section 2.4 gives the constrained H(div) reconstruction and Section 3 applies it to force/transport. P2 objective here is an experimental modification derived for this code; no inherited theorem or paper-author endorsement is claimed."
+    },
+    "isolation": "Generate one temporary modified native kernel from an exact patch and link its object before the native static libraries. No production kernel/API/default or large cloud input was changed."
+  },
+  "approximation": {
+    "source": "artifacts/current/native-laminar-stokes-approximation.cpp",
+    "definition": "Same actual accepted states and meshes from the prior archive. Native order-16 quadrature, 6x6 L2 P2 projection, original P1 cell/face L2 interpolation followed by native P2 potential, actual accepted P2 potential. RMS over full actual fluid area; no excluded cells.",
+    "limits": "Best P2 is a cellwise quadrature-defined optimum and may not satisfy global continuity/divergence/boundary constraints. The ratio alone is not proof of a defect or an attainable global solver target.",
+    "results": [
+      {
+        "cells": 60,
+        "bestP2Rms": 0.003018722322707107,
+        "interpolatedP2Rms": 0.0044173841967517806,
+        "actualP2Rms": 0.01926572351925028,
+        "actualMinusInterpolatedP2Rms": 0.018752524404934846,
+        "exactVelocityRms": 0.007972140083391924,
+        "interpolatedWeakDivergenceMaximum": 4.846487490641432e-16,
+        "level": 3,
+        "actualOverBestP2": 6.382078727258793,
+        "actualOverInterpolatedP2": 4.3613420660618285
+      },
+      {
+        "cells": 200,
+        "bestP2Rms": 0.0010944348257637512,
+        "interpolatedP2Rms": 0.001901316094407182,
+        "actualP2Rms": 0.007495292524316831,
+        "actualMinusInterpolatedP2Rms": 0.0072453017948173664,
+        "exactVelocityRms": 0.007972140083391931,
+        "interpolatedWeakDivergenceMaximum": 1.5323526388371495e-15,
+        "level": 4,
+        "actualOverBestP2": 6.8485508208186285,
+        "actualOverInterpolatedP2": 3.9421601417905285
+      },
+      {
+        "cells": 740,
+        "bestP2Rms": 0.00022159241801745502,
+        "interpolatedP2Rms": 0.0003701909283710547,
+        "actualP2Rms": 0.0014777538467053714,
+        "actualMinusInterpolatedP2Rms": 0.001421660689197435,
+        "exactVelocityRms": 0.007972140083391989,
+        "interpolatedWeakDivergenceMaximum": 8.47056379644041e-15,
+        "level": 5,
+        "actualOverBestP2": 6.668792461071333,
+        "actualOverInterpolatedP2": 3.9918694204850143
+      }
+    ]
+  },
+  "polygonControls": [
+    {
+      "level": 3,
+      "cells": 60,
+      "baseline": {
+        "velocityP2Rms": 0.01926572351925028,
+        "pressureP1Rms": 0.4801500164757715,
+        "pressureP1MeanRemovedRms": 0.23638479108206326,
+        "pressureMeanError": -0.4179309379153127,
+        "pressureVertexMaximum": 0.9676796964181484,
+        "embeddedWall": {
+          "faces": 24,
+          "length": 6.1229349178414365,
+          "cellPressureRms": 0.44497190430161715,
+          "reactionPressureRms": 0.4747287405376665,
+          "cellPressureEndpointMaximum": 0.5612975863024071,
+          "reactionPressureEndpointMaximum": 0.5689607196090861,
+          "tractionRms": 0.47792755770869855,
+          "shearRms": 0.05520301916491731,
+          "tractionMomentRms": 0.4778618670500003,
+          "bestP1TractionRms": 0.007923789301174416,
+          "forceOnFluid": [
+            5.656854249490562,
+            -8.485281374247215
+          ],
+          "exactForceOnFluid": [
+            5.656854249492381,
+            -8.485281374238571
+          ]
+        },
+        "outerWall": {
+          "faces": 32,
+          "length": 11.827017202914725,
+          "cellPressureRms": 0.6369960473545425,
+          "reactionPressureRms": 0.6243329507651422,
+          "cellPressureEndpointMaximum": 0.9676796964181493,
+          "reactionPressureEndpointMaximum": 2.177007369164388,
+          "tractionRms": 0.6867453771226655,
+          "shearRms": 0.2860552037426398,
+          "tractionMomentRms": 0.685338336705927,
+          "bestP1TractionRms": 0.04393833452129888,
+          "forceOnFluid": [
+            -17.484791989753308,
+            26.227187984641418
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.227187984632685
+          ]
+        }
+      },
+      "potentialTarget": {
+        "converged": true,
+        "stop": 0,
+        "reason": "Original momentum, divergence, linear and applicable state-change targets satisfied",
+        "cells": 60,
+        "faces": 144,
+        "meshKey": 17099224861837948979,
+        "solveQuadrature": 12,
+        "errorQuadrature": 16,
+        "viscosity": 1,
+        "amplitude": 1,
+        "equationTolerance": 1e-09,
+        "stateTolerance": 1e-09,
+        "linearTolerance": 1e-13,
+        "maximumLinearRestarts": 50,
+        "krylovDirections": 60,
+        "maximumIterations": 40,
+        "boundaryReferenceVelocityMaximum": 1.3041036188456101e-17,
+        "boundaryReferenceNormalViscousStressMaximum": 1.038150122572429e-16,
+        "solveAndReadSeconds": 0.093772667,
+        "area": 5.913968870131368,
+        "minimumCellArea": 0.02501151967433923,
+        "maximumCellDiameter": 0.6079547458722673,
+        "pressureReferenceAtGaugeCell": -0.24358000656879852,
+        "velocityP2Rms": 0.015316577992621365,
+        "velocityP1Rms": 0.01552444679037331,
+        "pressureP1Rms": 0.2960731311632984,
+        "pressureMeanError": -0.23407150691946596,
+        "pressureP1MeanRemovedRms": 0.18130038236388282,
+        "pressureVertexMaximum": 0.8476913976590339,
+        "velocityGradientRms": 0.19343264286706735,
+        "exactVelocityRms": 0.007972140083391924,
+        "exactGaugedPressureRms": 3.7777328886201818,
+        "embeddedWall": {
+          "faces": 24,
+          "length": 6.1229349178414365,
+          "cellPressureRms": 0.23099523311155337,
+          "reactionPressureRms": 0.2723489619456776,
+          "cellPressureEndpointMaximum": 0.3458658224904928,
+          "reactionPressureEndpointMaximum": 0.3862769470895965,
+          "tractionRms": 0.27683454143284303,
+          "shearRms": 0.04963271358130946,
+          "tractionMomentRms": 0.2767211175415477,
+          "bestP1TractionRms": 0.007923789301174416,
+          "forceOnFluid": [
+            5.656854249490606,
+            -8.485281374245616
+          ],
+          "exactForceOnFluid": [
+            5.656854249492381,
+            -8.485281374238571
+          ]
+        },
+        "outerWall": {
+          "faces": 32,
+          "length": 11.827017202914725,
+          "cellPressureRms": 0.4572403382694264,
+          "reactionPressureRms": 0.4739917074157001,
+          "cellPressureEndpointMaximum": 0.8476913976590343,
+          "reactionPressureEndpointMaximum": 1.7260568129231442,
+          "tractionRms": 0.5233745092420956,
+          "shearRms": 0.22192957942904815,
+          "tractionMomentRms": 0.5215268925797586,
+          "bestP1TractionRms": 0.04393833452129888,
+          "forceOnFluid": [
+            -17.48479198975335,
+            26.22718798463977
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.227187984632685
+          ]
+        },
+        "momentumImbalance": [
+          1.9539925233402755e-14,
+          2.1316282072803006e-14
+        ],
+        "boundaryVolumeFlux": 0,
+        "totalSeconds": 0.192948209
+      },
+      "iterations": [
+        {
+          "iteration": "0",
+          "accepted": "1",
+          "restarts": "1",
+          "products": "59",
+          "linear_residual": "5.8333446127234353e-14",
+          "cell_momentum": "2.8326473466241247e-15",
+          "face_momentum": "1.9968989880778436e-13",
+          "divergence": "3.3445644790515252e-13",
+          "state_change": "7.7614800394181307"
+        }
+      ]
+    },
+    {
+      "level": 4,
+      "cells": 200,
+      "baseline": {
+        "velocityP2Rms": 0.007495292524316831,
+        "pressureP1Rms": 0.403879601657332,
+        "pressureP1MeanRemovedRms": 0.17694323726051803,
+        "pressureMeanError": -0.3630562262551811,
+        "pressureVertexMaximum": 1.4217086162071395,
+        "embeddedWall": {
+          "faces": 44,
+          "length": 6.122934917841435,
+          "cellPressureRms": 0.3833168490467388,
+          "reactionPressureRms": 0.3792163867654756,
+          "cellPressureEndpointMaximum": 0.4230143969475029,
+          "reactionPressureEndpointMaximum": 0.4460120542803389,
+          "tractionRms": 0.3796085595380079,
+          "shearRms": 0.017250811084073787,
+          "tractionMomentRms": 0.37960270849030114,
+          "bestP1TractionRms": 0.002107648298166873,
+          "forceOnFluid": [
+            5.65685424952865,
+            -8.48528137425808
+          ],
+          "exactForceOnFluid": [
+            5.656854249492381,
+            -8.485281374238571
+          ]
+        },
+        "outerWall": {
+          "faces": 64,
+          "length": 11.827017202914714,
+          "cellPressureRms": 0.6773047653547873,
+          "reactionPressureRms": 0.5559252004898032,
+          "cellPressureEndpointMaximum": 1.4217086162016979,
+          "reactionPressureEndpointMaximum": 2.7173541677779305,
+          "tractionRms": 0.5798731506367715,
+          "shearRms": 0.1649243532344073,
+          "tractionMomentRms": 0.5795535441052402,
+          "bestP1TractionRms": 0.019249944012161724,
+          "forceOnFluid": [
+            -17.484791989791113,
+            26.227187984651938
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.227187984632696
+          ]
+        }
+      },
+      "potentialTarget": {
+        "converged": true,
+        "stop": 0,
+        "reason": "Original momentum, divergence, linear and applicable state-change targets satisfied",
+        "cells": 200,
+        "faces": 448,
+        "meshKey": 2314100569411827876,
+        "solveQuadrature": 12,
+        "errorQuadrature": 16,
+        "viscosity": 1,
+        "amplitude": 1,
+        "equationTolerance": 1e-09,
+        "stateTolerance": 1e-09,
+        "linearTolerance": 1e-13,
+        "maximumLinearRestarts": 50,
+        "krylovDirections": 60,
+        "maximumIterations": 40,
+        "boundaryReferenceVelocityMaximum": 1.4603862183903787e-17,
+        "boundaryReferenceNormalViscousStressMaximum": 1.3797978100528407e-15,
+        "solveAndReadSeconds": 0.403147166,
+        "area": 5.913968870131382,
+        "minimumCellArea": 0.0010387476384164213,
+        "maximumCellDiameter": 0.3105651156920064,
+        "pressureReferenceAtGaugeCell": -0.33597857846656987,
+        "velocityP2Rms": 0.006164306237012512,
+        "velocityP1Rms": 0.007530389349857305,
+        "pressureP1Rms": 0.316446820459828,
+        "pressureMeanError": -0.27891882284044067,
+        "pressureP1MeanRemovedRms": 0.1494753506249023,
+        "pressureVertexMaximum": 1.2430889245655499,
+        "velocityGradientRms": 0.12841178962671818,
+        "exactVelocityRms": 0.007972140083391931,
+        "exactGaugedPressureRms": 3.8103612905256514,
+        "embeddedWall": {
+          "faces": 44,
+          "length": 6.122934917841435,
+          "cellPressureRms": 0.2947742864099791,
+          "reactionPressureRms": 0.29198420169572137,
+          "cellPressureEndpointMaximum": 0.33981054588004217,
+          "reactionPressureEndpointMaximum": 0.3624971186958453,
+          "tractionRms": 0.29243533641930075,
+          "shearRms": 0.01623736267938551,
+          "tractionMomentRms": 0.2924277411692005,
+          "bestP1TractionRms": 0.002107648298166873,
+          "forceOnFluid": [
+            5.656854249529229,
+            -8.48528137425864
+          ],
+          "exactForceOnFluid": [
+            5.656854249492381,
+            -8.485281374238571
+          ]
+        },
+        "outerWall": {
+          "faces": 64,
+          "length": 11.827017202914714,
+          "cellPressureRms": 0.5555525991158897,
+          "reactionPressureRms": 0.49074837170915325,
+          "cellPressureEndpointMaximum": 1.2430889245599253,
+          "reactionPressureEndpointMaximum": 2.3130427444371637,
+          "tractionRms": 0.5098082743052221,
+          "shearRms": 0.1380960253406421,
+          "tractionMomentRms": 0.5094447135907854,
+          "bestP1TractionRms": 0.019249944012161724,
+          "forceOnFluid": [
+            -17.484791989791713,
+            26.227187984652495
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.227187984632696
+          ]
+        },
+        "momentumImbalance": [
+          2.8421709430404007e-13,
+          -2.8066438062523957e-13
+        ],
+        "boundaryVolumeFlux": 0,
+        "totalSeconds": 0.806775083
+      },
+      "iterations": [
+        {
+          "iteration": "0",
+          "accepted": "1",
+          "restarts": "2",
+          "products": "94",
+          "linear_residual": "7.5066342838055172e-14",
+          "cell_momentum": "2.0068140640241857e-13",
+          "face_momentum": "1.4603081626736254e-13",
+          "divergence": "7.9338046614072365e-13",
+          "state_change": "8.3158714708083536"
+        }
+      ]
+    },
+    {
+      "level": 5,
+      "cells": 740,
+      "baseline": {
+        "velocityP2Rms": 0.0014777538467053714,
+        "pressureP1Rms": 0.0740306688194213,
+        "pressureP1MeanRemovedRms": 0.05869098469268514,
+        "pressureMeanError": -0.0451210398999606,
+        "pressureVertexMaximum": 0.6567865942019555,
+        "embeddedWall": {
+          "faces": 72,
+          "length": 6.122934917841433,
+          "cellPressureRms": 0.04953578257310689,
+          "reactionPressureRms": 0.04760046553997211,
+          "cellPressureEndpointMaximum": 0.06887403808623827,
+          "reactionPressureEndpointMaximum": 0.071914642387771,
+          "tractionRms": 0.04787068038497606,
+          "shearRms": 0.00507914568588709,
+          "tractionMomentRms": 0.04786730120931795,
+          "bestP1TractionRms": 0.0005687841919089478,
+          "forceOnFluid": [
+            5.656854249493869,
+            -8.485281374230317
+          ],
+          "exactForceOnFluid": [
+            5.6568542494923815,
+            -8.485281374238568
+          ]
+        },
+        "outerWall": {
+          "faces": 128,
+          "length": 11.827017202914709,
+          "cellPressureRms": 0.26350266811845474,
+          "reactionPressureRms": 0.16679900701931105,
+          "cellPressureEndpointMaximum": 0.6567865942019556,
+          "reactionPressureEndpointMaximum": 1.2768743811870755,
+          "tractionRms": 0.17324535958276555,
+          "shearRms": 0.04681928955391788,
+          "tractionMomentRms": 0.17317605024947488,
+          "bestP1TractionRms": 0.004900024178829647,
+          "forceOnFluid": [
+            -17.48479198975646,
+            26.227187984624425
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.22718798463267
+          ]
+        }
+      },
+      "potentialTarget": {
+        "converged": true,
+        "stop": 0,
+        "reason": "Original momentum, divergence, linear and applicable state-change targets satisfied",
+        "cells": 740,
+        "faces": 1568,
+        "meshKey": 3094372810068783641,
+        "solveQuadrature": 12,
+        "errorQuadrature": 16,
+        "viscosity": 1,
+        "amplitude": 1,
+        "equationTolerance": 1e-09,
+        "stateTolerance": 1e-09,
+        "linearTolerance": 1e-13,
+        "maximumLinearRestarts": 50,
+        "krylovDirections": 60,
+        "maximumIterations": 40,
+        "boundaryReferenceVelocityMaximum": 1.504065473505698e-17,
+        "boundaryReferenceNormalViscousStressMaximum": 1.3797978100528407e-15,
+        "solveAndReadSeconds": 1.999384709,
+        "area": 5.913968870131296,
+        "minimumCellArea": 0.0003173552717191417,
+        "maximumCellDiameter": 0.15390412016647376,
+        "pressureReferenceAtGaugeCell": -0.38217786441545565,
+        "velocityP2Rms": 0.0013241844904802564,
+        "velocityP1Rms": 0.0021692796845596634,
+        "pressureP1Rms": 0.058915880482198334,
+        "pressureMeanError": -0.028323679423264157,
+        "pressureP1MeanRemovedRms": 0.05166091517695792,
+        "pressureVertexMaximum": 0.5867927030221965,
+        "velocityGradientRms": 0.05234302722028793,
+        "exactVelocityRms": 0.007972140083391989,
+        "exactGaugedPressureRms": 3.8274077362739987,
+        "embeddedWall": {
+          "faces": 72,
+          "length": 6.122934917841433,
+          "cellPressureRms": 0.03245632268354464,
+          "reactionPressureRms": 0.031139549117192834,
+          "cellPressureEndpointMaximum": 0.05057795601263887,
+          "reactionPressureEndpointMaximum": 0.05926490808662116,
+          "tractionRms": 0.031597709886911914,
+          "shearRms": 0.005361319881837581,
+          "tractionMomentRms": 0.031592590185682626,
+          "bestP1TractionRms": 0.0005687841919089478,
+          "forceOnFluid": [
+            5.656854249493937,
+            -8.485281374230865
+          ],
+          "exactForceOnFluid": [
+            5.6568542494923815,
+            -8.485281374238568
+          ]
+        },
+        "outerWall": {
+          "faces": 128,
+          "length": 11.827017202914709,
+          "cellPressureRms": 0.22597344423160862,
+          "reactionPressureRms": 0.17409293936921505,
+          "cellPressureEndpointMaximum": 0.5867927030221964,
+          "reactionPressureEndpointMaximum": 1.108355174922187,
+          "tractionRms": 0.17948865321779545,
+          "shearRms": 0.043678657210641667,
+          "tractionMomentRms": 0.17942175564012547,
+          "bestP1TractionRms": 0.004900024178829647,
+          "forceOnFluid": [
+            -17.484791989756502,
+            26.227187984624937
+          ],
+          "exactForceOnFluid": [
+            -17.484791989755124,
+            26.22718798463267
+          ]
+        },
+        "momentumImbalance": [
+          1.7763568394002505e-13,
+          -4.263256414560601e-14
+        ],
+        "boundaryVolumeFlux": 0,
+        "totalSeconds": 3.399742
+      },
+      "iterations": [
+        {
+          "iteration": "0",
+          "accepted": "1",
+          "restarts": "4",
+          "products": "206",
+          "linear_residual": "9.8951578868027468e-14",
+          "cell_momentum": "3.3729338674800174e-14",
+          "face_momentum": "1.6626842037037483e-13",
+          "divergence": "7.8564214603878088e-13",
+          "state_change": "8.5930671864860013"
+        }
+      ]
+    }
+  ],
+  "crossCaseControls": [
+    {
+      "case": "sheared8-stokes",
+      "variant": "baseline",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "solve",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-baseline",
+        "0",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "check",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-baseline.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-baseline.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 1,
+      "matrixProducts": 48,
+      "linearRestarts": 1,
+      "maximumLinearRelativeResidual": 7.412303859523835e-14,
+      "finalMetrics": {
+        "iteration": 0,
+        "restarts": 1,
+        "products": 48,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 7.412303859523835e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 8.827274193034987e-13,
+        "faceMomentum": 1.0369483049998962e-12,
+        "divergence": 4.442759471446935e-12,
+        "residualNorm": 6.660422039044492e-13,
+        "stateChange": 3.8716547019420924,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 0
+      },
+      "accuracy": {
+        "velocityRms": 0.015458931994936519,
+        "pressureRms": 0.31211212391272,
+        "rt1VelocityRms": 0.057038196862358614,
+        "manufacturedTractionMomentRms": 0.5789806952894376,
+        "maxDivergence": 4.444143478696684e-12,
+        "internalResidual": 1.3698338849334591e-14,
+        "freeFaceResidual": 1.2961853812498703e-13,
+        "energyBalance": 1.3145040611561853e-13,
+        "convectionIdentityError": 0,
+        "globalMomentumBalanceX": -4.4874520765958437e-13,
+        "globalMomentumBalanceY": -2.955552469430245e-13,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.8245791670051403,
+      "solveApiAndStateOutputSeconds": 0.053738,
+      "rawResult": "raw/sheared8-stokes-baseline.json"
+    },
+    {
+      "case": "sheared8-stokes",
+      "variant": "potential",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "solve",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-potential",
+        "0",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "check",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-potential.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-stokes-potential.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 1,
+      "matrixProducts": 48,
+      "linearRestarts": 1,
+      "maximumLinearRelativeResidual": 7.350475429173888e-14,
+      "finalMetrics": {
+        "iteration": 0,
+        "restarts": 1,
+        "products": 48,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 7.350475429173888e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 6.945555242054979e-13,
+        "faceMomentum": 1.0480505352461478e-12,
+        "divergence": 4.4532586625654426e-12,
+        "residualNorm": 6.646995171059214e-13,
+        "stateChange": 4.3423799506506455,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 0
+      },
+      "accuracy": {
+        "velocityRms": 0.016412889934598395,
+        "pressureRms": 0.3612814658406141,
+        "rt1VelocityRms": 0.0482429322304627,
+        "manufacturedTractionMomentRms": 0.7312360588817194,
+        "maxDivergence": 4.455899150459595e-12,
+        "internalResidual": 1.2207397017045398e-14,
+        "freeFaceResidual": 1.3100631690576847e-13,
+        "energyBalance": 1.0302869668521453e-13,
+        "convectionIdentityError": 0,
+        "globalMomentumBalanceX": -4.2839343183942447e-13,
+        "globalMomentumBalanceY": -2.8045621380812236e-13,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.35713616700377315,
+      "solveApiAndStateOutputSeconds": 0.055260208,
+      "rawResult": "raw/sheared8-stokes-potential.json"
+    },
+    {
+      "case": "sheared16-stokes",
+      "variant": "baseline",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "solve",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-baseline",
+        "0",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "check",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-baseline.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-baseline.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 1,
+      "matrixProducts": 116,
+      "linearRestarts": 2,
+      "maximumLinearRelativeResidual": 6.83707561569169e-14,
+      "finalMetrics": {
+        "iteration": 0,
+        "restarts": 2,
+        "products": 116,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 6.83707561569169e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 4.0321079808336435e-12,
+        "faceMomentum": 6.02629057766535e-13,
+        "divergence": 5.4201831267396035e-12,
+        "residualNorm": 3.3868951782108043e-13,
+        "stateChange": 1.267717047338543,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 0
+      },
+      "accuracy": {
+        "velocityRms": 0.0016219640708007162,
+        "pressureRms": 0.0750523592493784,
+        "rt1VelocityRms": 0.009786271094349548,
+        "manufacturedTractionMomentRms": 0.22273723161795417,
+        "maxDivergence": 5.430552212565377e-12,
+        "internalResidual": 2.953453454024313e-14,
+        "freeFaceResidual": 3.774758283725532e-14,
+        "energyBalance": -1.680433570072637e-12,
+        "convectionIdentityError": 0,
+        "globalMomentumBalanceX": -3.9118274591798397e-13,
+        "globalMomentumBalanceY": -2.766294138201175e-13,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.27148883300833404,
+      "solveApiAndStateOutputSeconds": 0.259266125,
+      "rawResult": "raw/sheared16-stokes-baseline.json"
+    },
+    {
+      "case": "sheared16-stokes",
+      "variant": "potential",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "solve",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-potential",
+        "0",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "check",
+        "sheared",
+        "16",
+        "noslip-sheared",
+        "1",
+        "stokes",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-potential.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared16-stokes-potential.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 1,
+      "matrixProducts": 116,
+      "linearRestarts": 2,
+      "maximumLinearRelativeResidual": 6.776345282205904e-14,
+      "finalMetrics": {
+        "iteration": 0,
+        "restarts": 2,
+        "products": 116,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 6.776345282205904e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 3.843592111252292e-12,
+        "faceMomentum": 6.021849685566849e-13,
+        "divergence": 5.4698298496924514e-12,
+        "residualNorm": 3.369204881015622e-13,
+        "stateChange": 1.3674300007318028,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 0
+      },
+      "accuracy": {
+        "velocityRms": 0.001776521197936193,
+        "pressureRms": 0.09247228828285636,
+        "rt1VelocityRms": 0.008471918916392844,
+        "manufacturedTractionMomentRms": 0.28660640006568394,
+        "maxDivergence": 5.483653549311546e-12,
+        "internalResidual": 3.303845288424194e-14,
+        "freeFaceResidual": 3.7636560534792807e-14,
+        "energyBalance": -1.6626700016786344e-12,
+        "convectionIdentityError": 0,
+        "globalMomentumBalanceX": -3.7608111069786787e-13,
+        "globalMomentumBalanceY": -2.660562742340389e-13,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.28927604196360335,
+      "solveApiAndStateOutputSeconds": 0.277627458,
+      "rawResult": "raw/sheared16-stokes-potential.json"
+    },
+    {
+      "case": "sheared8-ns01",
+      "variant": "baseline",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "solve",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-baseline",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "check",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-baseline.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-baseline.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 11,
+      "matrixProducts": 4880,
+      "linearRestarts": 87,
+      "maximumLinearRelativeResidual": 9.807847829113166e-14,
+      "finalMetrics": {
+        "iteration": 10,
+        "restarts": 13,
+        "products": 750,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 9.651757685117566e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 1.0880185641326534e-14,
+        "faceMomentum": 7.283063041541027e-14,
+        "divergence": 1.0071534486308476e-12,
+        "residualNorm": 6.130486597022611e-14,
+        "stateChange": 1.78260739502889e-10,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 1000000
+      },
+      "accuracy": {
+        "velocityRms": 0.015129252498485122,
+        "pressureRms": 0.012322305373761553,
+        "rt1VelocityRms": 0.03453533262428979,
+        "manufacturedTractionMomentRms": 0.00827408245197278,
+        "maxDivergence": 1.0036017161201467e-12,
+        "internalResidual": 1.9081958235744878e-16,
+        "freeFaceResidual": 9.103828801926284e-15,
+        "energyBalance": 1.7458257062230587e-14,
+        "convectionIdentityError": -1.1275702593849246e-16,
+        "globalMomentumBalanceX": -4.860803599904262e-15,
+        "globalMomentumBalanceY": 1.384309333829492e-15,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 1.7903414170141332,
+      "solveApiAndStateOutputSeconds": 1.779431459,
+      "rawResult": "raw/sheared8-ns01-baseline.json"
+    },
+    {
+      "case": "sheared8-ns01",
+      "variant": "potential",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "solve",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-potential",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "check",
+        "sheared",
+        "8",
+        "noslip-sheared",
+        ".01",
+        "ns",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-potential.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/sheared8-ns01-potential.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 13,
+      "matrixProducts": 6415,
+      "linearRestarts": 112,
+      "maximumLinearRelativeResidual": 9.984044786559006e-14,
+      "finalMetrics": {
+        "iteration": 12,
+        "restarts": 14,
+        "products": 839,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 9.493431509174973e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 1.8207657603852567e-14,
+        "faceMomentum": 1.1124434706744058e-13,
+        "divergence": 1.2396379519537818e-12,
+        "residualNorm": 6.111565674213755e-14,
+        "stateChange": 7.105427357601002e-15,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 1000000
+      },
+      "accuracy": {
+        "velocityRms": 0.0062711195723923665,
+        "pressureRms": 0.008022438171461558,
+        "rt1VelocityRms": 0.014823479565559362,
+        "manufacturedTractionMomentRms": 0.007095502263822608,
+        "maxDivergence": 1.2394794908786267e-12,
+        "internalResidual": 2.2898349882893854e-16,
+        "freeFaceResidual": 1.3961054534661343e-14,
+        "energyBalance": 2.8144153674247718e-14,
+        "convectionIdentityError": 9.410874857174178e-17,
+        "globalMomentumBalanceX": -8.80415532145129e-15,
+        "globalMomentumBalanceY": -4.266118708295963e-15,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 2.1914138339925557,
+      "solveApiAndStateOutputSeconds": 2.179483084,
+      "rawResult": "raw/sheared8-ns01-potential.json"
+    },
+    {
+      "case": "square8-ns1",
+      "variant": "baseline",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "solve",
+        "square",
+        "8",
+        "noslip",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-baseline",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-baseline",
+        "check",
+        "square",
+        "8",
+        "noslip",
+        ".1",
+        "ns",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-baseline.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-baseline.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 8,
+      "matrixProducts": 410,
+      "linearRestarts": 8,
+      "maximumLinearRelativeResidual": 9.910198418479059e-14,
+      "finalMetrics": {
+        "iteration": 7,
+        "restarts": 1,
+        "products": 54,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 7.690527488365161e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 5.2394623665509924e-14,
+        "faceMomentum": 8.415490526658687e-14,
+        "divergence": 1.3527507264950176e-12,
+        "residualNorm": 4.721562783704904e-14,
+        "stateChange": 7.827072323607354e-15,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 1000000
+      },
+      "accuracy": {
+        "velocityRms": 0.0076756598470372394,
+        "pressureRms": 0.021882864807912843,
+        "rt1VelocityRms": 0.02429915864926159,
+        "manufacturedTractionMomentRms": 0.038715995742397355,
+        "maxDivergence": 1.3529555860166206e-12,
+        "internalResidual": 8.186659947735926e-16,
+        "freeFaceResidual": 1.0519363158323358e-14,
+        "energyBalance": 4.440892098500626e-16,
+        "convectionIdentityError": -3.426078865054194e-16,
+        "globalMomentumBalanceX": 4.0288952729561345e-15,
+        "globalMomentumBalanceY": -4.587476232220666e-15,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.8148090420290828,
+      "solveApiAndStateOutputSeconds": 0.803187209,
+      "rawResult": "raw/square8-ns1-baseline.json"
+    },
+    {
+      "case": "square8-ns1",
+      "variant": "potential",
+      "solveCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "solve",
+        "square",
+        "8",
+        "noslip",
+        ".1",
+        "ns",
+        "closed",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-potential",
+        ".1",
+        "40",
+        "mass",
+        "50",
+        "zero"
+      ],
+      "checkCommand": [
+        "/tmp/cartmesh-stokes-consistency/solver-potential",
+        "check",
+        "square",
+        "8",
+        "noslip",
+        ".1",
+        "ns",
+        "closed",
+        "6",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-potential.accepted.state",
+        "/tmp/cartmesh-stokes-consistency/raw/square8-ns1-potential.accuracy"
+      ],
+      "returncode": 0,
+      "checkReturncode": 0,
+      "converged": true,
+      "iterations": 8,
+      "matrixProducts": 411,
+      "linearRestarts": 8,
+      "maximumLinearRelativeResidual": 9.282370179159144e-14,
+      "finalMetrics": {
+        "iteration": 7,
+        "restarts": 1,
+        "products": 54,
+        "linearInitialRelativeResidual": 1,
+        "linearRelativeResidual": 8.451312665186238e-14,
+        "originalEquationsEvaluated": true,
+        "accepted": true,
+        "cellMomentum": 6.439293542825908e-14,
+        "faceMomentum": 6.607214775300463e-14,
+        "divergence": 1.4071676969006983e-12,
+        "residualNorm": 5.1845948450426525e-14,
+        "stateChange": 5.870304242705515e-15,
+        "trials": 1,
+        "alpha": 1,
+        "pseudoStep": 1000000
+      },
+      "accuracy": {
+        "velocityRms": 0.008188386641302373,
+        "pressureRms": 0.021858090504894515,
+        "rt1VelocityRms": 0.01800630836548282,
+        "manufacturedTractionMomentRms": 0.039026796527439594,
+        "maxDivergence": 1.4071921956435905e-12,
+        "internalResidual": 1.0061396160665481e-15,
+        "freeFaceResidual": 8.259018469125579e-15,
+        "energyBalance": 2.6645352591003757e-15,
+        "convectionIdentityError": 2.949029909160572e-17,
+        "globalMomentumBalanceX": -1.000913761595168e-14,
+        "globalMomentumBalanceY": -7.703039595075012e-15,
+        "wallNormal": 0
+      },
+      "solveProcessSeconds": 0.8008099159924313,
+      "solveApiAndStateOutputSeconds": 0.789839666,
+      "rawResult": "raw/square8-ns1-potential.json"
+    }
+  ],
+  "sharedControls": {
+    "polygon": "Identical archived 60/200/740 true Cut-cell Solver meshes, original zero wall traces, p reference at last cell, nu=1, Stokes backtracking, q12/error-q16, original mass/ILU0/zero seed, linear 1e-13, equation 1e-9, 50x60 linear and40 outer budgets.",
+    "crossCases": "sheared8/16 stationary manufactured Stokes nu1; sheared8 NS nu.01; square8 NS nu.1. Zero boundary velocity, no-slip manufactured exact force. q6, same native API/default mass/ILU0/zero and budgets. NS initial pseudo step .1; Stokes direct/backtracking.",
+    "crossPressureNormalization": "runOseen existing pressureRms removes one global mean in this closed-domain comparison; it is not an absolute-outlet-pressure norm. Polygon controls retain the exact native last-cell gauge and separately report mean removal.",
+    "wallMetric": "Polygon pressure/shear includes continuous analytic trace error. Cross-case manufacturedTractionMomentRms compares the complete native face-traction first moments with exact projected stress, normalized by full wall length; not pointwise maximum or pure viscous-term extraction.",
+    "productChanges": false
+  },
+  "controlsPassed": {
+    "elementTest": {
+      "source": "tests/compatible_flow_element_test.cpp",
+      "returncode": 0,
+      "result": {
+        "cells": 7,
+        "velocityMax": 8.881784197001252e-15,
+        "pressureMax": 1.687538997430238e-14,
+        "internalEquilibriumMax": 1.161028556277871e-13,
+        "gradientLoadBalanceMax": 9.769962616701378e-15
+      },
+      "coverage": "existing 7 irregular original cells: quadratic Stokes reconstruction, affine pressure, full divergence/trace constraints, gradient-force pressure compatibility, condensation and invalid data."
+    },
+    "apiTest": {
+      "source": "tests/compatible_flow_test.cpp",
+      "returncode": 0,
+      "rawLog": "raw/api-potential.log",
+      "coverage": "Existing complete native API test executable linked to candidate, including affine NS/quad Stokes/pressure boundaries/scales/invalid controls and truthful budgets. No allowances changed."
+    },
+    "ctest": "These are two directly compiled/executed existing native checks of the candidate; no claim of a full CTest/App/platform qualification.",
+    "delivery": {
+      "readerAndOriginalOutputByteIdentical": [
+        "approximation3.json",
+        "approximation3.cells.csv"
+      ],
+      "patchRecoveredSourceSha256": "82527aa52fc543d7a6a2d28a601a67949edbe05dc036d764d1d414da7d0e4468"
+    }
+  },
+  "decision": {
+    "adoptAsGeneralDefault": false,
+    "polygonFindings": "740 cells: P2 velocity .00147775 -> .00132418, pressure .0740307 -> .0589159, embedded normal traction pressure .0476005 -> .0311395. However embedded shear .00507915 -> .00536132 and outer reaction-pressure .166799 -> .174093 worsen; pressure maxima remain nonmonotone.",
+    "crossFindings": "Sheared Stokes n8/n16 velocity, pressure and traction errors all worsen. n16 pressure .0750524 -> .0924723 and traction .222737 -> .286606. Square NS velocity and traction slightly worsen. Low-nu sheared NS velocity improves .0151293 -> .00627112 and pressure .0123223 -> .00802244, but outer iterations 11 -> 13 and products 4880 -> 6415.",
+    "interpretation": "Preserved identities and success on one Cut-cell example are insufficient for a general reconstruction upgrade. Keep the reproducible negative comparison and localized NS benefit, retain R1 in production, do not tune a blend or add UI/API choices.",
+    "remaining": "Original cloud fixed-geometry refinement, curved local pressure, original 4716/17260 default reliability, geometry/domain errors and App/platform qualification remain required."
+  },
+  "cost": "All full solve/process times are retained, including additional outer work. This is an accuracy/mechanism comparison, not a controlled ABBA performance benchmark; some polynomial runs overlapped compilation.",
+  "files": {
+    "sourceSha256": {
+      "artifacts/current/native-laminar-stokes-approximation.cpp": "3c9ac714fcb10d284a9fddc304452c29b4fd8bd8ab8c3453941991732a55ba28",
+      "artifacts/current/native-laminar-polygon-stokes.cpp": "c54f220d7bf6b3f6e5576099f1b7d4be428f1c2ce91ad28505bb5047073c3894",
+      "artifacts/current/native-laminar-potential-lift.patch": "c70d799d3037cf85baddf0f780ec0757484a3d709ea99c05c17ef25078f58288"
+    },
+    "acceptedStates": {
+      "raw/potential3.accepted.state": {
+        "bytes": 8952,
+        "sha256": "78e4505fd415bf10e588f21f57f37ab99379a0b67eb33e027f92d40c09db6d7a"
+      },
+      "raw/potential4.accepted.state": {
+        "bytes": 28760,
+        "sha256": "766f9a2ed57396a64deaf4d2b0d89aa06a3747830fc11be2977fc413e5bddf31"
+      },
+      "raw/potential5.accepted.state": {
+        "bytes": 103480,
+        "sha256": "9215bac33593bf1eece440a95de5eeff97932fae79643964c7ede2d66b3a368e"
+      },
+      "raw/sheared16-stokes-baseline.accepted.state": {
+        "bytes": 35864,
+        "sha256": "73bb33c03fd2af5460a7f6a612d0e180be17439d83ed4f74c5111598b83c87c5"
+      },
+      "raw/sheared16-stokes-potential.accepted.state": {
+        "bytes": 35864,
+        "sha256": "974b4a5b009f9543d71aa8e6eb7881488cd7589629bec68fcf3ba0bf8e4509ff"
+      },
+      "raw/sheared8-ns01-baseline.accepted.state": {
+        "bytes": 9240,
+        "sha256": "d452cfa6eae16246c230197bb91209ea18f7f32876e767b4af72989477e8627f"
+      },
+      "raw/sheared8-ns01-potential.accepted.state": {
+        "bytes": 9240,
+        "sha256": "c5e64ee6a0319742cb4115b44cda642d75b6717c45c7585fd63deb2954894e76"
+      },
+      "raw/sheared8-stokes-baseline.accepted.state": {
+        "bytes": 9240,
+        "sha256": "dd8bce2ccbb91025f99da4621d4b6f037b096373706a7ae2013e1d2e924e02f4"
+      },
+      "raw/sheared8-stokes-potential.accepted.state": {
+        "bytes": 9240,
+        "sha256": "22ec498924f3fa42ab4f20969a5115009328b32f5f145228e520d4f95f9719eb"
+      },
+      "raw/solver3-q12.accepted.state": {
+        "bytes": 8952,
+        "sha256": "cd77077c4842774064bca0324a039315fdfb2e442b661d9c7edef281cfdf250b"
+      },
+      "raw/solver4-q12.accepted.state": {
+        "bytes": 28760,
+        "sha256": "86a781e781b186f2dc8d745c2722c0c7da76e0d08210c46e6fb255b83aaceea0"
+      },
+      "raw/solver5-q12.accepted.state": {
+        "bytes": 103480,
+        "sha256": "ed22cc537ddd600b1c352ddc22b0621ea7d7ee08cdfa438bfe3be4733c638030"
+      },
+      "raw/square8-ns1-baseline.accepted.state": {
+        "bytes": 9240,
+        "sha256": "168090784692504924d1e18b226eb51654b541ea447104a42fbaff3437a08964"
+      },
+      "raw/square8-ns1-potential.accepted.state": {
+        "bytes": 9240,
+        "sha256": "1126358182f02aad6b9da39ede9c5af57c239dc52d3b620106d5166ddacc1ceb"
+      }
+    }
+  },
+  "storage": {
+    "archive": "outputs/laminar-stability/potential-lift/native-laminar-potential-lift.tar.gz",
+    "cloudRawCopyConfirmed": false,
+    "inputArchive": "outputs/laminar-stability/polygon-stokes/native-laminar-polygon-stokes.tar.gz",
+    "inputArchiveSha256": "268f60627c96293c796291e803409a7900a3e04dac4784910d468e981d3c2ff4",
+    "inputDependencyFiles": {
+      "raw/solver3-q12.accepted.state": {
+        "bytes": 8952,
+        "sha256": "cd77077c4842774064bca0324a039315fdfb2e442b661d9c7edef281cfdf250b"
+      },
+      "raw/solver5.solver.cm2d": {
+        "bytes": 122053,
+        "sha256": "4f32ecc37d02c3135062669c707db98e0d0f5ac7d19359bf68330a717e224a24"
+      },
+      "raw/solver5-q12.accepted.state": {
+        "bytes": 103480,
+        "sha256": "ed22cc537ddd600b1c352ddc22b0621ea7d7ee08cdfa438bfe3be4733c638030"
+      },
+      "raw/solver3.solver.cm2d": {
+        "bytes": 9475,
+        "sha256": "3e321e0680ebe23b14f421b563e1f8d3002a150aaf794727b076d4a774715c22"
+      },
+      "raw/solver4-q12.accepted.state": {
+        "bytes": 28760,
+        "sha256": "86a781e781b186f2dc8d745c2722c0c7da76e0d08210c46e6fb255b83aaceea0"
+      },
+      "raw/solver4.solver.cm2d": {
+        "bytes": 32530,
+        "sha256": "4b1f0fd93bfb1edc948d6ce363d51a80e07ffbc74f3ce53f68ee9025e99679dd"
+      }
+    },
+    "policy": "Preserve unique raw fields and rejected-method evidence. Clean temporary files only by exact SHA allowlist after archive/dependency readback and open-job check.",
+    "archiveSha256": "c6565ec40dbf8f2ec4771a801b9a18f730957c3129a43f4ce0691d5768566816",
+    "archiveBytes": 1161592,
+    "archiveRawFiles": 120,
+    "archiveRawBytes": 3321522,
+    "archiveReadbackVerified": true,
+    "cleanup": {
+      "exactAllowlistFilesRemoved": 137,
+      "uncompressedBytesRemoved": 6699495,
+      "newArchiveAndOldDependenciesReadBack": true,
+      "noOpenFilesVerified": true,
+      "temporaryRootRemoved": true,
+      "regenerableBinariesAndSingleSourceFilesRemoved": [
+        "CompatibleFlowElement-potential.cpp",
+        "api-potential",
+        "approximation",
+        "approximation-delivery",
+        "approximation.cpp",
+        "element-potential",
+        "polygon-potential",
+        "restored-element.cpp",
+        "solve-and-check.cpp",
+        "solver-baseline",
+        "solver-potential"
+      ]
+    }
+  }
+}

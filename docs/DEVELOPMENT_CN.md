@@ -722,6 +722,10 @@ build/native-laminar-polygon-stokes outputs/polygon-stokes/level3.solver.cm2d ar
 
 `.cells.csv` 保存全部P1系数与逐格积分误差；`.walls.csv` 保存实际面长度/法向、直接外推p及完整守恒牵引一次矩，并和精确牵引的P1投影分开。法向反力在此静止无滑移参考下对应压力，切向比较的是完整数值牵引与物理剪切，包含稳定/载荷重构的数值误差，不能把牵引减压力直接称纯黏性项。压力差仿射，顶点/端点最大值覆盖完整单元/壁面；体内RMS以实际流体面积归一化，壁面RMS以完整对应边界长度归一化。原始接受状态/检查点、组装和误差积分敏感性、最初错误入口的拒绝均保存在 `native-laminar-polygon-stokes.json` 所列无损归档。当前三档尚未充分解析，原圆柱、非线性、几何/外域和默认可靠性资格仍独立进行。
 
+固定多边形序列的原生逼近比较入口 `native-laminar-stokes-approximation.cpp` 直接复用上一入口的解析场（`CARTMESH_POLYGON_STOKES_NO_MAIN`只省略main）。命令为 `stokes-approximation MESH.solver.cm2d ACCEPTED.state native-laminar-polygon-stokes.xy FRESH.csv`，编译和链接方法同上一程序。逐格6×6质量矩阵给出P2 L2投影，同时计算P1单元/面插值后的共用P2势及实际接受场；这不是另一套PDE，也不能把不满足全局约束的自由P2最优当作可直接实现的流场。
+
+`native-laminar-potential-lift.patch` 是**已否决作为通用替换**的可恢复方法试验：只把 `Lift` 的L2最小化目标换成P2势。不要应用到当前生产核或自动启用；复现时将原 `src/fv/CompatibleFlowElement2D.cpp` 和该补丁复制到临时目录，`patch` 生成单个试验源，编译时将试验源放在两个原生静态库之前，以取代该可执行文件中的局部核，保持仓库/库文件不变。原始核SHA和实际候选SHA、两项既有原生检查、全部成对解析场与命令记录在 `native-laminar-potential-lift.json`。局部核约束的来源见 [HHO原论文§2.4](https://arxiv.org/html/2203.07180v3)；本试验目标替换是自有候选，没有继承论文完整收敛定理。闭域交叉算例旧读取器的压力RMS减去全局均值，不能外推固定压力出口；多边形主序列仍保留原末格压力规范。低黏度NS上的局部收益保留，但剪切Stokes与部分壁面量变差，产品继续使用原P1目标。
+
 ### 相容混合边界与显式命令行
 
 API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。

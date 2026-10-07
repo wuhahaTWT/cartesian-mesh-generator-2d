@@ -70,6 +70,7 @@ struct WallError {
 };
 void checkedClose(std::ofstream& out){out.close();if(!out)throw std::runtime_error("reference evidence output failed");}
 }
+#ifndef CARTMESH_POLYGON_STOKES_NO_MAIN
 int main(int argc,char** argv)try {
     using namespace polygon_stokes;
     if(argc!=7)throw std::runtime_error("usage: polygon-stokes mesh.solver.cm2d polygon.xy padding_fraction solve_order error_order fresh_prefix");
@@ -161,3 +162,5 @@ int main(int argc,char** argv)try {
           <<",\"totalSeconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<"}\n";checkedClose(report);
     std::cout<<"cells="<<mesh.cells.size()<<" uP2="<<std::sqrt(uError/area)<<" p="<<std::sqrt(pError/area)<<" inner-wall-p="<<std::sqrt(walls[0].pReaction/walls[0].length)<<'\n';
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+
+#endif

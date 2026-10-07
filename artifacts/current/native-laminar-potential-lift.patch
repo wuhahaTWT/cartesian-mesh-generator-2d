@@ -1,0 +1,16 @@
+--- a/src/fv/CompatibleFlowElement2D.cpp
++++ b/src/fv/CompatibleFlowElement2D.cpp
+@@ -131,8 +131,11 @@
+             if(std::hypot(d.x,d.y)>256*std::numeric_limits<double>::epsilon()*scale)throw std::runtime_error("fan endpoints not closed at construction roundoff");}
+         Mat k(n,n),r(n,2*a.m),constraints(ncon,nv),targets(ncon,2*a.m);std::size_t cr=0;auto g=gauss(order);
+         for(std::size_t i=0;i<nf;++i){const auto& tr=tri[i];
+-            for(auto q:tr.quadrature(order)){auto s=tr.shape(q.p);auto phi=a.basis.phi(q.p);double w=q.w/cell.area;
+-                for(std::size_t j=0;j<8;++j){for(std::size_t l=0;l<8;++l)k(8*i+j,8*i+l)+=w*dot(s[j],s[l]);for(std::size_t c=0;c<2;++c)for(std::size_t l=0;l<3;++l)r(8*i+j,c*a.m+l)+=w*(c?s[j].y:s[j].x)*phi[l];}}
++            for(auto q:tr.quadrature(order)){auto s=tr.shape(q.p);auto theta=a.basis.theta(q.p);double w=q.w/cell.area;
++                // Research candidate: closest RT1 field to the existing P2
++                // potential. All original normal/divergence constraints remain.
++                Vec target(a.m);for(std::size_t l=0;l<a.m;++l)for(std::size_t z=0;z<6;++z)target[l]+=theta[z]*a.potential(z,l);
++                for(std::size_t j=0;j<8;++j){for(std::size_t l=0;l<8;++l)k(8*i+j,8*i+l)+=w*dot(s[j],s[l]);for(std::size_t c=0;c<2;++c)for(std::size_t l=0;l<a.m;++l)r(8*i+j,c*a.m+l)+=w*(c?s[j].y:s[j].x)*target[l];}}
+             constraints(cr,8*i+1)=1;constraints(cr,8*i+5)=1;constraints(cr+1,8*i+6)=3;constraints(cr+2,8*i+7)=3;
+             for(std::size_t c=0;c<2;++c)for(std::size_t j=0;j<a.m;++j){const auto& d=c?a.gy:a.gx;double hdet=tr.h*tr.det;
+                 targets(cr,c*a.m+j)=hdet*d(0,j);targets(cr+1,c*a.m+j)=hdet*(d(1,j)*tr.j0.x+d(2,j)*tr.j0.y);targets(cr+2,c*a.m+j)=hdet*(d(1,j)*tr.j1.x+d(2,j)*tr.j1.y);}
