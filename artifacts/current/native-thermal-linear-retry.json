@@ -244,7 +244,7 @@
     "desktop/tests/thermal.test.js": "af1c31fc9a78806842514ecaf08114a0a37095a9d432c5c6f1f43c50791a78ff"
   },
   "limitations": [
-    "New recovery path has been exercised through native API and actual CLI; GUI recovery on this new binary is not yet verified.",
+    "The original velocity-relaxation=1 failure input is not available in the current GUI, which keeps .6. Native API and real CLI cover the retry branch; frontend tests cover its failure message. Updated packaged App normal continuation through native file dialogs is verified separately.",
     "Only linear iteration exhaustion is classified as recoverable; structural or numerical-breakdown errors still fail.",
     "No new physical accuracy qualification."
   ],
@@ -255,5 +255,193 @@
     "bytes": 70093073,
     "allMatched": true,
     "activeFilesExcluded": true
+  },
+  "packagedAppContinuation": {
+    "format": "cartmesh2d-updated-thermal-app-resume-v1",
+    "sourceCommit": "988d253b57046a6e5069ae81e597264cdb784491",
+    "sourceZipSha256": "bf15caf32c240034f5b79fa2ca465e5ff0c8bde951c2625d3ad4ceb87fb7e23b",
+    "sourceZipUnchanged": true,
+    "savedZipSha256": "5b0a85af11926ddfe3bf0b58a9ca6da0a904bee229bc60dae76e019c7fb3e6e3",
+    "savedZipBytes": 2536783,
+    "zipCrcPassed": true,
+    "nativeBinarySha256": "e312cc19a3e6ab21ae0b696556ff98137f06e3c9263825031f31530ef981f1cf",
+    "packagedApp": "outputs/thermal-linear-retry-app/package/mac-arm64/CartMesh2D.app",
+    "processes": [
+      {
+        "pid": 49162,
+        "executable": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-linear-retry-app/package/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D"
+      }
+    ],
+    "stateMember": "mesh-iNU9xB/thermal-run-pXkHJY/desktop-state.json",
+    "request": {
+      "case": "cavity",
+      "nu": 0.01,
+      "speed": 0.2,
+      "maxIterations": 1500,
+      "tolerance": 1e-08,
+      "convection": "limited-linear",
+      "pressurePreconditioner": "cholesky",
+      "outletBackflow": "reject",
+      "viscousStress": "symmetric",
+      "steadyAcceleration": "none",
+      "linearPolicy": "strict",
+      "velocityRelaxation": 0.6,
+      "pressureCorrectionPasses": 4,
+      "mode": "adaptive",
+      "resume": true,
+      "dt": 0.025,
+      "endTime": 1.45,
+      "minDt": 1e-07,
+      "maxCourant": 1,
+      "maxRetries": 24,
+      "maxSteps": 100000,
+      "diffusivity": 0.02,
+      "initial": 300,
+      "source": 0,
+      "scalarConvection": "upwind",
+      "fluxCorrection": "bounded-spatial",
+      "boundaries": {
+        "wall": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "inlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "outlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "top": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "bottom": {
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        }
+      },
+      "events": [
+        {
+          "time": 0.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0.2
+        },
+        {
+          "time": 0.137,
+          "target": "top",
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.243,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 0.337,
+          "target": "top",
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.913,
+          "target": "source",
+          "kind": "source",
+          "value": 0.1
+        },
+        {
+          "time": 1.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 1.337,
+          "target": "source",
+          "kind": "source",
+          "value": -0.1
+        }
+      ],
+      "timeError": true,
+      "temperatureScale": 1,
+      "timeRtol": 0.01
+    },
+    "files": [
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.thermal.checkpoint",
+        "bytes": 452693,
+        "sha256": "525d7221a8a82eb836de626e0c873954acf55ff4d229f5dd70e3e94c21bdabd2",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.cells.csv",
+        "bytes": 118276,
+        "sha256": "47c89cb1a49b8fd14228a874289c1eb8a3d85480f03ca52be78d9a81e54f556b",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.faces.csv",
+        "bytes": 152086,
+        "sha256": "f7f78b6f3c1047986bdcaa2e828861485b9986cdd2df48ecdebd6dd7e65d0099",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.heat-history.csv",
+        "bytes": 461,
+        "sha256": "2632d54fdaf61659489eece464f64ac3e70c8f3210827ba953990ed8d8ec5d7f",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.thermal-history.csv",
+        "bytes": 450,
+        "sha256": "502d008d723a2445eeee9a836ae0a08421b555f2669542899c60e0583ef1bc77",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.boundary-heat-history.csv",
+        "bytes": 73,
+        "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+        "byteEqualToDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-pXkHJY/thermal.attempt-history.csv",
+        "bytes": 284,
+        "sha256": "5d61880d06a70babceb373a890e6e984da5b5b8e4a8ad376e6e16d8845dab545",
+        "byteEqualToDirectCli": true
+      }
+    ],
+    "observedUi": {
+      "nativeOpenDialog": true,
+      "nativeSaveDialog": true,
+      "startTimeS": 1.4,
+      "endTimeS": 1.45,
+      "newAcceptedSteps": 2,
+      "continuousAcceptedHistorySteps": 109,
+      "cells": 904,
+      "pressurePreconditioner": "cholesky",
+      "maximumStepS": 0.025
+    },
+    "linearFailureControlAvailableInCurrentGui": false,
+    "linearFailureScope": "The reproducing CLI velocity-relaxation=1 input is rejected by current desktop thermal validation; desktop keeps .6. Native API and real CLI test the retry branch, frontend unit test checks diagnostic text. This App run verifies updated-binary continuation.",
+    "temperatureScreenshotVisuallyInspected": true,
+    "fullWindowScreenshotSavedLocally": false
+  },
+  "appRawEvidence": {
+    "manifest": "outputs/thermal-linear-retry-app/raw-final-manifest.json",
+    "manifestSha256": "dab3da8be0494b79b64704c80b934e0d840f8adb0ea53aaf2c0a93b598dea569",
+    "count": 256,
+    "bytes": 456615461,
+    "allMatched": true
   }
 }

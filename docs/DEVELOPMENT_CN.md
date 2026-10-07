@@ -165,6 +165,8 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 真实系统文件选择验收保存在 `outputs/thermal-dialogs/`：`manual-project-1p4.zip` 是通过 NSSavePanel 保存的原包，`verify-save.py` 检查 ZIP、状态和 7 类原生文件，`process-after-reopen.json` 绑定新的 App 进程。`package/mac-arm64/CartMesh2D.app` 已更正 Cholesky 帮助，但物理程序仍为该轮冻结版本；全窗口截图仅在界面工具中查看，未另存本地，不能把导出的场预览当作完整 App 截图。
 
+更新后 App 的实际续算包在 `outputs/thermal-linear-retry-app/project-1p45.zip`，`comparison.json` 绑定新程序哈希、运行进程和 7 类文件字节一致；`run-cli.py` 用正式桌面参数构造器生成同控制参考，`verify-app.py` 读取真实 ZIP 核对。新包完成 1.4→1.45 s／107→109 历史；此前 `outputs/thermal-dialogs/` 包保留原物理版本。原线性失败的松弛系数 1 由 CLI 复现，当前桌面温度只允许 .6，未为了测试开放额外控制。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。
