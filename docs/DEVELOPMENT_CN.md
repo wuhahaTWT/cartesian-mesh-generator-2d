@@ -623,7 +623,33 @@ cmake --build build --target cartmesh2d_fv cartmesh2d_compatible_flow_element_te
 ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_face)$' --output-on-failure
 ```
 
-已有macOS配置继续使用 `/usr/bin/clang++`。新原生测试用非零解析二次Stokes、仿射压力、三次势梯度载荷核对真实弱方程与恢复，并检查非法维数/非有限体力失败。参考量沿用 `U=L=ν=1、p/U²`，局部舍入预算为 `4096 ε N_dof (1+|reference|)`，只用于这些小且形状受控的多项式回归，不是任意网格的条件数保证、产品残差或物理精度阈值。库迁移的三组完整同场对照、全部源码版本和归档见 `native-laminar-compatible-core.json`。下一步仍需把全局边界、完整未知量状态和失败/取消/检查点流程接入产品，而非仅注册库目标。
+已有macOS配置继续使用 `/usr/bin/clang++`。新原生测试用非零解析二次Stokes、仿射压力、三次势梯度载荷核对真实弱方程与恢复，并检查非法维数/非有限体力失败。参考量沿用 `U=L=ν=1、p/U²`，局部舍入预算为 `4096 ε N_dof (1+|reference|)`，只用于这些小且形状受控的多项式回归，不是任意网格的条件数保证、产品残差或物理精度阈值。库迁移的三组完整同场对照、全部源码版本和归档见 `native-laminar-compatible-core.json`。完整全局API与已接通的失败/取消语义见下节；产品CLI/App、一般混合边界及检查点仍须继续接入。
+
+### 相容稳态流动原生 API
+
+`include/cartmesh2d/fv/CompatibleIncompressible2D.hpp` 暴露 `solveCompatibleIncompressible2D(mesh, controls, initialSeed)`，实现位于 `src/fv/CompatibleIncompressible2D.cpp`。它直接使用通过 `makeFvMesh2D` 的原二维网格，显式提供每个边界面的连续物理数据，再在原面上投影P1矩；不按算例名猜入口/出口、不改几何或质量门。当前一个连通流体域，至少有一个完整速度边界以去除刚体自由度；全速度闭域使用末单元平均压力为零的规范，有牵引出口时保留全部绝对平均压力。API支持Stokes及定常NS，保留完整对称应力；物理牵引为 `(ν(G+Gᵀ)-pI)n`，伪牵引为 `(νG-pI)n`，后者保留隐式 `νGᵀn`。这里的压力/牵引除以密度，不能将伪牵引说成分别强制 `p=pD` 和 `∂n u=0`。
+
+一般体力单位为 `m/s²`、速度 `m/s`、运动学压力/牵引 `m²/s²`，函数参数是原物理坐标。内部用调用方明确的 `referenceLength/referenceVelocity` 转为无量纲问题，并原样转回全部P1单元/面系数。压力均值与斜率都保存；完整状态含每单元9个和每原子面4个系数。`CompatibleFlowState2D` 的输入是代数种子，不是经过网格/边界/物性身份核对的物理检查点。
+
+`CompatibleFlowTransport2D` 共用真实RT1守恒对流和解析advector导数；每个P1法向通量在真实零点分段，开放面保留自然对流迹。`CompatibleFlowLinear2D` 共用原稀疏块预条件器；默认Picard速度ILU0、黏性压力质量近似，有显式牵引出口时可选对角Schur/IC0。Newton矩阵不被近似逆替换，坏主元显式失败，没有自动后备解或压力罚项。局部积分/重构准备后缓存，迭代无需导出再读取矩阵。
+
+数值验收与成本：单元弱动量残差除以真实无量纲面积，自由面残差除以真实无量纲面长，P1弱散度在所有真实扇形顶点取最大；默认各自 `1e-9` 是研究迭代目标，非几何或物理精度保证。全部归一化状态系数变化另用 `1e-9`，真线性相对残差用 `1e-13`；普通一次Stokes可豁免场变化，伪时间Stokes仍必须通过。归一化分别相当于动量加速度 `Uref²/Lref`、面牵引 `Uref²`、散度 `Uref/Lref`、速度/压力系数 `Uref/Uref²`。这些尺度使不同单位下的停止规则一致；每次候选仍计算原方程，无额外独立PDE审计。原自由弱方程L2范数只用于回溯和伪步长更新，不独自判收敛。伪时间单位为 `Lref/Uref`，不是物理时间推进。
+
+`CompatibleFlowResult2D` 区分种子、最后接受迭代、最后拒绝场与停止原因；预算耗尽/取消/数值失败均不返回收敛。每个外层记录标明是否接受，原方程还没计算时 `metrics` 为空。取消在单元准备/装配、Krylov乘积和试探场检查中轮询，失败候选不覆盖最后接受场，用户回调异常传播。完整CLI/App与结果导出、一般混合/对称边界、上下文绑定的续算格式仍待接入，此API不自动替换旧默认。
+
+```sh
+cmake -S . -B build
+cmake --build build --target cartmesh2d_fv cartmesh2d_compatible_flow_tests cartmesh2d_compatible_flow_element_tests cartmesh2d_flow_face_tests -j 2
+ctest --test-dir build -R '^(cartmesh2d_compatible_flow|cartmesh2d_compatible_flow_element|cartmesh2d_flow_face)$' --output-on-failure
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-compatible-solver.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-compatible-solver
+# 选择不存在的输出前缀；此研究适配器只负责准备已存在的制造解与保存状态。
+build/native-laminar-compatible-solver sheared 4 noslip-sheared .01 ns closed outputs/api-sheared .1 40 mass
+build/native-laminar-compatible-solver square 4 outlet-poiseuille .1 ns pressure outputs/api-outlet .1 40 schur
+# 同一原问题的失败负对照，退出2并保留接受场与拒绝场：
+build/native-laminar-compatible-solver sheared 4 noslip-sheared .01 ns closed outputs/api-newton 0 40 mass
+```
+
+macOS使用系统Clang，Linux去掉Accelerate链接选项；本批未作Linux/Windows资格验证。上述库构建中有未改动 `FlowAggregation2D.hpp` 的既有9个转换/遮蔽警告，新实现没有通过关闭警告来隐藏问题。原生测试的 `1e-7` 解析场上限是 `U=L=1`（另有显式物理缩放）的多项式数值回归预算，容纳较严迭代门及条件数放大，不是空间误差阈值。3/3测试、原native算子的完整终场读回、失败保留与原始源码/状态哈希见 `native-laminar-compatible-solver.json`。
 
 ### 相容方程的解析 Newton 与残差回溯
 

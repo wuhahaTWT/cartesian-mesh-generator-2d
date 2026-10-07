@@ -17,6 +17,7 @@
 // traces or prove equivalence to the collocated discrete stencil.
 #define CARTMESH_P1_OSEEN_NO_MAIN
 #include "native-laminar-p1-oseen.cpp"
+#include "cartmesh2d/fv/detail/CompatibleFlowTransport2D.hpp"
 
 // beta.n is P1 on every RT1 edge. Split at its exact interior zero so
 // upwind/absolute-value integrals are polynomial on each interval, rather
@@ -32,29 +33,9 @@ Vector2D difference(Vector2D a,Vector2D b){return {a.x-b.x,a.y-b.y};}
 struct Transport : Oseen {
     Transport(const Fixture& f,int t,const std::string& problem,double nu,bool nonlinear,int outletModel,int order,const Vec& previous):Oseen(f,t,problem,nu,nonlinear,outletModel,order,previous){
         int m=e.a.m;for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){e.matrix(i,j)-=convection(i,j);convection(i,j)=0;}
-        for(std::size_t k=0;k<lift.tri.size();++k){const auto& tr=lift.tri[k];
-            for(auto q:tr.quadrature(order)){auto z=tr.ref(q.p);auto b=betaAt(int(k),q.p);Vec r0(2*m),r1(2*m),d0(2*m),d1(2*m);auto shape=tr.shape(q.p);
-                std::array<Vector2D,8> dx{{{0,0},{1,0},{0,0},{0,0},{0,1},{0,0},{2*z.x,z.y},{z.y,0}}},dy{{{0,0},{0,0},{1,0},{0,0},{0,0},{0,1},{0,z.x},{z.x,2*z.y}}};
-                double bx=(tr.j1.y*b.x-tr.j1.x*b.y)/(tr.h*tr.det),by=(-tr.j0.y*b.x+tr.j0.x*b.y)/(tr.h*tr.det);
-                for(int l=0;l<8;++l){Vector2D d{bx*dx[l].x+by*dy[l].x,bx*dx[l].y+by*dy[l].y};d={(tr.j0.x*d.x+tr.j1.x*d.y)/tr.det,(tr.j0.y*d.x+tr.j1.y*d.y)/tr.det};
-                    for(int j=0;j<2*m;++j){double c=lift.coefficients(8*k+l,j);r0[j]+=c*shape[l].x;r1[j]+=c*shape[l].y;d0[j]+=c*d.x;d1[j]+=c*d.y;}}
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)convection(i,j)-=q.w*(d0[i]*r0[j]+d1[i]*r1[j]);
-            }
-            // Each internal radial edge once, normal outward from triangle k.
-            int prev=(int(k)+int(lift.tri.size())-1)%int(lift.tri.size());auto d=tr.a-tr.c;Vector2D S{d.y,-d.x};
-            for(auto [z,w]:upwindRule(order,dot(betaAt(int(k),tr.c),S),dot(betaAt(int(k),tr.a),S))){Point2D p{tr.c.x+z*d.x,tr.c.y+z*d.y};double flux=dot(betaAt(int(k),p),S);std::vector<Vector2D> left(2*m),right(2*m);
-                for(int j=0;j<2*m;++j){left[j]=lift.value(int(k),j,p);right[j]=lift.value(prev,j,p);}
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)convection(i,j)+=w*flux*dot(difference(left[i],right[i]),flux>=0?left[j]:right[j]);
-            }
-            // Original polygon face remains a shared two-component P1 unknown.
-            int l=lift.faceLocal[k];const auto& face=f.mesh.faces[f.mesh.cells[t].faces[l]];double sign=face.owner==std::size_t(t)?1:-1;
-            auto fluxEnd=[&](double ss){return sign*((beta[3+2*l]+ss*beta[4+2*l])*face.areaVector.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*face.areaVector.y);};
-            for(auto [z,w]:upwindRule(order,fluxEnd(-.5),fluxEnd(.5))){double ss=z-.5;auto Sface=face.areaVector;Point2D p{face.centre.x-ss*Sface.y,face.centre.y+ss*Sface.x};double flux=sign*((beta[3+2*l]+ss*beta[4+2*l])*Sface.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*Sface.y);std::vector<Vector2D> inside(2*m),facev(2*m);
-                for(int j=0;j<2*m;++j)inside[j]=lift.value(int(k),j,p);
-                facev[3+2*l].x=1;facev[4+2*l].x=ss;facev[m+3+2*l].y=1;facev[m+4+2*l].y=ss;
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){convection(i,j)+=w*flux*dot(difference(inside[i],facev[i]),flux>=0?inside[j]:facev[j]);if(boundaryKind(face,outletModel,problem)==1)convection(i,j)+=w*flux*dot(facev[i],facev[j]);}
-            }
-        }
+        std::vector<bool> open(f.mesh.cells[t].faces.size());
+        for(std::size_t id=0;id<open.size();++id)open[id]=boundaryKind(f.mesh.faces[f.mesh.cells[t].faces[id]],outletModel,problem)==1;
+        convection=transportMatrix(f.mesh,t,e.a,lift,beta,open,order);
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)+=convection(i,j);
         e.condense();
     }

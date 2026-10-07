@@ -1,0 +1,89 @@
+#include "cartmesh2d/fv/CompatibleIncompressible2D.hpp"
+#include "cartmesh2d/fv/detail/CompatibleFlowElement2D.hpp"
+#include "fixtures/PolygonMesh2D.hpp"
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <sstream>
+using namespace cartmesh2d;
+using namespace cartmesh2d::fv;
+using namespace cartmesh2d::fv::detail::compatible;
+namespace {
+void check(bool x,const char* message){if(!x)throw std::runtime_error(message);}
+FvMesh2D grid(int n,double shear=0,double L=1) {
+    std::vector<Polygon2D> cells;auto p=[&](int i,int j){return Point2D{L*(double(i)/n+shear*double(j)/n),L*double(j)/n};};
+    for(int j=0;j<n;++j)for(int i=0;i<n;++i)cells.push_back({{p(i,j),p(i+1,j),p(i+1,j+1),p(i,j+1)}});
+    return makeFvMesh2D(cartmesh2d::test::fromPolygons(cells));
+}
+Vector2D velocity(Point2D p,bool rotation){return rotation?Vector2D{-p.y,p.x}:Vector2D{p.x*p.x-p.y*p.y,-2*p.x*p.y};}
+double pressure(Point2D p){return 1+2*p.x-3*p.y;}
+CompatibleFlowControls2D control(const FvMesh2D& mesh,bool rotation,bool outlet,double U=1,double L=1) {
+    CompatibleFlowControls2D c;c.viscosity=.1*U*L;c.referenceLength=L;c.referenceVelocity=U;
+    c.equation=rotation?CompatibleEquation2D::NavierStokes:CompatibleEquation2D::Stokes;
+    c.globalization=rotation?CompatibleGlobalization2D::PseudoTime:CompatibleGlobalization2D::Backtracking;
+    c.acceleration=[=](Point2D p){p.x/=L;p.y/=L;return Vector2D{(2-(rotation?p.x:0))*U*U/L,(-3-(rotation?p.y:0))*U*U/L};};
+    for(std::size_t f=0;f<mesh.faces.size();++f)if(!mesh.faces[f].neighbour){const auto& face=mesh.faces[f];CompatibleBoundary2D b;b.face=f;
+        if(outlet&&face.areaVector.x>0&&std::abs(face.areaVector.y)<1e-14){b.kind=CompatibleBoundaryKind2D::Traction;auto n=face.areaVector;const double len=std::hypot(n.x,n.y);n.x/=len;n.y/=len;
+            b.value=[=](Point2D p){p.x/=L;p.y/=L;const double pr=pressure(p);return rotation?Vector2D{-pr*n.x*U*U,-pr*n.y*U*U}:Vector2D{((.4*p.x-pr)*n.x-.4*p.y*n.y)*U*U,(-.4*p.y*n.x+(-.4*p.x-pr)*n.y)*U*U};};}
+        else b.value=[=](Point2D p){p.x/=L;p.y/=L;auto u=velocity(p,rotation);return Vector2D{U*u.x,U*u.y};};
+        c.boundaries.push_back(std::move(b));}
+    return c;
+}
+double h(const FvMesh2D& mesh,std::size_t t){std::vector<Point2D> vertices;for(auto id:mesh.cells[t].faces){const auto& f=mesh.faces[id];vertices.push_back({f.centre.x-f.areaVector.y/2,f.centre.y+f.areaVector.x/2});vertices.push_back({f.centre.x+f.areaVector.y/2,f.centre.y-f.areaVector.x/2});}double d=0;for(auto a:vertices)for(auto b:vertices)d=std::max(d,std::hypot(a.x-b.x,a.y-b.y));return d;}
+std::pair<double,double> errors(const FvMesh2D& mesh,const CompatibleFlowState2D& state,bool rotation,bool outlet,double U=1,double L=1) {
+    double ue=0,pe=0;const auto last=mesh.cells.back().centre;const double gauge=outlet?0:pressure({last.x/L,last.y/L});
+    for(std::size_t t=0;t<mesh.cells.size();++t){P1Local a(mesh,t,h(mesh,t),6);Vec local(2*a.m+3);for(std::size_t c=0;c<2;++c)for(std::size_t j=0;j<3;++j)local[c*a.m+j]=state.cells[t][3*c+j];
+        for(std::size_t f=0;f<mesh.cells[t].faces.size();++f)for(std::size_t c=0;c<2;++c)for(std::size_t j=0;j<2;++j)local[c*a.m+3+2*f+j]=state.faces[mesh.cells[t].faces[f]][2*c+j];
+        for(const auto& q:a.q){const auto theta=a.basis.theta(q.p);const auto phi=a.basis.phi(q.p);Vector2D got{};double pr=0;
+            for(std::size_t j=0;j<a.m;++j)for(std::size_t k=0;k<6;++k){got.x+=theta[k]*a.potential(k,j)*local[j];got.y+=theta[k]*a.potential(k,j)*local[a.m+j];}
+            for(std::size_t j=0;j<3;++j)pr+=phi[j]*state.cells[t][6+j];const auto exact=velocity({q.p.x/L,q.p.y/L},rotation);
+            ue=std::max(ue,std::hypot(got.x/U-exact.x,got.y/U-exact.y));pe=std::max(pe,std::abs(pr/U/U-pressure({q.p.x/L,q.p.y/L})+gauge));}
+    }
+    return {ue,pe};
+}
+void print(const char* name,const CompatibleFlowResult2D& r,double u=std::numeric_limits<double>::quiet_NaN(),double p=std::numeric_limits<double>::quiet_NaN()){
+    const auto number=[](double x){if(!std::isfinite(x))return std::string("null");std::ostringstream s;s<<std::setprecision(17)<<x;return s.str();};
+    const auto m=r.iterations.empty()?CompatibleFlowMetrics2D{}:r.iterations.back().metrics.value_or(CompatibleFlowMetrics2D{});
+    std::cout<<std::setprecision(17)<<"{\"case\":\""<<name<<"\",\"converged\":"<<(r.converged()?"true":"false")<<",\"iterations\":"<<r.iterations.size()<<",\"velocityMax\":"<<number(u)<<",\"pressureMax\":"<<number(p)<<",\"originalEquationsEvaluated\":"<<(!r.iterations.empty()&&r.iterations.back().metrics?"true":"false")<<",\"cellMomentum\":"<<m.cellMomentum<<",\"faceMomentum\":"<<m.faceMomentum<<",\"divergence\":"<<m.divergence<<",\"stateChange\":"<<m.stateChange<<",\"reason\":\""<<r.reason<<"\"}\n";
+}
+bool same(const CompatibleFlowState2D& a,const CompatibleFlowState2D& b){return a.cells==b.cells&&a.faces==b.faces;}
+}
+int main()try {
+    // These analytic polynomial cases exercise actual coupled global assembly,
+    // gauges, natural stress, Newton and inhomogeneous trace elimination. The
+    // 1e-7 field allowance is a numerical regression target in U,L units,
+    // larger than the 1e-9 nonlinear stop; it is not a mesh/physical error gate.
+    for(bool outlet:{false,true}){auto mesh=grid(3,outlet?0:.3);auto c=control(mesh,false,outlet);if(outlet)c.pressureInverse=CompatiblePressureInverse2D::DiagonalSchur;
+        const auto r=solveCompatibleIncompressible2D(mesh,c);print(outlet?"quadratic-traction":"quadratic-closed",r);check(r.converged()&&r.lastAccepted.has_value(),"Quadratic Stokes global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,outlet);print("quadratic-errors",r,u,p);check(u<1e-7&&p<1e-7,"Quadratic Stokes analytic field failed");}
+    const auto polygonPatch=[&](const std::vector<Polygon2D>& polygons){const auto mesh=makeFvMesh2D(cartmesh2d::test::fromPolygons(polygons));const auto r=solveCompatibleIncompressible2D(mesh,control(mesh,false,false));check(r.converged(),"Actual polygon global solve failed");const auto [u,p]=errors(mesh,*r.lastAccepted,false,false);print("actual-polygon-patch",r,u,p);check(u<1e-7&&p<1e-7,"Actual polygon polynomial consistency lost");};
+    polygonPatch({{{{0,0},{1,0},{.75,1},{0,1}}}});
+    polygonPatch({{{{0,0},{1,0},{1,1},{1,2},{0,2}}},{{{1,0},{2,0},{2,1},{1,1}}},{{{1,1},{2,1},{2,2},{1,2}}}});
+    auto mesh=grid(3,.3);auto c=control(mesh,true,false);const auto nonlinear=solveCompatibleIncompressible2D(mesh,c);print("nonlinear-rotation",nonlinear);check(nonlinear.converged(),"Nonlinear rotation failed");auto [u,p]=errors(mesh,*nonlinear.lastAccepted,true,false);print("nonlinear-errors",nonlinear,u,p);check(u<1e-7&&p<1e-7,"Nonlinear analytic field failed");
+    auto scaledMesh=grid(3,.3,2.5);auto scaledControls=control(scaledMesh,true,false,3,2.5);const auto scaled=solveCompatibleIncompressible2D(scaledMesh,scaledControls);check(scaled.converged(),"Physical scaling solve failed");auto [su,sp]=errors(scaledMesh,*scaled.lastAccepted,true,false,3,2.5);print("scaled-nonlinear",scaled,su,sp);check(su<1e-7&&sp<1e-7,"Physical unit conversion failed");
+    auto one=c;one.maximumIterations=1;const auto budget=solveCompatibleIncompressible2D(mesh,one);print("nonlinear-budget",budget);check(budget.stop==CompatibleFlowStop2D::NonlinearBudget&&budget.lastAccepted&&budget.seed,"Iteration limit mislabeled");check(!same(*budget.seed,*budget.lastAccepted),"Seed substituted for accepted iteration");
+    const auto resumed=solveCompatibleIncompressible2D(mesh,c,budget.lastAccepted);check(resumed.converged(),"Algebraic seed continuation failed");auto [ru,rp]=errors(mesh,*resumed.lastAccepted,true,false);check(ru<1e-7&&rp<1e-7,"Resumed algebraic solve differs");
+    bool stop=false;auto cancelled=c;cancelled.stopRequested=[&]{return stop;};cancelled.iterationAccepted=[&](const auto&){stop=true;};const auto stopped=solveCompatibleIncompressible2D(mesh,cancelled);check(stopped.stop==CompatibleFlowStop2D::Cancelled&&stopped.lastAccepted&&same(*stopped.lastAccepted,*budget.lastAccepted),"Cancellation replaced last accepted field");print("cancelled-after-accepted",stopped);
+    auto early=c;early.stopRequested=[]{return true;};const auto empty=solveCompatibleIncompressible2D(mesh,early);check(empty.stop==CompatibleFlowStop2D::Cancelled&&!empty.seed&&!empty.lastAccepted,"Cancelled preparation created accepted state");
+    std::size_t polls=0;auto during=c;during.stopRequested=[&]{return ++polls==60;};const auto interrupted=solveCompatibleIncompressible2D(mesh,during);
+    check(interrupted.stop==CompatibleFlowStop2D::Cancelled&&!interrupted.lastAccepted&&interrupted.iterations.size()==1&&interrupted.iterations[0].matrixProducts>0&&!interrupted.iterations[0].metrics,"Krylov cancellation published an unchecked field");
+    print("cancelled-inside-krylov",interrupted);
+    const auto oneCell=grid(1);CompatibleFlowControls2D incompatible;incompatible.equation=CompatibleEquation2D::Stokes;incompatible.globalization=CompatibleGlobalization2D::Backtracking;incompatible.maximumIterations=1;
+    for(std::size_t f=0;f<oneCell.faces.size();++f){CompatibleBoundary2D b;b.face=f;if(oneCell.faces[f].areaVector.x>0)b.value=[](Point2D){return Vector2D{1,0};};incompatible.boundaries.push_back(b);}
+    const auto massFailure=solveCompatibleIncompressible2D(oneCell,incompatible);print("incompatible-prescribed-flux",massFailure);
+    check(!massFailure.converged()&&!massFailure.iterations.empty()&&massFailure.iterations.back().metrics&&massFailure.iterations.back().metrics->divergence>.5,"Pressure gauge omission hid a global continuity failure");
+    auto linear=c;linear.maximumLinearRestarts=1;linear.krylovDirections=1;const auto failed=solveCompatibleIncompressible2D(mesh,linear);print("linear-budget",failed);check(failed.stop==CompatibleFlowStop2D::LinearBudget&&!failed.lastAccepted,"Failed linear trial replaced initial state");
+    auto bad=c;bad.acceleration=[](Point2D){return Vector2D{std::numeric_limits<double>::quiet_NaN(),0};};const auto nan=solveCompatibleIncompressible2D(mesh,bad);check(nan.stop==CompatibleFlowStop2D::NumericalFailure&&!nan.lastAccepted,"NaN accepted");
+    struct Sentinel{};bad=c;bad.acceleration=[](Point2D)->Vector2D{throw Sentinel{};};bool propagated=false;try{(void)solveCompatibleIncompressible2D(mesh,bad);}catch(const Sentinel&){propagated=true;}check(propagated,"User callback exception swallowed");
+    bad=c;bad.boundaries.pop_back();bool rejected=false;try{(void)solveCompatibleIncompressible2D(mesh,bad);}catch(const std::invalid_argument&){rejected=true;}check(rejected,"Missing boundary silently inferred");
+    // Pseudo-traction Couette: true symmetric correction nu*G^T*n at the
+    // outlet is nonzero. Omitting it changes the actual velocity/pressure.
+    const auto square=grid(3);CompatibleFlowControls2D couette;couette.viscosity=.1;
+    for(std::size_t f=0;f<square.faces.size();++f)if(!square.faces[f].neighbour){CompatibleBoundary2D b;b.face=f;
+        if(square.faces[f].areaVector.x>0&&square.faces[f].areaVector.y==0)b.kind=CompatibleBoundaryKind2D::PseudoTraction;
+        else b.value=[](Point2D q){return Vector2D{q.y,0};};couette.boundaries.push_back(b);}
+    auto shear=solveCompatibleIncompressible2D(square,couette);print("pseudo-traction-couette",shear);check(shear.converged(),"Pseudo-traction nonlinear solve failed");double error=0;
+    for(std::size_t t=0;t<square.cells.size();++t){error=std::max({error,std::abs(shear.lastAccepted->cells[t][0]-square.cells[t].centre.y),std::abs(shear.lastAccepted->cells[t][3]),std::abs(shear.lastAccepted->cells[t][6])});}check(error<1e-7,"Pseudo-traction transpose-gradient correction lost");
+    return 0;
+}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

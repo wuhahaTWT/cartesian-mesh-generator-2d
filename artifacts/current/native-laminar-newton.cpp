@@ -12,38 +12,10 @@ template<class Base> struct NewtonTransport : Base {
         Base(f,t,problem,nu,nonlinear,model,order,previous),advectorDerivative(2*this->e.a.m,2*this->e.a.m),picardCondensed(this->e.condensed().first){
         if(!nonlinear)return;
         auto& e=this->e;const int m=e.a.m;
-        auto& lift=this->lift;auto& beta=this->beta;
-        for(std::size_t k=0;k<lift.tri.size();++k){const auto& tr=lift.tri[k];
-            for(auto q:tr.quadrature(order)){
-                const auto z=tr.ref(q.p);const auto u=this->betaAt(int(k),q.p);
-                std::array<Vector2D,8> dx{{{0,0},{1,0},{0,0},{0,0},{0,1},{0,0},{2*z.x,z.y},{z.y,0}}},dy{{{0,0},{0,0},{1,0},{0,0},{0,0},{0,1},{0,z.x},{z.x,2*z.y}}};
-                std::vector<Vector2D> gx(2*m),gy(2*m),value(2*m);
-                for(int j=0;j<2*m;++j){value[j]=lift.value(int(k),j,q.p);
-                    for(int l=0;l<8;++l){
-                        const auto physical=[&](double x,double y){Vector2D d{x*dx[l].x+y*dy[l].x,x*dx[l].y+y*dy[l].y};return Vector2D{(tr.j0.x*d.x+tr.j1.x*d.y)/tr.det,(tr.j0.y*d.x+tr.j1.y*d.y)/tr.det};};
-                        const auto x=physical(tr.j1.y/(tr.h*tr.det),-tr.j0.y/(tr.h*tr.det));
-                        const auto y=physical(-tr.j1.x/(tr.h*tr.det),tr.j0.x/(tr.h*tr.det));
-                        const double c=lift.coefficients(8*k+l,j);gx[j].x+=c*x.x;gx[j].y+=c*x.y;gy[j].x+=c*y.x;gy[j].y+=c*y.y;
-                    }}
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)advectorDerivative(i,j)-=q.w*(value[j].x*dot(gx[i],u)+value[j].y*dot(gy[i],u));
-            }
-            const int prev=(int(k)+int(lift.tri.size())-1)%int(lift.tri.size());const auto d=tr.a-tr.c;Vector2D S{d.y,-d.x};
-            for(auto [z,w]:upwindRule(order,dot(this->betaAt(int(k),tr.c),S),dot(this->betaAt(int(k),tr.a),S))){
-                Point2D p{tr.c.x+z*d.x,tr.c.y+z*d.y};const double flux=dot(this->betaAt(int(k),p),S);
-                const auto u=flux>=0?this->betaAt(int(k),p):this->betaAt(prev,p);std::vector<Vector2D> left(2*m),jump(2*m);
-                for(int j=0;j<2*m;++j){left[j]=lift.value(int(k),j,p);jump[j]=difference(left[j],lift.value(prev,j,p));}
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)advectorDerivative(i,j)+=w*dot(left[j],S)*dot(jump[i],u);
-            }
-            const int l=lift.faceLocal[k];const auto& face=f.mesh.faces[f.mesh.cells[t].faces[l]];const double sign=face.owner==std::size_t(t)?1:-1;const auto sf=face.areaVector;
-            auto fluxEnd=[&](double s){return sign*((beta[3+2*l]+s*beta[4+2*l])*sf.x+(beta[m+3+2*l]+s*beta[m+4+2*l])*sf.y);};
-            for(auto [z,w]:upwindRule(order,fluxEnd(-.5),fluxEnd(.5))){const double s=z-.5;Point2D p{face.centre.x-s*sf.y,face.centre.y+s*sf.x};const double flux=fluxEnd(s);
-                Vector2D uf{beta[3+2*l]+s*beta[4+2*l],beta[m+3+2*l]+s*beta[m+4+2*l]};const auto upwind=flux>=0?this->betaAt(int(k),p):uf;std::vector<Vector2D> facev(2*m);
-                facev[3+2*l].x=1;facev[4+2*l].x=s;facev[m+3+2*l].y=1;facev[m+4+2*l].y=s;
-                for(int i=0;i<2*m;++i){const auto jump=difference(lift.value(int(k),i,p),facev[i]);
-                    for(int j=0;j<2*m;++j){const double df=sign*dot(facev[j],sf);advectorDerivative(i,j)+=w*df*dot(jump,upwind);
-                        if(boundaryKind(face,model,problem)==1)advectorDerivative(i,j)+=w*df*dot(facev[i],uf);}}
-            }
-        }
+        auto& beta=this->beta;
+        std::vector<bool> open(f.mesh.cells[t].faces.size());
+        for(std::size_t id=0;id<open.size();++id)open[id]=boundaryKind(f.mesh.faces[f.mesh.cells[t].faces[id]],model,problem)==1;
+        advectorDerivative=transportAdvectorDerivative(f.mesh,t,e.a,this->lift,beta,open,order);
         // Solve J(u_k) u_candidate = f + D_beta C(u_k)[u_k] u_k.
         // This is exactly the increment equation J d = -F, with inhomogeneous
         // velocity traces kept in the ordinary retained-unknown elimination.
