@@ -670,6 +670,15 @@ build/native-laminar-krylov-target MATRIX_PREFIX CELL_AREAS.csv outlet-schur-dia
 
 两组都保留完整真实残差历史、矩阵乘、重启、构造/求解代价与未知量；成功写 `.solution`，失败只写 `.candidate`。对照程序退出0只表示两组研究运行完成，必须读取各自 `converged`；不把失败候选恢复成接受流场。输入矩阵与原始场按SHA保留，Python只编排、序列化与读结果。仅这批小网格不证明原中档的默认50次预算已通过，旧检查点可继续但跨算法版本不保证相同迭代轨迹。
 
+`native-laminar-pressure-lsc.cpp` 是独立的同矩阵预条件研究入口，读取既有 `.entries/.rhs/.picard.entries` 和单元面积，复用原生ILU0、压力辅助矩阵、DenseLU与GMRES。`schur` 使用原上三角形式；`lsc` 使用 `L=B diag(Apicard)⁻¹G` 和标准缩放LSC组合；`schur-full` 先用同一速度近似逆把速度残差反馈给压力，随后按原上三角步骤求解。所有内算子固定且线性，没有把可变精度内Krylov误用于普通GMRES。矩阵/边界/原线性目标不变，方法依据见 [PETSc LSC](https://petsc.org/release/manualpages/PC/PCLSC/) 与 [完整块分解](https://petsc.org/release/manualpages/PC/PCFieldSplitSetSchurFactType/)。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-pressure-lsc.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-pressure-lsc
+build/native-laminar-pressure-lsc MATRIX_PREFIX CELL_AREAS.csv outlet .1 lsc ic0 1e-13 50 FRESH_OUTPUT_PREFIX
+```
+
+参数可选 `gauge|outlet`、`schur|schur-full|lsc`、`ic0|dense`。dense只把同一个辅助压力矩阵L解得更准确，不是精确原Schur；上限256个压力未知量用于限制稠密参考的立方成本（单份系数256² doubles约0.5MiB），不是物理或质量门。每个程序先验证已知小矩阵的LSC符号/恒等式和完整块逆；浮点额度仅用于这个代数控制。GMRES外层矩阵乘、每次重启额外的真实残差矩阵乘、LSC内部动量块乘、速度/压力逆次数与成本分别记录；`.solution`只表示线性目标满足，失败写 `.candidate` 并退出2，均不能当接受的非线性流场。这批两种尝试未取得默认采用价值，负结果及源输入索引见 `native-laminar-pressure-lsc.json`。
+
 ### 相容混合边界与显式命令行
 
 API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。
