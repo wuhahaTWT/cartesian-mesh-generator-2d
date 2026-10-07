@@ -95,7 +95,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/CompatibleFlowElement2D.cpp src/fv/CompatibleFlowTransport2D.cpp src/fv/CompatibleIncompressible2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowNewtonKrylov2D.cpp src/fv/FlowBranchCertificate2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/CompatibleFlowElement2D.cpp src/fv/CompatibleFlowTransport2D.cpp src/fv/CompatibleIncompressible2D.cpp src/fv/CompatibleFlowBoundary2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowNewtonKrylov2D.cpp src/fv/FlowBranchCertificate2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 if(APPLE)
     target_link_libraries(cartmesh2d_fv PUBLIC "-framework Accelerate")
@@ -109,7 +109,7 @@ endif()
 cartmesh2d_enable_warnings(cartmesh2d_fv)
 cartmesh2d_enable_warnings(cartmesh2d_fv_cli)
 
-add_executable(cartmesh2d_flow_cli apps/cartmesh2d_flow_cli.cpp)
+add_executable(cartmesh2d_flow_cli apps/cartmesh2d_flow_cli.cpp apps/CompatibleFlowCLI.cpp)
 add_executable(cartmesh2d_euler_cli apps/cartmesh2d_euler_cli.cpp)
 target_link_libraries(cartmesh2d_euler_cli PRIVATE cartmesh2d_fv)
 cartmesh2d_enable_warnings(cartmesh2d_euler_cli)
@@ -316,6 +316,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_flow_aggregation_tests tests/flow_aggregation_test.cpp)
     target_link_libraries(cartmesh2d_flow_aggregation_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_aggregation COMMAND cartmesh2d_flow_aggregation_tests)
+    add_executable(cartmesh2d_compatible_flow_boundary_tests tests/compatible_flow_boundary_test.cpp)
+    target_link_libraries(cartmesh2d_compatible_flow_boundary_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_compatible_flow_boundary COMMAND cartmesh2d_compatible_flow_boundary_tests)
     add_executable(cartmesh2d_compatible_flow_tests tests/compatible_flow_test.cpp)
     target_link_libraries(cartmesh2d_compatible_flow_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_compatible_flow COMMAND cartmesh2d_compatible_flow_tests)
@@ -357,6 +360,11 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_fv_cli_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fv_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_fv_cli>)
+    add_test(NAME cartmesh2d_compatible_flow_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/compatible_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
+            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
+    set_tests_properties(cartmesh2d_compatible_flow_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_flow_cli_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>

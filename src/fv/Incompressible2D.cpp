@@ -1440,8 +1440,8 @@ std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
     }
     if (controls.scenario == "annulus")
         return rotatingAnnulusBoundaryPreset2D(mesh, controls.speed);
-    ensure(controls.scenario == "duct" || controls.scenario == "channel" || controls.scenario == "cavity",
-           "Explicit boundary template currently supports duct, channel and cavity only");
+    ensure(controls.scenario == "duct" || controls.scenario == "channel" || controls.scenario == "cavity" || controls.scenario == "external",
+           "Explicit boundary template supports duct, channel, cavity and external flow");
     const auto b=boundaries(mesh, controls);
     std::vector<FlowBoundaryCondition2D> result;
     for (std::size_t id=0;id<mesh.faces.size();++id) {
@@ -1450,6 +1450,7 @@ std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
         if (b.role[id]==Role::Inlet) {value.kind=FlowBoundaryKind2D::VelocityInlet;value.name="inlet";}
         else if (b.role[id]==Role::Outlet) {value.kind=FlowBoundaryKind2D::PressureOutlet;value.name="outlet";}
         else if (b.role[id]==Role::Lid) {value.kind=FlowBoundaryKind2D::MovingWall;value.name="lid";}
+        else if (b.role[id]==Role::Slip) {value.kind=FlowBoundaryKind2D::Symmetry;value.velocity={};value.name="symmetry";}
         else ensure(b.role[id]==Role::Wall,"Unsupported condition in explicit boundary template");
         result.push_back(std::move(value));
     }

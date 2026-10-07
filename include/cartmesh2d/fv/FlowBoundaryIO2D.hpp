@@ -17,8 +17,8 @@ void writeFlowBoundaryConditions2D(std::ostream&, const FvMesh2D&, const FlowCon
 [[nodiscard]] std::vector<FlowBoundaryCondition2D> rotatingAnnulusBoundaryPreset2D(
     const FvMesh2D&, double innerSurfaceSpeed);
 
-// Converts supported physical presets (channel, duct, cavity, annulus) to explicit data.
-// Verification forcing and unsupported slip/farfield conditions are rejected.
+// Converts supported physical presets (channel, duct, cavity, external, annulus) to explicit data.
+// Verification forcing and unsupported farfield conditions are rejected.
 [[nodiscard]] std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
     const FvMesh2D&, const FlowControls2D&);
 

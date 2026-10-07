@@ -8,7 +8,7 @@ namespace cartmesh2d::fv {
 // Explicit compatible steady solver. It does not change the existing solver's
 // defaults or certify spatial accuracy. Mesh must pass makeFvMesh2D first.
 // One connected fluid component; all original cells/faces are retained.
-enum class CompatibleBoundaryKind2D { Velocity, Traction, PseudoTraction };
+enum class CompatibleBoundaryKind2D { Velocity, Traction, PseudoTraction, NormalVelocity };
 struct CompatibleBoundary2D {
     std::size_t face=0;
     CompatibleBoundaryKind2D kind=CompatibleBoundaryKind2D::Velocity;
@@ -17,6 +17,17 @@ struct CompatibleBoundary2D {
     // PseudoTraction=(nu*G-pI)n, with the implicit nu*G^T*n retained.
     // Exactly one entry per boundary face; no inferred patch conditions.
     std::function<Vector2D(Point2D)> value;
+    // NormalVelocity prescribes u.n and tangential physical traction t.sigma.n,
+    // with n the outward unit normal, t=(-n.y,n.x). Empty values are zero:
+    // the ordinary impermeable free-slip symmetry condition. value must be
+    // empty for this kind; scalar callbacks must be empty for other kinds.
+    std::function<double(Point2D)> normalVelocity; // m/s
+    std::function<double(Point2D)> tangentialTraction; // m^2/s^2
+    // Explicit ordinary-outlet policy. Valid only for Traction/PseudoTraction.
+    // Check P1 endpoint normal velocities against -1e-12*Uref, inherited
+    // from the existing outlet numerical allowance. Never clips a flux.
+    bool rejectBackflow=false;
+
 };
 enum class CompatibleEquation2D { Stokes, NavierStokes };
 enum class CompatibleGlobalization2D { Backtracking, PseudoTime };
@@ -62,7 +73,7 @@ struct CompatibleFlowControls2D {
     std::function<bool()> stopRequested;
     std::function<void(const CompatibleFlowIteration2D&)> iterationAccepted;
 };
-enum class CompatibleFlowStop2D { Converged, Cancelled, NonlinearBudget, LinearBudget, BacktrackingBudget, NumericalFailure };
+enum class CompatibleFlowStop2D { Converged, Cancelled, NonlinearBudget, LinearBudget, BacktrackingBudget, NumericalFailure, BoundaryFailure };
 struct CompatibleFlowResult2D {
     CompatibleFlowStop2D stop=CompatibleFlowStop2D::NonlinearBudget;
     std::string reason;

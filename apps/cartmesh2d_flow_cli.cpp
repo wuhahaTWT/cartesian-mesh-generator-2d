@@ -1,3 +1,4 @@
+#include "CompatibleFlowCLI.hpp"
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
@@ -163,6 +164,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 #endif
+    if(const auto compatible=tryCompatibleFlowCLI2D(argc,argv))return *compatible;
     std::string prefix;
     double acceptedTime=0;
     bool outputStarted=false;
@@ -196,6 +198,7 @@ int main(int argc, char** argv) {
                 std::cout
                     << "Native 2D incompressible laminar flow (development)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
+            "--discretization compatible: explicit compatible steady solver; use this selector with --help for its controls.\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
@@ -245,7 +248,9 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("missing option value");
             }
             std::string v = argv[++i];
-            if (a == "--mesh") {
+            if (a == "--discretization") {
+                if(v!="collocated")throw std::invalid_argument("invalid flow discretization");
+            } else if (a == "--mesh") {
                 path = v;
             } else if (a == "--output") {
                 prefix = v;

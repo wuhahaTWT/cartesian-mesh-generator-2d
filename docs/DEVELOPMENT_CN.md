@@ -623,7 +623,7 @@ cmake --build build --target cartmesh2d_fv cartmesh2d_compatible_flow_element_te
 ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_face)$' --output-on-failure
 ```
 
-已有macOS配置继续使用 `/usr/bin/clang++`。新原生测试用非零解析二次Stokes、仿射压力、三次势梯度载荷核对真实弱方程与恢复，并检查非法维数/非有限体力失败。参考量沿用 `U=L=ν=1、p/U²`，局部舍入预算为 `4096 ε N_dof (1+|reference|)`，只用于这些小且形状受控的多项式回归，不是任意网格的条件数保证、产品残差或物理精度阈值。库迁移的三组完整同场对照、全部源码版本和归档见 `native-laminar-compatible-core.json`。完整全局API与已接通的失败/取消语义见下节；产品CLI/App、一般混合边界及检查点仍须继续接入。
+已有macOS配置继续使用 `/usr/bin/clang++`。新原生测试用非零解析二次Stokes、仿射压力、三次势梯度载荷核对真实弱方程与恢复，并检查非法维数/非有限体力失败。参考量沿用 `U=L=ν=1、p/U²`，局部舍入预算为 `4096 ε N_dof (1+|reference|)`，只用于这些小且形状受控的多项式回归，不是任意网格的条件数保证、产品残差或物理精度阈值。库迁移的三组完整同场对照、全部源码版本和归档见 `native-laminar-compatible-core.json`。完整全局API、一般混合边界和显式CLI见下节；桌面、载荷及上下文绑定检查点仍须继续接入。
 
 ### 相容稳态流动原生 API
 
@@ -635,7 +635,7 @@ ctest --test-dir build -R '^(cartmesh2d_compatible_flow_element|cartmesh2d_flow_
 
 数值验收与成本：单元弱动量残差除以真实无量纲面积，自由面残差除以真实无量纲面长，P1弱散度在所有真实扇形顶点取最大；默认各自 `1e-9` 是研究迭代目标，非几何或物理精度保证。全部归一化状态系数变化另用 `1e-9`，真线性相对残差用 `1e-13`；普通一次Stokes可豁免场变化，伪时间Stokes仍必须通过。归一化分别相当于动量加速度 `Uref²/Lref`、面牵引 `Uref²`、散度 `Uref/Lref`、速度/压力系数 `Uref/Uref²`。这些尺度使不同单位下的停止规则一致；每次候选仍计算原方程，无额外独立PDE审计。原自由弱方程L2范数只用于回溯和伪步长更新，不独自判收敛。伪时间单位为 `Lref/Uref`，不是物理时间推进。
 
-`CompatibleFlowResult2D` 区分种子、最后接受迭代、最后拒绝场与停止原因；预算耗尽/取消/数值失败均不返回收敛。每个外层记录标明是否接受，原方程还没计算时 `metrics` 为空。取消在单元准备/装配、Krylov乘积和试探场检查中轮询，失败候选不覆盖最后接受场，用户回调异常传播。完整CLI/App与结果导出、一般混合/对称边界、上下文绑定的续算格式仍待接入，此API不自动替换旧默认。
+`CompatibleFlowResult2D` 区分种子、最后接受迭代、最后拒绝场与停止原因；预算耗尽/取消/数值失败均不返回收敛。每个外层记录标明是否接受，原方程还没计算时 `metrics` 为空。取消在单元准备/装配、Krylov乘积和试探场检查中轮询，失败候选不覆盖最后接受场，用户回调异常传播。一般混合/对称边界和显式CLI及结果导出已接通，见下节；桌面、载荷与上下文绑定的续算格式仍待接入，此API不自动替换旧默认。
 
 ```sh
 cmake -S . -B build
@@ -650,6 +650,34 @@ build/native-laminar-compatible-solver sheared 4 noslip-sheared .01 ns closed ou
 ```
 
 macOS使用系统Clang，Linux去掉Accelerate链接选项；本批未作Linux/Windows资格验证。上述库构建中有未改动 `FlowAggregation2D.hpp` 的既有9个转换/遮蔽警告，新实现没有通过关闭警告来隐藏问题。原生测试的 `1e-7` 解析场上限是 `U=L=1`（另有显式物理缩放）的多项式数值回归预算，容纳较严迭代门及条件数放大，不是空间误差阈值。3/3测试、原native算子的完整终场读回、失败保留与原始源码/状态哈希见 `native-laminar-compatible-solver.json`。
+
+### 相容混合边界与显式命令行
+
+API 的 `NormalVelocity` 接收物理 `normalVelocity(point)`（m/s）和 `tangentialTraction(point)`（m²/s²），面外法向为 `n=S/|S|`，切向为 `t=(-n.y,n.x)`；原 `value` 回调必须为空。空标量回调即零值。混合面保留量改为 `[un0,uns,ut0,uts]`，同时执行 `Wᵀ K W`、`Wᵀ f`，恢复和公共状态仍使用笛卡尔分量。压力耦合和原始方程残差使用同一变换；混合面保留自然对流切向迹，但不算绝对压力出口，全闭域仍检查规范单元的散度。至少一个完整速度边界的当前限制保持。
+
+`CompatibleFlowBoundary2D` 将已有且通过验证的面常值边界转换为相容条件，已有Symmetry格式的轴向限制没有放宽；一般旋转混合面使用原生API。`VelocityInlet/VelocityOutlet/Wall/MovingWall` 保留规定速度，`PressureOutlet` 使用 `PseudoTraction=-p n` 并设置 `rejectBackflow`。该旗标只用于牵引边界，在原候选面P1法向速度两端检查 `un >= -1e-12 Uref`，额度继承既有普通出口舍入容许量；检查线性迹端点即覆盖整个面，不裁剪通量。失败记录为 `BoundaryFailure`，回溯模式可继续试更短步，伪时间模式立即失败，最后接受场不被覆盖。压力开口需要进流切向策略，光滑移动壁需要相容高阶迹策略，目前均明确拒绝转换。
+
+```sh
+cmake --build build --target cartmesh2d_cli cartmesh2d_flow_cli cartmesh2d_compatible_flow_boundary_tests cartmesh2d_compatible_flow_tests cartmesh2d_compatible_flow_element_tests cartmesh2d_flow_face_tests cartmesh2d_flow_boundary_tests -j 2
+ctest --test-dir build -R '^(cartmesh2d_compatible_flow_boundary|cartmesh2d_compatible_flow|cartmesh2d_compatible_flow_element|cartmesh2d_flow_face|cartmesh2d_flow_boundary|cartmesh2d_compatible_flow_cli)$' --output-on-failure
+# 输入为原生网格器经过Solver质量门的最终文件；输出前缀必须尚不存在。
+build/cartmesh2d_flow_cli --discretization compatible --mesh FINAL.solver.cm2d --output outputs/compatible-run --case external --nu .1 --compatible-pressure-inverse schur
+build/cartmesh2d_flow_cli --discretization compatible --help
+# 用已有显式边界文件复现，保持每个原面常值：
+build/cartmesh2d_flow_cli --discretization compatible --mesh FINAL.solver.cm2d --output outputs/compatible-custom --case custom --boundary outputs/compatible-run.boundaries --nu .1 --compatible-pressure-inverse schur
+```
+
+省略 `--discretization` 或显式 `collocated` 继续走原CLI。新选项仅稳态固定物性，冷启动；`--momentum-inertia 0` 是Stokes，`--pseudo-step 0` 是残差回溯。尺度、数值验收、压力近似与伪时间默认沿用上述API，未新增物理阈值。新入口拒绝不支持的旧选项，不推测旧检查点含义。现有预设 `channel` 入口仍是面中心采样的常值抛物线数据，不能把该离散边界与连续解析入口混为一谈。
+
+结果约定：
+
+- `.summary.json` 使用 `cartmesh2d-compatible-flow-summary-v1`，运行中先标 `running`；完整输出关闭后发布最终状态，导出失败不写完成。数值收敛、导出完整、物理资格分别记录。退出0只代表数值收敛且导出完整；失败/预算退出2、SIGINT/SIGTERM合作取消退出130、非法输入/导出异常退出1。
+- `.seed.json/.accepted.json/.rejected.json` 保存实际存在的完整9单元系数、4面系数，分别标种子/接受迭代/拒绝候选；均明确不是上下文绑定物理检查点。接受场可能尚未收敛，必须读摘要状态。没有接受场时不导出初猜为 `.fields.json` 或CSV/VTK流场。
+- `.cells.csv` 保存所有P1系数和真实面积/质心，`.faces.csv` 保存所有P1迹及朝owner外法向的均值通量/斜率；`.fields.json` 是独立相容格式。VTK使用原多边形并显示单元P1均值，不能当作高阶重构图。`.residuals.csv` 记录每次尝试的接受标记、真线性残差与原方程指标，尚未计算的原方程指标留空。
+- `.boundaries` 使用已有网格绑定格式，可读回该组面常值数据。相容摘要/字段格式尚未接入桌面；目前不输出伪造的SIMPLE动量分解或物理载荷。
+- 新前缀保护避免覆盖已有结果；临时摘要关闭后重命名，接受/拒绝全状态先于可视化保存。计时分别列读入、原生求解和导出，未据此宣称一般加速。
+
+五组旋转/非零混合/闭域规范/半通道Stokes解析检查沿用 `1e-7` 的单位化小多项式数值回归预算；法向投影检查 `1e-12 m/s` 只针对这些 `U=L=1` 小单元的浮点一致性。出口回流反例所有面平均速度均向外，但一端为负，验证完整P1策略。CLI测试只编排原生网格/求解、读回文件及发信号，没有重复PDE方程。6/6、36/36/64格真实流程、原11步场逐字节保持及归档见 `native-laminar-compatible-boundary-cli.json`；该轮未证明曲壁空间精度、规模性能、桌面或跨平台资格。
 
 ### 相容方程的解析 Newton 与残差回溯
 
