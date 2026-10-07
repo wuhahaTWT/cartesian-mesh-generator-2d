@@ -1,0 +1,59 @@
+{
+  "schema": "cartmesh2d-native-laminar-oseen-pressure-scale-v1",
+  "scope": "research preconditioner only; retained matrices, right-hand sides, geometry, PDE and acceptance gates are unchanged",
+  "hypothesis": "for a two-dimensional Oseen momentum block, replace the purely viscous pressure mass inverse scale nu by the local convection-diffusion scale nu + Uref*sqrt(cellArea)",
+  "units": {
+    "nu": "m2/s",
+    "Uref": "m/s",
+    "sqrtCellArea": "m",
+    "pressureMassScale": "m2/s"
+  },
+  "controls": {
+    "linearRelativeTolerance": 1e-12,
+    "gmresDirectionsPerRestart": 60,
+    "maximumRestarts": 100,
+    "velocityApproximateInverse": "native ILU0",
+    "baselinePressureScale": "nu",
+    "candidatePressureScale": "nu + Uref*sqrt(cellArea)",
+    "nu": 0.1,
+    "Uref": 1.0,
+    "coefficientSweep": false,
+    "candidatePressureScaleMinimum": 0.10817801761064273,
+    "candidatePressureScaleMaximum": 1.3812500000000001
+  },
+  "cylinder4716": {
+    "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+    "equation": "compatible P1/RT1 fixed-static-pressure Oseen linear systems from the accepted Re20 sequence",
+    "unknowns": 42092,
+    "matrixNonzeros": 1107704,
+    "firstLinearization": {
+      "matrixSha256": "dfc38ab669e708870a351c09c082df2b8fd0b853711a9fe8502fc2d4fc756fab",
+      "rhsSha256": "8b4a483505a0658f190f986720ba51085a9c906bec0a580252138f203ff42ffa",
+      "viscous": {"restarts": 56, "krylovProducts": 3305, "relativeResidual": 7.547841922751911e-13, "seconds": 41.511397938},
+      "localOseen": {"restarts": 44, "krylovProducts": 2589, "relativeResidual": 6.034879524348981e-13, "seconds": 30.880911969},
+      "productReductionFraction": 0.2166414523449319,
+      "fieldDifference": {"velocityP1Rms": 2.3329085070367382e-12, "pressureP1RmsAbsolute": 2.842824664566332e-12, "pressureP1RmsAfterGlobalGauge": 1.9033358088007694e-12, "faceVelocityMaximum": 5.86470056933968e-12},
+      "localRecovered": {"maximumDivergence": 3.860245456621669e-12, "wallFx": 2.067925277267734}
+    },
+    "finalLinearization": {
+      "matrixSha256": "64d5f31e6a988b6c2fd257d4804391c8638553386ad25e786a09550b948d2b4b",
+      "rhsSha256": "f95dbf1559667a2c40e321da1257971a397c83dc6a1a11c3d2988fa8dc436fef",
+      "viscous": {"restarts": 55, "krylovProducts": 3245, "relativeResidual": 7.046437195811221e-13, "seconds": 39.361867119},
+      "localOseen": {"restarts": 44, "krylovProducts": 2589, "relativeResidual": 6.635823940192829e-13, "seconds": 30.731002677},
+      "productReductionFraction": 0.20215716486902928,
+      "fieldDifference": {"velocityP1Rms": 2.550470079774078e-12, "pressureP1RmsAbsolute": 2.451829741799549e-12, "pressureP1RmsAfterGlobalGauge": 1.6372597061794763e-12, "faceVelocityMaximum": 5.267293112093396e-12},
+      "localRecovered": {"maximumDivergence": 4.2436332226003515e-12, "wallFx": 2.0679407168370263}
+    }
+  },
+  "smallFixedPressureControls": {
+    "cells": 64,
+    "stokes": {"viscousProducts": 95, "localOseenProducts": 84, "solutionRmsDifference": 3.324680778461771e-11, "solutionMaximumDifference": 1.836388818787782e-10},
+    "navierStokes": {"viscousProducts": 93, "localOseenProducts": 93, "solutionRmsDifference": 1.197230296188849e-11, "solutionMaximumDifference": 9.336265094361806e-11}
+  },
+  "source": {
+    "path": "artifacts/current/native-laminar-block-precondition.cpp",
+    "sha256": "120872ceecc168825d520f0c43aa50e264450e8f62afb4778ba82d5eaaacc4b5",
+    "linuxBinarySha256": "c5f1ba4858428881ca29e5e698c5c2f583c94378cfd70c75eaf5f63162bf2746"
+  },
+  "conclusion": "The dimensionally consistent local scale reduces matrix products by about 20-22 percent on the first and final real 4716-cell Oseen systems and does not regress the two small controls. It still needs 2589 products and is therefore only a bounded research improvement, not a scalable backend or product default."
+}
