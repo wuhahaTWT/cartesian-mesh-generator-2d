@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ThermalFlow2D.hpp"
+#include "cartmesh2d/fv/FlowLinearIterationLimit2D.hpp"
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
@@ -28,10 +29,10 @@ void validateThermalSetup2D(const FvMesh2D& mesh,const ThermalSetup2D& setup) {
             throw std::invalid_argument("Thermal setup invalid boundary");
     }
 }
-ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
+static ThermalFlowResult2D advanceThermalFlowImpl(const FvMesh2D& mesh,
     const FlowControls2D& flowControls,const ThermalSetup2D& setup,
     const ScalarTransportControls2D& scalarControls,const ThermalFlowState2D& previous,
-    double timeStep,const std::function<void(const FlowIteration2D&)>& progress) {
+    double timeStep,const std::function<void(const FlowIteration2D&)>& progress,bool recoverLinearFailure) {
     validateThermalSetup2D(mesh,setup);
     if (previous.scalar.size()!=mesh.cells.size())
         throw std::invalid_argument("Thermal state invalid scalar dimensions");
@@ -49,7 +50,16 @@ ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
     ThermalFlowResult2D result;
     auto carrierControls=flowControls;
     for(unsigned refinement=0;refinement<2;++refinement) {
-        result.flow=advanceIncompressible2D(mesh,carrierControls,previous.flow,timeStep,progress);
+        try {
+            result.flow=advanceIncompressible2D(mesh,carrierControls,previous.flow,timeStep,progress);
+        } catch(const FlowLinearIterationLimit2D& error) {
+            // Only the adaptive controller supplies this internal callback.
+            // Public fixed-step calls still propagate every callback exception.
+            if(!recoverLinearFailure)throw;
+            result=ThermalFlowResult2D{};
+            result.flowLinearFailure=error.what();
+            return result;
+        }
         if (!result.flow.converged) return result;
         ScalarTransportProblem2D scalar;
         scalar.diffusivity=setup.diffusivity;
@@ -79,6 +89,12 @@ ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
         return result;
     }
     return result;
+}
+ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
+    const FlowControls2D& flowControls,const ThermalSetup2D& setup,
+    const ScalarTransportControls2D& scalarControls,const ThermalFlowState2D& previous,
+    double timeStep,const std::function<void(const FlowIteration2D&)>& progress) {
+    return advanceThermalFlowImpl(mesh,flowControls,setup,scalarControls,previous,timeStep,progress,false);
 }
 }
 
@@ -125,23 +141,23 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
     trialScalar.stopRequested=[&] {return (cancelled && cancelled()) || (sc.stopRequested && sc.stopRequested());};
     const auto run=[&](const ThermalFlowState2D& start,double h) {
         checkCancel();
-        auto r=advanceThermalFlow2D(mesh,trialFlow,setup,trialScalar,start,h,[&](const FlowIteration2D&){checkCancel();});
+        auto r=advanceThermalFlowImpl(mesh,trialFlow,setup,trialScalar,start,h,[&](const FlowIteration2D&){checkCancel();},true);
         checkCancel(); return r;
     };
     const auto reasonFor=[](const ThermalFlowResult2D& r) {
-        return !r.flow.converged?"flow":!r.carrierCompatible?"carrier":!r.scalar.converged?"scalar":"accepted";
+        return !r.flowLinearFailure.empty()?"flow-linear":!r.flow.converged?"flow":!r.carrierCompatible?"carrier":!r.scalar.converged?"scalar":"accepted";
     };
     for (std::size_t retry=0;;++retry) {
         auto full=run(previous,dt);
         double error=0, courant=std::max(full.flow.maxCourant,full.scalar.maxCourant);
-        std::string reason=reasonFor(full);
+        std::string reason=reasonFor(full),diagnostic=full.flowLinearFailure;
         if (full.accepted && (!std::isfinite(courant) || courant>limits.maximumCourant)) reason="courant";
         if (reason=="accepted" && c.estimateError) {
             const auto half=run(previous,.5*dt);
-            if (!half.accepted) reason=std::string(reasonFor(half))+"-half";
+            if (!half.accepted) {reason=std::string(reasonFor(half))+"-half";diagnostic=half.flowLinearFailure;}
             else {
                 const auto second=run(*half.accepted,.5*dt);
-                if (!second.accepted) reason=std::string(reasonFor(second))+"-half";
+                if (!second.accepted) {reason=std::string(reasonFor(second))+"-half";diagnostic=second.flowLinearFailure;}
                 else {
                     courant=std::max({courant,half.flow.maxCourant,second.flow.maxCourant});
                     const double ts=c.temperatureAbsoluteTolerance+c.relativeTolerance*c.temperatureScale;
@@ -158,7 +174,7 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
                 }
             }
         }
-        out.attempts.push_back({previous.flow.time,dt,error,courant,trialFlow.velocityRelaxation,reason});
+        out.attempts.push_back({previous.flow.time,dt,error,courant,trialFlow.velocityRelaxation,reason,diagnostic});
         if(observeAttempt)observeAttempt(out.attempts.back());
         if (reason=="accepted") {
             if (dt==limits.targetTime-previous.flow.time) {

@@ -1,0 +1,210 @@
+{
+  "format": "cartmesh2d-thermal-system-dialogs-v1",
+  "sourceBase": "8ab92fc0d776166d1ce64aaa265d4272e7456dda",
+  "scope": "Actual packaged macOS arm64 App UI, native NSOpenPanel/NSSavePanel and new-process reopening. This package precedes the linear-retry core change.",
+  "observedSteps": [
+    "Opened the existing t=1.3 s project using the native file dialog.",
+    "Changed maximum dt to .025 s and target to 1.4 s through renderer controls.",
+    "Completed t=1.4 s with 904 cells and 107 joined accepted history rows.",
+    "Saved manual-project-1p4.zip through NSSavePanel.",
+    "Quit the old App and launched the newly packaged App with corrected Cholesky help.",
+    "Reopened the saved ZIP through NSOpenPanel; t=1.4 s, dt=.025 s, Cholesky, temperature view and 107 rows restored."
+  ],
+  "comparison": {
+    "format": "cartmesh2d-real-dialog-save-comparison-v1",
+    "sourceZipSha256": "a1ffe73b8f80e35f17e2293d332e0c994fdbedd228aabd937c1b3dacdcc7c4aa",
+    "savedZipSha256": "bf15caf32c240034f5b79fa2ca465e5ff0c8bde951c2625d3ad4ceb87fb7e23b",
+    "savedZipBytes": 2144650,
+    "zipCrcPassed": true,
+    "stateMember": "mesh-iNU9xB/thermal-run-UZNyYS/desktop-state.json",
+    "request": {
+      "case": "cavity",
+      "nu": 0.01,
+      "speed": 0.2,
+      "maxIterations": 1500,
+      "tolerance": 1e-08,
+      "convection": "limited-linear",
+      "pressurePreconditioner": "cholesky",
+      "outletBackflow": "reject",
+      "viscousStress": "symmetric",
+      "steadyAcceleration": "none",
+      "linearPolicy": "strict",
+      "velocityRelaxation": 0.6,
+      "pressureCorrectionPasses": 4,
+      "mode": "adaptive",
+      "resume": true,
+      "dt": 0.025,
+      "endTime": 1.4,
+      "minDt": 1e-07,
+      "maxCourant": 1,
+      "maxRetries": 24,
+      "maxSteps": 100000,
+      "diffusivity": 0.02,
+      "initial": 300,
+      "source": 0,
+      "scalarConvection": "upwind",
+      "fluxCorrection": "bounded-spatial",
+      "boundaries": {
+        "wall": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "inlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "outlet": {
+          "kind": "flux",
+          "value": 0,
+          "inflowValue": 300
+        },
+        "top": {
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        "bottom": {
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        }
+      },
+      "events": [
+        {
+          "time": 0.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0.2
+        },
+        {
+          "time": 0.137,
+          "target": "top",
+          "kind": "value",
+          "value": 300,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.243,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 0.337,
+          "target": "top",
+          "kind": "value",
+          "value": 301,
+          "inflowValue": 300
+        },
+        {
+          "time": 0.913,
+          "target": "source",
+          "kind": "source",
+          "value": 0.1
+        },
+        {
+          "time": 1.137,
+          "target": "source",
+          "kind": "source",
+          "value": 0
+        },
+        {
+          "time": 1.337,
+          "target": "source",
+          "kind": "source",
+          "value": -0.1
+        }
+      ],
+      "timeError": true,
+      "temperatureScale": 1,
+      "timeRtol": 0.01
+    },
+    "files": [
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.thermal.checkpoint",
+        "sha256": "6af7646946f743a1129dc9bd27f8b6ea5c1a67a32e3a9a761b0c93c2effe0b6a",
+        "bytes": 452721,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.cells.csv",
+        "sha256": "833540cb615148126b319872c941f0c241c531c97e58134c27b7b2398c51ae39",
+        "bytes": 118365,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.faces.csv",
+        "sha256": "8044a8e1b787212596041fded6ff56a0123b6ec9100cb48339f4e753f9569ef4",
+        "bytes": 151995,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.heat-history.csv",
+        "sha256": "bbb88ac506aca61f62767ae0f7a0cd7c35402fe4ec2d088452b3194693813868",
+        "bytes": 958,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.thermal-history.csv",
+        "sha256": "28fe86facb47a286aa69c6db199e70f93fffa733b9ac01f278522e57d48089ae",
+        "bytes": 905,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.boundary-heat-history.csv",
+        "sha256": "6e0688f0060bb23532cbdeec51f26bca57f64d9bd8d2fde4a31945998b284506",
+        "bytes": 73,
+        "byteEqualToPriorDirectCli": true
+      },
+      {
+        "member": "mesh-iNU9xB/thermal-run-UZNyYS/thermal.attempt-history.csv",
+        "sha256": "e20cdb9f5a8fc4ab0f87e1eb6c8a9149f620df92eb054af6feecbccac3ce0a10",
+        "bytes": 567,
+        "byteEqualToPriorDirectCli": true
+      }
+    ],
+    "uiReadback": {
+      "acceptedTimeS": 1.4,
+      "historySteps": 107,
+      "cells": 904,
+      "pressure": "cholesky",
+      "maximumDtS": 0.025,
+      "nativeOpenDialog": true,
+      "nativeSaveDialog": true
+    }
+  },
+  "newProcess": {
+    "newAppProcesses": [
+      {
+        "pid": 34326,
+        "executable": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-dialogs/package/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D"
+      }
+    ],
+    "oldProcessGone": true,
+    "savedZipUnchangedAfterOpen": true,
+    "savedZipSha256": "bf15caf32c240034f5b79fa2ca465e5ff0c8bde951c2625d3ad4ceb87fb7e23b"
+  },
+  "uiFix": "Help now correctly states that macOS system Cholesky supports constant-property coupled temperature.",
+  "verification": {
+    "packagedApp": true,
+    "nativeFileDialogs": true,
+    "savedProjectNewProcessOpened": true,
+    "restoredTemperatureScreenshotVisuallyInspected": true,
+    "fullWindowScreenshotSavedLocally": false
+  },
+  "limitations": [
+    "Same-process Dock window reopening remains unverified; computer-use provider timed out.",
+    "Windows/Linux App and signed distribution were not tested.",
+    "This observation does not validate the later linear-retry fix in the GUI."
+  ],
+  "rawEvidence": {
+    "manifest": "outputs/thermal-dialogs/raw-manifest.json",
+    "manifestSha256": "2b9d5d7bbbd3604d6725e05018094b6778633538e16b9095794623a3243bb866",
+    "count": 126,
+    "bytes": 446398737,
+    "allMatched": true,
+    "activeFilesExcluded": true
+  }
+}

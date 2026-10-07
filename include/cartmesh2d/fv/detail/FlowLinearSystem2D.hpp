@@ -11,6 +11,7 @@
 #include <optional>
 #include <memory>
 
+#include "cartmesh2d/fv/FlowLinearIterationLimit2D.hpp"
 #include "cartmesh2d/fv/detail/FlowAggregation2D.hpp"
 #include "cartmesh2d/fv/detail/FlowCholesky2D.hpp"
 
@@ -422,7 +423,7 @@ struct SparseSystem2D {
         std::ostringstream message;
         message << "Flow pressure PCG iteration limit reached: true residual=" << linearNorm(residual)
                 << ", target=" << stop << ", rhs=" << linearNorm(rhs);
-        throw std::runtime_error(message.str());
+        throw FlowLinearIterationLimit2D(message.str());
     }
 
     std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
@@ -597,7 +598,7 @@ private:
         message << "Flow linear solver iteration limit reached: true residual=" << linearNorm(r)
                 << ", target=" << stop << ", diagonal-scaled residual=" << scaled
                 << ", diagonal-scaled target=" << diagonalScaledStop << ", rhs=" << linearNorm(rhs);
-        throw std::runtime_error(message.str());
+        throw FlowLinearIterationLimit2D(message.str());
     }
 private:
     // Owned by this matrix, so another system using the same Krylov workspace

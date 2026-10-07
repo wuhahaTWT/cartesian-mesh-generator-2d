@@ -33,6 +33,8 @@ struct ThermalFlowResult2D {
     // False only when a converged flow still fails the unchanged scalar carrier
     // gate after a tighter pressure solve. The controller must reject this trial.
     bool carrierCompatible = true;
+    // Adaptive rejection only; no candidate fields are published on this path.
+    std::string flowLinearFailure;
 };
 struct ThermalTimeControls2D {
     FlowTimeStepControls2D limits;
@@ -46,6 +48,7 @@ struct ThermalTimeControls2D {
 struct ThermalAttempt2D {
     double startTime=0, timeStep=0, error=0, courant=0, velocityRelaxation=0;
     std::string reason;
+    std::string diagnostic; // original linear residuals, when a solve exhausted its budget
 };
 struct ThermalControlledResult2D {
     ThermalFlowResult2D step;

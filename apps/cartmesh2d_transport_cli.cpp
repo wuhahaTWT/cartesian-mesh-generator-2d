@@ -470,6 +470,10 @@ int main(int argc,char**argv) {
                             lastAttempt=a;++attemptCount;
                             attemptHistory<<step<<','<<a.startTime<<','<<a.timeStep<<','<<a.error<<','<<a.courant<<','<<a.velocityRelaxation<<','<<a.reason<<'\n';
                             flushOutput(attemptHistory,prefix,".attempt-history.csv");if(a.reason!="accepted")++rejectedAttempts;
+                            if(!a.diagnostic.empty())std::cout<<std::setprecision(17)
+                                <<"{\"type\":\"thermal-time-retry\",\"startTime\":"<<a.startTime
+                                <<",\"timeStep\":"<<a.timeStep<<",\"reason\":"<<quote(a.reason)
+                                <<",\"diagnostic\":"<<quote(a.diagnostic)<<"}\n"<<std::flush;
                         });
                     dt=controlled.attempts.back().timeStep;
                     attempt=std::move(controlled.step);
@@ -482,8 +486,8 @@ int main(int argc,char**argv) {
                 if(attempt.accepted) {
                     saveAccepted(*attempt.accepted);state=*attempt.accepted;acceptedTime=state.flow.time;
                 }
-                const auto& fh=attempt.flow.history.back();
                 if(attempt.accepted) {
+                const auto& fh=attempt.flow.history.back();
                 thermalHistory<<step<<','<<time<<','<<(attempt.accepted?1:0)<<','<<attempt.flow.history.size()<<','<<fh.momentumResidual<<','<<fh.continuity
                     <<','<<result.history.size()<<',';
                 if(result.history.empty())thermalHistory<<"nan";else thermalHistory<<result.history.back().residualNorm;
@@ -516,11 +520,14 @@ int main(int argc,char**argv) {
                         if(std::isfinite(a.error))failed<<a.error;else failed<<"null";
                         failed<<",\"courant\":";
                         if(std::isfinite(a.courant))failed<<a.courant;else failed<<"null";
-                        failed<<",\"maximumCourant\":"<<timeControls.limits.maximumCourant<<'}';
+                        failed<<",\"maximumCourant\":"<<timeControls.limits.maximumCourant;
+                        if(!a.diagnostic.empty())failed<<",\"diagnostic\":"<<quote(a.diagnostic);
+                        failed<<'}';
                     }
                     failed<<"}\n";
                     return 2;
                 }
+                const auto& fh=attempt.flow.history.back();
                 std::cout<<std::setprecision(17)<<"{\"type\":\"thermal-time-step\",\"accepted\":1,\"step\":"<<step
                     <<",\"time\":"<<time<<",\"flowIterations\":"<<attempt.flow.history.size()
                     <<",\"momentumResidual\":"<<fh.momentumResidual<<",\"continuity\":"<<fh.continuity

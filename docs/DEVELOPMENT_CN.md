@@ -155,6 +155,16 @@ python3 tests/thermal_control_cli_test.py --cli build/cartmesh2d_transport_cli -
 
 `python3 outputs/thermal-wake-resolved/compare-time.py medium-at60 medium-dt025-at60 NEW_REPORT` 核对分叉前同一状态、分叉后仅最大步长不同，输出累计相位／幅值差、末态温度／速度差和原生接受误差比。全域面积 RMS 包含远场，不能替代尾迹局部或最大误差。`time60-raw-manifest.json` 封存本次完成的输入链补充、原生结果和后处理，前段输入由已有 Cholesky 清单绑定；活动目录明确排除。继续 60→120 s 时分别读取各自接受态，不覆盖 60 s 结果；实际完成范围见当前状态。图只渲染原生多边形及场，不建立独立方程验证链。
 
+180 s 基准、120 s 时间对照及细档 60 s 结果保存在 `medium-at180`、`medium-at120`、`medium-dt025-at120`、`fine-at60`；各 `analysis.json` 保存完整续算段清单。`compare-time.py medium-at120 medium-dt025-at120 NEW_REPORT` 复现长期时间差；`compare-mesh.py medium-at60 fine-at60 NEW_REPORT` 按命名边界核对物理条件（两档面编号不同），只统计原生响应，不重建方程或跨网格映射场。新的 .025／.0125 s 分叉共同读取 `medium-dt025-60to120/result.thermal.checkpoint`；运行和后处理均使用新目录，不覆盖输入。`time180-raw-manifest.json` 只封存完成部分并绑定此前清单。
+
+### 联合推进的线性迭代失败恢复
+
+`FlowLinearIterationLimit2D` 只标记压力 PCG／动量 BiCGStab 的有限迭代预算耗尽；真实残差、对角归一残差和原停止门均保留。自适应 `advanceThermalFlowImpl` 仅在流动调用处把该类型转换为 `flow-linear`／`flow-linear-half`，所有试步都从原接受态开始；半步失败也拒绝整步。控制器复用既有松弛阻尼、缩步、重试预算，原始诊断随 `ThermalAttempt2D` 写入 CLI `thermal-time-retry` 和失败摘要，不新增通过状态 CSV 列。固定步仍传播异常，矩阵错误、数值崩溃及取消不作为该类失败处理。
+
+相关原生回归为 `cartmesh2d_thermal_flow`、`cartmesh2d_scalar_transport`、`cartmesh2d_flow_linear`；9 格腔体用接近舍入底限的压力范数限制构造确定失败，不是新的生产精度阈值。`outputs/thermal-linear-retry/run-regression.py` 保留真实 23569 格、60 s 输入的自动恢复／零重试预算／旧通过结果字节比较；使用已冻结程序和全新目录。`tests/thermal_control_cli_test.py` 继续承担原生交易、事件、取消及完整续算检查，不增加独立方程验证链。原始数据索引为该目录的 `raw-manifest.json`。
+
+真实系统文件选择验收保存在 `outputs/thermal-dialogs/`：`manual-project-1p4.zip` 是通过 NSSavePanel 保存的原包，`verify-save.py` 检查 ZIP、状态和 7 类原生文件，`process-after-reopen.json` 绑定新的 App 进程。`package/mac-arm64/CartMesh2D.app` 已更正 Cholesky 帮助，但物理程序仍为该轮冻结版本；全窗口截图仅在界面工具中查看，未另存本地，不能把导出的场预览当作完整 App 截图。
+
 ### 周期腔体与联合载流精度
 
 原生标量载流门检查每格 `abs(Σq) <= carrierAbsoluteTolerance + carrierRelativeTolerance*Σabs(q)`，q 单位 m²/s。闭合压力系统钉住一行，其误差是其余行误差之和；原线性停止量的二范数不能直接作为该行的绝对预算。`advanceThermalFlow2D` 只捕获明确的 `ScalarCarrierContinuityError2D`，第一次不匹配后从原接受态重算相同 BE 步，把 `pressureResidualNormStop` 限为 `0.5*carrierAbsoluteTolerance/sqrt(max(1,N-1))`。Cauchy–Schwarz 给出遗漏行误差上界，0.5 为原预算留出舍入余量，实际面通量仍须通过原门。该上限单位也是 m²/s，只影响数值精度，默认无限时压力求解完全保留旧停止条件；不改物理状态身份。再次不匹配返回 `carrier`／`carrier-half`，由已有控制器回退重试；无效输入及其他异常不伪装成此类失败。

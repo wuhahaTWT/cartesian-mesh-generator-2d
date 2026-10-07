@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ThermalCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowLinearIterationLimit2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -473,8 +474,64 @@ void controllerHistoryPreservesTerminalInterval() {
     }
 }
 
+void controlledLinearFailureRecovery() {
+    const auto mesh=cavityMesh();const auto data=setup(mesh);const auto sc=scalarControls();
+    const auto start=initial(mesh),snapshot=start;
+    ThermalTimeControls2D c;c.limits.maximumStep=.1;c.limits.minimumStep=.01;
+    c.limits.targetTime=.1;c.limits.maximumRetries=5;
+    // These pressure-norm caps [area/time] deliberately probe the rounding
+    // floor of this nine-cell fixture. They are failure inputs, not new gates
+    // or accuracy recommendations for physical runs.
+    auto fc=flowControls();fc.pressureResidualNormStop=1e-18;
+    try {
+        (void)advanceThermalFlow2D(mesh,fc,data,sc,start,.1);
+        check(false,"fixed step preserves the linear iteration-limit exception");
+    } catch(const FlowLinearIterationLimit2D& error) {
+        check(std::string(error.what()).find("true residual=")!=std::string::npos,
+              "typed linear exhaustion retains the actual residual diagnostic");
+    }
+    for(bool estimate:{false,true}) {
+        c.estimateError=estimate;std::size_t observed=0;
+        const auto result=advanceControlledThermalFlow2D(mesh,fc,data,sc,start,c,{},
+            [&](const ThermalAttempt2D&){++observed;});
+        check(result.step.accepted.has_value(),"adaptive step recovers a genuine linear iteration limit");
+        check(result.attempts.size()>1 && observed==result.attempts.size(),"observer receives each rejected and accepted trial");
+        check(result.attempts.front().reason=="flow-linear" &&
+              result.attempts.front().diagnostic.find("true residual=")!=std::string::npos,
+              "linear failure is recorded before damping, with original residuals");
+        if(result.step.accepted) {
+            const auto& accepted=result.attempts.back();
+            check(accepted.reason=="accepted" && accepted.diagnostic.empty(),"no stale rejection diagnostic on acceptance");
+            check(accepted.velocityRelaxation<fc.velocityRelaxation,"failed linear solve uses existing relaxation recovery");
+            auto referenceControls=fc;referenceControls.velocityRelaxation=accepted.velocityRelaxation;
+            const auto reference=advanceThermalFlow2D(mesh,referenceControls,data,sc,start,accepted.timeStep);
+            check(reference.accepted.has_value(),"same original state and accepted controls converge independently");
+            if(reference.accepted)compareState(*result.step.accepted,*reference.accepted,
+                "linear retry discards failed candidates and retains the BE full step");
+        }
+        compareState(start,snapshot,"linear retry input");
+    }
+    fc.pressureResidualNormStop=1e-20;
+    const auto exhausted=advanceControlledThermalFlow2D(mesh,fc,data,sc,start,c);
+    check(!exhausted.step.accepted && !exhausted.step.flow.converged && exhausted.step.flow.history.empty(),
+          "exhausted linear retries publish neither a candidate nor fabricated flow history");
+    check(exhausted.attempts.size()==c.limits.maximumRetries+1,"linear retries obey the existing finite budget");
+    check(exhausted.attempts.back().timeStep<exhausted.attempts.front().timeStep,
+          "linear failure reduces time after the relaxation floor");
+    for(const auto& a:exhausted.attempts)check(a.reason=="flow-linear" && !a.diagnostic.empty(),
+          "every exhausted trial keeps its linear failure diagnostic");
+    compareState(start,snapshot,"exhausted linear input");
+    rejects([&]{(void)advanceThermalFlow2D(mesh,flowControls(),data,sc,start,.1,
+        [](const FlowIteration2D&){throw FlowLinearIterationLimit2D("user callback exception");});},
+        "user callback exception","fixed-step callback exceptions are never converted into numerical retries");
+    auto invalid=fc;invalid.pressureResidualNormStop=-1;
+    rejects([&]{(void)advanceControlledThermalFlow2D(mesh,invalid,data,sc,start,c);},
+        "Flow pressure residual limit must be positive","invalid linear controls still fail immediately");
+}
+
 int main() {
     try {
+        controlledLinearFailureRecovery();
         coupledCarrierContinuityBudget();
         controllerHistoryPreservesTerminalInterval();
         steadyTimeInvariance();

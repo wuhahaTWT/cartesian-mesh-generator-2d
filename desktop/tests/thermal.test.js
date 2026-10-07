@@ -349,6 +349,12 @@ test('thermal failure explains the native time budget and minimum step', () => {
   assert.match(message,/最小步长.*0\.000001.*s/);
   assert.match(message,/减小.*最小步长/);
   assert.doesNotMatch(message,/放宽.*误差|已有.*检查点/);
+  for(const reason of ['flow-linear','flow-linear-half']) {
+    const diagnostic='Flow linear solver iteration limit reached: true residual=0.01, target=0.001';
+    const text=thermalFailureMessage({acceptedTime:.5,controller:{reason,diagnostic,attempts:2,maximumRetries:1}},0);
+    assert.match(text,/线性求解达到迭代上限/);assert.match(text,/重试预算已用尽/);
+    assert.ok(text.includes(diagnostic));assert.match(text,/0\.5 s/);
+  }
   const old=thermalFailureMessage({acceptedTime:.5,failedStage:'joint-controller'},0);
   assert.match(old,/0\.5 s/);
   assert.doesNotMatch(old,/最小步长|重试预算/);

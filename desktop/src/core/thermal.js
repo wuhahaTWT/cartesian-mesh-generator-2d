@@ -182,6 +182,7 @@ function thermalFailureMessage(summary,startTime=0) {
   const reasons={flow:'流动方程未收敛',scalar:'温度方程未收敛',
     carrier:'载流面通量未满足温度连续性要求','carrier-half':'半步载流面通量未满足温度连续性要求',
     'flow-half':'时间估计的半步流动方程未收敛','scalar-half':'时间估计的半步温度方程未收敛',
+    'flow-linear':'流动线性求解达到迭代上限','flow-linear-half':'时间估计的半步流动线性求解达到迭代上限',
     'nonfinite-error':'时间缺陷含非有限数'};
   const number=value=>Number(value.toPrecision(6)).toString();
   if(c?.reason==='time-error'&&Number.isFinite(c.errorRatio))
@@ -189,6 +190,7 @@ function thermalFailureMessage(summary,startTime=0) {
   else if(c?.reason==='courant'&&Number.isFinite(c.courant)&&Number.isFinite(c.maximumCourant))
     lines.push(`CFL 为 ${number(c.courant)}，超过上限 ${number(c.maximumCourant)}。`);
   else if(reasons[c?.reason || summary?.failedStage])lines.push(reasons[c?.reason || summary.failedStage]+'。');
+  if(typeof c?.diagnostic==='string'&&c.diagnostic)lines.push(c.diagnostic);
   if(c&&Number.isFinite(c.timeStep)&&Number.isFinite(c.minimumTimeStep)) {
     lines.push(`最后尝试步长 ${number(c.timeStep)} s；设定最小步长 ${number(c.minimumTimeStep)} s。`);
     if(c.timeStep<=c.minimumTimeStep)
