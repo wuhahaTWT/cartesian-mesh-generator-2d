@@ -1,9 +1,9 @@
 {
   "format": "cartmesh2d-thermal-wake-response-v1",
   "branch": "codex/transient-thermal-workflow",
-  "sourceBase": "e3ad24274ab177a719a01d944dcc32f1cb3c9d21",
-  "frozenAtUtc": "2026-10-07T06:54:52.212011+00:00",
-  "scope": "Native incompressible Re=100, Pr=1 passive temperature. Both medium maximum-dt .05/.025 trajectories complete to 180 s from a common 20 s state. Fine trajectory remains developing; three shared-120-s branches are not all complete.",
+  "sourceBase": "ee0821acb69315f45a26dace9d9d57a69a0fd4b7",
+  "frozenAtUtc": "2026-10-07T08:16:45.051974+00:00",
+  "scope": "Native incompressible Re=100, Pr=1 passive temperature. Three medium maximum-dt .05/.025/.0125 trajectories complete to 180 s from the exact same 120 s accepted state. Developed fine-grid comparison remains pending.",
   "solverSourceChanged": false,
   "physicalQualificationEstablished": false,
   "meshProtocol": {
@@ -279,6 +279,24 @@
       "processSeconds": 4719.565131124982,
       "inputUnchanged": true,
       "checkpointSha256": "00f9482bd1bfb9148826a3d7687a49a4d923fb0f8d764d16c204fb626880cc62"
+    },
+    "medium-dt05-from025-120to180": {
+      "exitCode": 0,
+      "accepted": 1200,
+      "rejected": 0,
+      "endS": 180,
+      "processSeconds": 3385.978264000034,
+      "inputUnchanged": true,
+      "checkpointSha256": "45572593dbaedf3b35b3a56d225f398d8fa577daaaef1194bdd1664f684da809"
+    },
+    "medium-dt0125-120to180": {
+      "exitCode": 0,
+      "accepted": 4801,
+      "rejected": 0,
+      "endS": 180,
+      "processSeconds": 9707.249634834006,
+      "inputUnchanged": true,
+      "checkpointSha256": "dc4d01085144d6058e36caf3d453c5fbd6dd2f3e0799a1a9c809d31ebcb8f980"
     }
   },
   "trajectories": {
@@ -1681,6 +1699,752 @@
         "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
         "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
       }
+    },
+    "medium-dt05-from025-at180": {
+      "format": "cartmesh2d-thermal-wake-trajectory-v1",
+      "label": "Medium grid, shared-120-s maximum dt 0.05 s",
+      "completedTrajectory": true,
+      "inputChainVerified": true,
+      "physicalQualificationEstablished": false,
+      "cells": 6721,
+      "startS": 0,
+      "endS": 180,
+      "accepted": 5782,
+      "rejected": 8,
+      "seconds": 11960.286108166067,
+      "segments": [
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+          "startS": 0,
+          "endS": 2,
+          "accepted": 210,
+          "rejected": 8,
+          "seconds": 1064.1839589999872,
+          "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+          "inputSha256": null,
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+          "startS": 2,
+          "endS": 2.2,
+          "accepted": 15,
+          "rejected": 0,
+          "seconds": 22.5511317079945,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl4-2p2to4",
+          "startS": 2.2,
+          "endS": 4,
+          "accepted": 36,
+          "rejected": 0,
+          "seconds": 50.45982670801459,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-growth-4to20",
+          "startS": 4,
+          "endS": 20,
+          "accepted": 320,
+          "rejected": 0,
+          "seconds": 409.01914470799966,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt025-20to60",
+          "startS": 20,
+          "endS": 60,
+          "accepted": 1601,
+          "rejected": 0,
+          "seconds": 2478.959185125015,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt025-60to120",
+          "startS": 60,
+          "endS": 120,
+          "accepted": 2400,
+          "rejected": 0,
+          "seconds": 4549.134596917022,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt05-from025-120to180",
+          "startS": 120,
+          "endS": 180,
+          "accepted": 1200,
+          "rejected": 0,
+          "seconds": 3385.978264000034,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "45572593dbaedf3b35b3a56d225f398d8fa577daaaef1194bdd1664f684da809"
+        }
+      ],
+      "temperatureRangeK": [
+        299.99999999996504,
+        300.9973306200524
+      ],
+      "finalHeatGainKm2": 31.01376451028784,
+      "integratedNativeBudgetDefectKm2": 9.149181641993672e-08,
+      "maxAcceptedCourant": 2.9133133194465435,
+      "cyclesAfterS": 20,
+      "upwardZeroCrossingsS": [
+        25.629863528217516,
+        40.05759858128581,
+        53.29403116760446,
+        65.91693462446179,
+        78.35527181611516,
+        90.6862914468495,
+        102.96206950005266,
+        115.21039664600895,
+        127.46110654828404,
+        139.76982083150094,
+        152.09545798002148,
+        164.42586494299638,
+        176.75916068500587
+      ],
+      "cycles": [
+        {
+          "startS": 25.629863528217516,
+          "endS": 40.05759858128581,
+          "periodS": 14.427735053068293,
+          "Strouhal": 0.1386218968288212,
+          "meanCd": 1.18055927081265,
+          "meanCl": -0.00718221500307784,
+          "ClRms": 0.05932313512153093,
+          "ClHalfRange": 0.08321710100704843,
+          "meanNu": 5.765190698808207,
+          "NuHalfRange": 0.05434767728373524
+        },
+        {
+          "startS": 40.05759858128581,
+          "endS": 53.29403116760446,
+          "periodS": 13.23643258631865,
+          "Strouhal": 0.15109811400899864,
+          "meanCd": 1.221411134089554,
+          "meanCl": -0.008567753189691081,
+          "ClRms": 0.10352554286267875,
+          "ClHalfRange": 0.14622368352019371,
+          "meanNu": 5.73217719068083,
+          "NuHalfRange": 0.00954136451460208,
+          "changeFromPreviousCycle": {
+            "periodS": -1.1913024667496437,
+            "Strouhal": 0.01247621718017744,
+            "meanCd": 0.04085186327690393,
+            "ClRms": 0.044202407741147816,
+            "meanNu": -0.03301350812737702
+          }
+        },
+        {
+          "startS": 53.29403116760446,
+          "endS": 65.91693462446179,
+          "periodS": 12.62290345685733,
+          "Strouhal": 0.15844215293538588,
+          "meanCd": 1.2677449253025779,
+          "meanCl": -0.007182954997023665,
+          "ClRms": 0.14402722779148686,
+          "ClHalfRange": 0.20356275414970015,
+          "meanNu": 5.756158303564288,
+          "NuHalfRange": 0.01018489881409712,
+          "changeFromPreviousCycle": {
+            "periodS": -0.6135291294613197,
+            "Strouhal": 0.007344038926387242,
+            "meanCd": 0.046333791213023945,
+            "ClRms": 0.04050168492880811,
+            "meanNu": 0.02398111288345728
+          }
+        },
+        {
+          "startS": 65.91693462446179,
+          "endS": 78.35527181611516,
+          "periodS": 12.438337191653375,
+          "Strouhal": 0.1607931968062484,
+          "meanCd": 1.2923173339535887,
+          "meanCl": -0.005040338130269139,
+          "ClRms": 0.17368328200396552,
+          "ClHalfRange": 0.24568618200712045,
+          "meanNu": 5.774297698211722,
+          "NuHalfRange": 0.00922421040036081,
+          "changeFromPreviousCycle": {
+            "periodS": -0.18456626520395503,
+            "Strouhal": 0.002351043870862518,
+            "meanCd": 0.024572408651010846,
+            "ClRms": 0.02965605421247866,
+            "meanNu": 0.018139394647434415
+          }
+        },
+        {
+          "startS": 78.35527181611516,
+          "endS": 90.6862914468495,
+          "periodS": 12.331019630734332,
+          "Strouhal": 0.1621925890876955,
+          "meanCd": 1.3076548469190183,
+          "meanCl": -0.0029015579447890776,
+          "ClRms": 0.19252285452584542,
+          "ClHalfRange": 0.2723738812815887,
+          "meanNu": 5.7932393656766505,
+          "NuHalfRange": 0.009075152838010858,
+          "changeFromPreviousCycle": {
+            "periodS": -0.10731756091904288,
+            "Strouhal": 0.0013993922814470872,
+            "meanCd": 0.015337512965429623,
+            "ClRms": 0.0188395725218799,
+            "meanNu": 0.018941667464928535
+          }
+        },
+        {
+          "startS": 90.6862914468495,
+          "endS": 102.96206950005266,
+          "periodS": 12.275778053203169,
+          "Strouhal": 0.16292246335279187,
+          "meanCd": 1.3161726111092311,
+          "meanCl": -0.0015434175970541857,
+          "ClRms": 0.20287613024546983,
+          "ClHalfRange": 0.2870024294876452,
+          "meanNu": 5.8088545697806655,
+          "NuHalfRange": 0.006360186616763297,
+          "changeFromPreviousCycle": {
+            "periodS": -0.05524157753116299,
+            "Strouhal": 0.0007298742650963808,
+            "meanCd": 0.008517764190212773,
+            "ClRms": 0.01035327571962441,
+            "meanNu": 0.015615204104014957
+          }
+        },
+        {
+          "startS": 102.96206950005266,
+          "endS": 115.21039664600895,
+          "periodS": 12.248327145956281,
+          "Strouhal": 0.16328760459833808,
+          "meanCd": 1.320535483304048,
+          "meanCl": -0.0008016170218470263,
+          "ClRms": 0.20821193357745674,
+          "ClHalfRange": 0.29453995573435887,
+          "meanNu": 5.818830830108608,
+          "NuHalfRange": 0.0037373935281825865,
+          "changeFromPreviousCycle": {
+            "periodS": -0.02745090724688737,
+            "Strouhal": 0.00036514124554620775,
+            "meanCd": 0.0043628721948167914,
+            "ClRms": 0.00533580333198691,
+            "meanNu": 0.009976260327942299
+          }
+        },
+        {
+          "startS": 115.21039664600895,
+          "endS": 127.46110654828404,
+          "periodS": 12.25070990227509,
+          "Strouhal": 0.16325584524930903,
+          "meanCd": 1.3217245992933833,
+          "meanCl": 0.0006178432264649056,
+          "ClRms": 0.20939883782985036,
+          "ClHalfRange": 0.296196479158386,
+          "meanNu": 5.824146489406961,
+          "NuHalfRange": 0.002102662998565652,
+          "changeFromPreviousCycle": {
+            "periodS": 0.0023827563188092427,
+            "Strouhal": -3.175934902904798e-05,
+            "meanCd": 0.0011891159893353542,
+            "ClRms": 0.0011869042523936224,
+            "meanNu": 0.005315659298353204
+          }
+        },
+        {
+          "startS": 127.46110654828404,
+          "endS": 139.76982083150094,
+          "periodS": 12.3087142832169,
+          "Strouhal": 0.16248650784972946,
+          "meanCd": 1.3178002966060225,
+          "meanCl": 0.0005015297859964823,
+          "ClRms": 0.20504413456585086,
+          "ClHalfRange": 0.2900128129962173,
+          "meanNu": 5.823754168868826,
+          "NuHalfRange": 0.0024113292570913103,
+          "changeFromPreviousCycle": {
+            "periodS": 0.05800438094181004,
+            "Strouhal": -0.0007693373995795727,
+            "meanCd": -0.00392430268736077,
+            "ClRms": -0.004354703263999504,
+            "meanNu": -0.00039232053813531564
+          }
+        },
+        {
+          "startS": 139.76982083150094,
+          "endS": 152.09545798002148,
+          "periodS": 12.325637148520542,
+          "Strouhal": 0.1622634169658371,
+          "meanCd": 1.3156284476558577,
+          "meanCl": 0.00021749063593090286,
+          "ClRms": 0.2030019916293696,
+          "ClHalfRange": 0.28716778928773534,
+          "meanNu": 5.821625127217092,
+          "NuHalfRange": 0.0020932635896149243,
+          "changeFromPreviousCycle": {
+            "periodS": 0.016922865303641288,
+            "Strouhal": -0.00022309088389235732,
+            "meanCd": -0.0021718489501647564,
+            "ClRms": -0.0020421429364812504,
+            "meanNu": -0.0021290416517336652
+          }
+        },
+        {
+          "startS": 152.09545798002148,
+          "endS": 164.42586494299638,
+          "periodS": 12.330406962974905,
+          "Strouhal": 0.16220064804069276,
+          "meanCd": 1.314819109660126,
+          "meanCl": 8.105705825156367e-05,
+          "ClRms": 0.20201344418984382,
+          "ClHalfRange": 0.28576469725739284,
+          "meanNu": 5.820285598863608,
+          "NuHalfRange": 0.0018500220262187561,
+          "changeFromPreviousCycle": {
+            "periodS": 0.004769814454363086,
+            "Strouhal": -6.276892514434085e-05,
+            "meanCd": -0.0008093379957316849,
+            "ClRms": -0.0009885474395257832,
+            "meanNu": -0.0013395283534842761
+          }
+        },
+        {
+          "startS": 164.42586494299638,
+          "endS": 176.75916068500587,
+          "periodS": 12.333295742009483,
+          "Strouhal": 0.1621626564250487,
+          "meanCd": 1.314382835655064,
+          "meanCl": 7.392377677472526e-06,
+          "ClRms": 0.20152331169458712,
+          "ClHalfRange": 0.2850778576083133,
+          "meanNu": 5.819430955545913,
+          "NuHalfRange": 0.0016840849758339438,
+          "changeFromPreviousCycle": {
+            "periodS": 0.0028887790345777375,
+            "Strouhal": -3.7991615644050736e-05,
+            "meanCd": -0.00043627400506207614,
+            "ClRms": -0.000490132495256701,
+            "meanNu": -0.0008546433176945811
+          }
+        }
+      ],
+      "referenceContext": {
+        "url": "https://arxiv.org/pdf/2411.16005",
+        "section": "3.1, Newtonian Bn=0 only",
+        "equations": {
+          "22": "Cl_rms=(Re-46.1)^0.6554/56.9401",
+          "28": "Nu=0.5111 Pr^0.358 Re^0.532 (50<=Re<=180)"
+        },
+        "evaluatedAt": {
+          "Re": 100,
+          "Pr": 1
+        },
+        "ClRmsFit": 0.239587993916859,
+        "NuFit": 5.92251106730885,
+        "interpretation": "Primary paper fits are context, not an exact matching-domain or automatic pass threshold. Its reported Nu fit spread is below 5%. Its domain is 25D upstream, 75D downstream, width 50D; ours is 32D in each streamwise direction and width 64D. Its Newtonian model also decouples constant-property flow and temperature. No Bn>0 table value is used."
+      },
+      "definitions": {
+        "forceCoefficients": "C=2*(native F/rho)/(U^2 D), U=1 m/s, nominal D=2 m.",
+        "Nu": "-native outward wall diffusion/(pi alpha DeltaT), alpha=.02 m^2/s, DeltaT=1 K. Nominal circular perimeter is used for literature normalization of the actual 128-sided wall flux.",
+        "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
+        "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
+      }
+    },
+    "medium-dt0125-at180": {
+      "format": "cartmesh2d-thermal-wake-trajectory-v1",
+      "label": "Medium grid, shared-120-s maximum dt 0.0125 s",
+      "completedTrajectory": true,
+      "inputChainVerified": true,
+      "physicalQualificationEstablished": false,
+      "cells": 6721,
+      "startS": 0,
+      "endS": 180,
+      "accepted": 9383,
+      "rejected": 8,
+      "seconds": 18281.55747900004,
+      "segments": [
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-start-2s",
+          "startS": 0,
+          "endS": 2,
+          "accepted": 210,
+          "rejected": 8,
+          "seconds": 1064.1839589999872,
+          "binarySha256": "85c00ccbf83ef6e486edd74c90fd014a1df5179537234b01906e0892ce24b76b",
+          "inputSha256": null,
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cholesky-2to2p2",
+          "startS": 2,
+          "endS": 2.2,
+          "accepted": 15,
+          "rejected": 0,
+          "seconds": 22.5511317079945,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "c160635ef012c6815e021d51d32c35459cf0a04c19d89a7d60b6572a47a6963e",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-cfl4-2p2to4",
+          "startS": 2.2,
+          "endS": 4,
+          "accepted": 36,
+          "rejected": 0,
+          "seconds": 50.45982670801459,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "357eb03166349f79639deceb53764e3f5984181873ee8510728f519f7654a970",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-growth-4to20",
+          "startS": 4,
+          "endS": 20,
+          "accepted": 320,
+          "rejected": 0,
+          "seconds": 409.01914470799966,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "4f1e2cfe4a7bc81947954557c622d0efc70f35860516612c4bb17254a953ab9f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt025-20to60",
+          "startS": 20,
+          "endS": 60,
+          "accepted": 1601,
+          "rejected": 0,
+          "seconds": 2478.959185125015,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d51ab650735af2d6c0a3d8c6b7dbfa6bcbe95c7f388943961cd3c47d0a6a9d6f",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt025-60to120",
+          "startS": 60,
+          "endS": 120,
+          "accepted": 2400,
+          "rejected": 0,
+          "seconds": 4549.134596917022,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "2c07637d092c3d42a3bd5410474e76f09c430fb6f505ff57b3fd9d40cd38cd35",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b"
+        },
+        {
+          "directory": "outputs/thermal-wake-resolved/medium-dt0125-120to180",
+          "startS": 120,
+          "endS": 180,
+          "accepted": 4801,
+          "rejected": 0,
+          "seconds": 9707.249634834006,
+          "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+          "inputSha256": "d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b",
+          "inputUnchanged": true,
+          "mesh": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal-wake-resolved/medium/mesh.solver.cm2d",
+          "checkpointSha256": "dc4d01085144d6058e36caf3d453c5fbd6dd2f3e0799a1a9c809d31ebcb8f980"
+        }
+      ],
+      "temperatureRangeK": [
+        299.9999999997691,
+        300.9973306200524
+      ],
+      "finalHeatGainKm2": 31.08719924736574,
+      "integratedNativeBudgetDefectKm2": -2.898022759739356e-06,
+      "maxAcceptedCourant": 2.9133133194465435,
+      "cyclesAfterS": 20,
+      "upwardZeroCrossingsS": [
+        25.629863528217516,
+        40.05759858128581,
+        53.29403116760446,
+        65.91693462446179,
+        78.35527181611516,
+        90.6862914468495,
+        102.96206950005266,
+        115.21039664600895,
+        127.43727798776744,
+        139.62410612145834,
+        151.79731477891053,
+        163.96546202577014,
+        176.13081985454548
+      ],
+      "cycles": [
+        {
+          "startS": 25.629863528217516,
+          "endS": 40.05759858128581,
+          "periodS": 14.427735053068293,
+          "Strouhal": 0.1386218968288212,
+          "meanCd": 1.18055927081265,
+          "meanCl": -0.00718221500307784,
+          "ClRms": 0.05932313512153093,
+          "ClHalfRange": 0.08321710100704843,
+          "meanNu": 5.765190698808207,
+          "NuHalfRange": 0.05434767728373524
+        },
+        {
+          "startS": 40.05759858128581,
+          "endS": 53.29403116760446,
+          "periodS": 13.23643258631865,
+          "Strouhal": 0.15109811400899864,
+          "meanCd": 1.221411134089554,
+          "meanCl": -0.008567753189691081,
+          "ClRms": 0.10352554286267875,
+          "ClHalfRange": 0.14622368352019371,
+          "meanNu": 5.73217719068083,
+          "NuHalfRange": 0.00954136451460208,
+          "changeFromPreviousCycle": {
+            "periodS": -1.1913024667496437,
+            "Strouhal": 0.01247621718017744,
+            "meanCd": 0.04085186327690393,
+            "ClRms": 0.044202407741147816,
+            "meanNu": -0.03301350812737702
+          }
+        },
+        {
+          "startS": 53.29403116760446,
+          "endS": 65.91693462446179,
+          "periodS": 12.62290345685733,
+          "Strouhal": 0.15844215293538588,
+          "meanCd": 1.2677449253025779,
+          "meanCl": -0.007182954997023665,
+          "ClRms": 0.14402722779148686,
+          "ClHalfRange": 0.20356275414970015,
+          "meanNu": 5.756158303564288,
+          "NuHalfRange": 0.01018489881409712,
+          "changeFromPreviousCycle": {
+            "periodS": -0.6135291294613197,
+            "Strouhal": 0.007344038926387242,
+            "meanCd": 0.046333791213023945,
+            "ClRms": 0.04050168492880811,
+            "meanNu": 0.02398111288345728
+          }
+        },
+        {
+          "startS": 65.91693462446179,
+          "endS": 78.35527181611516,
+          "periodS": 12.438337191653375,
+          "Strouhal": 0.1607931968062484,
+          "meanCd": 1.2923173339535887,
+          "meanCl": -0.005040338130269139,
+          "ClRms": 0.17368328200396552,
+          "ClHalfRange": 0.24568618200712045,
+          "meanNu": 5.774297698211722,
+          "NuHalfRange": 0.00922421040036081,
+          "changeFromPreviousCycle": {
+            "periodS": -0.18456626520395503,
+            "Strouhal": 0.002351043870862518,
+            "meanCd": 0.024572408651010846,
+            "ClRms": 0.02965605421247866,
+            "meanNu": 0.018139394647434415
+          }
+        },
+        {
+          "startS": 78.35527181611516,
+          "endS": 90.6862914468495,
+          "periodS": 12.331019630734332,
+          "Strouhal": 0.1621925890876955,
+          "meanCd": 1.3076548469190183,
+          "meanCl": -0.0029015579447890776,
+          "ClRms": 0.19252285452584542,
+          "ClHalfRange": 0.2723738812815887,
+          "meanNu": 5.7932393656766505,
+          "NuHalfRange": 0.009075152838010858,
+          "changeFromPreviousCycle": {
+            "periodS": -0.10731756091904288,
+            "Strouhal": 0.0013993922814470872,
+            "meanCd": 0.015337512965429623,
+            "ClRms": 0.0188395725218799,
+            "meanNu": 0.018941667464928535
+          }
+        },
+        {
+          "startS": 90.6862914468495,
+          "endS": 102.96206950005266,
+          "periodS": 12.275778053203169,
+          "Strouhal": 0.16292246335279187,
+          "meanCd": 1.3161726111092311,
+          "meanCl": -0.0015434175970541857,
+          "ClRms": 0.20287613024546983,
+          "ClHalfRange": 0.2870024294876452,
+          "meanNu": 5.8088545697806655,
+          "NuHalfRange": 0.006360186616763297,
+          "changeFromPreviousCycle": {
+            "periodS": -0.05524157753116299,
+            "Strouhal": 0.0007298742650963808,
+            "meanCd": 0.008517764190212773,
+            "ClRms": 0.01035327571962441,
+            "meanNu": 0.015615204104014957
+          }
+        },
+        {
+          "startS": 102.96206950005266,
+          "endS": 115.21039664600895,
+          "periodS": 12.248327145956281,
+          "Strouhal": 0.16328760459833808,
+          "meanCd": 1.320535483304048,
+          "meanCl": -0.0008016170218470263,
+          "ClRms": 0.20821193357745674,
+          "ClHalfRange": 0.29453995573435887,
+          "meanNu": 5.818830830108608,
+          "NuHalfRange": 0.0037373935281825865,
+          "changeFromPreviousCycle": {
+            "periodS": -0.02745090724688737,
+            "Strouhal": 0.00036514124554620775,
+            "meanCd": 0.0043628721948167914,
+            "ClRms": 0.00533580333198691,
+            "meanNu": 0.009976260327942299
+          }
+        },
+        {
+          "startS": 115.21039664600895,
+          "endS": 127.43727798776744,
+          "periodS": 12.2268813417585,
+          "Strouhal": 0.16357400911133363,
+          "meanCd": 1.3232093335821398,
+          "meanCl": -0.00095274437843879,
+          "ClRms": 0.21159474277401666,
+          "ClHalfRange": 0.29931186314133684,
+          "meanNu": 5.824595996779407,
+          "NuHalfRange": 0.0023806376962256515,
+          "changeFromPreviousCycle": {
+            "periodS": -0.02144580419778208,
+            "Strouhal": 0.0002864045129955528,
+            "meanCd": 0.0026738502780918605,
+            "ClRms": 0.0033828091965599216,
+            "meanNu": 0.005765166670799182
+          }
+        },
+        {
+          "startS": 127.43727798776744,
+          "endS": 139.62410612145834,
+          "periodS": 12.186828133690895,
+          "Strouhal": 0.16411161116410045,
+          "meanCd": 1.3268770078072794,
+          "meanCl": -0.0006190549197589209,
+          "ClRms": 0.21576834212522622,
+          "ClHalfRange": 0.30522139547228044,
+          "meanNu": 5.829295498642767,
+          "NuHalfRange": 0.002336830896415787,
+          "changeFromPreviousCycle": {
+            "periodS": -0.04005320806760437,
+            "Strouhal": 0.0005376020527668168,
+            "meanCd": 0.0036676742251395833,
+            "ClRms": 0.0041735993512095615,
+            "meanNu": 0.0046995018633602115
+          }
+        },
+        {
+          "startS": 139.62410612145834,
+          "endS": 151.79731477891053,
+          "periodS": 12.173208657452193,
+          "Strouhal": 0.16429522045328948,
+          "meanCd": 1.3288052793875686,
+          "meanCl": -0.0003387298637439019,
+          "ClRms": 0.21777485021536572,
+          "ClHalfRange": 0.3080423422054138,
+          "meanNu": 5.832681435914035,
+          "NuHalfRange": 0.0018923442356642006,
+          "changeFromPreviousCycle": {
+            "periodS": -0.013619476238702077,
+            "Strouhal": 0.00018360928918903507,
+            "meanCd": 0.001928271580289298,
+            "ClRms": 0.002006508090139497,
+            "meanNu": 0.0033859372712674585
+          }
+        },
+        {
+          "startS": 151.79731477891053,
+          "endS": 163.96546202577014,
+          "periodS": 12.168147246859604,
+          "Strouhal": 0.16436355999194263,
+          "meanCd": 1.3296385591833626,
+          "meanCl": -0.00019844805776303385,
+          "ClRms": 0.2187524961370897,
+          "ClHalfRange": 0.309420939847437,
+          "meanNu": 5.834530960296063,
+          "NuHalfRange": 0.0017673012473768956,
+          "changeFromPreviousCycle": {
+            "periodS": -0.0050614105925888,
+            "Strouhal": 6.833953865315046e-05,
+            "meanCd": 0.0008332797957939508,
+            "ClRms": 0.0009776459217239741,
+            "meanNu": 0.0018495243820284557
+          }
+        },
+        {
+          "startS": 163.96546202577014,
+          "endS": 176.13081985454548,
+          "periodS": 12.165357828775342,
+          "Strouhal": 0.16440124722589727,
+          "meanCd": 1.3300742489805857,
+          "meanCl": -0.00012837216842991652,
+          "ClRms": 0.21922485118059037,
+          "ClHalfRange": 0.3100884214330635,
+          "meanNu": 5.835554137937209,
+          "NuHalfRange": 0.0016941473141214303,
+          "changeFromPreviousCycle": {
+            "periodS": -0.002789418084262252,
+            "Strouhal": 3.768723395464191e-05,
+            "meanCd": 0.0004356897972230822,
+            "ClRms": 0.0004723550435006829,
+            "meanNu": 0.0010231776411462334
+          }
+        }
+      ],
+      "referenceContext": {
+        "url": "https://arxiv.org/pdf/2411.16005",
+        "section": "3.1, Newtonian Bn=0 only",
+        "equations": {
+          "22": "Cl_rms=(Re-46.1)^0.6554/56.9401",
+          "28": "Nu=0.5111 Pr^0.358 Re^0.532 (50<=Re<=180)"
+        },
+        "evaluatedAt": {
+          "Re": 100,
+          "Pr": 1
+        },
+        "ClRmsFit": 0.239587993916859,
+        "NuFit": 5.92251106730885,
+        "interpretation": "Primary paper fits are context, not an exact matching-domain or automatic pass threshold. Its reported Nu fit spread is below 5%. Its domain is 25D upstream, 75D downstream, width 50D; ours is 32D in each streamwise direction and width 64D. Its Newtonian model also decouples constant-property flow and temperature. No Bn>0 table value is used."
+      },
+      "definitions": {
+        "forceCoefficients": "C=2*(native F/rho)/(U^2 D), U=1 m/s, nominal D=2 m.",
+        "Nu": "-native outward wall diffusion/(pi alpha DeltaT), alpha=.02 m^2/s, DeltaT=1 K. Nominal circular perimeter is used for literature normalization of the actual 128-sided wall flux.",
+        "cycles": "Positive Cl zero crossings with linear interpolation; complete-cycle means and second moments use trapezoidal integration of native samples. No stationary state is inferred from a completed process or a single cycle.",
+        "scope": "Native output postprocessing only; no rebuilt equation, cross-mesh field remap, new residual gate, or claim of mesh independence."
+      }
     }
   },
   "timeComparison": {
@@ -1855,9 +2619,68 @@
       "lastMatchedCrossingDifferenceS": 1.257842666829447,
       "assessment": "Persistent timestep amplitude/frequency effects remain after cycle drift is small. Instantaneous fields, phase and mean heat transfer must be assessed separately; local defect acceptance is not a global error guarantee."
     },
-    "nextEvidence": "Three maximum dt values .05/.025/.0125 use the exact same 120 s checkpoint from the .025 branch and target 180 s. The .025 member is complete; .05/.0125 and the fine grid are still running. The existing .05 baseline starts at 20 s and cannot substitute for the new shared-120-s .05 member.",
+    "nextEvidence": "Complete the already running fine-grid trajectory and compare developed response at matched controls. The three medium time-step trajectories are now complete; do not repeat their startup or extend them merely to reduce cycle tails.",
     "fieldNorm": "Global area RMS includes the large farfield and must not replace maximum or wake-local differences.",
-    "reference": "Literature fits use a different domain and remain context only; no automatic physical-qualification threshold."
+    "reference": "Literature fits use a different domain and remain context only; no automatic physical-qualification threshold.",
+    "threeTimeControl": {
+      "commonStartS": 120,
+      "endS": 180,
+      "matchedCycleRelativeAdjacentDifferencePercent": {
+        "periodS": [
+          0.9114547165631035,
+          0.46476924187109275
+        ],
+        "Strouhal": [
+          -0.9032222547214038,
+          -0.46261913044575964
+        ],
+        "meanCd": [
+          -0.7812278636120069,
+          -0.4016495875761618
+        ],
+        "ClRms": [
+          -5.478069923539914,
+          -2.747018049047092
+        ],
+        "meanNu": [
+          -0.18312986323900698,
+          -0.09333328326072184
+        ]
+      },
+      "lastMatchedCrossing": {
+        "ordinalAfterSharedStart": 5,
+        "values": [
+          176.75916068500587,
+          176.34227536327055,
+          176.13081985454548
+        ],
+        "coarseMinusMiddle": 0.41688532173532167,
+        "middleMinusFine": 0.21145550872506647,
+        "sameDirection": true,
+        "observedOrder": 0.9792964315031193
+      },
+      "lastCycleDevelopmentRelativePercent": [
+        {
+          "periodS": 0.02342260410360568,
+          "meanCd": -0.033192308452859955,
+          "ClRms": -0.24321379553324693,
+          "meanNu": -0.01468602899876502
+        },
+        {
+          "periodS": -0.007429167830976906,
+          "meanCd": 0.010436176845497103,
+          "ClRms": 0.06798358825735329,
+          "meanNu": 0.006672128756269854
+        },
+        {
+          "periodS": -0.022929190604359363,
+          "meanCd": 0.0327568026790241,
+          "ClRms": 0.21546601170301263,
+          "meanNu": 0.017533512961425683
+        }
+      ],
+      "assessment": "Observed three-step differences and cycle drift are reported separately. Adjacent differences and log-ratio orders do not establish an asymptotic global error bound. Phase-aligned cycle amplitudes do not replace instantaneous field or accumulated phase assessment."
+    }
   },
   "verification": {
     "completedNativeOutputsRead": true,
@@ -1867,27 +2690,31 @@
       "medium-at180",
       "time-at120",
       "mesh-at60",
-      "time-at180"
+      "time-at180",
+      "medium-dt05-from025-at180",
+      "medium-dt0125-at180",
+      "time-three-at180"
     ],
-    "newTests": "Wake production binary unchanged. Separate linear-retry fix evidence is in native-thermal-linear-retry.json."
+    "newTests": "No production solver change in this increment; existing native outputs and completed-process input chains were checked. No unrelated regression or platform run was repeated."
   },
   "figures": {
     "response": "artifacts/current/native-thermal-wake-response.png",
-    "timeComparison": "artifacts/current/native-thermal-wake-time.png"
+    "timeComparison": "artifacts/current/native-thermal-wake-time.png",
+    "threeTimeComparison": "artifacts/current/native-thermal-wake-three-time.png"
   },
   "limitations": [
-    "Both medium baselines have small latest-cycle drift but a material .05/.025 temporal difference; no spatial or global time-error qualification.",
-    "Developed fine-grid statistics and complete three-step shared-120-s comparison are pending.",
+    "Medium trajectories exhibit material maximum-step sensitivity in amplitude and phase; the native local BE error gate alone is not a long-time accuracy qualification.",
+    "Developed fine-grid statistics are pending.",
     "Two spatial levels do not establish mesh independence.",
-    "No asymptotic temporal order, global error upper bound or local wall-heat-flux qualification is claimed.",
+    "Reported observed temporal orders are finite three-step statistics, not proof of an asymptotic regime, a global error upper bound or local wall-heat-flux qualification.",
     "No change to physical scope or default controls.",
     "Reported process times include concurrent background load."
   ],
   "rawEvidence": {
-    "manifest": "outputs/thermal-wake-resolved/time180-pair-raw-manifest.json",
-    "manifestSha256": "51275c13ce6c7dd7f6a0bf6e051ebe38465215f67f4fb667bf508dec3002f113",
-    "count": 23,
-    "bytes": 16695833,
+    "manifest": "outputs/thermal-wake-resolved/three-time180-raw-manifest.json",
+    "manifestSha256": "a85a0206269054e4216009ee7b385d98c0315fdef7302985b8b45be90c0e8395",
+    "count": 43,
+    "bytes": 36113348,
     "allMatched": true,
     "activeFilesExcluded": true
   },
@@ -2091,5 +2918,415 @@
       "meanNu": -0.22387062280365125
     },
     "interpretation": "These are the two declared wall/wake meshes under identical post-startup controls. Actual adaptive time grids and startup pressure backends are reported separately. Own last complete cycles are phase-aligned only for plotting; development changes and time-step error must be assessed before interpreting differences as spatial accuracy. Two levels do not prove asymptotic mesh convergence. No cross-mesh field interpolation or independent equation audit is performed."
+  },
+  "threeTimeComparison": {
+    "format": "cartmesh2d-thermal-three-time-window-v1",
+    "completed": true,
+    "physicalQualificationEstablished": false,
+    "reports": [
+      {
+        "label": "medium-dt05-from025-at180",
+        "sha256": "a588d79f3d23137cd2a049afd1974e2f24d0d276ad6ce3520451c47775a07c1d"
+      },
+      {
+        "label": "medium-dt025-at180",
+        "sha256": "36519eb5bd70697515670d71a52e384597c660ee4e05215710ab74a8314f0a88"
+      },
+      {
+        "label": "medium-dt0125-at180",
+        "sha256": "f905807a21ebbfd93eba69266cba47c1c53cccd0159165bb875c342a93699680"
+      }
+    ],
+    "cells": 6721,
+    "commonInitialTimeS": 120,
+    "commonInitialCheckpointSha256": "d905fbaeb1441dee685977243b97b6ef680271b4de85d8ef87622e0f6b6f610b",
+    "endS": 180,
+    "maximumStepsS": [
+      0.05,
+      0.025,
+      0.0125
+    ],
+    "binarySha256": "879fd2df67744d2d1cf8d7349645e0e791c157711e8b4fa4b7655b2bfe826701",
+    "otherControlsIdentical": true,
+    "nativeTimeControl": [
+      {
+        "accepted": 1200,
+        "rejected": 0,
+        "rejectedReasons": {},
+        "maximumAcceptedErrorRatio": 0.05556432741245358,
+        "actualStepRangeS": [
+          0.049999999988642685,
+          0.05
+        ],
+        "maximumStepS": 0.05,
+        "processSeconds": 3385.978264000034
+      },
+      {
+        "accepted": 2400,
+        "rejected": 0,
+        "rejectedReasons": {},
+        "maximumAcceptedErrorRatio": 0.016017854984771835,
+        "actualStepRangeS": [
+          0.024999999986363264,
+          0.025
+        ],
+        "maximumStepS": 0.025,
+        "processSeconds": 4719.565131124982
+      },
+      {
+        "accepted": 4801,
+        "rejected": 0,
+        "rejectedReasons": {},
+        "maximumAcceptedErrorRatio": 0.0045322003741824785,
+        "actualStepRangeS": [
+          0.006250000022731683,
+          0.0125
+        ],
+        "maximumStepS": 0.0125,
+        "processSeconds": 9707.249634834006
+      }
+    ],
+    "completeCycleCountsAfterSharedStart": [
+      4,
+      4,
+      4
+    ],
+    "matchedCycleOrdinalAfterSharedStart": 4,
+    "matchedCompleteCycles": [
+      {
+        "startS": 164.42586494299638,
+        "endS": 176.75916068500587,
+        "periodS": 12.333295742009483,
+        "Strouhal": 0.1621626564250487,
+        "meanCd": 1.314382835655064,
+        "meanCl": 7.392377677472526e-06,
+        "ClRms": 0.20152331169458712,
+        "ClHalfRange": 0.2850778576083133,
+        "meanNu": 5.819430955545913,
+        "NuHalfRange": 0.0016840849758339438,
+        "changeFromPreviousCycle": {
+          "periodS": 0.0028887790345777375,
+          "Strouhal": -3.7991615644050736e-05,
+          "meanCd": -0.00043627400506207614,
+          "ClRms": -0.000490132495256701,
+          "meanNu": -0.0008546433176945811
+        }
+      },
+      {
+        "startS": 164.1203766931435,
+        "endS": 176.34227536327055,
+        "periodS": 12.221898670127047,
+        "Strouhal": 0.16364069560553884,
+        "meanCd": 1.3247320112450984,
+        "meanCl": -8.248725474837096e-05,
+        "ClRms": 0.21320270495066293,
+        "ClHalfRange": 0.30158222193796225,
+        "meanNu": 5.830107623663816,
+        "NuHalfRange": 0.0015591298942636556,
+        "changeFromPreviousCycle": {
+          "periodS": -0.0009079853643356728,
+          "Strouhal": 1.2156238808930242e-05,
+          "meanCd": 0.00013825137542244903,
+          "ClRms": 0.00014494284908719846,
+          "meanNu": 0.0003889922872799545
+        }
+      },
+      {
+        "startS": 163.96546202577014,
+        "endS": 176.13081985454548,
+        "periodS": 12.165357828775342,
+        "Strouhal": 0.16440124722589727,
+        "meanCd": 1.3300742489805857,
+        "meanCl": -0.00012837216842991652,
+        "ClRms": 0.21922485118059037,
+        "ClHalfRange": 0.3100884214330635,
+        "meanNu": 5.835554137937209,
+        "NuHalfRange": 0.0016941473141214303,
+        "changeFromPreviousCycle": {
+          "periodS": -0.002789418084262252,
+          "Strouhal": 3.768723395464191e-05,
+          "meanCd": 0.0004356897972230822,
+          "ClRms": 0.0004723550435006829,
+          "meanNu": 0.0010231776411462334
+        }
+      }
+    ],
+    "matchedCycleQuantities": {
+      "periodS": {
+        "values": [
+          12.333295742009483,
+          12.221898670127047,
+          12.165357828775342
+        ],
+        "coarseMinusMiddle": 0.1113970718824362,
+        "middleMinusFine": 0.056540841351704785,
+        "sameDirection": true,
+        "observedOrder": 0.9783460549918594
+      },
+      "Strouhal": {
+        "values": [
+          0.1621626564250487,
+          0.16364069560553884,
+          0.16440124722589727
+        ],
+        "coarseMinusMiddle": -0.0014780391804901372,
+        "middleMinusFine": -0.0007605516203584295,
+        "sameDirection": true,
+        "observedOrder": 0.9585664382030687
+      },
+      "meanCd": {
+        "values": [
+          1.314382835655064,
+          1.3247320112450984,
+          1.3300742489805857
+        ],
+        "coarseMinusMiddle": -0.010349175590034454,
+        "middleMinusFine": -0.005342237735487254,
+        "sameDirection": true,
+        "observedOrder": 0.9539997639232437
+      },
+      "ClRms": {
+        "values": [
+          0.20152331169458712,
+          0.21320270495066293,
+          0.21922485118059037
+        ],
+        "coarseMinusMiddle": -0.01167939325607581,
+        "middleMinusFine": -0.006022146229927444,
+        "sameDirection": true,
+        "observedOrder": 0.9556156830629662
+      },
+      "meanNu": {
+        "values": [
+          5.819430955545913,
+          5.830107623663816,
+          5.835554137937209
+        ],
+        "coarseMinusMiddle": -0.010676668117902466,
+        "middleMinusFine": -0.00544651427339371,
+        "sameDirection": true,
+        "observedOrder": 0.9710563767191462
+      }
+    },
+    "matchedPositiveCrossings": [
+      {
+        "ordinalAfterSharedStart": 1,
+        "values": [
+          127.46110654828404,
+          127.44509544262777,
+          127.43727798776744
+        ],
+        "coarseMinusMiddle": 0.016011105656261293,
+        "middleMinusFine": 0.007817454860330031,
+        "sameDirection": true,
+        "observedOrder": 1.0343020485888939
+      },
+      {
+        "ordinalAfterSharedStart": 2,
+        "values": [
+          139.76982083150094,
+          139.67303066947377,
+          139.62410612145834
+        ],
+        "coarseMinusMiddle": 0.09679016202716184,
+        "middleMinusFine": 0.04892454801543522,
+        "sameDirection": true,
+        "observedOrder": 0.984301893417925
+      },
+      {
+        "ordinalAfterSharedStart": 3,
+        "values": [
+          152.09545798002148,
+          151.89757003765212,
+          151.79731477891053
+        ],
+        "coarseMinusMiddle": 0.1978879423693627,
+        "middleMinusFine": 0.10025525874158348,
+        "sameDirection": true,
+        "observedOrder": 0.9810057962305958
+      },
+      {
+        "ordinalAfterSharedStart": 4,
+        "values": [
+          164.42586494299638,
+          164.1203766931435,
+          163.96546202577014
+        ],
+        "coarseMinusMiddle": 0.3054882498528855,
+        "middleMinusFine": 0.15491466737336168,
+        "sameDirection": true,
+        "observedOrder": 0.9796431445601808
+      },
+      {
+        "ordinalAfterSharedStart": 5,
+        "values": [
+          176.75916068500587,
+          176.34227536327055,
+          176.13081985454548
+        ],
+        "coarseMinusMiddle": 0.41688532173532167,
+        "middleMinusFine": 0.21145550872506647,
+        "sameDirection": true,
+        "observedOrder": 0.9792964315031193
+      }
+    ],
+    "cycleDevelopment": [
+      {
+        "lastCompleteCycle": {
+          "startS": 164.42586494299638,
+          "endS": 176.75916068500587,
+          "periodS": 12.333295742009483,
+          "Strouhal": 0.1621626564250487,
+          "meanCd": 1.314382835655064,
+          "meanCl": 7.392377677472526e-06,
+          "ClRms": 0.20152331169458712,
+          "ClHalfRange": 0.2850778576083133,
+          "meanNu": 5.819430955545913,
+          "NuHalfRange": 0.0016840849758339438,
+          "changeFromPreviousCycle": {
+            "periodS": 0.0028887790345777375,
+            "Strouhal": -3.7991615644050736e-05,
+            "meanCd": -0.00043627400506207614,
+            "ClRms": -0.000490132495256701,
+            "meanNu": -0.0008546433176945811
+          }
+        },
+        "relativeChangeFromPreviousCyclePercent": {
+          "periodS": 0.02342260410360568,
+          "meanCd": -0.033192308452859955,
+          "ClRms": -0.24321379553324693,
+          "meanNu": -0.01468602899876502
+        }
+      },
+      {
+        "lastCompleteCycle": {
+          "startS": 164.1203766931435,
+          "endS": 176.34227536327055,
+          "periodS": 12.221898670127047,
+          "Strouhal": 0.16364069560553884,
+          "meanCd": 1.3247320112450984,
+          "meanCl": -8.248725474837096e-05,
+          "ClRms": 0.21320270495066293,
+          "ClHalfRange": 0.30158222193796225,
+          "meanNu": 5.830107623663816,
+          "NuHalfRange": 0.0015591298942636556,
+          "changeFromPreviousCycle": {
+            "periodS": -0.0009079853643356728,
+            "Strouhal": 1.2156238808930242e-05,
+            "meanCd": 0.00013825137542244903,
+            "ClRms": 0.00014494284908719846,
+            "meanNu": 0.0003889922872799545
+          }
+        },
+        "relativeChangeFromPreviousCyclePercent": {
+          "periodS": -0.007429167830976906,
+          "meanCd": 0.010436176845497103,
+          "ClRms": 0.06798358825735329,
+          "meanNu": 0.006672128756269854
+        }
+      },
+      {
+        "lastCompleteCycle": {
+          "startS": 163.96546202577014,
+          "endS": 176.13081985454548,
+          "periodS": 12.165357828775342,
+          "Strouhal": 0.16440124722589727,
+          "meanCd": 1.3300742489805857,
+          "meanCl": -0.00012837216842991652,
+          "ClRms": 0.21922485118059037,
+          "ClHalfRange": 0.3100884214330635,
+          "meanNu": 5.835554137937209,
+          "NuHalfRange": 0.0016941473141214303,
+          "changeFromPreviousCycle": {
+            "periodS": -0.002789418084262252,
+            "Strouhal": 3.768723395464191e-05,
+            "meanCd": 0.0004356897972230822,
+            "ClRms": 0.0004723550435006829,
+            "meanNu": 0.0010231776411462334
+          }
+        },
+        "relativeChangeFromPreviousCyclePercent": {
+          "periodS": -0.022929190604359363,
+          "meanCd": 0.0327568026790241,
+          "ClRms": 0.21546601170301263,
+          "meanNu": 0.017533512961425683
+        }
+      }
+    ],
+    "finalTemperatureDifferenceK": {
+      "adjacentDifferences": [
+        {
+          "maximum": 0.06975411880682714,
+          "globalAreaRms": 0.002024942365363577
+        },
+        {
+          "maximum": 0.03941372100126728,
+          "globalAreaRms": 0.0011235889095037729
+        }
+      ],
+      "observedOrderFromMaximum": 0.8235804480201738,
+      "observedOrderFromGlobalAreaRms": 0.8497665566953813,
+      "areaWeightedDifferenceDirectionCosine": 0.9319761799627517
+    },
+    "finalVelocityDifferenceMS": {
+      "adjacentDifferences": [
+        {
+          "maximum": 0.19721048508490888,
+          "globalAreaRms": 0.006906229965870101
+        },
+        {
+          "maximum": 0.10864515182811284,
+          "globalAreaRms": 0.0037129501313980886
+        }
+      ],
+      "observedOrderFromMaximum": 0.8601124602295038,
+      "observedOrderFromGlobalAreaRms": 0.8953324358174911,
+      "areaWeightedDifferenceDirectionCosine": 0.9725419746038546
+    },
+    "interpretation": [
+      "All branches begin at the same exact accepted state and differ only in maximum dt.",
+      "Observed order is log2 of adjacent differences, not a proven asymptotic error bound or extrapolated accepted field.",
+      "Field differences include accumulated phase; the direction cosine helps describe whether adjacent field differences are aligned.",
+      "Global area RMS includes the large farfield and must not replace maximum/wake-local differences.",
+      "Cycle statistics use corresponding complete cycle ordinals after the shared start; phase is also reported without alignment.",
+      "No automatic accuracy or stationary-state threshold is introduced.",
+      "Wake-region RMS supplements the whole-domain norm; its stated geometric window is a reporting choice, not an accuracy gate."
+    ],
+    "wakeRegion": {
+      "selection": "Native cell centroid, -1 <= (x-.07)/D <= 10 and |(y-.03)/D| <= 2, D=2 m; no phase alignment",
+      "cells": 5456,
+      "nativeCellAreaM2": 172.85966884304457,
+      "wholeDomainAreaFraction": 0.01055253950876763,
+      "finalTemperatureDifferenceK": {
+        "adjacentDifferences": [
+          {
+            "maximum": 0.06975411880682714,
+            "regionAreaRms": 0.01791116588586535
+          },
+          {
+            "maximum": 0.03941372100126728,
+            "regionAreaRms": 0.009903164396589127
+          }
+        ],
+        "observedOrderFromMaximum": 0.8235804480201738,
+        "areaWeightedDifferenceDirectionCosine": 0.926437187247574,
+        "observedOrderFromRegionAreaRms": 0.854897755350956
+      },
+      "finalVelocityDifferenceMS": {
+        "adjacentDifferences": [
+          {
+            "maximum": 0.19721048508490888,
+            "regionAreaRms": 0.05991113216802668
+          },
+          {
+            "maximum": 0.10864515182811284,
+            "regionAreaRms": 0.03203985062111787
+          }
+        ],
+        "observedOrderFromMaximum": 0.8601124602295038,
+        "areaWeightedDifferenceDirectionCosine": 0.9716233768828324,
+        "observedOrderFromRegionAreaRms": 0.9029566755193993
+      }
+    }
   }
 }
