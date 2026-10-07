@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <sstream>
 #include <string>
@@ -76,14 +78,72 @@ std::vector<std::pair<std::size_t,std::size_t>> connections(const Matrix& k,std:
     std::sort(result.begin(),result.end());result.erase(std::unique(result.begin(),result.end()),result.end());
     return result;
 }
+struct PressureSchurDiagonal {
+    struct Data {
+        Vec diag;
+        std::map<std::pair<std::size_t,std::size_t>,double> off;
+        std::vector<std::pair<std::size_t,std::size_t>> connections;
+        double symmetryError=0,coefficientMaximum=0;
+    } data;
+    SparsePattern2D pattern;
+    SparseSystem2D system;
+    LinearWorkspace2D workspace;
+
+    static Data build(const Matrix& matrix,const Matrix& velocityMatrix,std::size_t nv) {
+        linearEnsure(matrix.n==velocityMatrix.n&&nv<matrix.n,"Schur input dimensions invalid");
+        const auto np=matrix.n-nv;Vec diagonalA(nv);
+        std::vector<std::vector<std::pair<std::size_t,double>>> divergence(nv),gradient(nv);
+        for(std::size_t i=0;i<velocityMatrix.n;++i)for(auto k=velocityMatrix.rows[i];k<velocityMatrix.rows[i+1];++k)
+            if(i<nv&&velocityMatrix.columns[k]==i)diagonalA[i]=velocityMatrix.values[k];
+        for(double value:diagonalA)linearEnsure(std::isfinite(value)&&value>0,"Schur velocity diagonal invalid");
+        for(std::size_t i=0;i<matrix.n;++i)for(auto k=matrix.rows[i];k<matrix.rows[i+1];++k) {
+            const auto j=matrix.columns[k];const auto value=matrix.values[k];
+            if(i>=nv&&j<nv)divergence[j].emplace_back(i-nv,value);
+            if(i<nv&&j>=nv)gradient[i].emplace_back(j-nv,value);
+        }
+        std::map<std::pair<std::size_t,std::size_t>,long double> coefficients;
+        for(std::size_t k=0;k<nv;++k)for(const auto& [i,d]:divergence[k])for(const auto& [j,g]:gradient[k])
+            coefficients[{i,j}]+=static_cast<long double>(d)*g/diagonalA[k];
+        Data result;result.diag.assign(np,0);
+        for(const auto& [key,sum]:coefficients) {
+            const double value=linearFinite(static_cast<double>(sum));
+            result.coefficientMaximum=std::max(result.coefficientMaximum,std::abs(value));
+            if(key.first==key.second)result.diag[key.first]=value;
+            else if(value!=0)result.off[key]=value;
+        }
+        for(std::size_t i=0;i<np;++i)linearEnsure(std::isfinite(result.diag[i])&&result.diag[i]>0,"Schur diagonal is not positive");
+        for(const auto& [key,value]:result.off) {
+            const auto reverse=result.off.find({key.second,key.first});
+            const double other=reverse==result.off.end()?0:reverse->second;
+            result.symmetryError=std::max(result.symmetryError,std::abs(value-other));
+            if(key.first<key.second)result.connections.push_back(key);
+        }
+        linearEnsure(result.symmetryError<=1e-12*std::max(1.,result.coefficientMaximum),"Schur diagonal approximation is not symmetric");
+        return result;
+    }
+    PressureSchurDiagonal(const Matrix& matrix,const Matrix& velocityMatrix,std::size_t nv)
+        :PressureSchurDiagonal(build(matrix,velocityMatrix,nv)) {}
+    explicit PressureSchurDiagonal(Data assembled):data(std::move(assembled)),pattern(data.diag.size(),data.connections),system(pattern),workspace(data.diag.size()) {
+        system.diag=data.diag;
+        for(const auto& [key,value]:data.off)system.off[pattern.slot(key.first,key.second)]=value;
+        system.factorIC0();
+    }
+    void apply(const Vec& input,std::size_t offset,Vec& output) {
+        linearEnsure(input.size()==output.size()&&offset+data.diag.size()==input.size(),"Schur pressure vector size mismatch");
+        for(std::size_t i=0;i<data.diag.size();++i)workspace.r[i]=input[offset+i];
+        system.precondition(workspace,LinearPressureMethod2D::IC0);
+        for(std::size_t i=0;i<data.diag.size();++i)output[offset+i]=-workspace.z[i];
+    }
+};
 struct Block {
-    const Matrix& matrix;const Vec& volume;std::size_t nv,np;bool corrected,ilu0,oseenScale;double viscosity,transportSpeed;
+    const Matrix& matrix;const Vec& volume;std::size_t nv,np;bool corrected,ilu0,oseenScale,schurDiagonal;double viscosity,transportSpeed;
     SparsePattern2D pattern;SparseSystem2D velocity;LinearWorkspace2D workspace;
+    std::unique_ptr<PressureSchurDiagonal> pressureSchur;
     LinearPressureMethod2D method;double asymmetry=0,matrixAsymmetry=0,symmetryCorrection=0;std::size_t applications=0;
     Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,double speed,const Matrix& pk):matrix(k),volume(area),
-        nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen")?0:1))),
-        np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen")?0:1)),
-        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),viscosity(nu),transportSpeed(speed),
+        nv(k.n-(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag")?0:1))),
+        np(area.size()-((pressure=="outlet"||pressure=="outlet-oseen"||pressure=="outlet-schur-diag")?0:1)),
+        corrected(pressure=="gauge"),ilu0(mode=="ilu0"),oseenScale(pressure=="outlet-oseen"),schurDiagonal(pressure=="outlet-schur-diag"),viscosity(nu),transportSpeed(speed),
         pattern(nv,connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
         linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
         for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
@@ -108,6 +168,7 @@ struct Block {
         }
         if(mode=="ic0")velocity.factorIC0();
         if(ilu0)velocity.factorILU0();
+        if(schurDiagonal)pressureSchur=std::make_unique<PressureSchurDiagonal>(matrix,pk,nv);
     }
     Vec apply(const Vec& r) {
         ++applications;Vec z(r.size());long double sum=0;
@@ -121,7 +182,9 @@ struct Block {
         // Explicit outlet-oseen uses nu+|U|*sqrt(V_i), with the same L^2/T
         // dimensions as viscosity in 2D. Only the approximate inverse changes.
         const double shift=corrected?static_cast<double>(sum/volume.back()):0;
-        for(std::size_t i=nv;i<r.size();++i) {
+        if(schurDiagonal) {
+            pressureSchur->apply(r,nv,z);
+        } else for(std::size_t i=nv;i<r.size();++i) {
             const double scale=viscosity+(oseenScale?transportSpeed*std::sqrt(volume[i-nv]):0);
             z[i]=scale*(-r[i]/volume[i-nv]-shift);
         }
@@ -138,9 +201,9 @@ struct Block {
 };
 
 int main(int argc,char** argv)try {
-    if(argc<6 || argc>12)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet|outlet-oseen output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1] [transport_speed=0] [--velocity-preconditioner prefix]");
+    if(argc<6 || argc>12)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet|outlet-oseen|outlet-schur-diag output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1] [transport_speed=0] [--velocity-preconditioner prefix]");
     const std::string prefix=argv[1],mode=argv[3],gauge=argv[4],output=argv[5];
-    linearEnsure((mode=="ic0"||mode=="ilu0"||mode=="jacobi")&&(gauge=="gauge"||gauge=="plain"||gauge=="outlet"||gauge=="outlet-oseen"),"invalid preconditioner choice");
+    linearEnsure((mode=="ic0"||mode=="ilu0"||mode=="jacobi")&&(gauge=="gauge"||gauge=="plain"||gauge=="outlet"||gauge=="outlet-oseen"||gauge=="outlet-schur-diag"),"invalid preconditioner choice");
     const double tolerance=argc>=7?std::stod(argv[6]):1e-11;const auto maximum=argc>=8?std::stoull(argv[7]):50;
     const double nu=argc>=9?std::stod(argv[8]):1.;
     // Preserve the published positional transport-speed argument. The
@@ -160,7 +223,7 @@ int main(int argc,char** argv)try {
     linearEnsure(!std::filesystem::exists(output+".json") && !std::filesystem::exists(output+".solution") &&
         !std::filesystem::exists(output+".candidate"),"output exists; retain prior evidence and choose another prefix");
     const auto start=std::chrono::steady_clock::now();const auto rhs=binary<double>(prefix+".rhs"),area=areas(argv[2]);
-    const bool outlet=gauge=="outlet"||gauge=="outlet-oseen";
+    const bool outlet=gauge=="outlet"||gauge=="outlet-oseen"||gauge=="outlet-schur-diag";
     linearEnsure(rhs.size()>area.size()-(outlet?0:1),"invalid retained pressure dimension");
     for(double v:rhs)linearFinite(v);
     const Matrix matrix(rhs.size(),binary<Entry>(prefix+".entries"));
@@ -195,6 +258,9 @@ int main(int argc,char** argv)try {
         <<",\"viscous_pressure_mass_scale\":"<<nu<<",\"transport_speed\":"<<speed
         <<",\"pressure_mass_scale_min\":"<<(nu+(gauge=="outlet-oseen"?speed*std::sqrt(*std::min_element(area.begin(),area.end())):0))
         <<",\"pressure_mass_scale_max\":"<<(nu+(gauge=="outlet-oseen"?speed*std::sqrt(*std::max_element(area.begin(),area.end())):0))
+        <<",\"pressure_schur_nonzeros\":"<<(block.pressureSchur?block.pressureSchur->system.diag.size()+block.pressureSchur->system.off.size():0)
+        <<",\"pressure_schur_symmetry_error\":"<<(block.pressureSchur?block.pressureSchur->data.symmetryError:0)
+        <<",\"pressure_schur_ic0_builds\":"<<(block.pressureSchur?block.pressureSchur->system.ic0Builds():0)
         <<",\"ilu0_factor_builds\":"<<block.velocity.ilu0Builds()<<",\"setup_seconds\":"<<setup
         <<",\"total_seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<",\"residual_history\":[";
     for(std::size_t i=0;i<history.size();++i){if(i)record<<',';record<<history[i];}record<<"]}\n";
