@@ -45,6 +45,7 @@ template<OutletForm form> struct OpenTransport : Transport {
         // already computed by Transport remains exact for this operator.
     }
 };
+#ifndef CARTMESH_OPEN_BOUNDARY_NO_MAIN
 int main(int argc,char** argv)try{
     if(argc==4&&std::string(argv[1])=="write-warped"){
         const int n=std::stoi(argv[2]);const std::string path=argv[3];
@@ -67,3 +68,5 @@ int main(int argc,char** argv)try{
     }
     return runOseen<Transport>(argc,argv);
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+
+#endif

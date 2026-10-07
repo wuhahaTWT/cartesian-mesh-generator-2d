@@ -79,17 +79,21 @@ std::vector<std::pair<std::size_t,std::size_t>> connections(const Matrix& k,std:
 struct Block {
     const Matrix& matrix;const Vec& volume;std::size_t nv,np;bool corrected,ilu0;double viscosity;
     SparsePattern2D pattern;SparseSystem2D velocity;LinearWorkspace2D workspace;
-    LinearPressureMethod2D method;double asymmetry=0,symmetryCorrection=0;std::size_t applications=0;
-    Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu):matrix(k),volume(area),
+    LinearPressureMethod2D method;double asymmetry=0,matrixAsymmetry=0,symmetryCorrection=0;std::size_t applications=0;
+    Block(const Matrix& k,const Vec& area,const std::string& mode,const std::string& pressure,double nu,const Matrix& pk):matrix(k),volume(area),
         nv(k.n-(area.size()-(pressure=="outlet"?0:1))),np(area.size()-(pressure=="outlet"?0:1)),
         corrected(pressure=="gauge"),ilu0(mode=="ilu0"),viscosity(nu),
-        pattern(nv,connections(k,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
-        linearEnsure(nv>0,"expected retained velocity block followed by cell pressures");
-        for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p) {
-            const auto j=k.columns[p];const double v=k.values[p];
+        pattern(nv,connections(pk,nv)),velocity(pattern),workspace(nv),method(mode=="ic0"?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi) {
+        linearEnsure(nv>0&&pk.n==k.n,"expected matching velocity/pressure preconditioner dimensions");
+        for(std::size_t i=0;i<k.n;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p)if(i>=nv&&k.columns[p]>=nv)linearEnsure(k.values[p]==0,"only the zero retained-pressure block format is supported");
+        for(std::size_t i=0;i<pk.n;++i)for(auto p=pk.rows[i];p<pk.rows[i+1];++p) {
+            const auto j=pk.columns[p];const double v=pk.values[p];
             if(i<nv && j<nv){if(i==j)velocity.diag[i]=v;else velocity.off[pattern.slot(i,j)]=v;}
             if(i>=nv && j>=nv)linearEnsure(v==0,"only the zero retained-pressure block format is supported");
         }
+        for(std::size_t i=0;i<nv;++i)for(auto p=k.rows[i];p<k.rows[i+1];++p){const auto j=k.columns[p];if(j>=nv||j==i)continue;
+            const auto first=k.columns.begin()+k.rows[j],last=k.columns.begin()+k.rows[j+1],at=std::lower_bound(first,last,i);
+            const double reverse=at==last||*at!=i?0:k.values[std::size_t(at-k.columns.begin())];matrixAsymmetry=std::max(matrixAsymmetry,std::abs(k.values[p]-reverse));}
         // IC0 uses the symmetric part only in its approximate inverse. ILU0
         // preserves all nonsymmetric velocity entries. Original K is unchanged.
         for(std::size_t i=0;i<nv;++i) {
@@ -128,7 +132,7 @@ struct Block {
 };
 
 int main(int argc,char** argv)try {
-    if(argc<6 || argc>9)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1]");
+    if(argc<6 || argc>10)throw std::runtime_error("usage: probe input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1] [velocity_preconditioner_prefix]");
     const std::string prefix=argv[1],mode=argv[3],gauge=argv[4],output=argv[5];
     linearEnsure((mode=="ic0"||mode=="ilu0"||mode=="jacobi")&&(gauge=="gauge"||gauge=="plain"||gauge=="outlet"),"invalid preconditioner choice");
     const double tolerance=argc>=7?std::stod(argv[6]):1e-11;const auto maximum=argc>=8?std::stoull(argv[7]):50;
@@ -140,7 +144,9 @@ int main(int argc,char** argv)try {
     const auto start=std::chrono::steady_clock::now();const auto rhs=binary<double>(prefix+".rhs"),area=areas(argv[2]);
     linearEnsure(rhs.size()>area.size()-(gauge=="outlet"?0:1),"invalid retained pressure dimension");
     for(double v:rhs)linearFinite(v);
-    const Matrix matrix(rhs.size(),binary<Entry>(prefix+".entries"));Block block(matrix,area,mode,gauge,nu);
+    const Matrix matrix(rhs.size(),binary<Entry>(prefix+".entries"));
+    std::optional<Matrix> preconditionerMatrix;if(argc==10)preconditionerMatrix.emplace(rhs.size(),binary<Entry>(std::string(argv[9])+".entries"));
+    Block block(matrix,area,mode,gauge,nu,preconditionerMatrix?*preconditionerMatrix:matrix);
     const double setup=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
     const double initial=linearNorm(rhs);Vec x(rhs.size()),r=rhs;std::size_t restarts=0,products=0;std::vector<double> history{initial};
     // Use the existing relative linear tolerance; do not add the product's
@@ -161,12 +167,12 @@ int main(int argc,char** argv)try {
     linearEnsure(bool(result),"candidate write failed");
     std::ostringstream record;record<<std::setprecision(17)<<"{\"converged\":"<<(converged?"true":"false")<<",\"unknowns\":"<<rhs.size()
         <<",\"velocity_unknowns\":"<<block.nv<<",\"pressure_unknowns\":"<<block.np<<",\"matrix_nonzeros\":"<<matrix.values.size()
-        <<",\"velocity_off_nonzeros\":"<<block.velocity.off.size()<<",\"method\":\""<<mode<<"\",\"mass\":\""<<gauge
+        <<",\"separate_velocity_preconditioner\":"<<(preconditionerMatrix?"true":"false")<<",\"velocity_off_nonzeros\":"<<block.velocity.off.size()<<",\"method\":\""<<mode<<"\",\"mass\":\""<<gauge
         <<"\",\"relative_tolerance\":"<<tolerance<<",\"rhs_norm\":"<<initial<<",\"residual_norm\":"<<history.back()
         <<",\"relative_residual\":"<<(initial?history.back()/initial:0)<<",\"maximum_residual\":"<<maximumResidual
         <<",\"restarts\":"<<restarts<<",\"krylov_products\":"<<products<<",\"preconditioner_applications\":"<<block.applications
         <<",\"velocity_preconditioner_symmetry_correction_max\":"<<block.asymmetry
-        <<",\"velocity_matrix_asymmetry_max\":"<<block.asymmetry<<",\"velocity_preconditioner_entry_change_max\":"<<block.symmetryCorrection
+        <<",\"velocity_matrix_asymmetry_max\":"<<block.matrixAsymmetry<<",\"velocity_preconditioner_input_asymmetry_max\":"<<block.asymmetry<<",\"velocity_preconditioner_entry_change_max\":"<<block.symmetryCorrection
         <<",\"viscous_pressure_mass_scale\":"<<nu<<",\"ilu0_factor_builds\":"<<block.velocity.ilu0Builds()<<",\"setup_seconds\":"<<setup
         <<",\"total_seconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()<<",\"residual_history\":[";
     for(std::size_t i=0;i<history.size();++i){if(i)record<<',';record<<history[i];}record<<"]}\n";

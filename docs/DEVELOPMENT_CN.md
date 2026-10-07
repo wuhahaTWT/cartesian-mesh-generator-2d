@@ -430,7 +430,7 @@ python3 artifacts/current/native-laminar-p1-stress.py sheared 8 vortex 0 lift sy
 
 原生参数为 `assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix`；文件网格时n忽略，cylinder控制要求显式Embedded/Domain边界标识。这个cylinder案例在整个外边界施加(1,0)、内壁零速度、ν=1且无对流，输出静态运动学压力；不等于原产品压力出口或Re20。CSV中 `traction_x/y` 与 `stress_x/y` 是积分力矩而非逐点应力；最大速度、压力范围及散度取积分采样点，尚非连续最大值。154011未知量的全局LU规模已显示成本问题，后续需解决可扩展预条件、兼容对流和原问题边界；不能仅凭小矩阵正性或有界幅值选取物理解。
 
-`native-laminar-block-precondition.cpp` 只读取原生凝聚矩阵、右端和单元面积，不重建方程。右块三角预条件器复用 `SparseSystem2D::factorIC0/factorILU0` 近似速度块逆。`ic0` 仅在预条件器中取速度块对称部分；`ilu0` 保留全部非对称系数，`jacobi` 为对角控制。采用两侧非零结构并集，所有Krylov乘积和停止检查始终用原K；不补主元、不移对角、不静默切换算法。旧 `velocity_preconditioner_symmetry_correction_max` 字段记录原两侧差，保留兼容；新增 `velocity_matrix_asymmetry_max` 含义相同，`velocity_preconditioner_entry_change_max` 才记录实际系数变化，ILU0为零。
+`native-laminar-block-precondition.cpp` 只读取原生凝聚矩阵、右端和单元面积，不重建方程。右块三角预条件器复用 `SparseSystem2D::factorIC0/factorILU0` 近似速度块逆。`ic0` 仅在预条件器中取速度块对称部分；`ilu0` 保留全部非对称系数，`jacobi` 为对角控制。采用两侧非零结构并集，所有Krylov乘积和停止检查始终用原K；不补主元、不移对角、不静默切换算法。旧 `velocity_preconditioner_symmetry_correction_max` 字段保留为预条件输入的两侧差；`velocity_matrix_asymmetry_max` 报告实际K的两侧差，`velocity_preconditioner_input_asymmetry_max` 报告所选速度预条件输入的两侧差。未指定独立预条件矩阵时两者相同；`velocity_preconditioner_entry_change_max` 才记录对输入的实际系数变化，ILU0为零。
 
 闭域固定最后一格压力为0，去均值质量矩阵为 `diag(V_i)-V_i V_j/Vtotal`，`gauge` 逆为 `diag(1/V_i)+11ᵀ/V_last`，`plain` 省略秩一项作负对照。自然出口用 `outlet`，保留Nc个压力及其绝对水平，只用对角质量逆，不减均值。各布局的压力近似逆均乘以 `-ν`；正黏度是显式输入，这是黏性Schur近似，不是Oseen精确逆或对雷诺数/网格的鲁棒性保证。仍只支持当前速度在前、单元均压在后、零保留压力块的凝聚格式；部分速度分量边界约束允许使速度未知量不再是4的整数倍。新接口为 `input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1]`，历史ν=1调用保持兼容。
 
@@ -610,6 +610,27 @@ python3 artifacts/current/native-laminar-oseen-block.py square 8 outlet-poiseuil
 
 `native-laminar-product-wall-profile.cpp` 在同一固定多边形的两份研究场之间逐段覆盖全部原壁面，原 `wallPressureDifferenceRms` 和 `pA0/pB0` 仍是去全域均值后的历史量；新增 `wallPressureAbsoluteDifferenceRms`、绝对压力CSV列及两种端点最大差。固定压力出口必须看绝对量，不能只看去均值量。P1差在每个重叠区间内是仿射函数，故端点最大值是该区间精确极值；`MaxAtQuadrature` 旧字段仍保留原采样含义。调用为 `wall-profile meshA nA stateA meshB nB stateB new-output.csv`，覆盖不一致或已有输出明确拒绝；不同真实曲线/折线不能用此固定几何读取器声称网格差。历史云端数据与合并后的读取语义分开保存在 `native-laminar-product-outlet.json`，Mac小场对照在 `native-laminar-open-boundary.json` 的 `mergedCloudIntegration`。
 
+
+### 相容方程的解析 Newton 与残差回溯
+
+`native-laminar-newton.cpp` 包含现有开放边界入口，通过模板微分同一保守 RT1 体积、径向内面、原始共享面及出口对流。令 `F(u)=K_Picard(u)u-f`，增加 `D_beta C(u)[δu]u`，求解 `J(u_k)u_candidate=f+D_beta C(u_k)[u_k]u_k`，等价于 `Jδu=-F`。压力约束、弱边界及静态凝聚自由度保持；内部8×8消元使用真实J重新计算。上风积分仍按当前P1通量的真实零点分段，零点处沿原符号分支取导数；没有宣称全局光滑。
+
+`check` 始终调用原 `Transport/OpenTransport`。`recover` 只输出 `linearizedNewton=true, physicalDiagnostics=false` 的候选和线性化反力列，不能从候选恢复阶段授予真实能量或力资格。`seed` 保持相同网格身份、写入规定面速度及闭域压力规范，明确标记 `physicalSolution=false`；`blend` 只在相同网格上混合两份完整原生状态并检查有限值。`tangent` 用确定性完整状态/方向对原生原方程做中心差分，非独立PDE。
+
+重新编译上述原生块求解器和状态读取器，再构建本入口。macOS使用系统Clang；Linux使用系统C++20编译器并去掉Accelerate参数：
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-newton.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o build/native-laminar-newton
+build/native-laminar-newton tangent sheared 3 noslip-sheared .1 closed 6 1e-6
+python3 artifacts/current/native-laminar-newton.py sheared 8 noslip-sheared .01 ns closed outputs/laminar-stability/newton/reproduction --iterations 40
+python3 artifacts/current/native-laminar-oseen-block.py sheared 8 noslip-sheared .01 ns closed outputs/laminar-stability/newton/picard-reference --transport build/native-laminar-open-boundary --iterations 40
+```
+
+输出目录必须是新目录。Python只编排原生状态、方程与线性代数：每一步线性候选用原方程重算所有自由未凝聚方程的L2范数，评价函数为其平方的一半；`α=1,1/2,...`，Armijo系数 `1e-4`、最多15个试探。沿用 `U=L=1、p/U²` 的原多项式方程归一化，规定边界的反力不进评价函数；这个范数不是任意有量纲问题的通用物理门。接受试探仍不等于完成：原最大内部/自由面残差、弱散度及实际场系数变化都要通过原 `1e-9` 控制，线性相对控制为 `1e-13`。已有的Stokes一步线性语义保留。达到所有严格门时允许在舍入底部接受，不靠极小步长掩盖非零原方程残差。标准方法背景见[Newton线搜索](https://petsc.org/release/manualpages/SNES/SNESNEWTONLS/)；实现没有新增PETSc依赖。
+
+默认研究选项 `--preconditioner picard` 输出同一状态的 `.picard.entries`；块求解器新增末尾可选参数 `velocity_preconditioner_prefix`，仅用该原生矩阵的速度块构造ILU0。实际J、右端、Krylov乘积、压力耦合及线性停止检查保持，压力块仍为黏性质量近似，原ILU0主元门不变。`--preconditioner newton` 保留直接用J构造ILU0的对照，`--backend dense-reference` 限2175未知量，只作线性代数参考，不能用于生产稀疏LU性能比较。`--no-line-search` 是负对照，仍须最终原方程门，不能视作稳健默认。
+
+`lastAcceptedIterate` 只是研究迭代；线性失败不恢复候选，回溯失败不替换它，预算耗尽不设置 `finalState`。所有试探、真实方程输出、命令、二进制/源码哈希和失败原因留在 `result.json` 与同目录原始文件中。这里未重新验证产品取消/检查点语义。`native-laminar-newton.json` 记录四组完整同场对照及更粗剪切格的失败：低黏度剪切8档9步Newton对36步Picard，但规则8档ν=.1的Newton更慢；剪切4档ν=.01即用直接线性解仍回溯停滞。上述比较不等于新空间精度、曲壁压力或大网格默认资格。
 
 ## 完整笛卡尔背景网格
 
