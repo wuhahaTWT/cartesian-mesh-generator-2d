@@ -1,0 +1,285 @@
+{
+  "boundaryIdentity": {
+    "exactTraction": "(nu(G+G^T)-pI)n=t_exact",
+    "obstruction": "For u=(4y(1-y),0), the slanted outlet has n_y!=0 and G n=((4-8y)n_y,0), so p_D=p does not satisfy pseudo-traction except at y=0.5.",
+    "pseudoTraction": "(nu G-pI)n=-p_D n"
+  },
+  "build": {
+    "postprocessorCommand": "g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-state-compare.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-state-compare-oblique",
+    "postprocessorRole": "Native polynomial field integration only; no PDE assembly or acceptance gate",
+    "postprocessorSha256": "8649dbb41b2c607c4a4b83e683f2f25a824105d7d1c217e2d9cef5060d56f63d",
+    "postprocessorSourceSha256": "588d6b38ddfa9b9424f2ed57709b553726ad0804d979734e225f1b5d03753bb5",
+    "solverCommand": "g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -I include artifacts/current/native-laminar-compatible-solver.cpp src/fv/CompatibleIncompressible2D.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-compatible-solver-oblique",
+    "solverSha256": "42dda40d4b14723e1768486805df323919587f294f8144679ca5be5178f0fcaa",
+    "solverSourceSha256": "fa9c03677ae193be0ca6d255fe7387cbbacec1d6001df224725d580f8d8077ec"
+  },
+  "conclusion": "The compatible discretization and aggregation inverse solve the oblique system, but product-like static-pressure pseudo-traction is not a coordinate-invariant exact outlet model. Full traction restores second-order velocity convergence on this control.",
+  "equation": {
+    "equation": "steady Navier-Stokes",
+    "problem": "outlet-poiseuille",
+    "viscosity": 0.1
+  },
+  "exactTraction": {
+    "16": {
+      "acceptedIterations": 7,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-traction-exact.json",
+          "sha256": "8114edf8750e5300c1d91b77e0b9457c5bbf7f48dbcd09719b1f603902976cfe"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-traction-aggregation.json",
+          "sha256": "4b6ece46ef1f8d0c74048e06bc82e408fde7c5169932713fd84136940e1b3120"
+        }
+      },
+      "lastDivergencePerSecond": 2.1398438576625267e-12,
+      "linearRestarts": 14,
+      "matrixProducts": 700,
+      "nativeExactError": {
+        "cells": 256,
+        "faceVelocityMaximumAtGauss6": 0.0020943986784427437,
+        "faceVelocityRms": 0.0008634550615319659,
+        "pressureP1RmsAbsolute": 2.426690896864111e-13,
+        "velocityP1Rms": 0.0011646187382811422
+      },
+      "seconds": 3.381214341
+    },
+    "32": {
+      "acceptedIterations": 6,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-traction-exact.json",
+          "sha256": "a15fb53f51f6777d2acf15aaba807ddfca28ebe8b678cbdd2cd3911e2ba862ae"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-traction-aggregation.json",
+          "sha256": "7e68548c0d73bc39a86c707893f9c129d9046cfac03c1a76dbf7dcae91da37bd"
+        }
+      },
+      "lastDivergencePerSecond": 2.142286348316702e-12,
+      "linearRestarts": 28,
+      "matrixProducts": 1631,
+      "nativeExactError": {
+        "cells": 1024,
+        "faceVelocityMaximumAtGauss6": 0.0005235996723218506,
+        "faceVelocityRms": 0.00021586376538300066,
+        "pressureP1RmsAbsolute": 7.885105349048933e-13,
+        "velocityP1Rms": 0.00029115468457029906
+      },
+      "seconds": 13.533593185
+    },
+    "8": {
+      "acceptedIterations": 8,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared8-traction-aggregation.exact.json",
+          "sha256": "15ebdf9f9c2396d69063bf927ed2b1e7e70de0cd71ee3fdcfd9520125bd07aa4"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared8-traction-aggregation.json",
+          "sha256": "cc4fa5802e323e31410ce27964c8a9e6322dbf295ac11dc47caa733c14d9b0ae"
+        }
+      },
+      "lastDivergencePerSecond": 1.9126922268242197e-12,
+      "linearRestarts": 8,
+      "matrixProducts": 366,
+      "nativeExactError": {
+        "cells": 64,
+        "faceVelocityMaximumAtGauss6": 0.008377594712407399,
+        "faceVelocityRms": 0.003453820246127851,
+        "pressureP1RmsAbsolute": 1.5574892248286933e-13,
+        "velocityP1Rms": 0.00465847495312455
+      },
+      "seconds": 0.862861544
+    },
+    "orders": {
+      "faceVelocityRms": [
+        1.999999999999995,
+        1.9999999999999387
+      ],
+      "velocityP1Rms": [
+        1.9999999999999942,
+        1.999999999999933
+      ]
+    }
+  },
+  "geometry": {
+    "cells": [
+      64,
+      256,
+      1024
+    ],
+    "realPolygonMesh": true,
+    "shear": 0.7
+  },
+  "limitations": [
+    "Three manufactured parallelogram meshes are not a curved-wall or backflow qualification.",
+    "Pressure errors under exact traction are roundoff-scale and do not define an observed pressure order.",
+    "No product default, quality gate, threshold, or boundary input format changed."
+  ],
+  "pressureInverseAB": {
+    "16": {
+      "acceptedStateDifference": {
+        "cells": 256,
+        "faceVelocityMaximum": 8.073382692177446e-13,
+        "faceVelocityRms": 3.4811717938706085e-13,
+        "pressureMeanDifference": -3.7937148810850895e-13,
+        "pressureP1RmsAbsolute": 7.807665244367034e-13,
+        "pressureP1RmsAfterGlobalGauge": 6.824028426752826e-13,
+        "stateCoefficientMaximum": 2.077893412888443e-12,
+        "velocityP1Rms": 3.52287356493734e-13
+      },
+      "aggregationProducts": 588,
+      "aggregationSeconds": 2.752628711,
+      "elapsedReductionFraction": 0.08054854743253703,
+      "files": {
+        "aggregation": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-aggregation.json",
+          "sha256": "debecc40776ec9e5dc949018137c92aed404faad849fec8d515e0c0502c1feae"
+        },
+        "comparison": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-compare.json",
+          "sha256": "c750c204d4c49cb9112bf4b3fe548e0e061cf24fe1ffd8d9246c9cfaee750612"
+        },
+        "schurIC0": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-schur.json",
+          "sha256": "429691de10c2a5556fd6dbac8d1e401b59856af6bbc4d0a4c599c2ea15f68730"
+        }
+      },
+      "productReductionFraction": 0.20967741935483875,
+      "schurIC0Products": 744,
+      "schurIC0Seconds": 2.993772758
+    },
+    "32": {
+      "acceptedStateDifference": {
+        "cells": 1024,
+        "faceVelocityMaximum": 4.531513244131173e-12,
+        "faceVelocityRms": 1.4098217047833477e-12,
+        "pressureMeanDifference": 3.334510142133494e-12,
+        "pressureP1RmsAbsolute": 3.955875137867894e-12,
+        "pressureP1RmsAfterGlobalGauge": 2.1283773674821807e-12,
+        "stateCoefficientMaximum": 1.0203726752422426e-11,
+        "velocityP1Rms": 1.4062922539821357e-12
+      },
+      "aggregationProducts": 1639,
+      "aggregationSeconds": 13.750527767,
+      "elapsedReductionFraction": 0.14234036247101045,
+      "files": {
+        "aggregation": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-aggregation.json",
+          "sha256": "80350c5782de3d8e82df1a39f0fd38e2322e3ae1884f8a23f9eef19a617ecc6f"
+        },
+        "comparison": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-compare.json",
+          "sha256": "d7266aa6f843e8aa4c15532d2d53d71d30c26a4044e21ff9943c23d3af9e3e36"
+        },
+        "schurIC0": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-schur.json",
+          "sha256": "8012ea8a41bad4446505b2dd162b70324f3c3fec65225fa31df928fd93d03b01"
+        }
+      },
+      "productReductionFraction": 0.4202334630350194,
+      "schurIC0Products": 2827,
+      "schurIC0Seconds": 16.032616163
+    }
+  },
+  "pseudoTraction": {
+    "16": {
+      "acceptedIterations": 6,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-exact.json",
+          "sha256": "767cf397f04d82d6edf0440cf8e4d0a5e5f6dd0c3854fb8e28daed21399dd28e"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared16-aggregation.json",
+          "sha256": "debecc40776ec9e5dc949018137c92aed404faad849fec8d515e0c0502c1feae"
+        }
+      },
+      "lastDivergencePerSecond": 2.2997159732085493e-12,
+      "linearRestarts": 12,
+      "matrixProducts": 588,
+      "nativeExactError": {
+        "cells": 256,
+        "faceVelocityMaximumAtGauss6": 0.15616818764874393,
+        "faceVelocityRms": 0.04452414006774196,
+        "pressureP1RmsAbsolute": 0.05576446655479002,
+        "velocityP1Rms": 0.04370363387044097
+      },
+      "seconds": 2.752628711
+    },
+    "32": {
+      "acceptedIterations": 6,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-exact.json",
+          "sha256": "9777689603e4eede31d34cd78d5a583ca90d4c29b956f434841f629d2cc53c59"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared32-aggregation.json",
+          "sha256": "80350c5782de3d8e82df1a39f0fd38e2322e3ae1884f8a23f9eef19a617ecc6f"
+        }
+      },
+      "lastDivergencePerSecond": 2.9086733022154476e-12,
+      "linearRestarts": 28,
+      "matrixProducts": 1639,
+      "nativeExactError": {
+        "cells": 1024,
+        "faceVelocityMaximumAtGauss6": 0.15637258833155493,
+        "faceVelocityRms": 0.04448767334656787,
+        "pressureP1RmsAbsolute": 0.056684198363042136,
+        "velocityP1Rms": 0.044099072440326376
+      },
+      "seconds": 13.750527767
+    },
+    "8": {
+      "acceptedIterations": 7,
+      "completed": true,
+      "files": {
+        "nativeExactPostprocess": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared8-pressure-aggregation.exact.json",
+          "sha256": "5629fe95d1f9dec4a2577d87caa1578913429af0469ac473fa0c115e1e4f79fa"
+        },
+        "solverReport": {
+          "path": "outputs/laminar-stability/aggregation-oblique/sheared8-pressure-aggregation.json",
+          "sha256": "5f37111275c1f9660b76f39f50a60985e6a2e494134616991db20692ac328c5c"
+        }
+      },
+      "lastDivergencePerSecond": 1.8467449791614854e-12,
+      "linearRestarts": 7,
+      "matrixProducts": 313,
+      "nativeExactError": {
+        "cells": 64,
+        "faceVelocityMaximumAtGauss6": 0.1554335368727669,
+        "faceVelocityRms": 0.045903331270184734,
+        "pressureP1RmsAbsolute": 0.05652625082579475,
+        "velocityP1Rms": 0.044224489598087904
+      },
+      "seconds": 0.75678677
+    },
+    "orders": {
+      "faceVelocityRms": [
+        0.04401110826375443,
+        0.0011820983916787996
+      ],
+      "velocityP1Rms": [
+        0.01709225069410743,
+        -0.012995069172445757
+      ]
+    }
+  },
+  "runControls": {
+    "initialPseudoStep": 0.1,
+    "initialState": "zero",
+    "maximumLinearRestarts": 50,
+    "maximumOuterIterations": 40,
+    "productQualityGate": "unchanged",
+    "solverTemplate": "native-laminar-compatible-solver-oblique sheared N outlet-poiseuille .1 ns pressure|traction PREFIX .1 40 schur|schur-aggregation 50 zero"
+  },
+  "scope": "Native sheared parallelogram manufactured outlet control; product defaults unchanged"
+}

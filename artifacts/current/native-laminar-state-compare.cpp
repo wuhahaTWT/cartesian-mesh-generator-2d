@@ -3,7 +3,7 @@
 #define CARTMESH_P1_OSEEN_NO_MAIN
 #include "native-laminar-p1-oseen.cpp"
 int main(int argc,char** argv)try {
-    if(argc<5)throw std::runtime_error("usage: state-compare geometry mesh n prefix | compare mesh n first_state second_state");
+    if(argc<5)throw std::runtime_error("usage: state-compare geometry mesh n prefix | exact mesh n problem state | compare mesh n first_state second_state");
     const std::string mode=argv[1];const auto f=readFixture(argv[2],std::stoi(argv[3]));const auto& mesh=f.mesh;
     if(mode=="geometry"&&argc==5){
         const std::string prefix=argv[4];if(std::filesystem::exists(prefix+".cells.csv"))throw std::runtime_error("geometry output exists");
@@ -11,6 +11,17 @@ int main(int argc,char** argv)try {
         for(std::size_t t=0;t<mesh.cells.size();++t){out<<t<<','<<mesh.cells[t].area<<'\n';area+=mesh.cells[t].area;}
         out.close();if(!out)throw std::runtime_error("geometry output failed");
         std::cout<<std::setprecision(17)<<"{\"meshKey\":"<<meshKey(f)<<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"area\":"<<area<<"}\n";return 0;
+    }
+    if(mode=="exact"&&argc==6){
+        const std::string problem=argv[4];const auto a=readState(argv[5],f);double area=0,velocity=0,pressure=0,faceError=0,length=0,faceMax=0;
+        for(std::size_t t=0;t<mesh.cells.size();++t){Basis basis{mesh.cells[t].centre,f.diameter[t],{}};area+=mesh.cells[t].area;
+            for(auto q:cellQuadrature(mesh,int(t),6)){auto phi=basis.phi(q.p);double u=0,v=0,p=0;for(int j=0;j<3;++j){u+=phi[j]*a[9*t+j];v+=phi[j]*a[9*t+3+j];p+=phi[j]*a[9*t+6+j];}
+                const auto e=exactAt(q.p,problem);velocity+=q.w*((u-e.u.x)*(u-e.u.x)+(v-e.u.y)*(v-e.u.y));pressure+=q.w*(p-e.p)*(p-e.p);}}
+        for(std::size_t i=0;i<mesh.faces.size();++i){const auto& face=mesh.faces[i];const double l=std::hypot(face.areaVector.x,face.areaVector.y);length+=l;const auto off=9*mesh.cells.size()+4*i;
+            for(auto [z,w]:gauss(6)){const double s=z-.5;const Point2D p{face.centre.x-s*face.areaVector.y,face.centre.y+s*face.areaVector.x};const auto e=exactAt(p,problem);
+                const double du=a[off]+s*a[off+1]-e.u.x,dv=a[off+2]+s*a[off+3]-e.u.y;faceError+=w*l*(du*du+dv*dv);faceMax=std::max(faceMax,std::hypot(du,dv));}}
+        std::cout<<std::setprecision(17)<<"{\"cells\":"<<mesh.cells.size()<<",\"velocityP1Rms\":"<<std::sqrt(velocity/area)<<",\"pressureP1RmsAbsolute\":"<<std::sqrt(pressure/area)
+            <<",\"faceVelocityRms\":"<<std::sqrt(faceError/length)<<",\"faceVelocityMaximumAtGauss6\":"<<faceMax<<"}\n";return 0;
     }
     if(mode!="compare"||argc!=6)throw std::runtime_error("invalid state comparison request");
     const auto a=readState(argv[4],f),b=readState(argv[5],f);double area=0,gauge=0,velocity=0,pressure=0,pressureGauged=0,faceError=0,length=0,faceMax=0,coefficientMax=0;

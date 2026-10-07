@@ -26,7 +26,11 @@ int main(int argc,char** argv)try {
             else if(std::abs(face.areaVector.x)<=round)b.kind=CompatibleBoundaryKind2D::NormalVelocity;
             else throw std::runtime_error("cylinder far boundary must be axis aligned");
         }
-        else if(boundary!="closed"&&face.areaVector.x>0&&std::abs(face.areaVector.y)<128*std::numeric_limits<double>::epsilon()*std::hypot(face.areaVector.x,face.areaVector.y)){
+        // These manufactured channel fixtures advance in physical +x.  The
+        // sheared right boundary therefore has Sx>0 but need not have Sy=0;
+        // selecting it by the actual outward flux direction exercises the
+        // same arbitrary-orientation pseudo-traction supported by the API.
+        else if(boundary!="closed"&&face.areaVector.x>128*std::numeric_limits<double>::epsilon()*std::hypot(face.areaVector.x,face.areaVector.y)){
             b.kind=boundary=="traction"?CompatibleBoundaryKind2D::Traction:CompatibleBoundaryKind2D::PseudoTraction;auto n=face.areaVector;const auto length=std::hypot(n.x,n.y);n.x/=length;n.y/=length;
             b.value=[=](Point2D p){const auto e=exactAt(p,problem);Vector2D value{-e.p*n.x,-e.p*n.y};
                 if(boundary=="traction"){const auto gu=e.gradient[0],gv=e.gradient[1];value.x+=nu*(2*gu.x*n.x+(gu.y+gv.x)*n.y);value.y+=nu*((gu.y+gv.x)*n.x+2*gv.y*n.y);}return value;};
