@@ -79,6 +79,27 @@ SolverCellMetrics2D evaluateSolverCellMetrics2D(const Polygon2D& polygon,
     return metrics;
 }
 
+SolverFaceGeometry2D evaluateSolverFaceGeometry2D(
+    const Point2D& a,const Point2D& b,const Point2D& ownerCentroid,
+    const std::optional<Point2D>& neighbourCentroid) {
+    SolverFaceGeometry2D result;
+    const auto edge=b-a;
+    const double magnitude=std::hypot(edge.x,edge.y);
+    if (!(magnitude>0.0) || !std::isfinite(magnitude)) return result;
+    const Vector2D normal{edge.y/magnitude,-edge.x/magnitude};
+    const Point2D faceCentre{a.x+(b.x-a.x)*.5,a.y+(b.y-a.y)*.5};
+    result.ownerNormalDistance=dot(normal,faceCentre-ownerCentroid);
+    result.normalCentreDistance=neighbourCentroid
+        ?dot(normal,*neighbourCentroid-ownerCentroid):result.ownerNormalDistance;
+    if (neighbourCentroid)
+        result.neighbourNormalDistance=dot(normal,*neighbourCentroid-faceCentre);
+    result.valid=std::isfinite(result.ownerNormalDistance) &&
+        std::isfinite(result.normalCentreDistance) && result.ownerNormalDistance>0.0 &&
+        result.normalCentreDistance>0.0 && (!neighbourCentroid ||
+        (std::isfinite(result.neighbourNormalDistance) && result.neighbourNormalDistance>0.0));
+    return result;
+}
+
 SolverInternalFaceMetrics2D evaluateSolverInternalFaceMetrics2D(
     const Point2D& a,const Point2D& b,const Point2D& ownerCentroid,
     const Point2D& neighbourCentroid,double ownerArea,double neighbourArea,
@@ -281,6 +302,33 @@ SolverQualityReport2D evaluateSolverQuality2D(
                                      edgeLength,policy.minFaceLength,"face length is below solver limit"});
         }
         if (edge.owner>=centroids.size() || !centroidValid[edge.owner]) continue;
+        if (edge.neighbour &&
+            (*edge.neighbour>=centroids.size() || !centroidValid[*edge.neighbour])) continue;
+
+        // Global edge endpoints are canonical identities, not an outward
+        // orientation. Recover that orientation from the actual owner loop.
+        const auto& owner=topology.cells[edge.owner];
+        const auto position=std::find(owner.edges.begin(),owner.edges.end(),edge.id);
+        const auto index=static_cast<std::size_t>(position-owner.edges.begin());
+        if (position==owner.edges.end() || owner.vertices.size()!=owner.edges.size() ||
+            owner.vertices[index]>=topology.vertices.size() ||
+            owner.vertices[(index+1)%owner.vertices.size()]>=topology.vertices.size()) {
+            report.issues.push_back({SolverQualityIssueCode2D::InvalidTopology,edge.owner,edge.id,0,0,
+                                     "face has no valid oriented owner incidence"});
+            continue;
+        }
+        const auto faceGeometry=evaluateSolverFaceGeometry2D(
+            topology.vertices[owner.vertices[index]].point,
+            topology.vertices[owner.vertices[(index+1)%owner.vertices.size()]].point,
+            centroids[edge.owner],edge.neighbour?std::optional<Point2D>{centroids[*edge.neighbour]}:std::nullopt);
+        if (!faceGeometry.valid) {
+            const double distance=std::min(faceGeometry.normalCentreDistance,
+                edge.neighbour?std::min(faceGeometry.ownerNormalDistance,faceGeometry.neighbourNormalDistance)
+                              :faceGeometry.ownerNormalDistance);
+            report.issues.push_back({SolverQualityIssueCode2D::InvalidFaceGeometry,edge.owner,edge.id,
+                std::isfinite(distance)?distance:0.0,0.0,
+                "face has nonpositive or nonfinite outward normal centre distance/bracket"});
+        }
 
         if (!edge.neighbour) {
             const double skewness=evaluateSolverBoundaryFaceSkewness2D(
@@ -294,8 +342,6 @@ SolverQualityReport2D evaluateSolverQuality2D(
             }
             continue;
         }
-        if (*edge.neighbour>=centroids.size() || !centroidValid[*edge.neighbour]) continue;
-
         const auto metrics=evaluateSolverInternalFaceMetrics2D(
             a,b,centroids[edge.owner],centroids[*edge.neighbour],
             areas[edge.owner],areas[*edge.neighbour],tol);

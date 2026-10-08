@@ -92,6 +92,8 @@ build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm
 
 `coupling-diagnosis.json` 保存源码/二进制/输入哈希、真实命令及失败记录；配套小体积归档保存原生 CSV/日志和基于 `ab4aba3` 的未奏效补丁。原始场、试改二进制和继续研究材料保留于本机 `outputs/laminar-diagnosis/`；云端消费者用现有输入归档和本程序重建，不依赖本机绝对路径。尚未把这些试改作为修复合入，也未改变默认控制。原生 `FlowMomentum2D.cpp` 按同一共享面向 owner/neighbour 组装相反动量贡献；`FlowFlux2D.cpp`、`FlowPressure2D.hpp` 和 `Incompressible2D.cpp` 分别承担面通量、压力修正和耦合更新，是后续算法修复入口。
 
+有向面几何回归在 `tests/solver_export_test.cpp::reversedCentreConnectorRegression`，使用实际 DFG 面 4591 的两单元多边形，保留三个尺度、端点反转及 patch-local 检查。`evaluateSolverFaceGeometry2D` 的法向来自 owner 的 CCW 顶点循环；内部面要求 owner 到面、面到 neighbour、owner 到 neighbour 的有向法向距离均正，边界要求 owner 到面为正，与 FVM 原有可容许条件一致。原无向 nonorthogonality 诊断仍保留，不能再单独放行反向中心。`quality-normal-distance-fields.tar.gz` 包含原 3,086 格失败输入及修复后 3,085 格输入、真实 u/v/p/flux；后续求解仍须通过原 strict 条件和物理误差检查，固定几何 5,891 格的误差恶化见 `dfg-controlled-refinement.json`。
+
 ### 与网格产品一致的求解规模
 
 云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。

@@ -1,0 +1,152 @@
+{
+  "scope": "DFG actual native H4 hybrid quality repair; unchanged fluid domain, BL request, and frozen flow solver",
+  "sourceHead": "4ac9d5100874426dfb1436a04350c5e9f5808247",
+  "driverSource": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/native_bl_probe-quality-fixed.cpp",
+  "driverSourceSha256": "a6bdb09b810dadd4e4a0fdfea547f3f27aa74c4e0194246e6f65d81381eec644",
+  "driverBinarySha256": "35b08ef97827fcad27ff851e503e7b972338901b32afb5621fd7b0cde13be9ea",
+  "nativeLibrarySha256": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0",
+  "changedQualitySourceSha256": {
+    "src/quality/SolverQuality2D.cpp": "e99b0e1666d1af97e3f191788ca968afd743ee2793f05bc6252f62c031d2513b",
+    "src/quality/PatchLocalQuality2D.cpp": "64c3a03876cf994c286caa370763880b907e5638c3b1c37f1c1f88fa59fe217c",
+    "src/quality/SolverTopology2D.cpp": "462067ceffad9138ce82eff228f811e565c454d6c05e9fbef2d59865a8654f2b",
+    "include/cartmesh2d/quality/SolverQuality2D.hpp": "20f651d0e902fe9261dadb17c57080a1238a25f1322dcaf1249ab70a30de4bf4"
+  },
+  "oldMeshRecord": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-v2/mesh.json",
+  "oldFvmRejectLog": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-v2-aa16/solve.log",
+  "minimumFailureExample": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/failure-face4591.json",
+  "oldCells": 3086,
+  "newMeshRecord": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-quality-fixed/mesh.json",
+  "newGenerationLog": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-quality-fixed/generation.log",
+  "newCells": 3085,
+  "newFluidArea": 0.8941491721076131,
+  "newQuality": {
+    "quality_class": "solver_quality",
+    "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+    "valid": true,
+    "policy": {
+      "max_non_orthogonality_deg": 70,
+      "max_internal_skewness": 4,
+      "max_boundary_skewness": 4,
+      "max_concavity_deg": 80,
+      "max_cell_aspect": 1000,
+      "min_interior_angle_deg": 0.5,
+      "min_face_length": 1.01e-10,
+      "min_face_weight": 0.05,
+      "min_volume_ratio": 0.01
+    },
+    "metrics": {
+      "max_non_orthogonality_deg": 64.80988067162009,
+      "max_internal_skewness": 2.965704015106067,
+      "max_boundary_skewness": 3.253090538423874e-14,
+      "max_concavity_deg": 8.94793037412282,
+      "max_cell_aspect": 41.41873259236452,
+      "min_interior_angle_deg": 2.9013372823818013,
+      "min_face_length": 0.0001546559532937669,
+      "min_face_weight": 0.05021956913456769,
+      "min_volume_ratio": 0.010174939538013569,
+      "min_compactness": 0.0748548493740661
+    },
+    "issue_count": 0,
+    "issues": []
+  },
+  "inputGateResult": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-input-gate/result.json",
+  "fullSolvePlannedResult": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/result.json",
+  "fullSolveStatus": "strict converged; full cold solve complete",
+  "frozenSolverSha256": "6fdf07218b9c8f584e1e974691c8a57253fd4b539bc1990a7e95daa463e7b674",
+  "fullSolveResult": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/result.json",
+  "fullSolveStrictConverged": true,
+  "fullSolveMetrics": {
+    "Cd": 5.683381808397673,
+    "Cl": 0.008701271628676772,
+    "pressureDrop": 0.11837715787560388,
+    "CdError": 0.10384657455767332,
+    "CdRelativeError": 0.018612047456541117,
+    "ClError": -0.0019176765173232278,
+    "ClRelativeError": 0.1805900632489281,
+    "pressureDropError": 0.0008569909056038716,
+    "pressureDropRelativeError": 0.00729228801915028,
+    "reference": {
+      "Cd": 5.57953523384,
+      "Cl": 0.010618948146,
+      "pressureDrop": 0.11752016697,
+      "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+      "coefficientMeanVelocity": 0.2
+    }
+  },
+  "fullSolveSummary": {
+    "iterations": 581,
+    "momentumResidual": 3.3583240738339095e-09,
+    "continuity": 7.910913849184952e-12,
+    "velocityChange": 9.970565628554623e-09,
+    "pressureChange": 7.4335474808921025e-09,
+    "globalRelativeImbalance": 1.2205625301274814e-13,
+    "strictLinearFinal": true
+  },
+  "fullSolveRun": {
+    "command": [
+      "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/bin/flow-cli",
+      "--mesh",
+      "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-quality-fixed/mesh.solver.cm2d",
+      "--case",
+      "custom",
+      "--boundary",
+      "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-quality-fixed/flow.boundaries",
+      "--output",
+      "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/flow",
+      "--nu",
+      "0.001",
+      "--speed",
+      "0.3",
+      "--convection",
+      "limited-linear",
+      "--pressure-preconditioner",
+      "ic0",
+      "--max-iterations",
+      "6000",
+      "--tolerance",
+      "1e-8",
+      "--viscous-stress",
+      "symmetric",
+      "--profile",
+      "--steady-acceleration",
+      "anderson",
+      "--anderson-history",
+      "16",
+      "--anderson-start",
+      "1"
+    ],
+    "returnCode": 0,
+    "timedOut": false,
+    "seconds": 12.758561553999243,
+    "log": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/solve.log",
+    "timing": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/solve.time.txt"
+  },
+  "fullSolveResourceUse": {
+    "userSeconds": 12.690787,
+    "systemSeconds": 0.016144,
+    "peakRssKiB": 14848,
+    "measurement": "RUSAGE_CHILDREN; exactly one child in this Python invocation"
+  },
+  "validation": {
+    "native": {
+      "passed": 104,
+      "total": 104,
+      "seconds": 51.37,
+      "log": "outputs/laminar-repair/coupled-quality-ctest.log"
+    },
+    "frontend": {
+      "passed": 191,
+      "total": 191,
+      "log": "outputs/laminar-repair/coupled-quality-frontend-permitted.log"
+    },
+    "realApp": {
+      "cells": 5216,
+      "iterations": 553,
+      "strictTolerance": 1e-08,
+      "pressurePreconditioner": "ic0",
+      "converged": true,
+      "report": "outputs/laminar-repair/coupled-quality-app/rectangle.png.json"
+    },
+    "crossPlatformCI": "not completed: api.github.com CONNECT returns 403"
+  }
+}

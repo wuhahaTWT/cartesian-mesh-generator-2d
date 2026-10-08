@@ -490,6 +490,14 @@ struct LocalQualityRank2D {
     QualityScore2D score;
     score.issueCount=quality.issues.size();
     for (const auto& issue:quality.issues) {
+        // Admissibility is categorical, with a zero dimensional limit. A
+        // reversed signed distance must not become a negative severity or an
+        // infinity that corrupts the candidate ordering.
+        if (issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry) {
+            score.maximumSeverity=std::max(score.maximumSeverity,1.0);
+            score.totalSeverity+=1.0;
+            continue;
+        }
         const bool lowerBound=
             issue.code==SolverQualityIssueCode2D::ShortFace ||
             issue.code==SolverQualityIssueCode2D::SmallInteriorAngle ||
@@ -568,6 +576,7 @@ void rankRelativeToBase(LocalQualityRank2D& rank,const LocalQualityRank2D& base)
     filtered.policy=quality.policy;
     for (const auto& issue:quality.issues) {
         const bool cellIssue=issue.code==SolverQualityIssueCode2D::InvalidCell ||
+            issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry ||
             issue.code==SolverQualityIssueCode2D::ExcessiveConcavity ||
             issue.code==SolverQualityIssueCode2D::ExcessiveAspect ||
             issue.code==SolverQualityIssueCode2D::SmallInteriorAngle;
@@ -588,6 +597,7 @@ void rankRelativeToBase(LocalQualityRank2D& rank,const LocalQualityRank2D& base)
 
 [[nodiscard]] bool internalInterfaceIssue(SolverQualityIssueCode2D code) noexcept {
     return code==SolverQualityIssueCode2D::ExcessiveNonOrthogonality ||
+           code==SolverQualityIssueCode2D::InvalidFaceGeometry ||
            code==SolverQualityIssueCode2D::ExcessiveSkewness ||
            code==SolverQualityIssueCode2D::LowFaceWeight ||
            code==SolverQualityIssueCode2D::LowVolumeRatio;

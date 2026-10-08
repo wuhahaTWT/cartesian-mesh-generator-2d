@@ -32,7 +32,8 @@ enum class SolverQualityIssueCode2D {
     ExcessiveAspect,
     SmallInteriorAngle,
     LowFaceWeight,
-    LowVolumeRatio
+    LowVolumeRatio,
+    InvalidFaceGeometry
 };
 
 struct SolverQualityIssue2D {
@@ -63,7 +64,7 @@ struct SolverCellMetrics2D {
 
 struct SolverInternalFaceMetrics2D {
     // False when the owner/neighbour connector or the face normal degenerates.
-    // The global evaluator skips every internal metric in that case.
+    // Such a face is rejected, never skipped as a passing metric.
     bool orientationValid = false;
     double length = 0.0;
     double nonOrthogonalityDeg = 0.0;
@@ -71,6 +72,21 @@ struct SolverInternalFaceMetrics2D {
     double faceWeight = 0.0;
     double volumeRatio = 0.0;
 };
+
+// The two-point finite-volume operator requires a positive outward normal
+// distance and, internally, centres on opposite sides of the face. These are
+// its existing geometric admissibility conditions, not adjustable thresholds.
+// a -> b must follow the counterclockwise owner polygon, not sorted vertex IDs.
+struct SolverFaceGeometry2D {
+    bool valid = false;
+    double ownerNormalDistance = 0.0;
+    double neighbourNormalDistance = 0.0;
+    double normalCentreDistance = 0.0;
+};
+
+[[nodiscard]] SolverFaceGeometry2D evaluateSolverFaceGeometry2D(
+    const Point2D& a,const Point2D& b,const Point2D& ownerCentroid,
+    const std::optional<Point2D>& neighbourCentroid = {});
 
 [[nodiscard]] SolverInternalFaceMetrics2D evaluateSolverInternalFaceMetrics2D(
     const Point2D& a, const Point2D& b, const Point2D& ownerCentroid,

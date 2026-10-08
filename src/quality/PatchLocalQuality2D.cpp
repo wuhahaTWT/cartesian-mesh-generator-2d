@@ -173,6 +173,12 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
             }
         }
 
+        const auto faceGeometry=evaluateSolverFaceGeometry2D(a,b,metrics[owner.cell].centroid,
+            physical?std::nullopt:std::optional<Point2D>{metrics[incidences.back().cell].centroid});
+        if (!faceGeometry.valid) {
+            result.issues.push_back("patch-local face has nonpositive or nonfinite outward normal centre distance/bracket");
+            return result;
+        }
         if (physical) {
             const double skewness=evaluateSolverBoundaryFaceSkewness2D(
                 a,b,metrics[owner.cell].centroid);
@@ -185,7 +191,10 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
         const auto face=evaluateSolverInternalFaceMetrics2D(
             a,b,metrics[owner.cell].centroid,neighbourMetrics.centroid,
             metrics[owner.cell].area,neighbourMetrics.area,tol);
-        if (!face.orientationValid) continue;
+        if (!face.orientationValid) {
+            result.issues.push_back("patch-local internal face geometry degenerates");
+            return result;
+        }
         ++result.ratedInternalFaceCount;
         result.maxNonOrthogonalityDeg=std::max(result.maxNonOrthogonalityDeg,
                                                face.nonOrthogonalityDeg);
