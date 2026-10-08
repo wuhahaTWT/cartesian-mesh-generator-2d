@@ -63,6 +63,17 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 不可压内部实现入口为 `src/fv/Incompressible2D.cpp`；工况与预设在 `FlowCase2D.cpp`，动量在 `FlowMomentum2D.cpp`，Rhie–Chow 在 `FlowFlux2D.cpp`，压力线性循环在 `FlowPressure2D.hpp`，监测在 `FlowConvergence2D.cpp`，受力在 `FlowForces2D.cpp`。私有参数接口集中于 `FlowSolverDetail2D.hpp`，公共求解 API 保持不变。纯重构的六个代表例逐场哈希见 `artifacts/current/laminar-foundation/refactor-hashes.json`；数值修改须另行比较精度，不能援引重构哈希作为修复证据。
 
+### 与网格产品一致的求解规模
+
+云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。
+
+- 使用当前产品网格流程，在固定几何、计算域、Re、物性和边界条件下完成约 10 万、30 万、50 万**真实流体单元**的曲壁系列；覆盖纯 Cut-cell 和共形边界层网格。500,000 是生成器目标数量，报告聚合后的实际格数，不通过凑格数改变流体区域。30 万至 50 万目前仍有规模与收敛缺口，须继续算法修复并完成实际求解；短步预算探测或仅生成大网格不算完成。
+- 每档保存生成参数、输入几何及网格哈希、实际流体格数、层级分布、最小单元尺度及壁面切向/法向尺寸。level 由计算域跨度和目标尺寸共同决定；同一个 level 不保证同一物理分辨率。边界层按实际法向尺寸比较，完整背景中的固体内部格不计入流体规模。曲壁细化同时记录几何离散误差，不能只加密远离壁面的区域来完成精度验证。
+- 标准基准继续用解析解/公开参考值判断速度、压力及受力误差；高密度代表曲壁还须有同网格 OpenFOAM 对照和保持同一物理问题的细化比较。10/30/50 万是容量覆盖点，不直接当等比例的三档网格计算阶数；观测阶依据受控的实际空间细化。修复须在高密度保持已验证的精度与守恒，失败样本保留并进入后续修复。
+- 同时记录外迭代数、线性求解工作量、残差与场变化、压降/受力、峰值内存和完整墙钟时间。冷启动单列；使用粗解初始化时，把粗解、映射、细解及导出全部计入，网格生成另列并给出总成本。同硬件、同控制和同物理精度比较，Linux 使用实际可用的预条件器。大规模收敛困难须解决离散、耦合或线性求解的瓶颈，不能仅放宽停止条件或把迭代上限当收敛。
+
+历史规模证据入口为 `artifacts/current/native-laminar-gradient-cache.json`、`native-laminar-initial-guess.json` 和 `native-laminar-dense-cutcell.json`；旧命令中的本机 `outputs/` 文件不会随 Git 上传，云端须保存可重建的输入/生成命令。历史喷管几何为 `examples/complex/nozzle_profile.xy`；它的指定网格性能结果不替代圆环/DFG 精度验收。新高密度运行使用独立 `outputs/` 目录，保留后续续算输入、代表场和最小失败例，只提交必要的小体积证据。
+
 ## 产物保留与清理
 
 维护对象是当前源码与必要测试；App 打包只包含 `desktop/src/`、原生 runtime 和样例。多平台共用同一算法源码，构建树、依赖、研究数据及安装包分别管理。[CMake](https://cmake.org/cmake/help/latest/manual/cmake.1.html#introduction-to-cmake-buildsystems)明确区分源码树和可重建的构建树。
