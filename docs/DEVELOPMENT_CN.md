@@ -116,6 +116,23 @@ build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm
 
 四个严格 field solve 使用原 6,208 格、`nu=.1`、`speed=.5`、inertia=1；映射探针单独设 inertia=0，在相同 SIMPLE 松弛和四次压力修正下执行 180 次。观测模式和残差单列，不称完整谱界。`open-source-mechanisms-fields.tar.gz` 的消费者是后续原生机制研究：保留场、通量、压力向量、分解面贡献、完整命令/成本与原创补丁；产品运行仍用前述 coupled JSON 算例。四个试改都不属于产品修复，不能改默认或据此继续高密度链。
 
+### 单元一步分项与来源传播
+
+`tools/benchmarks/cell_step.py` 是 Linux/GNU ld 研究入口，先构建已有层流库，不进入默认构建或产品求解。它从当前 archive 提取真实 C++ 符号，编译包裹版和未包裹版；`cell_step.cpp` 只记录实际 `momentum` / `rhieChowFlux` 输入及返回，先恢复原生 Stokes 一步映射的模态，再抓取下一次全网格 `F(x)` 与 `F(0)`。目标格只是观测位置，压力求解仍全局进行。解包前述原失败输入后运行：
+
+```bash
+python3 tools/benchmarks/cell_step.py \
+  outputs/laminar-inputs/annulus-l7.solver.cm2d \
+  outputs/laminar-inputs/annulus-l7.boundaries \
+  --target 3710 --power-steps 180 --output outputs/cell-step
+```
+
+仅支持稳态恒黏度 Stokes、闭合固定速度壁；固定 `nu=.1`、参考速度 `.5`、松弛 `.6/.25`、IC(0)、四次压力校正和原严格线性停止。零基目标 3710 对应用户单元 3711，相邻零基 3711 的面积约小十倍。壁面与内部黏性表包含紧致旧场作用、非正交和真实对称应力；压力力以共享面值重构并与实际 RHS 对齐。动量积分量单位 `m³/s²`，RC 是 `m²/s`，不互相相加。逐行重构对齐误差仅记录，不构建新的独立 Python 方程验证链。
+
+`cell_step_response.cpp` 保留捕获的实际紧致矩阵，分别用原生矩阵求解、速度梯度、RC 和 `solvePressureCorrection` 传播壁面/内部非正交与对称应力、动量压力/松弛，以及直接 RC 压力、通量松弛、旧压力，共 11 个来源。modal/base 矩阵和 rAU/df 必须相同、体源须零；最终面通量使用原压力函数返回的最后一次**滞后**修正。速度/压力分别用面积内积，通量用面长内积，投影各除以对应输入场平方范数；这些是单个模态的贡献，不是删项后的新映射谱。分源 Krylov 停止带来有限闭合误差，不宣称逐位闭合。
+
+`cell-step-diagnosis.json` 保存验证和实际数字，`cell-step-diagnosis-traces.tar.gz` 保留完整模态输入/一步输出、实际共享矩阵、目标及邻格逐面项、阶段和来源响应及可重建的原生源文件。重复全格 CSV 视图留在 `outputs/`；归档的选择及原 SHA 明列。消费者是后续应力—压力反馈修复；单例定位不扩大产品稳定性或精度资格。入口本身再次复跑得到同一字段哈希与来源闭合，相关四项原生测试通过；src/include、默认设置及生产 archive 未变。
+
 ### 与网格产品一致的求解规模
 
 云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。
