@@ -12,16 +12,16 @@
 
 云端已复现圆环与 DFG 默认发散，并加入显式 `--anderson-history` / `--anderson-start` 研究控制。原默认仍为不加速；启用 Anderson 时原四向量、第 10 步开始的设置也保留。使用 16 向量、首步开始积累历史，旧 3063 格 DFG 在 **1281 轮**严格收敛，6208 格圆环在 **1002 轮**严格收敛。DFG 只提早开始但仍用四向量、或只扩大历史但仍等到第 10 步，都失败。原生 CTest **102/102**、前端 **191/191** 通过；默认 Poiseuille 的 cells/faces 文件哈希与修改前相同。
 
-不可压求解器已将工况初始化/边界预设、动量组装、Rhie–Chow 通量、压力修正、收敛监测和受力后处理拆为独立模块。纯重构以 `5672a87` 为对照，方腔、制造解、非定常 Taylor–Green、Poiseuille、旧圆环和旧 DFG 六例的 **u/v/p/flux 哈希与迭代数全部相同**，原生 **102/102** 通过；[逐场哈希](../artifacts/current/laminar-foundation/refactor-hashes.json)保留。版本化算例文件、工程停止与 SIMPLEC 仍待实现。
+不可压求解器已将工况初始化/边界预设、动量组装、Rhie–Chow 通量、压力修正、收敛监测和受力后处理拆为独立模块。纯重构以 `5672a87` 为对照，方腔、制造解、非定常 Taylor–Green、Poiseuille、旧圆环和旧 DFG 六例的 **u/v/p/flux 哈希与迭代数全部相同**，原生 **102/102** 通过；[逐场哈希](../artifacts/current/laminar-foundation/refactor-hashes.json)保留。版本化 `--case-file` 已加入并通过 CLI 字段一致性、覆盖规则和拒绝非法输入的回归；工程停止与 SIMPLEC 仍待实现。
 
-这尚不是精度修复：DFG `Cd=6.0631245`（误差 **8.667%**）、`Cl=-0.5728154`、压降 `0.10719345`；圆环压力 L2/Uref² 仍 **0.02775795**。两张旧网格通过 OpenFOAM v2412 标准 checkMesh，但无限制梯度/非正交修正的 simpleFoam 同样发散。压力校正、重构与小单元几何仍在研究，默认设置未调整。[控制对照](../artifacts/current/laminar-foundation/early-anderson.json)及[真实场](../artifacts/current/laminar-foundation/early-anderson-fields.tar.gz)保留。
+这尚不是精度修复：DFG `Cd=6.0631245`（误差 **8.667%**）、`Cl=-0.5728154`、压降 `0.10719345`；圆环压力 L2/Uref² 仍 **0.02775795**。两张旧网格通过 OpenFOAM v2412 标准 checkMesh，但无限制梯度/非正交修正的 simpleFoam 同样发散。显式加上梯度与非正交限制器后，DFG 在 630 轮收敛（CPU 11.95 s），Cd=5.1782551（误差 7.192%）、Cl=0.6261126、压降=0.09826234，仍不合格；圆环到 16,000 轮仍不收敛。原网格同构导出、真实 OpenFOAM 场与日志见 [外部对照](../artifacts/current/laminar-foundation/openfoam-old-mesh.json)及[场归档](../artifacts/current/laminar-foundation/openfoam-old-mesh-fields.tar.gz)。压力校正、重构与小单元几何仍在研究，默认设置未调整。[控制对照](../artifacts/current/laminar-foundation/early-anderson.json)及[真实场](../artifacts/current/laminar-foundation/early-anderson-fields.tar.gz)保留。
 
 新增入口 `tools/benchmarks/laminar.py`：方腔 Re100/400/1000、DFG Re20、旋转圆环、Poiseuille，三档网格、两种对流格式。首轮 36 个矩阵条目中 24 个收敛、8 个未通过网格质量门、4 个求解失败。失败计入结果，不降低质量门。新结果及可异机重跑的输入见 [基线](../artifacts/current/laminar-foundation/baseline.json)，复现见[开发指南](DEVELOPMENT_CN.md#不可压基础基准与云端复现)。
 
 - 方腔 Re100 的 limited-linear/Marchi RMSE 为 `0.004080 → 0.0009002 → 0.0002163`，末两档观测阶 `2.082 / 2.011`；最细 15,876 格需 8,590 轮。Ghia 指标单列，Re400 原表可疑条目未静默删去。
 - 旧 6,208 格圆环默认控制再次发散；启用现有 Anderson、保持速度松弛 0.6 可在 980 轮收敛，但压力归一化 L2 仍 `0.02775795`。完全隐式非正交压力算子的试验未解决发散，未保留为产品功能；[失败补丁](../artifacts/current/laminar-foundation/rejected-implicit-pressure.patch)及基线 JSON 内的日志已上传，原始场保留在 `outputs/laminar-foundation/`。
 - DFG 使用等尺寸笛卡尔背景可生成通过现有质量门的 3,063 格网格，但默认 SIMPLE 及松弛 0.2 + Anderson 均发散。下一步检查动量预测中显式对称黏性应力、壁面压力重构及耦合稳定性；尚无 DFG 精度通过结论。
-- 同网格 OpenFOAM 准备/读取脚本已加入；首次运行被 Docker 重启中断，当前没有完成的外部对照结果。
+- 同网格 OpenFOAM 已在 Linux Docker v2412 上完成旧 DFG/圆环的失败与限制器对照；其他工况及细化序列尚待完成。原首次 Docker 中断记录仍属历史失败。
 
 云端接续前的本机基线已完成：系统 Clang Release 网格/流动 CLI 构建、完整 36 条目基线、额外圆环/DFG 失败定位、Python 语法检查和 IC(0) Poiseuille 小例运行。当时求解器产品源码恢复为 `6ec4edf`，没有把未奏效的试验算作修复；当时未重新运行完整 CTest、前端或跨平台 CI。接续后的代码与验证进展见上文；基础小例的默认发散、物理误差和高密度能力须由同一套通用实现共同解决，单个十万格案例收敛不能替代小例验收。
 

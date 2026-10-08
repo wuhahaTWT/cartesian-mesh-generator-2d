@@ -1,0 +1,67 @@
+[
+  {
+    "case": "dfg20",
+    "scheme": "limited-linear",
+    "iterations": 630.0,
+    "converged": true,
+    "status": "converged",
+    "metrics": {
+      "Cd": 5.178255085436574,
+      "Cl": 0.6261125526550964,
+      "pressureDrop": 0.09826233561223756,
+      "CdError": -0.4012801484034254,
+      "CdRelativeError": 0.0719199954092328,
+      "ClError": 0.6154936045090964,
+      "ClRelativeError": 57.96182409469093,
+      "pressureDropError": -0.019257831357762448,
+      "pressureDropRelativeError": 0.16386831174838695,
+      "reference": {
+        "Cd": 5.57953523384,
+        "Cl": 0.010618948146,
+        "pressureDrop": 0.11752016697,
+        "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+        "coefficientMeanVelocity": 0.2
+      }
+    },
+    "meshSha256": "4f0aed9584bb05c58b20fd9ee6b00ef04ca11933d896926296b6f15fa38e4e5b",
+    "actualDictionaries": {
+      "fvSchemes": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object fvSchemes;\n}\n\nddtSchemes { default steadyState; }\ngradSchemes { default cellLimited leastSquares 1; }\ndivSchemes { default none; div(phi,U) bounded Gauss linearUpwind grad(U); div((nuEff*dev2(T(grad(U))))) Gauss linear; }\nlaplacianSchemes { default Gauss linear limited 0.5; }\ninterpolationSchemes { default linear; }\nsnGradSchemes { default limited 0.5; }\nwallDist { method meshWave; }\n",
+      "fvSolution": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object fvSolution;\n}\n\nsolvers\n{\n p { solver PCG; preconditioner DIC; tolerance 1e-11; relTol 0; maxIter 3000; }\n U { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-10; relTol 0; }\n}\nSIMPLE { nNonOrthogonalCorrectors 3; pRefCell 0; pRefValue 0; residualControl { p 1e-8; U 1e-8; } }\nrelaxationFactors { fields { p 0.25; } equations { U 0.6; } }\n",
+      "controlDict": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object controlDict;\n}\n\napplication simpleFoam;\nstartFrom startTime; startTime 0; stopAt endTime; endTime 16000; deltaT 1;\nwriteControl timeStep; writeInterval 16000; purgeWrite 1; writeFormat ascii; writePrecision 17; writeCompression off;\ntimeFormat general; timePrecision 10; runTimeModifiable false;\nfunctions { wallLoads { type forces; libs (forces); patches (cylinder); rho rhoInf; rhoInf 1; CofR (0 0 0); writeControl timeStep; writeInterval 1; log false; } }\n"
+    },
+    "executionSeconds": 11.95,
+    "wallSeconds": 12.0,
+    "forceFile": "postProcessing/wallLoads/0/force_0.dat",
+    "openfoam": "OpenCFD v2412",
+    "image": "opencfd/openfoam-default:2412",
+    "imageDigest": "sha256:1ba02114b1c025c370f2e269a07677c16c9bea8d990fcd75ac8378aff9d41b50",
+    "unlimitedAttempt": "diverged",
+    "standardCheckMesh": "Mesh OK",
+    "fieldArchive": "openfoam-old-mesh-fields.tar.gz"
+  },
+  {
+    "case": "annulus",
+    "scheme": "limited-linear",
+    "iterations": 16000.0,
+    "converged": false,
+    "status": "not-converged",
+    "metrics": {
+      "velocityL2": 0.0024287326234515277,
+      "pressureL2": 0.12849811190470595
+    },
+    "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+    "actualDictionaries": {
+      "fvSchemes": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object fvSchemes;\n}\n\nddtSchemes { default steadyState; }\ngradSchemes { default cellLimited leastSquares 1; }\ndivSchemes { default none; div(phi,U) bounded Gauss linearUpwind grad(U); div((nuEff*dev2(T(grad(U))))) Gauss linear; }\nlaplacianSchemes { default Gauss linear limited 0.5; }\ninterpolationSchemes { default linear; }\nsnGradSchemes { default limited 0.5; }\nwallDist { method meshWave; }\n",
+      "fvSolution": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object fvSolution;\n}\n\nsolvers\n{\n p { solver PCG; preconditioner DIC; tolerance 1e-11; relTol 0; maxIter 3000; }\n U { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-10; relTol 0; }\n}\nSIMPLE { nNonOrthogonalCorrectors 3; pRefCell 0; pRefValue 0; residualControl { p 1e-8; U 1e-8; } }\nrelaxationFactors { fields { p 0.25; } equations { U 0.6; } }\n",
+      "controlDict": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    location \"system\";\n    object controlDict;\n}\n\napplication simpleFoam;\nstartFrom startTime; startTime 0; stopAt endTime; endTime 16000; deltaT 1;\nwriteControl timeStep; writeInterval 16000; purgeWrite 1; writeFormat ascii; writePrecision 17; writeCompression off;\ntimeFormat general; timePrecision 10; runTimeModifiable false;\nfunctions { wallLoads { type forces; libs (forces); patches (rotor housing); rho rhoInf; rhoInf 1; CofR (0 0 0); writeControl timeStep; writeInterval 1; log false; } }\n"
+    },
+    "executionSeconds": 896.27,
+    "wallSeconds": 902.0,
+    "openfoam": "OpenCFD v2412",
+    "image": "opencfd/openfoam-default:2412",
+    "imageDigest": "sha256:1ba02114b1c025c370f2e269a07677c16c9bea8d990fcd75ac8378aff9d41b50",
+    "unlimitedAttempt": "diverged",
+    "standardCheckMesh": "Mesh OK",
+    "fieldArchive": "openfoam-old-mesh-fields.tar.gz"
+  }
+]

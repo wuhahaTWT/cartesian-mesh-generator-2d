@@ -7,6 +7,7 @@
 #include "cartmesh2d/fv/FlowInitialization2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include "FlowCaseFile.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -158,8 +159,9 @@ int main(int argc, char** argv) {
         std::string restart;
         fv::FlowInitialVortex2D initialVortex;
         unsigned vortexOptions=0;
-        for (int i = 1; i < argc; ++i) {
-            std::string a = argv[i];
+        const auto arguments=cli::flowCaseArguments(argc,argv);
+        for (std::size_t i = 0; i < arguments.size(); ++i) {
+            std::string a = arguments[i];
             if (a == "--profile") {
                 controls.profile = true;
                 continue;
@@ -168,6 +170,7 @@ int main(int argc, char** argv) {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
+            "--case-file FILE.json: native flow case v1; relative paths use its directory, explicit CLI options override.\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
@@ -208,10 +211,10 @@ int main(int argc, char** argv) {
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
             }
-            if (i + 1 >= argc) {
+            if (i + 1 >= arguments.size()) {
                 throw std::invalid_argument("missing option value");
             }
-            std::string v = argv[++i];
+            std::string v = arguments[++i];
             if (a == "--mesh") {
                 path = v;
             } else if (a == "--output") {

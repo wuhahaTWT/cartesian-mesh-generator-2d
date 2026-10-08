@@ -102,6 +102,36 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         wall_force_errors.append(abs(data['wallViscousForceX'] - .32))
         assert abs(data['wallViscousForceY']) < 1e-8
         if ny == 8:
+            # A portable JSON case resolves inputs relative to the case file,
+            # while an explicit CLI override has identical ordinary semantics.
+            case_file = root / 'channel.case.json'
+            case_options = dict(mesh=mesh.name, output='case-file', case='channel',
+                                nu=.01, speed=1, **{'max-iterations': 700})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1',
+                                                 options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)],
+                                    cwd=root.parent, text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('case-file' + suffix)).read_bytes() == (root / (f'channel{ny}' + suffix)).read_bytes()
+            result = subprocess.run([cli, '--output', str(root/'case-override'),
+                                     '--max-iterations', '1', '--case-file', str(case_file)],
+                                    text=True, capture_output=True, timeout=40)
+            assert result.returncode == 2, result.stderr
+            assert json.loads((root/'case-override.json').read_text())['iterations'] == 1
+            for invalid in [
+                '{"format":"cartmesh2d-native-flow-case-v2","options":{}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":0.1,"nu":0.2}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":"0.1"}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"profile":1}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"mesh":"\\uD800"}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":01}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{}} trailing',
+            ]:
+                case_file.write_text(invalid)
+                result = subprocess.run([cli, '--case-file', str(case_file)],
+                                        text=True, capture_output=True, timeout=10)
+                assert result.returncode == 1 and 'case-file JSON' in result.stderr, result.stderr
             # Profiling must observe, never alter the physical solve or exports.
             run('profiled', mesh, extra=('--profile',))
             for suffix in ('.json', '.fields.json', '.cells.csv', '.faces.csv',

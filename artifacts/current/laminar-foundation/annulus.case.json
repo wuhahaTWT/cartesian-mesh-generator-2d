@@ -1,0 +1,19 @@
+{
+  "format": "cartmesh2d-native-flow-case-v1",
+  "options": {
+    "mesh": "../../../outputs/laminar-inputs/annulus-l7.solver.cm2d",
+    "boundary": "../../../outputs/laminar-inputs/annulus-l7.boundaries",
+    "output": "../../../outputs/laminar-case-file/annulus/flow",
+    "case": "custom",
+    "nu": 0.1,
+    "speed": 0.5,
+    "convection": "face-limited-linear",
+    "pressure-preconditioner": "ic0",
+    "max-iterations": 16000,
+    "tolerance": 1e-08,
+    "steady-acceleration": "anderson",
+    "anderson-history": 16,
+    "anderson-start": 1,
+    "profile": true
+  }
+}

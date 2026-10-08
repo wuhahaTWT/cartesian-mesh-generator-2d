@@ -49,6 +49,13 @@ build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/annulus-l7.solver.cm2d -
 build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/dfg20-l7.solver.cm2d --case custom --boundary outputs/laminar-inputs/dfg20-l7.boundaries --output outputs/dfg-default --nu .001 --speed .3 --convection limited-linear --pressure-preconditioner ic0 --max-iterations 16000 --tolerance 1e-8 --profile
 ```
 
+CLI 支持版本化 `--case-file FILE.json`，格式为 `{"format":"cartmesh2d-native-flow-case-v1","options":{...}}`。`options` 使用去掉 `--` 的原 CLI 名称；数值采用 JSON number，枚举/路径采用 string，`profile` 采用 boolean。文件内路径相对 JSON 所在目录解析，显式命令行选项优先；未知版本、重复键和类型错误明确失败。该格式与桌面请求存档格式分开。解包上面的输入后，可直接复现两个早期 Anderson 算例：
+
+```sh
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20.case.json
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/annulus.case.json
+```
+
 云端的早期历史实验在以上命令追加 `--steady-acceleration anderson --anderson-history 16 --anderson-start 1`。两个选项显式记录到结果 JSON；默认仍是历史 4、从第 10 步开始，未加速仍为产品默认。历史容量 1–32 是内存/QR 工作量控制，不是物理验收门。原始 DFG 输入同时用于原生 `cartmesh2d_flow_stability` 回归，仍要求完整 strict 停止条件和普通 SIMPLE 最终确认步。该网格虽收敛，Cd/Cl/压降尚不合格；结果及原始场见 `artifacts/current/laminar-foundation/early-anderson*`。
 
 `tools/benchmarks/openfoam.py` 将已有 OpenFOAM 导出网格的边界重新分组，保留点、内部面、owner/neighbour 和单元编号，准备稳态层流对照。准备后在有 OpenFOAM 的环境执行 `checkMesh -case CASE`、`simpleFoam -case CASE > CASE/solve.log 2>&1`，再 `python3 tools/benchmarks/openfoam.py --output CASE --collect`。例如：
@@ -57,7 +64,7 @@ build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/dfg20-l7.solver.cm2d --c
 python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outputs/laminar-baseline/meshes/cavity100-l6/openfoam --mesh outputs/laminar-baseline/meshes/cavity100-l6/mesh.solver.cm2d --case cavity100
 ```
 
-该对照的 OpenFOAM `linearUpwind` 与原生 `limited-linear` 分别记录，不能声称格式完全相同。OpenFOAM 自身残差通过仍须比较物理误差；未完成或中断的运行不算通过。
+该对照的 OpenFOAM `linearUpwind` 与原生 `limited-linear` 分别记录，不能声称格式完全相同。OpenFOAM 自身残差通过仍须比较物理误差；未完成或中断的运行不算通过。`--stabilized` 显式选择 `cellLimited leastSquares 1` 和 `limited 0.5` 非正交修正。每个尝试使用新目录；读取器按最终场时间查找唯一受力记录（包含 OpenFOAM 重跑生成的 `force_0.dat`），拒绝旧记录混用，并保存实际 fvSchemes/fvSolution/controlDict 与 CPU/墙钟耗时。
 
 `artifacts/current/laminar-foundation/rejected-implicit-pressure.patch` 保留未奏效的完整非正交压力 GMRES 试验，可在原 `6ec4edf` 求解器上复现，CLI 选项为 `--pressure-correction implicit`。它只用于解释已试过的方向，不应在未解决问题时作为修复合入。对应细圆环第 10/20 轮动量残差约 `4309.5 / 694436`，故下一步须继续检查外迭代动量—压力耦合，而不能假定只换压力线性求解器即可消除发散。
 

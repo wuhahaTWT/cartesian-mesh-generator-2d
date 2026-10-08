@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 import re
 import shutil
@@ -23,7 +24,9 @@ def dictionary(root, location, name, body):
     path.write_text(foam.header('dictionary',location,name)+body+'\n')
 
 
-def prepare(case, source, mesh_file, root, scheme, iterations):
+def prepare(case, source, mesh_file, root, scheme, iterations, stabilized=False):
+    if (root/'comparison.json').exists():
+        raise ValueError('comparison directory already exists; use a fresh directory to retain prior fields and forces')
     source=source/'constant/polyMesh'
     target=root/'constant/polyMesh'
     target.mkdir(parents=True, exist_ok=True)
@@ -69,12 +72,14 @@ def prepare(case, source, mesh_file, root, scheme, iterations):
     dictionary(root,'constant','transportProperties',f'transportModel Newtonian;\nnu [0 2 -1 0 0 0 0] {laminar.controls(case)["nu"]};')
     dictionary(root,'constant','turbulenceProperties','simulationType laminar;')
     convection='upwind' if scheme=='upwind' else 'linearUpwind grad(U)'
+    gradient='cellLimited leastSquares 1' if stabilized else 'leastSquares'
+    correction='limited 0.5' if stabilized else 'corrected'
     dictionary(root,'system','fvSchemes',f'''ddtSchemes {{ default steadyState; }}
-gradSchemes {{ default leastSquares; }}
+gradSchemes {{ default {gradient}; }}
 divSchemes {{ default none; div(phi,U) bounded Gauss {convection}; div((nuEff*dev2(T(grad(U))))) Gauss linear; }}
-laplacianSchemes {{ default Gauss linear corrected; }}
+laplacianSchemes {{ default Gauss linear {correction}; }}
 interpolationSchemes {{ default linear; }}
-snGradSchemes {{ default corrected; }}
+snGradSchemes {{ default {correction}; }}
 wallDist {{ method meshWave; }}''')
     dictionary(root,'system','fvSolution','''solvers
 {
@@ -96,7 +101,25 @@ timeFormat general; timePrecision 10; runTimeModifiable false;
         meshSha256=laminar.meshio.sha256_file(mesh_file),source=str(source.resolve()),
         pointsUnchanged=True,internalFacesUnchanged=True,cellNumberingUnchanged=True,
         boundaryPermutation=order[len(neighbours):],convection=convection,
-        gradient='leastSquares',note='OpenFOAM linearUpwind and native limited-linear are distinct discretizations.'))
+        gradient=gradient,nonOrthogonalCorrection=correction,
+        note='OpenFOAM linearUpwind and native limited-linear are distinct discretizations.'))
+
+
+def force_at_time(directory, time):
+    # OpenFOAM adds _0, _1, ... when an output file already exists. Never read
+    # an old divergent run's force.dat merely because it has the familiar name.
+    matches=[]
+    for file in sorted(directory.glob('*/force*.dat')):
+        for line in file.read_text().splitlines():
+            if not line.strip() or line.lstrip().startswith('#'):continue
+            values=[float(v) for v in re.findall(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?',line)]
+            if values and values[0]==time:
+                if len(values)!=10 or not all(math.isfinite(v) for v in values):
+                    raise ValueError('invalid OpenFOAM force record in '+str(file))
+                matches.append((file,values))
+    if len(matches)!=1:
+        raise ValueError(f'expected one force record at field time {time}, found {len(matches)}; use a fresh comparison directory')
+    return matches[0]
 
 
 def collect(root):
@@ -113,18 +136,25 @@ def collect(root):
         for i,(centre,area) in enumerate(zip(measured.centroids,measured.areas)):
             writer.writerow([i,*centre,area,*u[i][:2],p[i]])
     log=(root/'solve.log').read_text()
-    converged='SIMPLE solution converged' in log
+    last_times=re.findall(r'^Time = ([0-9.eE+-]+)\s*$',log,re.MULTILINE)
+    declared=re.findall(r'SIMPLE solution converged in ([0-9]+) iterations',log)
+    field_time=float(final.name)
+    converged=bool(declared and last_times and float(declared[-1])==field_time
+                   and float(last_times[-1])==field_time and 'FOAM FATAL' not in log)
     summary=dict(namedWallLoads=[])
     if config['case']=='dfg20':
-        force_files=list((root/'postProcessing/wallLoads').glob('*/force.dat'))
-        if not force_files:raise ValueError('missing OpenFOAM cylinder forces')
-        last=[line for line in force_files[-1].read_text().splitlines() if line and not line.startswith('#')][-1]
-        numbers=[float(v) for v in re.findall(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?',last)]
+        force_file,numbers=force_at_time(root/'postProcessing/wallLoads',field_time)
         # force.dat: time, total vector, pressure vector, viscous vector.
         depth=max(v[2] for v in foam.read_points(root/'constant/polyMesh/points'))-min(v[2] for v in foam.read_points(root/'constant/polyMesh/points'))
         summary['namedWallLoads']=[dict(name='cylinder',forceX=numbers[1]/depth,forceY=numbers[2]/depth)]
-    result=dict(case=config['case'],scheme=config['scheme'],iterations=float(final.name),converged=converged,
-        metrics=laminar.evaluate(config['case'],prefix,summary),meshSha256=config['meshSha256'])
+    execution=re.findall(r'ExecutionTime = ([0-9.eE+-]+) s\s+ClockTime = ([0-9.eE+-]+) s',log)
+    result=dict(case=config['case'],scheme=config['scheme'],iterations=field_time,converged=converged,
+        status='converged' if converged else 'not-converged',
+        metrics=laminar.evaluate(config['case'],prefix,summary),meshSha256=config['meshSha256'],
+        actualDictionaries={name:(root/'system'/name).read_text() for name in ('fvSchemes','fvSolution','controlDict')},
+        executionSeconds=float(execution[-1][0]) if execution else None,
+        wallSeconds=float(execution[-1][1]) if execution else None)
+    if config['case']=='dfg20':result['forceFile']=str(force_file.relative_to(root))
     laminar.write_json(root/'result.json',result)
     print({**result,'metrics':{k:v for k,v in result['metrics'].items() if isinstance(v,(float,int))}})
 
@@ -138,8 +168,9 @@ if __name__=='__main__':
     parser.add_argument('--case',choices=laminar.CASES)
     parser.add_argument('--scheme',choices=['upwind','limited-linear'],default='limited-linear')
     parser.add_argument('--iterations',type=int,default=16000)
+    parser.add_argument('--stabilized',action='store_true',help='cellLimited leastSquares and limited 0.5 nonorthogonal correction')
     args=parser.parse_args()
     if args.collect:collect(args.output)
     else:
         if args.source is None or args.mesh is None or args.case is None:parser.error('prepare requires source, mesh and case')
-        prepare(args.case,args.source,args.mesh,args.output,args.scheme,args.iterations)
+        prepare(args.case,args.source,args.mesh,args.output,args.scheme,args.iterations,args.stabilized)

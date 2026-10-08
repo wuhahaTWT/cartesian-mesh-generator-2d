@@ -1,0 +1,19 @@
+{
+  "format": "cartmesh2d-native-flow-case-v1",
+  "options": {
+    "mesh": "../../../outputs/laminar-inputs/dfg20-l7.solver.cm2d",
+    "boundary": "../../../outputs/laminar-inputs/dfg20-l7.boundaries",
+    "output": "../../../outputs/laminar-case-file/dfg20/flow",
+    "case": "custom",
+    "nu": 0.001,
+    "speed": 0.3,
+    "convection": "limited-linear",
+    "pressure-preconditioner": "ic0",
+    "max-iterations": 16000,
+    "tolerance": 1e-08,
+    "steady-acceleration": "anderson",
+    "anderson-history": 16,
+    "anderson-start": 1,
+    "profile": true
+  }
+}
