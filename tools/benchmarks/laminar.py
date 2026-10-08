@@ -80,15 +80,16 @@ def circle(n, radius, centre=(0., 0.)):
     return result
 
 
-def geometry(case, level):
+def geometry(case, level, segments=None):
+    segments = segments if segments is not None else 4*2**level
     if case.startswith("cavity"):
         return [[(0,0),(1,0),(1,1),(0,1)]]
     if case == "poiseuille":
         return [[(0,0),(2,0),(2,1),(0,1)]]
     if case == "dfg20":
         return [[(0,0),(2.2,0),(2.2,.41),(0,.41)],
-                circle(4*2**level, .05, (.2,.2))]
-    return [circle(4*2**level, 1), circle(4*2**level, .5)]
+                circle(segments, .05, (.2,.2))]
+    return [circle(segments, 1), circle(segments, .5)]
 
 
 def controls(case):
@@ -117,18 +118,18 @@ def boundary_values(case, x, y, sx, sy):
     return "wall", name, 0.,0.,0.
 
 
-def prepare(case, level, root, mesh_cli, timeout, layout='native'):
+def prepare(case, level, root, mesh_cli, timeout, layout='native', segments=None):
     directory=root / "meshes" / f"{case}-l{level}"
     directory.mkdir(parents=True, exist_ok=True)
     manifest=directory / "mesh.json"
     if manifest.exists():
         record=json.loads(manifest.read_text())
-        if record.get('layout','native') != layout:
-            raise ValueError('mesh layout changed; use a fresh output directory')
+        if record.get('layout','native') != layout or record.get('geometrySegments') != segments:
+            raise ValueError('mesh layout or geometry resolution changed; use a fresh output directory')
         return record
     xy=directory / "boundary.xy"
     xy.write_text("\n\n".join("\n".join(f"{x:.17g} {y:.17g}" for x,y in loop)
-                              for loop in geometry(case,level))+"\n")
+                              for loop in geometry(case,level,segments))+"\n")
     prefix=directory / "mesh"
     # One background cell outside each side gives nested interior cell sizes.
     padding=1/(2**level-2)
@@ -137,8 +138,15 @@ def prepare(case, level, root, mesh_cli, timeout, layout='native'):
         command += ['--size-field','--far-field-spans',padding,
                     '--wall-cells-per-span',2**level-2,'--cells-per-level',0,'--far-level',level]
     generation=run(command,directory/"generation.log",timeout)
-    record=dict(case=case,level=level,layout=layout,generation=generation,path=str(prefix)+".solver.cm2d",
+    record=dict(case=case,level=level,layout=layout,geometrySegments=segments,generation=generation,path=str(prefix)+".solver.cm2d",
                 boundary=str(directory/"flow.boundaries"),geometry=str(xy),openfoam=str(directory/"openfoam"))
+    record['geometrySha256']=meshio.sha256_file(xy)
+    if case in ('annulus','dfg20'):
+        facets=segments if segments is not None else 4*2**level
+        radii=[1.,.5] if case=='annulus' else [.05]
+        record['circleApproximation']=[dict(radius=r,facets=facets,
+            maximumSagitta=r*(1-math.cos(math.pi/facets)),
+            circleAreaMinusPolygonArea=r*r*(math.pi-.5*facets*math.sin(2*math.pi/facets))) for r in radii]
     if generation["returnCode"] == 0:
         mesh=meshio.read_cm2d(Path(record["path"]))
         measured=meshio.measure(mesh)
@@ -151,7 +159,7 @@ def prepare(case, level, root, mesh_cli, timeout, layout='native'):
                 kind,name,u,v,p=boundary_values(case,x,y,sx,sy)
                 stream.write(f'BOUNDARY {edge.id} {edge.owner} {x:.17g} {y:.17g} {sx:.17g} {sy:.17g} {kind} "{name}" {u:.17g} {v:.17g} {p:.17g}\n')
             stream.write("END\n")
-        record.update(cells=len(mesh.cells),h=measured.characteristic_h,
+        record.update(cells=len(mesh.cells),h=measured.characteristic_h,fluidArea=measured.total_area,
                       meshSha256=meshio.sha256_file(Path(record["path"])))
     write_json(manifest,record)
     return record
@@ -173,6 +181,9 @@ def evaluate(case, prefix, summary):
                 actual=meshio.affine_sample(rows,x,y,field,boundary=walls)
                 samples.append(dict(field=field,coordinate=coordinate,actual=actual,reference=expected,error=actual-expected))
         result.update(ghiaRmse=rms([r['error'] for r in samples]),ghiaMax=max(abs(r['error']) for r in samples),samples=samples)
+        if reynolds==400:
+            result['referenceNotes']=[dict(field='v',coordinate=.9063,reference=-.23827,
+                note='Suspicious printed Ghia Table II entry retained in every metric; no substitution or exclusion.')]
         if reynolds==100:
             ref=json.loads((ROOT/'tools/verification/references/cavity-marchi-2009-re100.json').read_text())
             errors=[]
@@ -290,6 +301,7 @@ def main():
     parser.add_argument('--schemes',nargs='+',default=['upwind','limited-linear'])
     parser.add_argument('--mesh-cli',type=Path,default=ROOT/'build/cartmesh2d_cli')
     parser.add_argument('--mesh-layout',choices=['native','square'],default='native')
+    parser.add_argument('--geometry-segments',type=int,help='fixed polygon facet count for each circle across all mesh levels; default is 4*2**level')
     parser.add_argument('--preconditioner',choices=['jacobi','ic0','aggregation','cholesky'],
                         default='cholesky' if platform.system()=='Darwin' else 'ic0')
     parser.add_argument('--flow-cli',type=Path,default=ROOT/'build/cartmesh2d_flow_cli')
@@ -304,7 +316,10 @@ def main():
     parser.add_argument('--rerun',action='store_true')
     parser.add_argument('--prepare-only',action='store_true')
     parser.add_argument('--extra',nargs=argparse.REMAINDER,default=[])
-    args=parser.parse_args();args.output=args.output.resolve();args.flow_cli=args.flow_cli.resolve();args.mesh_cli=args.mesh_cli.resolve()
+    args=parser.parse_args()
+    if args.geometry_segments is not None and (args.geometry_segments<8 or args.geometry_segments%4):
+        parser.error('--geometry-segments must be a multiple of four, at least eight')
+    args.output=args.output.resolve();args.flow_cli=args.flow_cli.resolve();args.mesh_cli=args.mesh_cli.resolve()
     args.output.mkdir(parents=True,exist_ok=True)
     args.binary_hash=meshio.sha256_file(args.flow_cli)
     # A queued run must not pick up a later rebuild of build/ midway through
@@ -315,7 +330,7 @@ def main():
     if meshio.sha256_file(binary)!=args.binary_hash:raise ValueError('benchmark executable snapshot hash mismatch')
     args.flow_cli=binary
     for case in args.cases:
-        for level in args.levels:prepare(case,level,args.output,args.mesh_cli,args.timeout,args.mesh_layout)
+        for level in args.levels:prepare(case,level,args.output,args.mesh_cli,args.timeout,args.mesh_layout,args.geometry_segments)
     if args.prepare_only:return
     jobs=[(case,level,scheme) for case in args.cases for level in args.levels for scheme in args.schemes]
     records=[]

@@ -38,6 +38,8 @@ cmake --build build --target cartmesh2d_cli cartmesh2d_flow_cli --parallel 4
 python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5 6 7 --workers 2
 ```
 
+`--geometry-segments N` 可固定各圆的原始多边形段数，再单独细化计算网格；默认仍是 `4*2**level`。记录保存几何哈希、实际流体面积、相对解析圆的最大弓高和面积差，输出目录拒绝混用不同段数。固定多边形系列的离散收敛与同时加密几何的圆形参考误差须分开解释；更少段数并不授予曲壁精度资格。Re400 的 Ghia `v(.9063,.5)=-.23827` 原表可疑点明确标记，但继续参与全部原表误差统计。
+
 上述完整矩阵保留已知失败。`--mesh-layout square` 用等尺寸笛卡尔背景，适于 DFG 的长矩形外域；须使用新输出目录，不能把不同网格策略冒充同一细化序列。`--prepare-only` 只准备输入。当前细曲壁网格仍可能质量失败，求解器亦可能发散，均需继续修复。
 
 仓库保存了约 574 KiB 的原始失败输入，云端无需读取本机 `outputs/` 即可重现细圆环与 DFG：
