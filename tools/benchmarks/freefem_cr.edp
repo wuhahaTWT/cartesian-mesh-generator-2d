@@ -1,0 +1,5 @@
+// FreeFEM's native two-dimensional Crouzeix--Raviart/P0 pair.
+// Boundary velocity DOFs are edge means, matching native FV face data.
+macro VelocityElement P1nc //
+macro PressureElement P0 //
+include "freefem_core.idp"

@@ -1,0 +1,5 @@
+// FreeFEM's native two-dimensional Taylor--Hood pair.
+// Use the continuous boundary control, not conflicting facet values at corners.
+macro VelocityElement P2 //
+macro PressureElement P1 //
+include "freefem_core.idp"

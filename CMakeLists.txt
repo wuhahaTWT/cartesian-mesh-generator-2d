@@ -130,6 +130,9 @@ add_executable(cartmesh2d_flow_momentum_probe EXCLUDE_FROM_ALL tools/benchmarks/
 target_include_directories(cartmesh2d_flow_momentum_probe PRIVATE src/fv)
 target_link_libraries(cartmesh2d_flow_momentum_probe PRIVATE cartmesh2d_fv)
 cartmesh2d_enable_warnings(cartmesh2d_flow_momentum_probe)
+add_executable(cartmesh2d_freefem_mesh EXCLUDE_FROM_ALL tools/benchmarks/freefem_mesh.cpp)
+target_link_libraries(cartmesh2d_freefem_mesh PRIVATE cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_freefem_mesh)
 
 add_executable(cartmesh2d_transport_cli apps/cartmesh2d_transport_cli.cpp)
 target_link_libraries(cartmesh2d_transport_cli PRIVATE cartmesh2d_fv)

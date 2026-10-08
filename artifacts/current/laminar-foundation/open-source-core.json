@@ -1,0 +1,2352 @@
+{
+  "format": "cartmesh2d-native-freefem-reference-v1",
+  "sourceBase": "d51d8eb7dc10c395723771fd5d13f859da24f839",
+  "sourceQualifier": "Uncommitted adapter snapshot at execution; numerical source hashes below and per-run metadata identify the actual code. Product FV numerical code unchanged from sourceBase.",
+  "sourceSha256": {
+    "CMakeLists.txt": "ef0f7c1a926f4ba466470a93f498ef26406aac483d4a389e98264ee4cfb63786",
+    "tools/benchmarks/freefem_cr.edp": "8fdaa4977e6cb0d46866facc4ad0b1a3a66cfc6770f2e43ec57dbe3dc6ff702c",
+    "tools/benchmarks/freefem_mesh.cpp": "90e0024b3d597037c2cd2bb0ec33fc8ab47db31c5f410039e29c6eeed745cdfa",
+    "tools/benchmarks/freefem_reference.py": "75982eb141900ec80812e00c8665bcc2e590ef39c0c460360b7c2420eda40219",
+    "tools/benchmarks/freefem_core.idp": "42e0f5ad6f13137087ffea0f6fabc75176f80c04ad03c330bcb03ae029b79fe1",
+    "tools/benchmarks/freefem_th.edp": "92bbd810c8414a62b3814e53432410fb38d427c15f6ec2ad31dce8d2fe263db6"
+  },
+  "dependency": {
+    "referenceUpstreamCommit": "b1e524c8ca6a9b44cb9eff780459bacfc12a3ad7",
+    "installedBinaryPackage": "Debian FreeFEM 4.15+dfsg-1 amd64; distribution build, not a locally compiled pristine upstream tag",
+    "packageUrls": [
+      "https://deb.debian.org/debian/pool/main/f/freefem++/freefem++_4.15+dfsg-1_amd64.deb",
+      "https://deb.debian.org/debian/pool/main/f/freefem++/libfreefem++_4.15+dfsg-1_amd64.deb"
+    ],
+    "sha256": {
+      "outputs/open-source-core/packages/freefem_4.15.deb": "220f0fe303e4352b8be40b81c8e552a5766308ebe43c2d565d743086bbff6e9e",
+      "outputs/open-source-core/packages/libfreefem_4.15.deb": "43bc97d476f3f73b4b71d747d2df03d77327a37072fe7c57864cea2de8f86d20",
+      "outputs/open-source-core/runtime/usr/bin/FreeFem++": "01093e07e9d44bb2f0555022073915e852e1b380482281eed195b8ee9777cc03",
+      "outputs/open-source-core/runtime/usr/share/doc/freefem++/copyright": "dbab526806c6a8a4c779b3d2ba23cc01bf6505e483a564e99eb2b5fd0054e529"
+    },
+    "license": "FreeFEM LGPL-2.1; Debian copyright also identifies separately licensed packaged components. Runtime/packages are retained locally and not committed.",
+    "references": [
+      {
+        "path": "examples/examples/NSNewton.md",
+        "gitBlob": "13c61edc6499da3fd9a19886d46ff59c4cf89df8",
+        "use": "Native Newton weak formulation, independently expressed as total-iterate system; original example pressure penalty replaced by exact mean constraint."
+      },
+      {
+        "path": "examples/tutorial/Laplace-lagrange-mult.edp",
+        "gitBlob": "1ccf75e071f5594e0b721a8b3bc7a3aba637e8ab",
+        "use": "Exact global mean constraint block assembly; retained initially, later replaced by exact point gauge with complete continuity residual check for sparse solve performance."
+      },
+      {
+        "url": "https://doc.freefem.org/documentation/finite-element.html",
+        "use": "Native P1nc edge-midpoint/edge-average degrees of freedom and P0 pressure."
+      }
+    ]
+  },
+  "originalInputArchive": {
+    "path": "artifacts/current/laminar-foundation/failure-inputs.tar.gz",
+    "sha256": "aec834d3b4543da2aade996d685c2e1785867b7ee953704a4918b65a3a58dfb0"
+  },
+  "finalExternalRuns": [
+    {
+      "name": "cr-l5-ns",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 484,
+        "ntri": 1928,
+        "nverts": 1076,
+        "originalVertices": 592,
+        "nf": 1076,
+        "boundaryFaces": 224,
+        "originalArea": 2.3524113679094545,
+        "triangleArea": 2.3524113679094545,
+        "areaDifference": -2.1033522146218786e-17,
+        "maximumCellAreaDifference": 4.0911691352382706e-19,
+        "minimumTriangleArea": 3.487753047659725e-05,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 4,
+        "triangles": 1928,
+        "vertices": 1076,
+        "degreesOfFreedom": 7936,
+        "area": 2.352411367909445,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 1.3244960683778118e-13,
+        "scaledResidual": 2.8999503496838952e-15,
+        "absoluteResidual": 8.699851049051685e-16,
+        "linearResidual": 7.105047886840632e-16,
+        "pressureMean": -1.0868175231686068e-17,
+        "pressureRms": 0.01354074571833561,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 3.1329979246739247e-17,
+        "velocityRms": 0.2287808232248997,
+        "strongDivergenceRms": 2.6033399216551606e-15,
+        "netBoundaryFlux": 4.119968255444917e-18,
+        "originalFacetMidpointVelocityDifference": 1.2412670766236366e-16,
+        "dirichletDofVelocityMismatch": 2.79831904550349e-34,
+        "boundaryNormalVelocityL2": 0.021883371053210976,
+        "circleVelocityL2": 0.003555572636082789,
+        "circlePressureMeanFreeL2": 0.024296742546872196,
+        "solveAndDiagnosticsCpuSeconds": 5.068498
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.017888167999444704,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-ns.export.log",
+          "sha256": "a7b45ac22568a056cfabb91c9817aa931d396f38bf85614f4d69e284cdff0ea8"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 5.240205461000187,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-ns.solve.log",
+          "sha256": "1bdc5e122e0d036464d646398f97d90f3b13a56e61dfc2ebf5ee91438d1f10e9"
+        }
+      ],
+      "metadataSha256": "cd39555e4dd1f1f63729f67712562bf076eef2ad80956e9a17bbf30cdf0b4592",
+      "metadata": "outputs/open-source-core/final/cr-l5-ns.run.json",
+      "fields": {
+        ".cells.csv": "95036311d4719781b1e2502cd3f8b9515f8b71d8fc12ac806bfeb207a1e51464",
+        ".fe-solution.txt": "b2ddd15b51706f5a75678cd1691daa1e2f896b5dc5447221ba7a2d0bf853cf10",
+        ".iterations.csv": "2948968a18142f7d4349f2f205decc7eff1e6fced7e41f331ad4b209f4d7bed5"
+      }
+    },
+    {
+      "name": "cr-l5-stokes",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 0,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 484,
+        "ntri": 1928,
+        "nverts": 1076,
+        "originalVertices": 592,
+        "nf": 1076,
+        "boundaryFaces": 224,
+        "originalArea": 2.3524113679094545,
+        "triangleArea": 2.3524113679094545,
+        "areaDifference": -2.1033522146218786e-17,
+        "maximumCellAreaDifference": 4.0911691352382706e-19,
+        "minimumTriangleArea": 3.487753047659725e-05,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 2,
+        "triangles": 1928,
+        "vertices": 1076,
+        "degreesOfFreedom": 7936,
+        "area": 2.352411367909445,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 0,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 0,
+        "scaledResidual": 1.3474464599649849e-14,
+        "absoluteResidual": 6.737232299824925e-16,
+        "linearResidual": 6.036837696399289e-16,
+        "pressureMean": 1.2319302848464965e-18,
+        "pressureRms": 0.005796326569079251,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 1.4072810350174677e-17,
+        "velocityRms": 0.22878328603212544,
+        "strongDivergenceRms": 2.6686947858760954e-15,
+        "netBoundaryFlux": 7.643625316022806e-18,
+        "originalFacetMidpointVelocityDifference": 1.2412670766236366e-16,
+        "dirichletDofVelocityMismatch": 2.738579907364461e-32,
+        "boundaryNormalVelocityL2": 0.021873203551361364,
+        "circleVelocityL2": 0.003459550483964321,
+        "circlePressureMeanFreeL2": 0.023185306276313374,
+        "solveAndDiagnosticsCpuSeconds": 1.4721009999999999
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-stokes-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.025464821999776177,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-stokes.export.log",
+          "sha256": "a7b45ac22568a056cfabb91c9817aa931d396f38bf85614f4d69e284cdff0ea8"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-stokes-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-stokes",
+            "--inertia",
+            "0",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 1.6490376949996062,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l5-stokes.solve.log",
+          "sha256": "150e44a15276c6c5d88306c6daa156a00b0b9792ff8bb08c07f388064e7d34d5"
+        }
+      ],
+      "metadataSha256": "7e4f55e55d6ac52d96c6679c3b8b5669f44794fae94181ca28c68bb44de7e387",
+      "metadata": "outputs/open-source-core/final/cr-l5-stokes.run.json",
+      "fields": {
+        ".cells.csv": "ca0787cc84cc4a395428ba8c649d42fa2450b9206f9ed18a508a7d4bc99de0ac",
+        ".fe-solution.txt": "c31c6285d1034ce1b7b6574475210d733ed2cc809e1761aa448781735af279c6",
+        ".iterations.csv": "d81804ff76a6ffe908b3ed4a8fec5dd317e901bd574bdd12ed0cb7aa3763c6eb"
+      }
+    },
+    {
+      "name": "cr-l6-ns",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 1672,
+        "ntri": 6696,
+        "nverts": 3600,
+        "originalVertices": 1928,
+        "nf": 3600,
+        "boundaryFaces": 504,
+        "originalArea": 2.3552483677160647,
+        "triangleArea": 2.3552483677160647,
+        "areaDifference": -4.662069341687669e-17,
+        "maximumCellAreaDifference": 1.0323214044661785e-19,
+        "minimumTriangleArea": 2.965267779237001e-06,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 4,
+        "triangles": 6696,
+        "vertices": 3600,
+        "degreesOfFreedom": 27288,
+        "area": 2.3552483677151836,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 1.1196044091832391e-12,
+        "scaledResidual": 1.3260351611242907e-14,
+        "absoluteResidual": 3.978105483372872e-15,
+        "linearResidual": 1.1691828705011603e-15,
+        "pressureMean": 3.4862777531341408e-15,
+        "pressureRms": 0.013012616290816471,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 4.0385066141721497e-17,
+        "velocityRms": 0.2291635815051205,
+        "strongDivergenceRms": 5.544699748716602e-15,
+        "netBoundaryFlux": -3.0086610286472748e-18,
+        "originalFacetMidpointVelocityDifference": 1.2412670766236366e-16,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.010731889879677946,
+        "circleVelocityL2": 0.0011187306626302001,
+        "circlePressureMeanFreeL2": 0.015783993251748295,
+        "solveAndDiagnosticsCpuSeconds": 19.145104
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.08915296399936778,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-ns.export.log",
+          "sha256": "5f8f7ed21e9e637fee718ad0d3f6a17d128e7ad9fefa6a9fdba7748f383fe989"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 19.756415955999728,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-ns.solve.log",
+          "sha256": "bf00f934db59c4e8fc02d64a88f90f49b834ce5d28e3009911eef69faad63e2b"
+        }
+      ],
+      "metadataSha256": "089a89911a8e8df81bd1223a301cc616afef6076bf790437e5d5f4c63f37dbc7",
+      "metadata": "outputs/open-source-core/final/cr-l6-ns.run.json",
+      "fields": {
+        ".cells.csv": "983f8c24f687ec9562032c922d458b1a7d676b2ebb313a140a8d335590d89075",
+        ".fe-solution.txt": "52e556bb09400452bd0980ed133f61e6bfd3c7a4f92ba6cc3e8c56a0061af466",
+        ".iterations.csv": "fdba90b2ef91f628c93ebb5f4b03686bc66a5710e9197c51ea3547fec63f311e"
+      }
+    },
+    {
+      "name": "cr-l6-stokes",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 0,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 1672,
+        "ntri": 6696,
+        "nverts": 3600,
+        "originalVertices": 1928,
+        "nf": 3600,
+        "boundaryFaces": 504,
+        "originalArea": 2.3552483677160647,
+        "triangleArea": 2.3552483677160647,
+        "areaDifference": -4.662069341687669e-17,
+        "maximumCellAreaDifference": 1.0323214044661785e-19,
+        "minimumTriangleArea": 2.965267779237001e-06,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 2,
+        "triangles": 6696,
+        "vertices": 3600,
+        "degreesOfFreedom": 27288,
+        "area": 2.3552483677151836,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 0,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 0,
+        "scaledResidual": 7.559165966786185e-14,
+        "absoluteResidual": 3.779582983393093e-15,
+        "linearResidual": 1.7763568394002505e-15,
+        "pressureMean": 2.7841038350497364e-16,
+        "pressureRms": 0.0038217645128357756,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 4.9340712980298306e-17,
+        "velocityRms": 0.22916729399675206,
+        "strongDivergenceRms": 6.174403086916073e-15,
+        "netBoundaryFlux": -3.8285889215894375e-18,
+        "originalFacetMidpointVelocityDifference": 1.2412670766236366e-16,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.010729144920356497,
+        "circleVelocityL2": 0.0010878923657222231,
+        "circlePressureMeanFreeL2": 0.015287058051340358,
+        "solveAndDiagnosticsCpuSeconds": 4.192069
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-stokes-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.07028596600048331,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-stokes.export.log",
+          "sha256": "5f8f7ed21e9e637fee718ad0d3f6a17d128e7ad9fefa6a9fdba7748f383fe989"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-stokes-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-stokes",
+            "--inertia",
+            "0",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 4.395560594000017,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l6-stokes.solve.log",
+          "sha256": "500601c0ac8d755f5b80890c4ad31c0113703b7a3b827a32c13b243fb2424441"
+        }
+      ],
+      "metadataSha256": "9d0e3dd0997efe3f10b4b4fb8cf34b58cdca37accc3ff0ade31fa615bff2916a",
+      "metadata": "outputs/open-source-core/final/cr-l6-stokes.run.json",
+      "fields": {
+        ".cells.csv": "58ff88d5c9d8543c6be0ff6eb7eb7e294996d03caf710f6f6ca0ab09cd072c71",
+        ".fe-solution.txt": "0632182034bcfd11ce8a13c9ec629bd3e50736bf9b8f86190c7a74b11f077cd0",
+        ".iterations.csv": "6bdc1e48b8a595d95440fe785ed0ffd80c92971253159a195c7f801e365c1540"
+      }
+    },
+    {
+      "name": "cr-l7-ns",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 6208,
+        "ntri": 24836,
+        "nverts": 12910,
+        "originalVertices": 6702,
+        "nf": 12910,
+        "boundaryFaces": 984,
+        "originalArea": 2.35595793819958,
+        "triangleArea": 2.35595793819958,
+        "areaDifference": -5.724587470723463e-17,
+        "maximumCellAreaDifference": 2.710505431213761e-20,
+        "minimumTriangleArea": 7.049759251924917e-08,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 4,
+        "triangles": 24836,
+        "vertices": 12910,
+        "degreesOfFreedom": 100328,
+        "area": 2.355957938197738,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 1.5075718451385e-12,
+        "scaledResidual": 1.3960148482928838e-14,
+        "absoluteResidual": 4.188044544878651e-15,
+        "linearResidual": 1.6702085762744729e-15,
+        "pressureMean": 6.275011454560503e-15,
+        "pressureRms": 0.012700879444182852,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 5.487210525619155e-17,
+        "velocityRms": 0.22930124390824388,
+        "strongDivergenceRms": 9.21998340725154e-15,
+        "netBoundaryFlux": -3.8963515573697816e-18,
+        "originalFacetMidpointVelocityDifference": 1.7554167342883506e-16,
+        "dirichletDofVelocityMismatch": 7.787887538039938e-33,
+        "boundaryNormalVelocityL2": 0.005862702118400966,
+        "circleVelocityL2": 0.00031346142814818917,
+        "circlePressureMeanFreeL2": 0.009541117108498228,
+        "solveAndDiagnosticsCpuSeconds": 48.0685
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.1847845430002053,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-ns.export.log",
+          "sha256": "836c9176eb4d592a36f6b95b78504ba873f04bba9717bac06f828f2618e6ac7a"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 48.88805728300031,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-ns.solve.log",
+          "sha256": "87ec46fff5d2c2c41932aa339f84020cc0fa63ebfeab1c4c928333ee480da919"
+        }
+      ],
+      "metadataSha256": "72d9a51cd107dbcece3fad9a7e854927a2f961a92c146f6a5cf8b977d87af256",
+      "metadata": "outputs/open-source-core/final/cr-l7-ns.run.json",
+      "fields": {
+        ".cells.csv": "57c37a89a8e967398fa1be899ded2c649de98067eec40ed3c50a15533d5dbc4a",
+        ".fe-solution.txt": "3eade85bca187eabdb6cff5f371963adb25bb7047c76671ef0edf0984efd1f3f",
+        ".iterations.csv": "820957d30e2d6a30e5de266a0bdd1d263a3c7f983a4cf435ec8e04d7e6171331"
+      }
+    },
+    {
+      "name": "cr-l7-stokes",
+      "controls": {
+        "space": "cr",
+        "trace": "facets",
+        "stress": "laplacian",
+        "inertia": 0,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 6208,
+        "ntri": 24836,
+        "nverts": 12910,
+        "originalVertices": 6702,
+        "nf": 12910,
+        "boundaryFaces": 984,
+        "originalArea": 2.35595793819958,
+        "triangleArea": 2.35595793819958,
+        "areaDifference": -5.724587470723463e-17,
+        "maximumCellAreaDifference": 2.710505431213761e-20,
+        "minimumTriangleArea": 7.049759251924917e-08,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 2,
+        "triangles": 24836,
+        "vertices": 12910,
+        "degreesOfFreedom": 100328,
+        "area": 2.355957938197738,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 0,
+        "symmetricStress": 0,
+        "boundaryMode": "facets",
+        "scaledUpdate": 0,
+        "scaledResidual": 4.268964738998737e-14,
+        "absoluteResidual": 2.1344823694993686e-15,
+        "linearResidual": 2.220446049250313e-15,
+        "pressureMean": -4.2513286752045464e-17,
+        "pressureRms": 0.002332754013527976,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 2.237001347006095e-17,
+        "velocityRms": 0.22930222490641397,
+        "strongDivergenceRms": 7.733819072757762e-15,
+        "netBoundaryFlux": -3.603278157619794e-18,
+        "originalFacetMidpointVelocityDifference": 1.7554167342883506e-16,
+        "dirichletDofVelocityMismatch": 4.5449083808577474e-32,
+        "boundaryNormalVelocityL2": 0.005862054596367231,
+        "circleVelocityL2": 0.00030744869156944455,
+        "circlePressureMeanFreeL2": 0.009331016054110635,
+        "solveAndDiagnosticsCpuSeconds": 32.608394000000004
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-stokes-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.5900281579997682,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-stokes.export.log",
+          "sha256": "836c9176eb4d592a36f6b95b78504ba873f04bba9717bac06f828f2618e6ac7a"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_cr.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-stokes-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-stokes",
+            "--inertia",
+            "0",
+            "--boundary",
+            "facets",
+            "--symmetric",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 33.682835592999254,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/cr-l7-stokes.solve.log",
+          "sha256": "725102414deec7e5655c7df114efd024611254629f9e0e79d42873c3abb344e0"
+        }
+      ],
+      "metadataSha256": "e812c0e7bfbf50ebd06f6e50e065d9b784656ca35f8dcfdc72f03e363af462fa",
+      "metadata": "outputs/open-source-core/final/cr-l7-stokes.run.json",
+      "fields": {
+        ".cells.csv": "6146295793686a9c4b5ed94ea13bf813a6e7e3f78bb0d99f222eb79f22c8cc32",
+        ".fe-solution.txt": "bb54fec2093eacf8444d24c8d43841b30fb379363f821d9dffe5c3372d6e8641",
+        ".iterations.csv": "2dccd66b01195b47644bae49eca67ede9c856050063faca7f8e45d6adf6976b4"
+      }
+    },
+    {
+      "name": "th-l5-exact-ns",
+      "controls": {
+        "space": "th",
+        "trace": "exact",
+        "stress": "symmetric",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 484,
+        "ntri": 1928,
+        "nverts": 1076,
+        "originalVertices": 592,
+        "nf": 1076,
+        "boundaryFaces": 224,
+        "originalArea": 2.3524113679094545,
+        "triangleArea": 2.3524113679094545,
+        "areaDifference": -2.1033522146218786e-17,
+        "maximumCellAreaDifference": 4.0911691352382706e-19,
+        "minimumTriangleArea": 3.487753047659725e-05,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 3,
+        "triangles": 1928,
+        "vertices": 1076,
+        "degreesOfFreedom": 9236,
+        "area": 2.352411367909445,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 1,
+        "boundaryMode": "exact",
+        "scaledUpdate": 1.8086084296875526e-09,
+        "scaledResidual": 3.537604163915221e-15,
+        "absoluteResidual": 1.0612812491745663e-15,
+        "linearResidual": 9.284260372218606e-16,
+        "pressureMean": 3.661822686647983e-18,
+        "pressureRms": 0.012551491404193548,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 10,
+        "pinContinuityResidual": 4.6861611424643985e-17,
+        "velocityRms": 0.22982563218707083,
+        "strongDivergenceRms": 0.002004754871215461,
+        "netBoundaryFlux": 9.383536868801546e-19,
+        "originalFacetMidpointVelocityDifference": 0.019862372117053734,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.025113692760128387,
+        "circleVelocityL2": 5.628829477015026e-05,
+        "circlePressureMeanFreeL2": 0.0010910987019948249,
+        "solveAndDiagnosticsCpuSeconds": 4.78326
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.01569100899996556,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-ns.export.log",
+          "sha256": "a7b45ac22568a056cfabb91c9817aa931d396f38bf85614f4d69e284cdff0ea8"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_th.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "exact",
+            "--symmetric",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 4.917708900999969,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-ns.solve.log",
+          "sha256": "9a1698ca1d273ac653ccd4f00dc3336faebb36fb748da440d689197fb2f41775"
+        }
+      ],
+      "metadataSha256": "2c425f5c9cac17925db0fd2467eecc2a80a7d66528e3f16cc500c1cf7f744e0d",
+      "metadata": "outputs/open-source-core/final/th-l5-exact-ns.run.json",
+      "fields": {
+        ".cells.csv": "d50c211cb5c3ce014f4b8dd0f5abf9ab75b6f38fbfbf10a79d7ee6f3880a9a30",
+        ".fe-solution.txt": "3a3b14180291dbad1280a5f7af13e5b3f677494659b516e1d76a4100ee2a7d6a",
+        ".iterations.csv": "ceadcdb377f2f7ddf9391e082ddb3da442ac6f4379553da81cd8cfb217ba5c78"
+      }
+    },
+    {
+      "name": "th-l5-exact-stokes",
+      "controls": {
+        "space": "th",
+        "trace": "exact",
+        "stress": "symmetric",
+        "inertia": 0,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 484,
+        "ntri": 1928,
+        "nverts": 1076,
+        "originalVertices": 592,
+        "nf": 1076,
+        "boundaryFaces": 224,
+        "originalArea": 2.3524113679094545,
+        "triangleArea": 2.3524113679094545,
+        "areaDifference": -2.1033522146218786e-17,
+        "maximumCellAreaDifference": 4.0911691352382706e-19,
+        "minimumTriangleArea": 3.487753047659725e-05,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 2,
+        "triangles": 1928,
+        "vertices": 1076,
+        "degreesOfFreedom": 9236,
+        "area": 2.352411367909445,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 0,
+        "symmetricStress": 1,
+        "boundaryMode": "exact",
+        "scaledUpdate": 0,
+        "scaledResidual": 2.3574892038524808e-14,
+        "absoluteResidual": 1.1787446019262404e-15,
+        "linearResidual": 8.043297812184748e-16,
+        "pressureMean": 2.519382256749515e-19,
+        "pressureRms": 0.0001938054925591843,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 10,
+        "pinContinuityResidual": 9.824016211173229e-17,
+        "velocityRms": 0.2298256534083587,
+        "strongDivergenceRms": 0.0019063191821563105,
+        "netBoundaryFlux": 9.383536868801546e-19,
+        "originalFacetMidpointVelocityDifference": 0.019862372117053734,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.025113692760128387,
+        "circleVelocityL2": 5.4256823942822306e-05,
+        "circlePressureMeanFreeL2": 0.0007752219702365638,
+        "solveAndDiagnosticsCpuSeconds": 4.684533999999999
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-stokes-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.06580294699961087,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-stokes.export.log",
+          "sha256": "a7b45ac22568a056cfabb91c9817aa931d396f38bf85614f4d69e284cdff0ea8"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_th.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-stokes-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-stokes",
+            "--inertia",
+            "0",
+            "--boundary",
+            "exact",
+            "--symmetric",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 4.79951972300023,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l5-exact-stokes.solve.log",
+          "sha256": "9910d2745ed203d2ee4a15a1bf438c2552ad180cd918ff8cefe7f25752bd0c2d"
+        }
+      ],
+      "metadataSha256": "1cfb47f18d551a1ed606a3a30167333f1f971495592d42d6557b07dfc9740ccc",
+      "metadata": "outputs/open-source-core/final/th-l5-exact-stokes.run.json",
+      "fields": {
+        ".cells.csv": "553aa90e794c13ac64148f0a5fce60e36925dbfeee4d08ea73e976a0d7294bbf",
+        ".fe-solution.txt": "3a20ff1e539166c78dfce66b496fdda5b8b141a09973895cd7635c1d090ee55b",
+        ".iterations.csv": "5c6b8fdb9eb875a833341c77ab91cac559fa89cdc288de785aa8b4fff410b029"
+      }
+    },
+    {
+      "name": "th-l6-exact-ns",
+      "controls": {
+        "space": "th",
+        "trace": "exact",
+        "stress": "symmetric",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 1672,
+        "ntri": 6696,
+        "nverts": 3600,
+        "originalVertices": 1928,
+        "nf": 3600,
+        "boundaryFaces": 504,
+        "originalArea": 2.3552483677160647,
+        "triangleArea": 2.3552483677160647,
+        "areaDifference": -4.662069341687669e-17,
+        "maximumCellAreaDifference": 1.0323214044661785e-19,
+        "minimumTriangleArea": 2.965267779237001e-06,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 3,
+        "triangles": 6696,
+        "vertices": 3600,
+        "degreesOfFreedom": 31392,
+        "area": 2.3552483677151836,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 1,
+        "boundaryMode": "exact",
+        "scaledUpdate": 5.671740854751306e-11,
+        "scaledResidual": 7.3918292435141e-15,
+        "absoluteResidual": 2.2175487730542297e-15,
+        "linearResidual": 1.1391419999938392e-15,
+        "pressureMean": 2.9204653873805652e-15,
+        "pressureRms": 0.012513757764384367,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 2,
+        "pinContinuityResidual": 1.3125303600148195e-16,
+        "velocityRms": 0.2294644512952977,
+        "strongDivergenceRms": 0.00056403281775294,
+        "netBoundaryFlux": -8.971541366746034e-18,
+        "originalFacetMidpointVelocityDifference": 0.012072023258843842,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.012558016872247044,
+        "circleVelocityL2": 8.273732660808291e-06,
+        "circlePressureMeanFreeL2": 0.0003036605558123034,
+        "solveAndDiagnosticsCpuSeconds": 37.503223
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l6.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l6-exact-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.0542859609995503,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l6-exact-ns.export.log",
+          "sha256": "5f8f7ed21e9e637fee718ad0d3f6a17d128e7ad9fefa6a9fdba7748f383fe989"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_th.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l6-exact-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l6-exact-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "exact",
+            "--symmetric",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 38.33587509999961,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l6-exact-ns.solve.log",
+          "sha256": "d4a58fbbe498c52cf65298025f3d7144a48ff2cf5bc822412b61287404ceb950"
+        }
+      ],
+      "metadataSha256": "b832b4c6b46c592428d60e237d047959c34804e1b1d39be19b74208a6b387059",
+      "metadata": "outputs/open-source-core/final/th-l6-exact-ns.run.json",
+      "fields": {
+        ".cells.csv": "0ac298a5c9f8aa3a0b9a027e52aea5490d1b406c25a6cf8d1d6f0df3cbeecc5c",
+        ".fe-solution.txt": "76ec48df8d68df8539742ed846448540e37444f18447abae01da632a38735c30",
+        ".iterations.csv": "60b2a7e30aa6e2e6c2ad417b2c50c0fc4561527ed227f7a07838e9c9dd36e8cc"
+      }
+    },
+    {
+      "name": "th-l7-exact-ns",
+      "controls": {
+        "space": "th",
+        "trace": "exact",
+        "stress": "symmetric",
+        "inertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08
+      },
+      "mesh": {
+        "format": "cartmesh2d-freefem-fan-v1",
+        "benchmark": {
+          "centre": [
+            0,
+            0
+          ],
+          "innerCircumradius": 0.5,
+          "outerCircumradius": 1,
+          "innerSpeed": 0.5
+        },
+        "nc": 6208,
+        "ntri": 24836,
+        "nverts": 12910,
+        "originalVertices": 6702,
+        "nf": 12910,
+        "boundaryFaces": 984,
+        "originalArea": 2.35595793819958,
+        "triangleArea": 2.35595793819958,
+        "areaDifference": -5.724587470723463e-17,
+        "maximumCellAreaDifference": 2.710505431213761e-20,
+        "minimumTriangleArea": 7.049759251924917e-08,
+        "nonpositiveFanTriangles": 0,
+        "cellAndFaceIds": "zero-based",
+        "meshVertexIdsAndBoundaryLabels": "one-based",
+        "triangleRegion": "original cell id + 1",
+        "boundaryLabel": "original face id + 1",
+        "boundaryKindTags": {
+          "internal": 0,
+          "wall": 1,
+          "moving-wall": 2,
+          "smooth-moving-wall": 3
+        },
+        "meditEdgesContain": "physical boundary faces only; all original faces remain shared triangle edges and are also listed in .edges.dat",
+        "geometryValidation": "native makeFvMesh2D and concentric regular polygon annulus preset",
+        "cellTriangleMappingSuffix": ".cell-triangles.csv",
+        "interiorTriangleSamplesSuffix": ".triangles.dat",
+        "triangleSampleMeaning": "triangle interior centroid; exact area-mean sample for CR P1nc velocity and P0 pressure, avoiding ambiguous values at the original FV centre vertex",
+        "originalEdgesSuffix": ".edges.dat"
+      },
+      "result": {
+        "converged": true,
+        "iterations": 3,
+        "triangles": 24836,
+        "vertices": 12910,
+        "degreesOfFreedom": 114222,
+        "area": 2.355957938197738,
+        "nu": 0.1,
+        "speed": 0.5,
+        "inertia": 1,
+        "symmetricStress": 1,
+        "boundaryMode": "exact",
+        "scaledUpdate": 3.775726259425127e-11,
+        "scaledResidual": 1.1120636272195401e-14,
+        "absoluteResidual": 3.3361908816586204e-15,
+        "linearResidual": 1.8852079846607165e-15,
+        "pressureMean": 6.437863012955466e-15,
+        "pressureRms": 0.012504387883547824,
+        "pressureGauge": "exact-point-then-mean",
+        "pressurePinDof": 4,
+        "pinContinuityResidual": 9.75863112511791e-17,
+        "velocityRms": 0.22937485300592148,
+        "strongDivergenceRms": 0.0001393965034885387,
+        "netBoundaryFlux": 2.4470136645298945e-18,
+        "originalFacetMidpointVelocityDifference": 0.006001174035478397,
+        "dirichletDofVelocityMismatch": 0,
+        "boundaryNormalVelocityL2": 0.006279006196001809,
+        "circleVelocityL2": 1.0455678640707799e-06,
+        "circlePressureMeanFreeL2": 7.734316580124876e-05,
+        "solveAndDiagnosticsCpuSeconds": 112.142868
+      },
+      "commandsAndCost": [
+        {
+          "name": "export",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_freefem_mesh",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l7-exact-ns-input"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 0.23140344500006904,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l7-exact-ns.export.log",
+          "sha256": "836c9176eb4d592a36f6b95b78504ba873f04bba9717bac06f828f2618e6ac7a"
+        },
+        {
+          "name": "solve",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/runtime/usr/bin/FreeFem++",
+            "-nw",
+            "-v",
+            "1",
+            "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/freefem_th.edp",
+            "--input",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l7-exact-ns-input",
+            "--output",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l7-exact-ns",
+            "--inertia",
+            "1",
+            "--boundary",
+            "exact",
+            "--symmetric",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 113.53659358699952,
+          "log": "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/final/th-l7-exact-ns.solve.log",
+          "sha256": "fd3e8a83d8d17cd7e1a1443bb31bc5b6b5f24c4a606637af064a6b79eab7139e"
+        }
+      ],
+      "metadataSha256": "1c3527bb31716cae892d026b574e3ffc84453e94f394fd6987160ee038ace6cc",
+      "metadata": "outputs/open-source-core/final/th-l7-exact-ns.run.json",
+      "fields": {
+        ".cells.csv": "f0a6e7104b76c6c89cbad1aeea0cf339320fedc395ff22699add17a4ed30758e",
+        ".fe-solution.txt": "66288604a00b986a10d5bfb259d85441bd8a3c9fdc225fcf38dc8b3fcfc3bd19",
+        ".iterations.csv": "2d56e3a77aa809d7dd642ec60e243af520175cd42d07f9dd14d05852628ada26"
+      }
+    }
+  ],
+  "nativeStokes": {
+    "scope": "One6208-cell native coupled Stokes solve, preserving supplied polygon wall conditions and all acceptance gates; comparison metrics postprocess native fields only.",
+    "converged": true,
+    "strictLinearFinal": true,
+    "iterations": 10,
+    "KrylovIterations": 185,
+    "momentumResidual": 2.0178172051021157e-13,
+    "continuity": 1.1512622859924945e-13,
+    "fluxConsistency": 0,
+    "momentumInertia": 0,
+    "speedMagnitude": {
+      "minimum": 0.0003999334624498417,
+      "maximum": 0.49954126542688915,
+      "areaRms": 0.22891984652875466
+    },
+    "velocityL2OverUrefVsCircularCouette": 0.0011414495326055607,
+    "pressureMagnitude": {
+      "gauge": "native first cell zero",
+      "minimum": -0.6368411904227478,
+      "maximum": 0.646330198932214,
+      "areaMean": -0.0004848105704221994,
+      "gaugeAreaRms": 0.006894169258678927,
+      "meanFreeAreaRms": 0.00687710174987403,
+      "meanFreeAreaRmsOverUrefSquared": 0.02750840699949612
+    },
+    "NSComparison": {
+      "velocityDifferenceAreaRmsOverUref": 4.078339713982443e-05,
+      "NSCirclePressureErrorMinusStokesPressureAreaRmsOverUrefSquared": 0.0005472954760324813,
+      "NSCirclePressureErrorMinusStokesPressureMeanFreeAreaRmsOverUrefSquared": 0.0005468156579511087,
+      "correlationOfMeanFreeStokesPressureWithMeanFreeNSCirclePressureError": 0.9998250082307127
+    },
+    "pressureQualification": "Circular Couette Stokes has constant pressure. The actual polygon and piecewise facet-tangent prescribed traces can induce nonconstant Stokes pressure; the magnitude here is a diagnostic, not an exact polygon pressure-error claim.",
+    "wallLoads": [
+      {
+        "name": "housing",
+        "faces": 576,
+        "length": 6.283027602288595,
+        "pressureForceX": -0.0001493500458368471,
+        "pressureForceY": -0.0004781075842634838,
+        "viscousForceX": 2.014372356185059e-05,
+        "viscousForceY": 0.00012651890604024538,
+        "forceX": -0.0001292063222749965,
+        "forceY": -0.00035158867822323843,
+        "pressureTorque": -1.5907716234503028e-06,
+        "viscousTorque": 0.41820285915884464,
+        "torque": 0.4182012683872212
+      },
+      {
+        "name": "rotor",
+        "faces": 408,
+        "length": 3.1415138011442982,
+        "pressureForceX": 0.0019924852387480396,
+        "pressureForceY": 0.0016576795651192626,
+        "viscousForceX": -0.0018632789111504076,
+        "viscousForceY": -0.0013060908915770372,
+        "forceX": 0.00012920632759763195,
+        "forceY": 0.00035158867354222537,
+        "pressureTorque": 0.00016728367600788382,
+        "viscousTorque": -0.41984614009172355,
+        "torque": -0.4196788564157157
+      }
+    ],
+    "run": {
+      "sourceHead": "d51d8eb7dc10c395723771fd5d13f859da24f839",
+      "command": [
+        "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-stokes/flow-cli",
+        "--mesh",
+        "outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+        "--case",
+        "custom",
+        "--boundary",
+        "outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+        "--output",
+        "outputs/open-source-core/native-stokes/flow",
+        "--nu",
+        ".1",
+        "--speed",
+        ".5",
+        "--convection",
+        "face-limited-linear",
+        "--viscous-stress",
+        "symmetric",
+        "--coupling",
+        "coupled",
+        "--convergence",
+        "strict",
+        "--pressure-preconditioner",
+        "ic0",
+        "--linear-policy",
+        "adaptive",
+        "--momentum-inertia",
+        "0",
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--profile"
+      ],
+      "binarySha256": "fcb0f68cdecd782c65c41434d7372f7e160d9295bb9c20e98b05c7078ead62dc",
+      "returnCode": 0,
+      "wallSeconds": 12.294536952000271,
+      "cpuSeconds": 12.282427,
+      "peakRssKiB": 49900,
+      "measurement": "wait4 of this native child only; includes input read, solve and export",
+      "preflight": "First invocation could not start because /usr/bin/time is absent; no native solver ran in that preflight. Preserved time.log."
+    },
+    "fieldSha256": "45c7feaf439477fceccafd40d837c4349705f03772daa55db65f436afdec87bc"
+  },
+  "nativeExactTrace": {
+    "status": "Both native Stokes and NS strictly converged; prior rejected attempt preserved separately",
+    "comparisonControls": {
+      "mesh": "same 6208 final polygon cells",
+      "nu": 0.1,
+      "Uref": 0.5,
+      "viscousStress": "symmetric",
+      "coupling": "coupled",
+      "convection": "face-limited-linear",
+      "tolerance": 1e-08,
+      "convergence": "strict",
+      "pressurePreconditioner": "ic0",
+      "linearPolicy": "adaptive",
+      "pressureGauge": "cell 0 only; no prescribed pressure boundary",
+      "boundarySamplesIdenticalToRejectedAttempt": true,
+      "stokesAndNsMatchedBcByteIdentical": true,
+      "fluxCorrection": 0,
+      "boundaryDifferencesVersusOriginalFacet": {
+        "rotor": {
+          "faces": 408,
+          "length": 3.141513801144301,
+          "lengthWeightedNormalTraceDifferenceRms": 0.0018773414047130693,
+          "lengthWeightedTangentialTraceDifferenceRms": 5.597832202771727e-05,
+          "lengthWeightedFullTraceDifferenceRms": 0.0018781757964543902
+        },
+        "housing": {
+          "faces": 576,
+          "length": 6.283027602288602,
+          "lengthWeightedNormalTraceDifferenceRms": 1.6850992821763243e-07,
+          "lengthWeightedTangentialTraceDifferenceRms": 4.185433811210102e-05,
+          "lengthWeightedFullTraceDifferenceRms": 4.185467732999481e-05
+        }
+      },
+      "zeroFluxSmoothMovingWallFaceIds": [
+        5048
+      ]
+    },
+    "boundaryAudit": {
+      "cells": 6208,
+      "faces": 12910,
+      "boundaryFaces": 984,
+      "inward": 502,
+      "outward": 481,
+      "zero": 1,
+      "zeroWithNonzeroVelocity": 1,
+      "zeroNonzeroVelocityKind": "smooth-moving-wall",
+      "zeroFaceQualification": "original analytic velocity retained; this one exactly zero-flux face uses the existing wall-specific tangential-gradient path",
+      "prescribedFlux": 9.218663229107476e-19,
+      "prescribedFluxWideAccumulation": 9.23625038140006e-19,
+      "prescribedFluxMagnitude": 0.003609054187940979,
+      "originalNetFluxTolerance": 1.360905418794098e-12,
+      "netFluxWithinOriginalTolerance": true,
+      "fluxAdjustment": 0,
+      "pressureBoundaryFaces": 0,
+      "trace": "full circular Couette velocity evaluated at every actual polygon face centre; changes the impermeable facet-wall problem"
+    },
+    "results": {
+      "stokes": {
+        "nativeResult": {
+          "converged": true,
+          "stopped": false,
+          "failureReason": "",
+          "inertia": 0,
+          "nu": 0.1,
+          "Uref": 0.5,
+          "convection": "face-limited-linear",
+          "viscousStress": "symmetric",
+          "coupling": "coupled",
+          "convergence": "strict",
+          "tolerance": 1e-08,
+          "pressurePreconditioner": "ic0",
+          "linearPolicy": "adaptive",
+          "pressureGaugeCell": 0,
+          "pressureAtGaugeCell": 0,
+          "iterations": 10,
+          "momentumResidual": 3.1044780854139314e-13,
+          "continuity": 1.3395190120038428e-13,
+          "fluxConsistency": 0,
+          "strictLinearFinal": true,
+          "coupledLinearResidual": 2.1126716498845153e-11,
+          "Krylov": 176,
+          "velocityL2OverUref": 0.0005420001169712092,
+          "pressureL2OverUrefSquared": 0.003239259405547276,
+          "pressureErrorMean": -0.0002689190897328418,
+          "pressureMeanFreeL2OverUrefSquared": 0.0030554413539229724,
+          "speedMax": 0.4995915453467203,
+          "speedAreaRms": 0.22906548055468276,
+          "pressureMin": -0.024127063637430588,
+          "pressureMax": 0.019139052855667475,
+          "globalImbalance": 9.218663229107476e-19,
+          "globalRelativeImbalance": 9.218663229107476e-19,
+          "solveWallSeconds": 7.1680587,
+          "cooperativeBudgetSeconds": 120,
+          "pressureReference": "constant for Stokes; analytic circular Couette pressure restricted to polygon for NS; face-centre sampled velocity is a midpoint boundary approximation"
+        },
+        "independentFieldPostprocess": {
+          "path": "outputs/open-source-core/native-exact-trace-supported/stokes.cells.csv",
+          "sha256": "0cabf9f9c0d3b893c697a12280a3e4aae345d8a3177687780d719269d306abc3",
+          "cells": 6208,
+          "velocityL2OverUref": 0.0005420001169712092,
+          "pressureL2OverUrefSquared": 0.003239259405547276,
+          "pressureMeanFreeL2OverUrefSquared": 0.0030554413539229724,
+          "areaMeanPressureError": -0.0002689190897328418,
+          "maximumAbsolutePressureError": 0.024127063637430588,
+          "maximumPressureErrorCell": 3720,
+          "maximumPressureErrorCellCentre": [
+            -0.44481592759064503,
+            0.23475134441343412
+          ]
+        },
+        "execution": {
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/exact-trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/stokes",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 7.307753281999794,
+          "cpuSeconds": 7.254711,
+          "peakRssKiB": 49748,
+          "measurement": "wait4 of this native child; includes mesh read, solve and export"
+        }
+      },
+      "ns": {
+        "nativeResult": {
+          "converged": true,
+          "stopped": false,
+          "failureReason": "",
+          "inertia": 1,
+          "nu": 0.1,
+          "Uref": 0.5,
+          "convection": "face-limited-linear",
+          "viscousStress": "symmetric",
+          "coupling": "coupled",
+          "convergence": "strict",
+          "tolerance": 1e-08,
+          "pressurePreconditioner": "ic0",
+          "linearPolicy": "adaptive",
+          "pressureGaugeCell": 0,
+          "pressureAtGaugeCell": 0,
+          "iterations": 10,
+          "momentumResidual": 4.972144728554255e-13,
+          "continuity": 1.430027053355454e-13,
+          "fluxConsistency": 0,
+          "strictLinearFinal": true,
+          "coupledLinearResidual": 2.3278084254244535e-11,
+          "Krylov": 264,
+          "velocityL2OverUref": 0.000541114819372495,
+          "pressureL2OverUrefSquared": 0.0032800342877681503,
+          "pressureErrorMean": -0.0002843271120945815,
+          "pressureMeanFreeL2OverUrefSquared": 0.0030765491093402036,
+          "speedMax": 0.49958976432242314,
+          "speedAreaRms": 0.22906603637151518,
+          "pressureMin": -0.0771032163419154,
+          "pressureMax": 0.0015493472334033914,
+          "globalImbalance": 9.218663229107476e-19,
+          "globalRelativeImbalance": 9.218663229107476e-19,
+          "solveWallSeconds": 14.349900511,
+          "cooperativeBudgetSeconds": 120,
+          "pressureReference": "constant for Stokes; analytic circular Couette pressure restricted to polygon for NS; face-centre sampled velocity is a midpoint boundary approximation"
+        },
+        "independentFieldPostprocess": {
+          "path": "outputs/open-source-core/native-exact-trace-supported/ns.cells.csv",
+          "sha256": "b4175a0b1434209a8e495cf4ee395b55d4f7d24a46caa446bb27b12adf031988",
+          "cells": 6208,
+          "velocityL2OverUref": 0.0005411148193724949,
+          "pressureL2OverUrefSquared": 0.00328003428776815,
+          "pressureMeanFreeL2OverUrefSquared": 0.003076549109340203,
+          "areaMeanPressureError": -0.00028432711209458146,
+          "maximumAbsolutePressureError": 0.024264349636905803,
+          "maximumPressureErrorCell": 3720,
+          "maximumPressureErrorCellCentre": [
+            -0.44481592759064503,
+            0.23475134441343412
+          ]
+        },
+        "execution": {
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/exact-trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/ns",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 14.528944044000127,
+          "cpuSeconds": 14.458025,
+          "peakRssKiB": 49628,
+          "measurement": "wait4 of this native child; includes mesh read, solve and export"
+        }
+      }
+    },
+    "sameMeshOriginalFacetDiagnostics": {
+      "originalFacetStokes": {
+        "path": "outputs/open-source-core/native-stokes/flow.cells.csv",
+        "sha256": "45c7feaf439477fceccafd40d837c4349705f03772daa55db65f436afdec87bc",
+        "cells": 6208,
+        "velocityL2OverUref": 0.0011414495326055845,
+        "pressureL2OverUrefSquared": 0.027576677034715707,
+        "pressureMeanFreeL2OverUrefSquared": 0.02750840699949612,
+        "areaMeanPressureError": -0.00048481057042219945,
+        "maximumAbsolutePressureError": 0.646330198932214,
+        "maximumPressureErrorCell": 3830,
+        "maximumPressureErrorCellCentre": [
+          -0.3631143343010656,
+          0.34513175745617786
+        ]
+      },
+      "originalFacetNS": {
+        "path": "outputs/laminar-refactor/final/failures/annulus-l7-coupled.cells.csv",
+        "sha256": "7f134f513660348d0e0c1e80c6333600424460526b1d89ae86e5af032a00ab46",
+        "cells": 6208,
+        "velocityL2OverUref": 0.0011436711406240532,
+        "pressureL2OverUrefSquared": 0.027757945734317783,
+        "pressureMeanFreeL2OverUrefSquared": 0.027688508459597357,
+        "areaMeanPressureError": -0.0004905386498620968,
+        "maximumAbsolutePressureError": 0.6442944161799972,
+        "maximumPressureErrorCell": 3830,
+        "maximumPressureErrorCellCentre": [
+          -0.3631143343010656,
+          0.34513175745617786
+        ]
+      }
+    },
+    "diagnosticMagnitudeRatios": {
+      "stokesOriginalFacetDiagnosticPressureMeanFreeRmsDividedByExactTraceControl": 9.003087872780558,
+      "nsOriginalFacetCirclePressureErrorMeanFreeDividedByExactTraceControl": 8.999859087422609
+    },
+    "claimsAndLimits": [
+      "An unmodified native API can solve this supported full analytic face-centre trace at strict tolerance for Stokes and NS.",
+      "Pressure magnitude/error is much smaller than in the original impermeable facet-tangent boundary problem.",
+      "Changing the actual velocity trace and the boundary stencil role together does not isolate a wall-specific discretization bug.",
+      "One exactly zero-flux face still uses SmoothMovingWall and therefore retains the wall-specific tangential-gradient path.",
+      "The circle Couette field restricted to the polygon is a continuous exact-domain solution only with the complete continuous analytic trace; native face-centre prescribed samples approximate this trace by midpoint data.",
+      "Original facet-tangent trace differs physically, particularly by its imposed pointwise impermeability; its circular-reference pressure diagnostic is not an exact polygon-solution error.",
+      "FE imposed interpolated trace and native midpoint samples must retain separate conservation and trace-approximation controls.",
+      "A single 6208 control does not establish mesh convergence or default solver qualification."
+    ],
+    "reproduction": {
+      "compile": "c++ -std=c++20 -O2 -Iinclude outputs/open-source-core/native-exact-trace-supported/exact-trace.cpp outputs/open-source-core/native-exact-trace/libcartmesh2d_fv.a outputs/open-source-core/native-exact-trace/libcartmesh2d.a -o outputs/open-source-core/native-exact-trace-supported/exact-trace",
+      "run": "python3 outputs/open-source-core/native-exact-trace-supported/run-native.py",
+      "analyse": "python3 outputs/open-source-core/native-exact-trace-supported/analyse.py"
+    },
+    "manifest": {
+      "nativeLibrarySourceHead": "d51d8eb7dc10c395723771fd5d13f859da24f839",
+      "driverBuildHead": "d51d8eb7dc10c395723771fd5d13f859da24f839",
+      "sha256": {
+        "outputs/open-source-core/native-exact-trace-supported/exact-trace.cpp": "b043c87ce0ceca1dacbba7e94cc247d7de706dc83e9fd83ccd1d85d17be54a42",
+        "outputs/open-source-core/native-exact-trace-supported/exact-trace": "67b966b146087d3d21ce22d9ef763027386eaf0605870629d719753fe153c8b3",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d_fv.a": "ab89a620cab63f377fc96b1de6f80de5c8c6889d89890384c08df9e37deff254",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0",
+        "outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+      },
+      "runs": [
+        {
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/exact-trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/stokes",
+            "0"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 7.307753281999794,
+          "cpuSeconds": 7.254711,
+          "peakRssKiB": 49748,
+          "measurement": "wait4 of this native child; includes mesh read, solve and export"
+        },
+        {
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/exact-trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported/ns",
+            "1"
+          ],
+          "returnCode": 0,
+          "wallSeconds": 14.528944044000127,
+          "cpuSeconds": 14.458025,
+          "peakRssKiB": 49628,
+          "measurement": "wait4 of this native child; includes mesh read, solve and export"
+        }
+      ],
+      "qualification": "NS runs only if Stokes converges. Exactly one q==0, U!=0 face uses the already supported SmoothMovingWall with the unmodified analytic velocity, retaining one wall-specific gradient path. All other 983 boundary faces use VelocityInlet/VelocityOutlet by original exact sign. No boundary flux adjustment or relaxed role/sign/conservation/convergence checks. Original moving-facet problem and this full analytic trace problem differ."
+    },
+    "sha256": {
+      "stokes.matchedBC.csv": "fe3f761777f031e6abc4a575d16a069d74c744145ed3612e7af9e3534a01f317",
+      "exact-trace.cpp": "b043c87ce0ceca1dacbba7e94cc247d7de706dc83e9fd83ccd1d85d17be54a42",
+      "manifest.json": "61763051f4d9132684aaf7f0160af0446bc01a6b34f6b678f537a37dba0bd29a",
+      "stokes.boundaries": "4774b63e2356d7181e15fc3d7776650b5f62e6b533c5e8cdcd4f2ddb13176769",
+      "ns.boundaries": "4774b63e2356d7181e15fc3d7776650b5f62e6b533c5e8cdcd4f2ddb13176769",
+      "stokes.cells.csv": "0cabf9f9c0d3b893c697a12280a3e4aae345d8a3177687780d719269d306abc3",
+      "stokes.json": "8c8213e24e3a3245915b99fbebf035345e7127a7929eb64e2ab447bd12b132dd",
+      "analyse.py": "b47f3b77fc4cbebe11f236c380d46fdc8e3528e5e401fa67240d4bf9d5758ae4",
+      "ns.json": "7f93741687594987d151d8916e47eccd8060a413fc7baa0098049c46799b62ee",
+      "stokes.residuals.csv": "a91614a384be51dd2d29f8f69e61ce6c6f211db283de4e14df6fede999253ae9",
+      "ns.cells.csv": "b4175a0b1434209a8e495cf4ee395b55d4f7d24a46caa446bb27b12adf031988",
+      "stokes.boundary-audit.json": "a2040d6c16a40b91bba925b8db3e12150fb041b9db5361cda5163d0f78a6db32",
+      "stokes.run.json": "0cd3f921927aa44667925d55a184600e1dcbc161f2d813ce56500993688a29bf",
+      "ns.run.json": "304b1417138e9541560b461e5986ef1b49a718dac4e2ed66e1a1e97ab0d08ae7",
+      "ns.run.log": "5fcb7b44052c76fc101df02fd335033a9ce009106f56b33fd4c0bb4e2ad8be72",
+      "ns.residuals.csv": "5a383b577a115d686b441d046fab4a6ad559fd29d99592467977325c9176e15a",
+      "ns.boundary-audit.json": "a2040d6c16a40b91bba925b8db3e12150fb041b9db5361cda5163d0f78a6db32",
+      "ns.faces.csv": "0e4ab720de34e82001e4a4c07dbd7e8ccad197b048620ad831f89375c0a395a3",
+      "ns.matchedBC.csv": "fe3f761777f031e6abc4a575d16a069d74c744145ed3612e7af9e3534a01f317",
+      "exact-trace": "67b966b146087d3d21ce22d9ef763027386eaf0605870629d719753fe153c8b3",
+      "stokes.run.log": "180ebca1b95cbb4419a8192a3a954e6e180dd996432b80f460822fe5c59d11a2",
+      "stokes.faces.csv": "5f10bd35e89228c22a6aafc9646e7e7bf50dab6d0845a65886538bac5174aa65",
+      "run-native.py": "8affafceb620ea3881a6e5b353534de8888ca3343490f44b3f771358c404afbc"
+    }
+  },
+  "nativeExactTraceSimpleFailure": {
+    "status": "native SIMPLE diverged and then threw at unchanged linear iteration-limit gate",
+    "converged": false,
+    "solverRan": true,
+    "returnedFlowResult": false,
+    "retainedTerminalField": null,
+    "fieldLimitation": "Native SIMPLE exception propagates instead of returning its local FlowResult. Only native reported iteration diagnostics can be preserved without modifying the product or changing the solve sequence. No terminal/accepted field is claimed.",
+    "lastReportedIteration": 100,
+    "lastReportedDiagnostics": {
+      "momentumResidual": 195776216.9427987,
+      "continuity": 247.11733147812927,
+      "velocityChange": 562965314.6285912,
+      "pressureChange": 1.745519065813109e+16,
+      "strictLinearStep": 0.0
+    },
+    "reportedProgress": [
+      {
+        "iteration": "1",
+        "momentumResidual": "2.9042304441470175",
+        "continuity": "0.0034726439613864384",
+        "velocityChange": "4.994537572263452",
+        "pressureChange": "184.7409790524222",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "10",
+        "momentumResidual": "2153.390863454631",
+        "continuity": "3.8119548579127023",
+        "velocityChange": "6673.7129737213481",
+        "pressureChange": "1129896.2540751086",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "20",
+        "momentumResidual": "52786.972680016421",
+        "continuity": "588.04710587673321",
+        "velocityChange": "103317.35387158852",
+        "pressureChange": "792065814.5762285",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "30",
+        "momentumResidual": "177723.38847297983",
+        "continuity": "3221.194914382871",
+        "velocityChange": "509359.48300364823",
+        "pressureChange": "12592430587.749559",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "40",
+        "momentumResidual": "638769.63424291497",
+        "continuity": "16015.016621997531",
+        "velocityChange": "1807895.1878385958",
+        "pressureChange": "244348976497.08557",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "50",
+        "momentumResidual": "350137.87661280751",
+        "continuity": "84.785384217309485",
+        "velocityChange": "267359.35439883656",
+        "pressureChange": "3626796842.1066699",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "60",
+        "momentumResidual": "561116.44106905744",
+        "continuity": "1041.5785240046923",
+        "velocityChange": "2651297.1771038002",
+        "pressureChange": "149700590451.1051",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "70",
+        "momentumResidual": "2784447.5861582244",
+        "continuity": "12.307066717244352",
+        "velocityChange": "5835888.2967417017",
+        "pressureChange": "3870277658146.4263",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "80",
+        "momentumResidual": "69774737.412748143",
+        "continuity": "4906.8055627751837",
+        "velocityChange": "192393207.23087713",
+        "pressureChange": "230788605549813.56",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "90",
+        "momentumResidual": "14834908.55274432",
+        "continuity": "18.040723255843925",
+        "velocityChange": "37669585.84079726",
+        "pressureChange": "40456228794013.898",
+        "strictLinearStep": "0"
+      },
+      {
+        "iteration": "100",
+        "momentumResidual": "195776216.9427987",
+        "continuity": "247.11733147812927",
+        "velocityChange": "562965314.62859118",
+        "pressureChange": "17455190658131090",
+        "strictLinearStep": "0"
+      }
+    ],
+    "failure": {
+      "converged": false,
+      "solverRan": true,
+      "phase": "solve",
+      "reason": "Flow linear solver iteration limit reached: true residual=0.00183114, target=2.17672e+06, diagonal-scaled residual=8.93262e-08, diagonal-scaled target=3e-08, rhs=2.17672e+13"
+    },
+    "exactFailingOuterIteration": null,
+    "failureIterationQualification": "Progress callback in original native solver reports iteration 1 and multiples of 10. Failure occurred after the iteration-100 report; exact outer iteration is not exposed on this exception path.",
+    "matchingControl": {
+      "matchedBcByteIdenticalToConvergedCoupledNs": true,
+      "serializedBoundaryByteIdenticalToConvergedCoupledNs": true,
+      "coupledResult": {
+        "converged": true,
+        "stopped": false,
+        "failureReason": "",
+        "inertia": 1,
+        "nu": 0.1,
+        "Uref": 0.5,
+        "convection": "face-limited-linear",
+        "viscousStress": "symmetric",
+        "coupling": "coupled",
+        "convergence": "strict",
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "ic0",
+        "linearPolicy": "adaptive",
+        "pressureGaugeCell": 0,
+        "pressureAtGaugeCell": 0,
+        "iterations": 10,
+        "momentumResidual": 4.972144728554255e-13,
+        "continuity": 1.430027053355454e-13,
+        "fluxConsistency": 0,
+        "strictLinearFinal": true,
+        "coupledLinearResidual": 2.3278084254244535e-11,
+        "Krylov": 264,
+        "velocityL2OverUref": 0.000541114819372495,
+        "pressureL2OverUrefSquared": 0.0032800342877681503,
+        "pressureErrorMean": -0.0002843271120945815,
+        "pressureMeanFreeL2OverUrefSquared": 0.0030765491093402036,
+        "speedMax": 0.49958976432242314,
+        "speedAreaRms": 0.22906603637151518,
+        "pressureMin": -0.0771032163419154,
+        "pressureMax": 0.0015493472334033914,
+        "globalImbalance": 9.218663229107476e-19,
+        "globalRelativeImbalance": 9.218663229107476e-19,
+        "solveWallSeconds": 14.349900511,
+        "cooperativeBudgetSeconds": 120,
+        "pressureReference": "constant for Stokes; analytic circular Couette pressure restricted to polygon for NS; face-centre sampled velocity is a midpoint boundary approximation"
+      },
+      "controls": {
+        "coupling": "simple",
+        "momentumInertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08,
+        "maxIterations": 1000,
+        "viscousStress": "symmetric",
+        "convection": "face-limited-linear",
+        "pressurePreconditioner": "ic0",
+        "adaptiveLinear": true,
+        "velocityRelaxation": 0.6,
+        "pressureRelaxation": 0.25,
+        "pressureCorrectionPasses": 4,
+        "cooperativeBudgetSeconds": 120
+      },
+      "sharedLibraryHashes": {
+        "outputs/open-source-core/native-exact-trace-supported-simple/exact-trace.cpp": "35af4403b7c81194b0e20856c8c3a3dcf01b667310447f7a3a5f5a6909d115a9",
+        "outputs/open-source-core/native-exact-trace-supported-simple/exact-trace": "c4bf8c7f66fcbdf71b6c20692273e155a3c79fca961ac9f96e63165f0418be49",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d_fv.a": "ab89a620cab63f377fc96b1de6f80de5c8c6889d89890384c08df9e37deff254",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0",
+        "outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+      },
+      "difference": "Only requested coupling selection and maxIterations differ. SIMPLE uses existing default relaxation and pressure-correction controls; coupled ignores these iterative controls."
+    },
+    "boundaryAudit": {
+      "cells": 6208,
+      "faces": 12910,
+      "boundaryFaces": 984,
+      "inward": 502,
+      "outward": 481,
+      "zero": 1,
+      "zeroWithNonzeroVelocity": 1,
+      "zeroNonzeroVelocityKind": "smooth-moving-wall",
+      "zeroFaceQualification": "original analytic velocity retained; this one exactly zero-flux face uses the existing wall-specific tangential-gradient path",
+      "prescribedFlux": 9.218663229107476e-19,
+      "prescribedFluxWideAccumulation": 9.23625038140006e-19,
+      "prescribedFluxMagnitude": 0.003609054187940979,
+      "originalNetFluxTolerance": 1.360905418794098e-12,
+      "netFluxWithinOriginalTolerance": true,
+      "fluxAdjustment": 0,
+      "pressureBoundaryFaces": 0,
+      "trace": "full circular Couette velocity evaluated at every actual polygon face centre; changes the impermeable facet-wall problem"
+    },
+    "execution": {
+      "nativeLibrarySourceHead": "d51d8eb7dc10c395723771fd5d13f859da24f839",
+      "command": [
+        "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported-simple/exact-trace",
+        "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+        "/workspace/cartesian-mesh-generator-2d/outputs/open-source-core/native-exact-trace-supported-simple/ns-simple",
+        "1",
+        "simple"
+      ],
+      "returnCode": 2,
+      "wallSeconds": 20.905221611000343,
+      "cpuSeconds": 20.610072,
+      "peakRssKiB": 17796,
+      "measurement": "wait4 of this native child; includes mesh read, solve and export",
+      "sha256": {
+        "outputs/open-source-core/native-exact-trace-supported-simple/exact-trace.cpp": "35af4403b7c81194b0e20856c8c3a3dcf01b667310447f7a3a5f5a6909d115a9",
+        "outputs/open-source-core/native-exact-trace-supported-simple/exact-trace": "c4bf8c7f66fcbdf71b6c20692273e155a3c79fca961ac9f96e63165f0418be49",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d_fv.a": "ab89a620cab63f377fc96b1de6f80de5c8c6889d89890384c08df9e37deff254",
+        "outputs/open-source-core/native-exact-trace/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0",
+        "outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+      },
+      "controls": {
+        "coupling": "simple",
+        "momentumInertia": 1,
+        "nu": 0.1,
+        "speed": 0.5,
+        "tolerance": 1e-08,
+        "maxIterations": 1000,
+        "viscousStress": "symmetric",
+        "convection": "face-limited-linear",
+        "pressurePreconditioner": "ic0",
+        "adaptiveLinear": true,
+        "velocityRelaxation": 0.6,
+        "pressureRelaxation": 0.25,
+        "pressureCorrectionPasses": 4,
+        "cooperativeBudgetSeconds": 120
+      },
+      "qualification": "Exactly one q==0, U!=0 face uses unchanged SmoothMovingWall; other 983 faces use generic velocity inlet/outlet by exact unadjusted q sign. No role/sign/conservation checks were changed."
+    },
+    "claimsAndLimits": [
+      "Changing the full analytic trace and face role reduced converged coupled pressure error, while original SIMPLE still diverged for exactly the same supported trace.",
+      "This separates observed boundary/accuracy sensitivity from the continued segregated iteration instability; it does not identify the defective operator or prove a specific wall/root cause.",
+      "One exactly zero-flux face still retains the SmoothMovingWall gradient path.",
+      "No boundary compensation, matrix/relaxation change, enlarged linear/conservation tolerance, or alternate numerical solver was used.",
+      "The genuine prior unsupported-BC rejection and two converged coupled fields remain unchanged in separate folders."
+    ],
+    "reproduction": {
+      "compile": "c++ -std=c++20 -O2 -Iinclude outputs/open-source-core/native-exact-trace-supported-simple/exact-trace.cpp outputs/open-source-core/native-exact-trace/libcartmesh2d_fv.a outputs/open-source-core/native-exact-trace/libcartmesh2d.a -o outputs/open-source-core/native-exact-trace-supported-simple/exact-trace",
+      "run": "python3 outputs/open-source-core/native-exact-trace-supported-simple/run-native.py",
+      "analyse": "python3 outputs/open-source-core/native-exact-trace-supported-simple/analyse.py"
+    },
+    "sha256": {
+      "exact-trace.cpp": "35af4403b7c81194b0e20856c8c3a3dcf01b667310447f7a3a5f5a6909d115a9",
+      "ns-simple.boundary-audit.json": "a2040d6c16a40b91bba925b8db3e12150fb041b9db5361cda5163d0f78a6db32",
+      "ns-simple.matchedBC.csv": "fe3f761777f031e6abc4a575d16a069d74c744145ed3612e7af9e3534a01f317",
+      "ns-simple.run.log": "97f0c6704bb9a064ff34e052c0de44047cdea2e49eb424fc3cbefafa56f32c1c",
+      "analyse.py": "70420f395c1236e018d613380f28e46968b944088e9137d458d2d5489a54cb69",
+      "ns-simple.progress.csv": "f788201d16810308bb8642f2d3db17f1ca6558d45d5b6a817b62d089f8208ca0",
+      "ns-simple.rejection.json": "38f8049a97a48211054bebc7e83a7c1aed4a4c4b3c6aded34ae7be85de0e7437",
+      "ns-simple.run.json": "572288c0940526032fb476e5884036850d5e7fdef78ebab48ab92380bcb1dd9e",
+      "exact-trace": "c4bf8c7f66fcbdf71b6c20692273e155a3c79fca961ac9f96e63165f0418be49",
+      "run-native.py": "4a0d813beab9809b4e6a03f101c995347f4c9efe0608964f3156956117ba42ae",
+      "ns-simple.boundaries": "4774b63e2356d7181e15fc3d7776650b5f62e6b533c5e8cdcd4f2ddb13176769"
+    }
+  },
+  "pressureGaugeDiagnostic": {
+    "scope": "Postprocess retained converged native fields; no equation reconstruction or new solve.",
+    "definition": "A=-1/3, B=1/3; p_exact=.5*A^2*r^2+2*A*B*log(r)-.5*B^2/r^2. Original gauge subtracts exact p at first native cell; mean-free L2 removes area-weighted pressure-error constant. Uref=.5.",
+    "fields": [
+      {
+        "name": "native-l5",
+        "path": "/workspace/cartesian-mesh-generator-2d/outputs/numerical-design/annulus-l5-original-symmetric.cells.csv",
+        "sha256": "dc6054580cecb8aff268f81aef6e84b0774d829515a0412afbcec7dc9df45b85",
+        "cells": 484,
+        "fluidArea": 2.3524113679094545,
+        "firstCell": {
+          "cell": 0.0,
+          "x": -0.6770833333333334,
+          "y": -0.6770833333333334,
+          "p": 0.0
+        },
+        "pressureL2OverUrefSquared": 0.03331614498224997,
+        "areaMeanPressureErrorOverUrefSquared": -0.0019496058862731962,
+        "meanFreePressureL2OverUrefSquared": 0.033259052201866916,
+        "pressureSquaredErrorFractionRemovedByBestConstant": 0.003424397474842999,
+        "pressureMax": 0.12149088718882094,
+        "pressureMin": -0.22729146553988272,
+        "pressureMean": -0.00855863701199574,
+        "pressureMeanFreeRms": 0.01432420629321588,
+        "velocityL2OverUref": 0.009203477946474036
+      },
+      {
+        "name": "native-l6",
+        "path": "/workspace/cartesian-mesh-generator-2d/outputs/numerical-design/annulus-l6-original-symmetric.cells.csv",
+        "sha256": "059a6b40e157c6d41ebe9c855dda55614761723b5a0e7163f065222d5a950146",
+        "cells": 1672,
+        "fluidArea": 2.3552483677160647,
+        "firstCell": {
+          "cell": 0.0,
+          "x": -0.6607366394746985,
+          "y": -0.7407518992933855,
+          "p": 0.0
+        },
+        "pressureL2OverUrefSquared": 0.020671277258740465,
+        "areaMeanPressureErrorOverUrefSquared": -0.003293903101640616,
+        "meanFreePressureL2OverUrefSquared": 0.020407153301348107,
+        "pressureSquaredErrorFractionRemovedByBestConstant": 0.025391421456857424,
+        "pressureMax": 0.10382672352767978,
+        "pressureMin": -0.20965382125106305,
+        "pressureMean": -0.008991507786373963,
+        "pressureMeanFreeRms": 0.013202428675348585,
+        "velocityL2OverUref": 0.002268668380199039
+      },
+      {
+        "name": "native-l7",
+        "path": "/workspace/cartesian-mesh-generator-2d/outputs/numerical-design/annulus-l7-original-symmetric.cells.csv",
+        "sha256": "753db34a7dea4f7b94aa39455785c5f0bd22661a484ebe71fc9069d3a1557268",
+        "cells": 6208,
+        "fluidArea": 2.35595793819958,
+        "firstCell": {
+          "cell": 0.0,
+          "x": -0.6567708333333333,
+          "y": -0.7380208333333333,
+          "p": 0.0
+        },
+        "pressureL2OverUrefSquared": 0.027757945734317783,
+        "areaMeanPressureErrorOverUrefSquared": -0.001962154599448387,
+        "meanFreePressureL2OverUrefSquared": 0.027688508459597357,
+        "pressureSquaredErrorFractionRemovedByBestConstant": 0.004996798087684677,
+        "pressureMax": 0.590475541488706,
+        "pressureMin": -0.6905724988835494,
+        "pressureMean": -0.008681363649871961,
+        "pressureMeanFreeRms": 0.01421122734622175,
+        "velocityL2OverUref": 0.0011436711406240293
+      },
+      {
+        "name": "root-final-l7",
+        "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/final/failures/annulus-l7-coupled.cells.csv",
+        "sha256": "7f134f513660348d0e0c1e80c6333600424460526b1d89ae86e5af032a00ab46",
+        "cells": 6208,
+        "fluidArea": 2.35595793819958,
+        "firstCell": {
+          "cell": 0.0,
+          "x": -0.6567708333333333,
+          "y": -0.7380208333333333,
+          "p": 0.0
+        },
+        "pressureL2OverUrefSquared": 0.027757945734317783,
+        "areaMeanPressureErrorOverUrefSquared": -0.001962154599448387,
+        "meanFreePressureL2OverUrefSquared": 0.027688508459597357,
+        "pressureSquaredErrorFractionRemovedByBestConstant": 0.004996798087684677,
+        "pressureMax": 0.590475541488706,
+        "pressureMin": -0.6905724988835494,
+        "pressureMean": -0.008681363649871961,
+        "pressureMeanFreeRms": 0.01421122734622175,
+        "velocityL2OverUref": 0.0011436711406240293
+      }
+    ],
+    "conclusion": "Removing the best constant leaves almost all pressure-error variance; reference-cell pressure gauge offset is not the main retained annulus pressure error.",
+    "qualification": "Circle exact solution is the established laminar benchmark reference, not an exact solution on each polygon wall; gauge decomposition alone does not locate a discretization root cause."
+  },
+  "comparisonControls": {
+    "scope": "Necessary numerical controls for an independently solved native two-dimensional FreeFEM comparison; no product changes or new mesh series.",
+    "originalBoundary": {
+      "geometry": "The actual CM2D polygon boundary, including cut subsegments and their stored outward normals; fan triangulation must retain every boundary segment and native-cell region mapping.",
+      "rotor": "Ue = .5*(S_y,-S_x)/|S| on each supplied face. It is tangential to that actual segment and represents the supplied constant segment/edge-average velocity.",
+      "housing": "Zero velocity.",
+      "smoothMovingWall": "Native SmoothMovingWall changes wall-gradient reconstruction; it does not change the supplied face-centre velocity or the imposed zero boundary flux. It is not a moving geometry or a circular analytic trace."
+    },
+    "CR_P1nc_P0": {
+      "edgeDOF": "For affine velocity on a triangle edge, its edge average equals its midpoint value. The CR basis for the edge opposite vertex i is 1-2*lambda_i, whose edge-average Kronecker property permits each original boundary edge to carry exactly its prescribed average.",
+      "corners": "There is no shared vertex velocity DOF, so differing adjacent facet averages do not clash at a polygon corner.",
+      "impermeability": "Prescribed Ue dot n = 0 gives zero integrated boundary flux per edge. The reconstructed linear edge trace can vary and have locally nonzero normal velocity; this is weak edge-average enforcement, not pointwise constant no slip.",
+      "divergence": "P0 pressure tests enforce each triangle's constant velocity divergence, subject to the chosen pressure gauge/penalty and solve residual. Check physical divergence in all triangles, including any replaced gauge row, and polygon aggregate fluxes.",
+      "viscosity": "Use and record nu*grad(U):grad(V) for the first CR solve. It is not the same discrete stress as native symmetric FVM. Direct 2*nu*D(U):D(V) on nonconforming CR requires its own discrete-Korn/rigid-mode assessment or stated stabilization; continuum equivalence under divergence-free velocity does not establish nonconforming discrete equivalence."
+    },
+    "TH_P2_P1": {
+      "cornerConflict": "Continuous P2 traces cannot equal different constant vectors on adjacent segments at their shared vertex. Independently assigning facet Dirichlet values with on(label) can silently select one endpoint value according to assembly/label order.",
+      "validControl": "Use one continuous analytic boundary function on the actual polygon and explicitly distinguish this control case from original facet-constant BC.",
+      "exactRestrictionControl": "Prescribing U=(-y,x)*(-1/3+1/(3*r^2)) on BOTH polygon walls restricts the circular Couette exact solution to the polygon domain: Stokes pressure is constant, and inertia=1 pressure is r^2/18-log(r^2)/9-1/(18*r^2). This control allows local normal trace and tiny nonzero housing trace; it changes original wall data.",
+      "normalizedRotorControl": "Prescribing only .5*(-y/r,x/r) on the rotor and zero on the housing is continuous but is not the same exact restricted Couette trace. Circular pressure is not an exact polygon reference for that boundary choice.",
+      "compatibility": "Measure net flux of the actual FE-interpolated Dirichlet trace, not only the analytic continuous function. A closed incompressible solve needs globally compatible boundary flux.",
+      "momentOnlyAlternative": "A continuous P2 edge can preserve the original mean by constraining (Ua+4*Um+Ub)/6=Ue; it does not preserve the original pointwise constant trace. For both endpoints zero, Um=1.5*Ue. Treat this as an explicitly different moment-enforced boundary case."
+    },
+    "gaugeAndSampling": {
+      "gauge": "Compare pressure after removing its area-weighted constant. If using pressure-mass penalization instead of an exact mean/gauge constraint, report the parameter and pressure/divergence sensitivity; penalization changes continuity slightly.",
+      "CRVertexAmbiguity": "The native centroid becomes a fan-triangle shared vertex. CR velocity and P0 pressure can have several incident-triangle values there; direct FE point evaluation chooses a triangle and is not a unique native-cell map.",
+      "mapping": "Report FE domain quadrature metrics and aggregate triangle integrals/areas for every original native polygon region. Native primitive fields are centroid-point estimates, so mapped FE polygon averages also introduce a stated sampling difference.",
+      "units": "Use kinematic pressure and nu with density=1, matching native m^2/s^2 pressure; record both absolute magnitudes and normalization Uref=.5."
+    },
+    "matchedPhysicalControls": [
+      "Same actual polygon and supplied facet averages for CR comparison; analytic trace controls are separate cases.",
+      "Native inertia=0 Stokes against FreeFEM Stokes; native inertia=1 against a converged nonlinear NS solve. Do not mix the two pressure references.",
+      "Nu=.1, Uref=.5, zero volume sources, consistent pressure sign and units.",
+      "Report element pair, viscous bilinear form, boundary enforcement, gauge/penalty, quadrature, linear/weak residuals, full physical divergence and actual triangle/DOF counts.",
+      "Fan triangles provide more pressure/velocity unknowns than native polygon cells. Lower error alone does not isolate the kernel from spatial resolution or make a same-cost performance claim."
+    ],
+    "whatTheComparisonCanShow": [
+      "An independent solver can or cannot obtain a conservative Stokes/NS field on the retained polygon and boundary moments with its declared formulation.",
+      "Agreement or disagreement of gauge-invariant pressure/velocity/load trends can test whether retained native anomalies survive a different approximation and coupling mechanism.",
+      "A substantially smaller qualified gauge-invariant pressure error under matched geometry/BC would weaken a geometry-only explanation, while still requiring spatial/DOF controls before selecting a specific native operator as the cause."
+    ],
+    "whatItCannotShowAlone": [
+      "One converged FreeFEM solution is not exact polygon truth or a general stability/accuracy certificate.",
+      "CR/P0 with grad viscosity and original edge averages is not the same discrete equation as native symmetric Rhie-Chow FVM.",
+      "A P2/P1 analytic-trace result cannot validate native original impermeable facet BC or be compared as the same physical case.",
+      "Mean-free pressure scoring removes gauge ambiguity but does not locate the faulty pressure, viscous, boundary or coupling term.",
+      "Matched original polygons/faces do not imply matched finite-element DOFs, effective spatial resolution, complete cost or performance."
+    ],
+    "nativeEvidence": {
+      "existingGaugePostprocess": "outputs/open-source-core/pressure-gauge.json",
+      "nativeStokesControlAndCost": "outputs/open-source-core/native-stokes/run.json",
+      "nativeStokesFields": "outputs/open-source-core/native-stokes/flow.cells.csv and flow.faces.csv",
+      "nativeStokesAcceptanceAndMagnitude": "outputs/open-source-core/native-stokes/evaluation.json"
+    }
+  },
+  "sparsePressureGauge": {
+    "format": "freefem-native-gauge-performance-v1",
+    "purpose": "Isolate the FreeFEM first-solve bottleneck on the existing annulus Stokes matrices; no root script or input was modified.",
+    "kernel": "FreeFEM 4.15 / native UMFPACK",
+    "kernelSha256": "01093e07e9d44bb2f0555022073915e852e1b380482281eed195b8ee9777cc03",
+    "diagnosticSources": {
+      "pinned-timing.edp": "cd0a6473cd1b75e6bed10ee052e934c571f72fecf52b49b56f4f392ed9a916e2",
+      "pinned-coo-timing.edp": "d450ac65e1f9ef35f94464120bb1b248d7a95727448efb2ca4c65a9e0070eac9",
+      "assembly-timing.edp": "30cd934591422852d6f44c6535845c6beb9c59f7d06b54faeadd0ddea9a124ac",
+      "augmented-timing.edp": "5bedd3737b19dffa39bdef2e715300e25f49ff34115e1df6a858867893ee3d5c"
+    },
+    "discovery": {
+      "stdout": "EDP endl did not immediately flush redirected stdout; an empty log did not identify the current stage.",
+      "closedProgressFiles": "Independent ofstream objects scoped to a block produce closed, immediately readable stage files.",
+      "l7BodyAssemblyCpuSeconds": 1.6246,
+      "l7MeanAugmentedStages": {
+        "start": "0.291635 dofs=100328",
+        "matrix": "0.923472",
+        "rhs": "0.002662",
+        "augmented": "0.498191 n=100329 m=100329",
+        "set": "0.000162"
+      },
+      "meanAugmentedSolve": "Stopped after it reached the native sparse solve and remained CPU-bound; there was no completed solution/acceptance claim.",
+      "rootOriginalObservedCpuSeconds": 866,
+      "rootOriginalObservedStatus": "Still running with empty stdout at the last snapshot; parent subsequently stopped it.",
+      "diagnosticStoppedRecord": "l7-augmented.stopped.json"
+    },
+    "replacement": {
+      "gauge": "Remove one pressure DOF and its redundant continuity test row by exact principal-submatrix restriction; recover full vector with pinned p=0, then subtract the global pressure mean only from pressure DOFs.",
+      "massPenalty": false,
+      "cooSyntax": "int[int] ai(0),aj(0); real[int] av(0); [ai,aj,av]=A; filter pin row and column; matrix pinned=[bi,bj,values];",
+      "fullPdeCheck": "Original matrix residual checked on every free DOF, including the removed continuity row.",
+      "records": [
+        {
+          "level": 5,
+          "sourceMesh": "outputs/freefem-core/annulus-l5.mesh",
+          "sourceMeshSha256": "16c8cca5f48744805a70f3a8b23f4536ae806871c1837ab768033b6fb8b069bc",
+          "stages": {
+            "start": "0.022763 dofs=7936",
+            "matrix": "0.106156",
+            "rhs": "0.003974",
+            "restriction": "0.526281 pin=2 n=7935 m=7935 originalNnz=83352 pinnedNnz=83339",
+            "set": "8.5e-05",
+            "solve": "0.160891 linfty=0.499398",
+            "checks": "area=2.3524113679094452 velocityRms=0.22878328603212095 pressureRms=0.005796326569079112 meanP=0.0007175433027498874 maxFreeResidual=6.0368376963992887e-16 eliminatedContinuityResidual=1.4121733296623695e-17"
+          },
+          "totalCpuSeconds": 0.861769,
+          "comparisonToRetainedMeanConstraintSolution": "velocityMaximumDifference=1.3877787807814457e-15 meanFreePressureMaximumDifference=1.4932511203450886e-14 meanPinned=0.00071754330274989163 meanOriginal=-1.152224253032134e-20"
+        },
+        {
+          "level": 6,
+          "sourceMesh": "outputs/freefem-core/annulus-l6.mesh",
+          "sourceMeshSha256": "28227097bdf869f75dd95574f2299e2c581af3ee1a32f5f8d379c926ac904d95",
+          "stages": {
+            "start": "0.054754 dofs=27288",
+            "matrix": "0.179403",
+            "rhs": "0.000949",
+            "restriction": "1.46418 pin=2 n=27287 m=27287 originalNnz=288936 pinnedNnz=288923",
+            "set": "6e-05",
+            "solve": "0.426436 linfty=0.499849",
+            "checks": "area=2.3552483677151836 velocityRms=0.22916729399674726 pressureRms=0.0038217645128356221 meanP=-0.00076529608173648677 maxFreeResidual=1.7763568394002505e-15 eliminatedContinuityResidual=4.9331198848090452e-17"
+          },
+          "totalCpuSeconds": 2.22771,
+          "comparisonToRetainedMeanConstraintSolution": "velocityMaximumDifference=4.9404924595819466e-15 meanFreePressureMaximumDifference=8.9338360793798474e-14 meanPinned=-0.00076529608173649176 meanOriginal=-6.6392243442553972e-21"
+        },
+        {
+          "level": 7,
+          "sourceMesh": "outputs/freefem-core/annulus-l7.mesh",
+          "sourceMeshSha256": "ff539db3e6e6bfc3ee4d2f38d903a5b5cb2d4a2e1a5d20a7c619269f34d29fe1",
+          "stages": {
+            "start": "0.208522 dofs=100328",
+            "matrix": "0.810556",
+            "rhs": "0.003656",
+            "restriction": "5.01336 pin=2 n=100327 m=100327 originalNnz=1069916 pinnedNnz=1069903",
+            "set": "0.000185",
+            "solve": "2.83632 linfty=0.499962",
+            "checks": "area=2.3559579381977378 velocityRms=0.22930222490641014 pressureRms=0.0023327540135278557 meanP=5.4651258116828545e-05 maxFreeResidual=2.2204460492503131e-15 eliminatedContinuityResidual=2.2370140136986072e-17"
+          },
+          "totalCpuSeconds": 9.18455
+        }
+      ]
+    },
+    "limitations": [
+      "Each benchmark performs one Stokes linear solve with basic checks; it is not a full Newton/diagnostics/export cost comparison.",
+      "The direct-solve ordering explanation is inferred from the dense mean constraint being removed, not a native UMFPACK profiler trace.",
+      "CR/P0 Stokes on the three existing annulus inputs only; no other physics problem was run."
+    ],
+    "consumer": "Use this gauge construction in the FreeFEM adapter, keep all original free-DOF continuity residual checks, and retain coarse mean-free field parity."
+  },
+  "stoppedInitialMeanConstraintRuns": [
+    {
+      "pid": 9737,
+      "output": "cr-l7-stokes",
+      "reason": "Stopped slow dense mean-constraint UMFPACK path after independent exact pressure-pin solve satisfied all equations; retain pending attempts and use equivalent sparse gauge.",
+      "terminalFieldAvailable": false,
+      "observedUtc": "2026-10-08T17:32:14.130783+00:00",
+      "procStat": "9737 (FreeFem++) R 9624 9623 9623 0 -1 4194560 159282 0 0 0 96515 554 0 0 20 0 1 0 554144 2342694912 76581 18446744073709551615 1 1 0 0 0 0 0 4096 8388608 0 0 0 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+      "terminationRequested": true
+    },
+    {
+      "pid": 10059,
+      "output": "cr-l7-ns",
+      "reason": "Stopped slow dense mean-constraint UMFPACK path after independent exact pressure-pin solve satisfied all equations; retain pending attempts and use equivalent sparse gauge.",
+      "terminalFieldAvailable": false,
+      "observedUtc": "2026-10-08T17:32:14.139787+00:00",
+      "procStat": "10059 (FreeFem++) R 10056 10052 10052 0 -1 4194560 80985 0 0 0 42755 334 0 0 20 0 1 0 608223 2326814720 71379 18446744073709551615 1 1 0 0 0 0 0 0 8388608 0 0 0 17 4 0 0 0 0 0 0 0 0 0 0 0 0 0\n",
+      "terminationRequested": true
+    }
+  ],
+  "checks": {
+    "exporterBuild": "passed",
+    "originalMeshesByteUnchangedAfterBenchmarkChecks": [
+      {
+        "level": 5,
+        "geometryBytesUnchanged": true,
+        "meshSha256": "16c8cca5f48744805a70f3a8b23f4536ae806871c1837ab768033b6fb8b069bc",
+        "stdout": "cells=484 triangles=1928 vertices=1076 faces=1076 boundary=224 area=2.3524113679094545 triangleArea=2.3524113679094545 minTriangleArea=3.4877530476597252e-05 nonpositiveFanTriangles=0\n"
+      },
+      {
+        "level": 6,
+        "geometryBytesUnchanged": true,
+        "meshSha256": "28227097bdf869f75dd95574f2299e2c581af3ee1a32f5f8d379c926ac904d95",
+        "stdout": "cells=1672 triangles=6696 vertices=3600 faces=3600 boundary=504 area=2.3552483677160648 triangleArea=2.3552483677160647 minTriangleArea=2.9652677792370011e-06 nonpositiveFanTriangles=0\n"
+      },
+      {
+        "level": 7,
+        "geometryBytesUnchanged": true,
+        "meshSha256": "ff539db3e6e6bfc3ee4d2f38d903a5b5cb2d4a2e1a5d20a7c619269f34d29fe1",
+        "stdout": "cells=6208 triangles=24836 vertices=12910 faces=12910 boundary=984 area=2.3559579381995797 triangleArea=2.3559579381995797 minTriangleArea=7.0497592519249177e-08 nonpositiveFanTriangles=0\n"
+      }
+    ],
+    "adapter": {
+      "pythonSyntax": "pass",
+      "checks": [
+        {
+          "check": "incompatible-corner-trace",
+          "returnCode": 2,
+          "rejected": true
+        },
+        {
+          "check": "unsupported-cr-symmetric",
+          "returnCode": 2,
+          "rejected": true
+        },
+        {
+          "check": "preserve-existing-run",
+          "returnCode": 2,
+          "rejected": true
+        }
+      ]
+    },
+    "finiteMappedFieldsAndRecordedHashes": "all ten final runs passed",
+    "productRegression": "No FV numerical code changed in this increment. Full CTest/frontend/App/platform CI not rerun; prior refactor checks are recorded separately."
+  },
+  "findings": [
+    "Native FreeFEM CR/P0 on retained 484/1672/6208-cell polygons converged in 2 Stokes / 4 NS Newton steps with original prescribed face means.",
+    "The finest case has 24836 triangles, 100328 CR/P0 DOFs; this is an actual 2D mesh, not an extruded 3D solver.",
+    "Taylor-Hood symmetric-stress exact-trace NS controls converged in 3 steps at all three levels; finest mean-free pressure L2/Uref^2 is 7.734316580124876e-5.",
+    "Native coupled with exact sampled trace/changed boundary roles passes in 10 steps; same supported trace under SIMPLE diverges, last report at 100 steps, then linear iteration-limit exception.",
+    "Removing inertia retains almost the same native pressure error pattern. Gauge removal accounts for only about 0.5% of the original finest pressure-error square.",
+    "Boundary/trace/role treatment contributes substantially to pressure diagnostics; SIMPLE iteration instability is distinct. The unique defective coefficient and a general product fix are not established."
+  ],
+  "limits": [
+    "CR uses broken Laplacian and edge-average continuity; TH uses continuous P2/P1 and symmetric stress. Neither is the same finite-grid FV operator.",
+    "Original facet boundary velocities jump at polygon corners. CR fixes their means, not pointwise impermeability. TH exact trace changes the physical boundary and includes local normal velocity.",
+    "FE weak residual normalization is not the FV strict residual norm, and convergence does not certify spatial accuracy.",
+    "FE mapped values are exact triangle-quadrature polygon means; FV output values are centroid estimates. Analytic native trace also changes boundary reconstruction roles.",
+    "Three existing levels change both polygon approximation and interior discretization; no isolated fixed-geometry convergence order or universal timing claim is made.",
+    "DFG, general boundary types, default App integration, cross-platform execution and high-density scaling remain untested for this external adapter."
+  ],
+  "initialAdapterFailure": {
+    "cause": "FreeFEM also exposes artificial region interfaces in Th.be; initially treating every Th.be label as a physical Dirichlet boundary incorrectly constrained internal edges.",
+    "fix": "Use only explicit input boundary kind/face labels, leaving all region interfaces free.",
+    "evidence": "cr-l5-debug.log and initial failed attempts are retained. The source-initial snapshot is the corrected mean-constraint implementation; it is not claimed to reproduce the earlier bad-label code."
+  },
+  "archive": {
+    "path": "artifacts/current/laminar-foundation/open-source-core-fields.tar.gz",
+    "sha256": "c09199182357e94ce99ac7c36f884a7fbf5523f565106adafef09fe845f5e18c",
+    "bytes": 7155383,
+    "members": 251,
+    "retention": "Native fields/fluxes, all final FE cell means, representative fine FE coefficients, logs, controls, failures, original research drivers. Runtime packages and generated mesh duplicates stay local and are reproducible."
+  }
+}

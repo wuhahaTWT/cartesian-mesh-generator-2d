@@ -1,0 +1,178 @@
+// Native FreeFEM assembly/UMFPACK solve; no cartmesh FV operator is called.
+// Newton weak form follows the public FreeFEM NSNewton example, with an exact
+// pressure gauge (no pressure mass). The original exact mean-multiplier form
+// is retained in the evidence archive; its dense row made UMFPACK expensive.
+// Reference version: FreeFem/FreeFem-sources v4.15, b1e524c8ca6a9b44cb9eff780459bacfc12a3ad7.
+verbosity=0;
+string input="outputs/freefem-core/annulus-l5";
+string output="outputs/open-source-core/reference";
+string boundaryMode="facets";
+real inertia=1,nu=.1,speed=.5,tolerance=1e-8;
+int symmetric=0;
+for(int k=0;k<ARGV.n-1;k++) {
+    if(ARGV[k]=="--input") input=ARGV[k+1];
+    if(ARGV[k]=="--output") output=ARGV[k+1];
+    if(ARGV[k]=="--boundary") boundaryMode=ARGV[k+1];
+    if(ARGV[k]=="--inertia") inertia=atof(ARGV[k+1]);
+    if(ARGV[k]=="--nu") nu=atof(ARGV[k+1]);
+    if(ARGV[k]=="--speed") speed=atof(ARGV[k+1]);
+    if(ARGV[k]=="--tolerance") tolerance=atof(ARGV[k+1]);
+    if(ARGV[k]=="--symmetric") symmetric=atoi(ARGV[k+1]);
+}
+assert(nu>0 && speed==.5 && tolerance>0 && (inertia==0 || inertia==1));
+assert(boundaryMode=="facets" || boundaryMode=="exact");
+mesh Th=readmesh(input+".mesh");
+ifstream boundaryFile(input+".boundary.dat");
+int nf; boundaryFile>>nf;
+real[int] bcU(nf+1),bcV(nf+1); int[int] bcKind(nf+1);
+bcU=0;bcV=0;bcKind=0;
+for(int i=0;i<nf;i++) boundaryFile>>bcU[i+1]>>bcV[i+1]>>bcKind[i+1];
+// FreeFEM also lists interfaces between triangle regions in Th.be. Only the
+// imported physical face labels are Dirichlet boundaries; region interfaces
+// must remain unconstrained interior edges.
+int nb=0;for(int i=1;i<=nf;i++) if(bcKind[i]>0) nb++;
+int[int] labels(nb);int nextLabel=0;
+for(int i=1;i<=nf;i++) if(bcKind[i]>0) labels[nextLabel++]=i;
+func gx=boundaryMode=="facets" ? bcU[label] : y/3-y/(3*(x*x+y*y));
+func gy=boundaryMode=="facets" ? bcV[label] : -x/3+x/(3*(x*x+y*y));
+fespace Xh(Th,[VelocityElement,VelocityElement,PressureElement]);
+Xh [u,v,p],[w,z,q],[uold,vold,pold],[pressureTag0,pressureTag1,pressureTag];
+[pressureTag0,pressureTag1,pressureTag]=[0,0,1];
+u[]=0;
+macro Div(a,b) (dx(a)+dy(b)) //
+macro Visc(a,b,c,d) (dx(a)*dx(c)+dy(a)*dy(c)+dx(b)*dx(d)+dy(b)*dy(d)+symmetric*(dx(a)*dx(c)+dy(a)*dx(d)+dx(b)*dy(c)+dy(b)*dy(d))) //
+macro Adv(a,b,c,d,e,f) ((a*dx(c)+b*dy(c))*e+(a*dx(d)+b*dy(d))*f) //
+varf essential([u,v,p],[w,z,q])=on(labels,u=1,v=1);
+varf prescribed([u,v,p],[w,z,q])=on(labels,u=gx,v=gy);
+real[int] prescribedValues=prescribed(0,Xh,tgv=-1);
+real[int] fixed=essential(0,Xh,tgv=-1);
+real area=int2d(Th)(1.);
+int pressurePin=-1;
+for(int i=0;i<Xh.ndof;i++) if(pressureTag0[][i]>.5) {pressurePin=i;break;}
+assert(pressurePin>=0 && pressurePin<Xh.ndof-1);
+varf jacobian([u,v,p],[w,z,q])=int2d(Th,qforder=6)(
+    nu*Visc(u,v,w,z)-p*Div(w,z)-q*Div(u,v)
+    +inertia*(Adv(uold,vold,u,v,w,z)+Adv(u,v,uold,vold,w,z)))
+    +on(labels,u=gx,v=gy);
+varf rhsForm([u,v,p],[w,z,q])=int2d(Th,qforder=6)(
+    inertia*Adv(uold,vold,uold,vold,w,z))+on(labels,u=gx,v=gy);
+varf actualResidual([unused0,unused1,unused2],[w,z,q])=int2d(Th,qforder=6)(
+    nu*Visc(u,v,w,z)-p*Div(w,z)-q*Div(u,v)+inertia*Adv(u,v,u,v,w,z));
+ofstream history(output+".iterations.csv");
+history.precision(17);
+history<<"iteration,scaledUpdate,scaledResidual,absoluteResidual,linearResidual,pinContinuityResidual,seconds\n";
+real elapsedStart=clock(),change=1,residual=1,absoluteResidual=1,linearResidual=1;
+real pinContinuityResidual=1;
+int completed=0; bool converged=false;
+for(int iteration=1;iteration<=25;iteration++) {
+    uold[]=u[];
+    matrix A=jacobian(Xh,Xh,tgv=-1);
+    real[int] rhs=rhsForm(0,Xh,tgv=-1);
+    // Exact zero pressure at one DOF removes the constant nullspace. Keep the
+    // original A and all nonlinear residual rows, including the omitted
+    // continuity equation; inconsistent prescribed net flux cannot be hidden.
+    int[int] ai(0),aj(0);real[int] av(0);[ai,aj,av]=A;
+    int count=0;
+    for(int k=0;k<ai.n;k++) if(ai[k]!=pressurePin && aj[k]!=pressurePin) count++;
+    int[int] bi(count),bj(count);real[int] entries(count);int used=0;
+    for(int k=0;k<ai.n;k++) if(ai[k]!=pressurePin && aj[k]!=pressurePin) {
+        bi[used]=ai[k]-(ai[k]>pressurePin?1:0);
+        bj[used]=aj[k]-(aj[k]>pressurePin?1:0);entries[used++]=av[k];
+    }
+    matrix pinned=[bi,bj,entries];
+    assert(pinned.n==Xh.ndof-1 && pinned.m==Xh.ndof-1);
+    real[int] pinnedRhs(Xh.ndof-1);
+    for(int i=0;i<Xh.ndof-1;i++) pinnedRhs[i]=rhs[(i<pressurePin?i:i+1)];
+    set(pinned,solver=UMFPACK);
+    real[int] reduced=pinned^-1*pinnedRhs,solution(Xh.ndof);solution[pressurePin]=0;
+    for(int i=0;i<Xh.ndof-1;i++) solution[(i<pressurePin?i:i+1)]=reduced[i];
+    for(int i=0;i<Xh.ndof;i++) assert(abs(solution[i])<1e100);
+    real[int] linearDefect=A*solution;
+    linearDefect-=rhs;
+    linearResidual=linearDefect.linfty;
+    u[]=solution;
+    real pressureOffset=int2d(Th)(p)/area;
+    for(int i=0;i<Xh.ndof;i++) if(pressureTag0[][i]>.5) u[][i]-=pressureOffset;
+    real[int] defect=actualResidual(0,Xh);
+    pinContinuityResidual=abs(defect[pressurePin]);
+    change=0;residual=0;absoluteResidual=0;
+    for(int i=0;i<Xh.ndof;i++) {
+        real fieldScale=pressureTag0[][i]>.5 ? speed*speed : speed;
+        change=max(change,abs(u[][i]-uold[][i])/fieldScale);
+        if(abs(fixed[i])<.5) {
+            real equationScale=pressureTag0[][i]>.5 ? speed : nu*speed+inertia*speed*speed;
+            residual=max(residual,abs(defect[i])/equationScale);
+            absoluteResidual=max(absoluteResidual,abs(defect[i]));
+        }
+    }
+    completed=iteration;
+    history<<iteration<<","<<change<<","<<residual<<","<<absoluteResidual<<","<<linearResidual<<","<<pinContinuityResidual<<","<<clock()-elapsedStart<<endl;
+    {ofstream progress(output+".progress.json");progress.precision(17);
+     progress<<"{\"iteration\":"<<iteration<<",\"scaledUpdate\":"<<change<<",\"scaledResidual\":"<<residual
+         <<",\"pinContinuityResidual\":"<<pinContinuityResidual<<",\"cpuSeconds\":"<<clock()-elapsedStart<<"}\n";}
+    cout<<"newton "<<iteration<<" update="<<change<<" residual="<<residual<<" linear="<<linearResidual<<endl;
+    assert(change<1e100 && residual<1e100);
+    if(change<tolerance && residual<tolerance) {converged=true;break;}
+}
+real meanP=int2d(Th)(p)/area;
+real pressureRms=sqrt(int2d(Th,qforder=8)((p-meanP)^2)/area);
+real velocityRms=sqrt(int2d(Th,qforder=8)(u*u+v*v)/area);
+real divRms=sqrt(int2d(Th,qforder=8)(Div(u,v)^2)/area);
+real boundaryFlux=int1d(Th,labels,qforder=8)(u*N.x+v*N.y);
+real originalFacetDifference=0,dirichletMismatch=0,bcNormalSquared=0;
+for(int i=0;i<Xh.ndof;i++) if(abs(fixed[i])>.5)
+    dirichletMismatch=max(dirichletMismatch,abs(u[][i]-prescribedValues[i]));
+converged=converged && dirichletMismatch<speed*tolerance && abs(meanP)<speed*speed*tolerance;
+for(int i=0;i<Th.nbe;i++) {
+    int lab=Th.be(i).label;
+    if(lab<=0 || lab>nf || bcKind[lab]==0) continue;
+    real xmid=(Th.be(i)[0].x+Th.be(i)[1].x)*.5;
+    real ymid=(Th.be(i)[0].y+Th.be(i)[1].y)*.5;
+    originalFacetDifference=max(originalFacetDifference,sqrt((u(xmid,ymid)-bcU[lab])^2+(v(xmid,ymid)-bcV[lab])^2));
+}
+bcNormalSquared=int1d(Th,labels,qforder=8)((u*N.x+v*N.y)^2);
+func exactU=y/3-y/(3*(x*x+y*y));
+func exactV=-x/3+x/(3*(x*x+y*y));
+func exactP=inertia*((x*x+y*y)/18-2*log(sqrt(x*x+y*y))/9-1/(18*(x*x+y*y)));
+real exactMeanP=int2d(Th,qforder=10)(exactP)/area;
+real velocityError=sqrt(int2d(Th,qforder=10)((u-exactU)^2+(v-exactV)^2)/area)/speed;
+real pressureError=sqrt(int2d(Th,qforder=10)((p-meanP-exactP+exactMeanP)^2)/area)/(speed*speed);
+ofstream summary(output+".summary.json");summary.precision(17);
+summary<<"{\n\"converged\":"<<(converged?"true":"false")<<",\n\"iterations\":"<<completed
+    <<",\n\"triangles\":"<<Th.nt<<",\n\"vertices\":"<<Th.nv<<",\n\"degreesOfFreedom\":"<<Xh.ndof
+    <<",\n\"area\":"<<area<<",\n\"nu\":"<<nu<<",\n\"speed\":"<<speed<<",\n\"inertia\":"<<inertia
+    <<",\n\"symmetricStress\":"<<symmetric<<",\n\"boundaryMode\":\""<<boundaryMode<<"\",\n\"scaledUpdate\":"<<change
+    <<",\n\"scaledResidual\":"<<residual<<",\n\"absoluteResidual\":"<<absoluteResidual<<",\n\"linearResidual\":"<<linearResidual
+    <<",\n\"pressureMean\":"<<meanP<<",\n\"pressureRms\":"<<pressureRms
+    <<",\n\"pressureGauge\":\"exact-point-then-mean\",\n\"pressurePinDof\":"<<pressurePin
+    <<",\n\"pinContinuityResidual\":"<<pinContinuityResidual
+    <<",\n\"velocityRms\":"<<velocityRms<<",\n\"strongDivergenceRms\":"<<divRms<<",\n\"netBoundaryFlux\":"<<boundaryFlux
+    <<",\n\"originalFacetMidpointVelocityDifference\":"<<originalFacetDifference
+    <<",\n\"dirichletDofVelocityMismatch\":"<<dirichletMismatch<<",\n\"boundaryNormalVelocityL2\":"<<sqrt(bcNormalSquared)
+    <<",\n\"circleVelocityL2\":"<<velocityError<<",\n\"circlePressureMeanFreeL2\":"<<pressureError
+    <<",\n\"solveAndDiagnosticsCpuSeconds\":"<<clock()-elapsedStart<<"\n}\n";
+// Project each native FE field to its true triangle mean using FreeFEM's own
+// integration. Aggregate those means inside each unchanged source polygon.
+fespace P0h(Th,P0);
+P0h triangleU,triangleV,triangleP;
+varf areaForm(a,b)=int2d(Th)(b);
+varf uForm(a,b)=int2d(Th,qforder=6)(u*b);
+varf vForm(a,b)=int2d(Th,qforder=6)(v*b);
+varf pForm(a,b)=int2d(Th,qforder=6)(p*b);
+real[int] areas=areaForm(0,P0h),uIntegrals=uForm(0,P0h),vIntegrals=vForm(0,P0h),pIntegrals=pForm(0,P0h);
+triangleU[]=uIntegrals./areas;triangleV[]=vIntegrals./areas;triangleP[]=pIntegrals./areas;
+ifstream cells(input+".cells.dat");int nc;cells>>nc;
+real[int] cx(nc),cy(nc),ca(nc),cu(nc),cv(nc),cp(nc);cu=0;cv=0;cp=0;
+for(int i=0;i<nc;i++){int id;cells>>id>>cx[i]>>cy[i]>>ca[i];assert(id==i);}
+for(int k=0;k<Th.nt;k++) {
+    int id=Th[k].region-1;assert(id>=0 && id<nc);
+    real tx=(Th[k][0].x+Th[k][1].x+Th[k][2].x)/3;
+    real ty=(Th[k][0].y+Th[k][1].y+Th[k][2].y)/3;
+    real weight=Th[k].area/ca[id];
+    cu[id]+=weight*triangleU(tx,ty);cv[id]+=weight*triangleV(tx,ty);cp[id]+=weight*triangleP(tx,ty);
+}
+ofstream values(output+".cells.csv");values.precision(17);
+values<<"cell,x,y,area,u,v,p\n";
+for(int i=0;i<nc;i++) values<<i<<","<<cx[i]<<","<<cy[i]<<","<<ca[i]<<","<<cu[i]<<","<<cv[i]<<","<<cp[i]<<"\n";
+ofstream solutionFile(output+".fe-solution.txt");solutionFile.precision(17);solutionFile<<u[];
+if(!converged) exit(2);

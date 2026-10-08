@@ -122,6 +122,44 @@ build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm
 
 四个严格 field solve 使用原 6,208 格、`nu=.1`、`speed=.5`、inertia=1；映射探针单独设 inertia=0，在相同 SIMPLE 松弛和四次压力修正下执行 180 次。观测模式和残差单列，不称完整谱界。`open-source-mechanisms-fields.tar.gz` 的消费者是后续原生机制研究：保留场、通量、压力向量、分解面贡献、完整命令/成本与原创补丁；产品运行仍用前述 coupled JSON 算例。四个试改都不属于产品修复，不能改默认或据此继续高密度链。
 
+### 原生二维开源内核实际对照
+
+`tools/benchmarks/freefem_reference.py` 实际调用 **FreeFEM 4.15 的二维有限元装配及 UMFPACK**，只用 Python 编排和记录哈希，不重写有限体积方程。入口限于已保留的圆环：中心 `(0,0)`、内外多边形外接圆半径 `.5/1`、内壁速度 `.5`、`nu=.1`。原生转换器验证原拓扑、边界身份及基准参数；以原 FV 中心作扇形三角剖分，保留全部多边形、原边及物理边界，任何非正三角形都失败。它是独立研究入口，未进入产品求解或默认构建。
+
+上游参考固定为 [FreeFEM v4.15](https://github.com/FreeFem/FreeFem-sources/tree/b1e524c8ca6a9b44cb9eff780459bacfc12a3ad7)，使用官方 Newton 弱式与原生有限元空间。实际运行包为 Debian `4.15+dfsg-1` amd64；包 URL、SHA-256、二进制哈希、许可证来源和参考文件版本见 `artifacts/current/laminar-foundation/open-source-core.json`。FreeFEM 主体为 LGPL-2.1，分发包内其他组件有各自声明；仓库不提交第三方二进制或整份源码。Linux 本轮环境可按下列方式解包运行，其他系统需自行安装同版 FreeFEM，跨平台未验证：
+
+```sh
+mkdir -p outputs/freefem-runtime/packages
+for package in freefem++ libfreefem++; do
+  curl -fL "https://deb.debian.org/debian/pool/main/f/freefem++/${package}_4.15+dfsg-1_amd64.deb" -o "outputs/freefem-runtime/packages/${package}.deb"
+  dpkg-deb -x "outputs/freefem-runtime/packages/${package}.deb" outputs/freefem-runtime
+done
+cmake -S . -B build
+cmake --build build --target cartmesh2d_freefem_mesh --parallel 2
+python3 tools/benchmarks/freefem_reference.py --mesh outputs/laminar-inputs/annulus-l7.solver.cm2d --boundary outputs/laminar-inputs/annulus-l7.boundaries --output outputs/freefem-reference/cr-l7-ns --freefem outputs/freefem-runtime/usr/bin/FreeFem++ --space cr --trace facets --stress laplacian --inertia 1
+python3 tools/benchmarks/freefem_reference.py --mesh outputs/laminar-inputs/annulus-l7.solver.cm2d --boundary outputs/laminar-inputs/annulus-l7.boundaries --output outputs/freefem-reference/th-l7-exact-ns --freefem outputs/freefem-runtime/usr/bin/FreeFem++ --space th --trace exact --stress symmetric --inertia 1
+```
+
+原输入先按本节前面的 `failure-inputs.tar.gz` 命令解包。替换文件名中的 `l7` 可运行 `l5/l6`；`--inertia 0` 是 Stokes 对照。输出前缀已存在时明确拒绝覆盖，换新前缀保留旧场与失败记录。原生 CLI 和 App 不依赖 FreeFEM。
+
+- **CR/P0 + facets + Laplacian**：非协调速度 DOF 位于三角边中点，线性边上的中点值也是面均值，故保留原规定逐面速度及零平均法向通量。原折线转角两侧速度不连续，不能把两个不同值同时赋给 Taylor–Hood 的共享角点；封装明确拒绝 TH/facets。CR 内部是 broken Laplacian，不能把它和原生对称应力的有限网格结果视为同一个离散方程，也不把边均值无穿透说成边上逐点无穿透。
+- **Taylor–Hood P2/P1 + exact + symmetric**：在原多边形边界施加圆形 Couette 解析速度的 P2 节点插值。它允许解析场在弦上的局部法向速度，改变了原逐面不穿透的物理边界，用来验证参考解的一致性。`originalFacetMidpointVelocityDifference` 是与原边界的差；`dirichletDofVelocityMismatch` 才是实际所施加边界的满足误差。
+- 压力固定一个 DOF 后减全域均值，不加压力质量惩罚。原完整线性残差和非线性弱残差都检查被删的冗余连续性行。初版全局均值乘子使 UMFPACK 极慢；精确单点基准与已完成两档均值约束解的逐 DOF 速度/去常数压力相符到 `1e-13` 以内，原停止记录及探针保留。
+- 收敛要求 Newton 场变化和所有自由 DOF 的弱残差均 `<1e-8`，并检查规定速度 DOF 和压力均值。速度/压力尺度为 `Uref/Uref²`，动量/连续性弱行尺度为 `nu*Uref+inertia*Uref²` / `Uref`；这个有限元判据与原生 FV 的逐单元 strict 判据单列，不能代替空间精度。`cells.csv` 使用 FreeFEM 积分求三角形真实均值再聚合到原单元，原 FV 值则是中心估计。
+
+`open-source-core-fields.tar.gz` 保存代表场、十次最终外部运行的日志/控制、原生 Stokes 与解析 trace 对照驱动、SIMPLE 真实失败、初版接入错误及压力基准对照。消费者是后续边界/离散修复和跨机复跑：原网格复用已有输入包，转换网格可重建，运行库/依赖/编译产物只留在本机 `outputs/`。原生解析 trace 对照将 983 个边界面按真实通量符号设为 velocity-inlet/outlet，一个恰为零通量的非零速度面使用现有 SmoothMovingWall；没有修改角色检查或补偿净通量。这同时改变 trace 和边界重构路径，不能据此宣布唯一壁面系数已经定位。原不支持角色的拒绝记录和后续 SIMPLE 抛错均保留；后者没有返回末场，只有真实进度和错误，不伪造接受场。
+
+归档内原运行命令含本机绝对路径；跨机原生复跑可解包到仓库根目录，直接重编其中 C++ 驱动并传新输出前缀，无需保留库快照或改写旧结果。例如复跑同解析 trace 的 coupled NS：
+
+```sh
+tar -xzf artifacts/current/laminar-foundation/open-source-core-fields.tar.gz -C .
+mkdir -p outputs/freefem-reference
+c++ -std=c++20 -O2 -Iinclude outputs/open-source-core/native-exact-trace-supported/exact-trace.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/freefem-reference/native-trace
+outputs/freefem-reference/native-trace outputs/laminar-inputs/annulus-l7.solver.cm2d outputs/freefem-reference/native-ns 1
+```
+
+SIMPLE 失败驱动在 `native-exact-trace-supported-simple/exact-trace.cpp`，同样链接当前原生库，最后两个参数为 `1 simple`。这些驱动的原验证库版本为 `d51d8eb`；本次适配提交没有改变 FV 数值代码，后续修复后应保留新旧结果的版本区别。
+
 ### 单元一步分项与来源传播
 
 `tools/benchmarks/cell_step.py` 是 Linux/GNU ld 研究入口，先构建已有层流库，不进入默认构建或产品求解。它从当前 archive 提取真实 C++ 符号，编译包裹版和未包裹版；`cell_step.cpp` 只记录实际 `momentum` / `rhieChowFlux` 输入及返回，先恢复原生 Stokes 一步映射的模态，再抓取下一次全网格 `F(x)` 与 `F(0)`。目标格只是观测位置，压力求解仍全局进行。解包前述原失败输入后运行：
