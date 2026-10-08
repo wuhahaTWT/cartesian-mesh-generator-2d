@@ -8,6 +8,8 @@
 
 云端已复现圆环与 DFG 默认发散，并加入显式 `--anderson-history` / `--anderson-start` 研究控制。原默认仍为不加速；启用 Anderson 时原四向量、第 10 步开始的设置也保留。使用 16 向量、首步开始积累历史，旧 3063 格 DFG 在 **1281 轮**严格收敛，6208 格圆环在 **1002 轮**严格收敛。DFG 只提早开始但仍用四向量、或只扩大历史但仍等到第 10 步，都失败。原生 CTest **102/102**、前端 **191/191** 通过；默认 Poiseuille 的 cells/faces 文件哈希与修改前相同。
 
+不可压求解器已将工况初始化/边界预设、动量组装、Rhie–Chow 通量、压力修正、收敛监测和受力后处理拆为独立模块。纯重构以 `5672a87` 为对照，方腔、制造解、非定常 Taylor–Green、Poiseuille、旧圆环和旧 DFG 六例的 **u/v/p/flux 哈希与迭代数全部相同**，原生 **102/102** 通过；[逐场哈希](../artifacts/current/laminar-foundation/refactor-hashes.json)保留。版本化算例文件、工程停止与 SIMPLEC 仍待实现。
+
 这尚不是精度修复：DFG `Cd=6.0631245`（误差 **8.667%**）、`Cl=-0.5728154`、压降 `0.10719345`；圆环压力 L2/Uref² 仍 **0.02775795**。两张旧网格通过 OpenFOAM v2412 标准 checkMesh，但无限制梯度/非正交修正的 simpleFoam 同样发散。压力校正、重构与小单元几何仍在研究，默认设置未调整。[控制对照](../artifacts/current/laminar-foundation/early-anderson.json)及[真实场](../artifacts/current/laminar-foundation/early-anderson-fields.tar.gz)保留。
 
 新增入口 `tools/benchmarks/laminar.py`：方腔 Re100/400/1000、DFG Re20、旋转圆环、Poiseuille，三档网格、两种对流格式。首轮 36 个矩阵条目中 24 个收敛、8 个未通过网格质量门、4 个求解失败。失败计入结果，不降低质量门。新结果及可异机重跑的输入见 [基线](../artifacts/current/laminar-foundation/baseline.json)，复现见[开发指南](DEVELOPMENT_CN.md#不可压基础基准与云端复现)。

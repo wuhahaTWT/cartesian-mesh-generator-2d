@@ -1,0 +1,279 @@
+{
+  "baselineCommit": "5672a87",
+  "compiler": "GCC 14.2 Release, Linux x86_64",
+  "pressurePreconditioner": "ic0",
+  "nativeTests": {
+    "passed": 102,
+    "total": 102
+  },
+  "cases": [
+    {
+      "case": "cavity",
+      "converged": true,
+      "iterations": 716,
+      "fieldSha256": {
+        "before": {
+          "u": "4769c3d8ab875231d63d2152f58f82e41d92673f74f3590c930ac1cf348431f9",
+          "v": "006660f3eb948bc55175318eceacfc707d0f8d4b544d0d5edeb7357dc11129e6",
+          "p": "8333545ce48eab820cfb6cef1a308b474b6c5067bc034153461fb8c4f9baec11",
+          "flux": "924037c54328867261aba58896ae2c2dba0bd8e07e7c9e251be7228921ba3ab6"
+        },
+        "after": {
+          "u": "4769c3d8ab875231d63d2152f58f82e41d92673f74f3590c930ac1cf348431f9",
+          "v": "006660f3eb948bc55175318eceacfc707d0f8d4b544d0d5edeb7357dc11129e6",
+          "p": "8333545ce48eab820cfb6cef1a308b474b6c5067bc034153461fb8c4f9baec11",
+          "flux": "924037c54328867261aba58896ae2c2dba0bd8e07e7c9e251be7228921ba3ab6"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "0fd53d57dea30d736d9e22e382ecdc67509bfbf5eba01a9c3d239b80b0873e09",
+        "faces.csv": "910d0e41b34e7080d3bb22b8a15f32a9125cf6e496d40481dc07911f932bdfc4"
+      },
+      "beforeSeconds": 1.08471957200004,
+      "afterSeconds": 1.1015754600000491,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-repair/matrix/meshes/cavity100-l5/mesh.solver.cm2d",
+        "--case",
+        "cavity",
+        "--nu",
+        ".01",
+        "--convection",
+        "limited-linear"
+      ]
+    },
+    {
+      "case": "manufactured",
+      "converged": true,
+      "iterations": 763,
+      "fieldSha256": {
+        "before": {
+          "u": "d4e92345ca22184759b27eb97b73681feccd65dc2963b9b0b76d93da28cfb333",
+          "v": "20808cc52f46fe751484f120addcf7b11483c94d33060162cf3198386207e707",
+          "p": "875f13bc580a36c28f35e2a4d045e910b4c08689b6bddfd2492c0daca4c67f06",
+          "flux": "24b33a3a0e4d2f44a812188d9fe34698f483f3f0e13ca6dcf91e4e24001d56b0"
+        },
+        "after": {
+          "u": "d4e92345ca22184759b27eb97b73681feccd65dc2963b9b0b76d93da28cfb333",
+          "v": "20808cc52f46fe751484f120addcf7b11483c94d33060162cf3198386207e707",
+          "p": "875f13bc580a36c28f35e2a4d045e910b4c08689b6bddfd2492c0daca4c67f06",
+          "flux": "24b33a3a0e4d2f44a812188d9fe34698f483f3f0e13ca6dcf91e4e24001d56b0"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "e94f8896a2037a6e15f1e72adff3d75e7c42fa8bcdabd7488d32526b1fd8a799",
+        "faces.csv": "1c2ec9ee1fc54510473ef49dba9ab32b1c75e8645bb02b241c2f11140969cdff"
+      },
+      "beforeSeconds": 1.1004984539999896,
+      "afterSeconds": 1.0758702719999746,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-repair/matrix/meshes/cavity100-l5/mesh.solver.cm2d",
+        "--case",
+        "manufactured",
+        "--nu",
+        ".1",
+        "--convection",
+        "limited-linear"
+      ]
+    },
+    {
+      "case": "transient",
+      "converged": true,
+      "iterations": 35,
+      "fieldSha256": {
+        "before": {
+          "u": "0aad7c08c34248b23fbd62c0b113b59e47999060a7857d81e065b0dbe6e1fdd5",
+          "v": "c0a102ffa9d9adcfd47a262b23a1f8eb12900fdbdb1d1ea1d5739b1ff693ef15",
+          "p": "3aa25d5fa5e6e389b7c5501a3080fb7b1bf552c072f26f1cdf5d0596ceaf159b",
+          "flux": "b25585e5df365843474fae26cfeddf122503247347e4832b445556cfe7d6b34b"
+        },
+        "after": {
+          "u": "0aad7c08c34248b23fbd62c0b113b59e47999060a7857d81e065b0dbe6e1fdd5",
+          "v": "c0a102ffa9d9adcfd47a262b23a1f8eb12900fdbdb1d1ea1d5739b1ff693ef15",
+          "p": "3aa25d5fa5e6e389b7c5501a3080fb7b1bf552c072f26f1cdf5d0596ceaf159b",
+          "flux": "b25585e5df365843474fae26cfeddf122503247347e4832b445556cfe7d6b34b"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "578d4690cd594180adbe003bfbc2d7c1b4dd3585d1f551e3b0dc34a3ad706622",
+        "faces.csv": "ac000f2d7a99b597a6d7a1d9ee02ec00db71a5152cff7719ed480d4c5409ae39"
+      },
+      "beforeSeconds": 0.12845568600005208,
+      "afterSeconds": 0.11715158699985295,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-repair/matrix/meshes/cavity100-l5/mesh.solver.cm2d",
+        "--case",
+        "taylor-green",
+        "--nu",
+        ".01",
+        "--time-step",
+        ".01",
+        "--steps",
+        "2"
+      ]
+    },
+    {
+      "case": "channel",
+      "converged": true,
+      "iterations": 88,
+      "fieldSha256": {
+        "before": {
+          "u": "e28779682e4a73dece8809bf4b86e84d144acc180cb53296aaa2514480d3c9fa",
+          "v": "a713a183f5547b468bce8905265c89651a9ec5160f7a3364a1159aee86198acd",
+          "p": "b864a4b000f09fd22716e42e6f226cd990857a520334bc078997a58d34ddebb9",
+          "flux": "b30a4898db56556d1b30fc01dd5463cae37f137ede4679ab3b315911298afc17"
+        },
+        "after": {
+          "u": "e28779682e4a73dece8809bf4b86e84d144acc180cb53296aaa2514480d3c9fa",
+          "v": "a713a183f5547b468bce8905265c89651a9ec5160f7a3364a1159aee86198acd",
+          "p": "b864a4b000f09fd22716e42e6f226cd990857a520334bc078997a58d34ddebb9",
+          "flux": "b30a4898db56556d1b30fc01dd5463cae37f137ede4679ab3b315911298afc17"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "6ebc3aabfc50d3d65e79a61d0d082487b1f43dc6e6caafed8817522e0a681789",
+        "faces.csv": "0766820f9f87e8e31c5b3c5c3b8be5ebb6a9f7b67a0c69a490601d4668394f99"
+      },
+      "beforeSeconds": 0.06389924199993402,
+      "afterSeconds": 0.08413981800003967,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-repair/matrix/meshes/poiseuille-l5/mesh.solver.cm2d",
+        "--case",
+        "channel",
+        "--nu",
+        ".1",
+        "--convection",
+        "limited-linear"
+      ]
+    },
+    {
+      "case": "annulus",
+      "converged": true,
+      "iterations": 995,
+      "fieldSha256": {
+        "before": {
+          "u": "706ae79ccd28ffcef8d9fd17ee5979b379e444ff67912a09445463b599d0935d",
+          "v": "29b7a752993d3680121dfdf5ae09134e916e4a827d2735801914468403028e16",
+          "p": "2829a6a3f5429ef52f830366f4e74cad10a11a51d87c737292c6ea04d9dc21c5",
+          "flux": "1bfc0ba167103777d03a7a481084da1744ebac61ee7c1aa0033a32e427a299b9"
+        },
+        "after": {
+          "u": "706ae79ccd28ffcef8d9fd17ee5979b379e444ff67912a09445463b599d0935d",
+          "v": "29b7a752993d3680121dfdf5ae09134e916e4a827d2735801914468403028e16",
+          "p": "2829a6a3f5429ef52f830366f4e74cad10a11a51d87c737292c6ea04d9dc21c5",
+          "flux": "1bfc0ba167103777d03a7a481084da1744ebac61ee7c1aa0033a32e427a299b9"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "ced3a893a1148ac504c92fde1f3269bb498b2b7689b5b6f2c60193c9b282204e",
+        "faces.csv": "e82a0663dfbaf978f5eda52918f1cba81dd4d80fc3428866517053ca341e3d73"
+      },
+      "beforeSeconds": 50.23558839399993,
+      "afterSeconds": 47.95902246299988,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+        "--boundary",
+        "outputs/laminar-inputs/annulus-l7.boundaries",
+        "--case",
+        "custom",
+        "--nu",
+        ".1",
+        "--speed",
+        ".5",
+        "--convection",
+        "limited-linear",
+        "--steady-acceleration",
+        "anderson",
+        "--anderson-history",
+        "16",
+        "--anderson-start",
+        "1"
+      ]
+    },
+    {
+      "case": "dfg20",
+      "converged": true,
+      "iterations": 1281,
+      "fieldSha256": {
+        "before": {
+          "u": "85708413cf5ea40c61e5b9c10c7c1a962e4b6b95a2ddb5a7bb9a1e461c2a267f",
+          "v": "88b5e3ed382e635c0e34384f3ff443f89ccbae65341d243cdb99a4811f0df791",
+          "p": "0028a2bd8753f83752760e9ffbef487fc9f8c84045a5c2ed00e799885b7a90bf",
+          "flux": "de3c0f2f91ec32b752c28db3f13be85e1c6e595793f9d666646bcc0e168bd717"
+        },
+        "after": {
+          "u": "85708413cf5ea40c61e5b9c10c7c1a962e4b6b95a2ddb5a7bb9a1e461c2a267f",
+          "v": "88b5e3ed382e635c0e34384f3ff443f89ccbae65341d243cdb99a4811f0df791",
+          "p": "0028a2bd8753f83752760e9ffbef487fc9f8c84045a5c2ed00e799885b7a90bf",
+          "flux": "de3c0f2f91ec32b752c28db3f13be85e1c6e595793f9d666646bcc0e168bd717"
+        }
+      },
+      "fileSha256": {
+        "cells.csv": "35f3698cfc6afab3df627b02bc640a70636af070d986b8ef93474dd09a28bb44",
+        "faces.csv": "c3b32f4ea48051a58b8f9c7b4a11e91fcd90fea7a66343cd0c03f7103c8896d0"
+      },
+      "beforeSeconds": 37.35409528900004,
+      "afterSeconds": 35.41320120199998,
+      "options": [
+        "--max-iterations",
+        "12000",
+        "--tolerance",
+        "1e-8",
+        "--pressure-preconditioner",
+        "ic0",
+        "--mesh",
+        "outputs/laminar-inputs/dfg20-l7.solver.cm2d",
+        "--boundary",
+        "outputs/laminar-inputs/dfg20-l7.boundaries",
+        "--case",
+        "custom",
+        "--nu",
+        ".001",
+        "--speed",
+        ".3",
+        "--convection",
+        "limited-linear",
+        "--steady-acceleration",
+        "anderson",
+        "--anderson-history",
+        "16",
+        "--anderson-start",
+        "1"
+      ]
+    }
+  ]
+}

@@ -8,6 +8,12 @@
 
 namespace cartmesh2d::fv::detail {
 
+inline bool strictFlowConverged2D(std::size_t iteration,double momentum,double velocityChange,
+    double pressureChange,double continuity,double imbalance,double tolerance,bool materialConverged) {
+    return iteration>=10 && momentum<tolerance && velocityChange<tolerance && pressureChange<tolerance &&
+        continuity<1e-8 && imbalance<1e-8 && materialConverged;
+}
+
 // Project-specific engineering criterion, inspired by residual reduction and
 // physical-monitor stability guidance, not Fluent-equivalent residuals.
 // The max-cell residual cap remains mandatory even after a large reduction.

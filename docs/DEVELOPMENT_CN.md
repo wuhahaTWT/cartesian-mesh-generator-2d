@@ -61,6 +61,8 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 `artifacts/current/laminar-foundation/rejected-implicit-pressure.patch` 保留未奏效的完整非正交压力 GMRES 试验，可在原 `6ec4edf` 求解器上复现，CLI 选项为 `--pressure-correction implicit`。它只用于解释已试过的方向，不应在未解决问题时作为修复合入。对应细圆环第 10/20 轮动量残差约 `4309.5 / 694436`，故下一步须继续检查外迭代动量—压力耦合，而不能假定只换压力线性求解器即可消除发散。
 
+不可压内部实现入口为 `src/fv/Incompressible2D.cpp`；工况与预设在 `FlowCase2D.cpp`，动量在 `FlowMomentum2D.cpp`，Rhie–Chow 在 `FlowFlux2D.cpp`，压力线性循环在 `FlowPressure2D.hpp`，监测在 `FlowConvergence2D.cpp`，受力在 `FlowForces2D.cpp`。私有参数接口集中于 `FlowSolverDetail2D.hpp`，公共求解 API 保持不变。纯重构的六个代表例逐场哈希见 `artifacts/current/laminar-foundation/refactor-hashes.json`；数值修改须另行比较精度，不能援引重构哈希作为修复证据。
+
 ## 产物保留与清理
 
 维护对象是当前源码与必要测试；App 打包只包含 `desktop/src/`、原生 runtime 和样例。多平台共用同一算法源码，构建树、依赖、研究数据及安装包分别管理。[CMake](https://cmake.org/cmake/help/latest/manual/cmake.1.html#introduction-to-cmake-buildsystems)明确区分源码树和可重建的构建树。
