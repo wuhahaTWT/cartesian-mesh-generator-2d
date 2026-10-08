@@ -15,7 +15,7 @@ void prepareMonitors(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b
             const auto [it,added]=groups.emplace(key,groups.size());
             if(added) {
                 monitorLengths.push_back(0);
-                for(const auto* label:{"flux/(Uref*length)","forceX/(pressureScale*length)","forceY/(pressureScale*length)"})
+                for(const auto* label:{"flux/(Uref*length)","forceX/(pressureScale*length)","forceY/(pressureScale*length)","mean-pressure/pressureScale","torque/(pressureScale*length^2)"})
                     r.monitorNames.push_back(key+":"+label);
             }
             monitorGroup[id]=it->second;
@@ -37,8 +37,9 @@ Vec physicalMonitors(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b
         }
         values[0]/=totalArea*c.speed*c.speed;
         for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour) {
-            const auto& face=m.faces[id];const auto i=face.owner,g=monitorGroup[id],offset=1+3*g;
+            const auto& face=m.faces[id];const auto i=face.owner,g=monitorGroup[id],offset=1+5*g;
             values[offset]+=r.flux[id]/(c.speed*monitorLengths[g]);
+            values[offset+3]+=pressureFaces[id]*std::hypot(face.areaVector.x,face.areaVector.y)/(pressureScale*monitorLengths[g]);
             if(b.role[id]!=Role::Wall && b.role[id]!=Role::Lid)continue;
             const double dx=-faceNu(c,id)*(face.transmissibility*(b.u[id]-r.u[i])+dot(gu[i],face.correction))
                 +(stressCorrection.empty()?0:stressCorrection[id].x);
@@ -46,6 +47,9 @@ Vec physicalMonitors(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b
                 +(stressCorrection.empty()?0:stressCorrection[id].y);
             values[offset+1]+=(pressureFaces[id]*face.areaVector.x+dx)/(pressureScale*monitorLengths[g]);
             values[offset+2]+=(pressureFaces[id]*face.areaVector.y+dy)/(pressureScale*monitorLengths[g]);
+            const double x=face.centre.x-.5*(b.xmin+b.xmax),y=face.centre.y-.5*(b.ymin+b.ymax);
+            values[offset+4]+=(x*(pressureFaces[id]*face.areaVector.y+dy)-y*(pressureFaces[id]*face.areaVector.x+dx))
+                /(pressureScale*monitorLengths[g]*monitorLengths[g]);
         }
         for(double value:values)finite(value);
         return values;

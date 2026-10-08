@@ -15,6 +15,7 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
 enum class FlowConvergence2D { Strict, Engineering };
+enum class FlowCoupling2D { Simple, SimpleC };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -51,6 +52,9 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
+    // Optional steady laminar correction response. The predicted Rhie--Chow
+    // flux retains SIMPLE's coefficient so the converged equations are shared.
+    FlowCoupling2D coupling = FlowCoupling2D::Simple;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
     // Explicit study controls; retain the original four-vector, step-10 default.

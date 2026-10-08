@@ -171,6 +171,7 @@ int main(int argc, char** argv) {
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
             "--case-file FILE.json: native flow case v1; relative paths use its directory, explicit CLI options override.\n"
+            "--coupling simple|simplec: steady laminar pressure/velocity correction (default simple).\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
@@ -182,9 +183,9 @@ int main(int argc, char** argv) {
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
             "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
-            "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
+            "--velocity-relaxation 0.6 --pressure-relaxation 0.25: inner relaxation in (0,1].\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
-            "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
+            "Engineering: residual < tolerance, 3-order reduction or <1e-5, 50-step field/monitor stability <1e-3, strict continuity and final linear step.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
             "--anderson-history 4 --anderson-start 10: history capacity (1..32) and first history step (>=1).\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
@@ -239,6 +240,9 @@ int main(int argc, char** argv) {
             } else if (a == "--convergence") {
                 if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
+            } else if (a == "--coupling") {
+                if(v!="simple" && v!="simplec")throw std::invalid_argument("coupling must be simple or simplec");
+                controls.coupling=v=="simplec"?fv::FlowCoupling2D::SimpleC:fv::FlowCoupling2D::Simple;
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
             } else if (a == "--initial-guess") {
@@ -250,6 +254,10 @@ int main(int argc, char** argv) {
                 if(passes<1 || passes>4 || std::floor(passes)!=passes)
                     throw std::invalid_argument("pressure-corrections must be an integer in [1,4]");
                 controls.pressureCorrectionPasses=static_cast<std::size_t>(passes);
+            } else if (a == "--pressure-relaxation") {
+                controls.pressureRelaxation=number(v);
+                if (!(controls.pressureRelaxation>0 && controls.pressureRelaxation<=1))
+                    throw std::invalid_argument("pressure-relaxation must be in (0,1]");
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
@@ -611,8 +619,10 @@ int main(int argc, char** argv) {
         summary << "{\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
+                                << "\"coupling\":" << std::quoted(controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":"simple") << ",\n"
                                 << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
+                                << "\"pressureRelaxation\":" << controls.pressureRelaxation << ",\n"
                                 << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
                                 << "\"andersonHistory\":" << controls.andersonHistory << ",\n"
                                 << "\"andersonStart\":" << controls.andersonStart << ",\n"
@@ -626,7 +636,7 @@ int main(int argc, char** argv) {
                     << ",\n\"adaptiveLinearSteps\":" << std::count_if(r.history.begin(),r.history.end(),[](const auto& h){return h.linearRelativeTolerance>1e-11;}) << ",\n";
             if(controls.convergence==fv::FlowConvergence2D::Engineering) {
                 const auto w=fv::detail::engineeringWindow2D(r.history,r.convergenceReference,controls.tolerance);
-                summary << "\"engineeringConvergence\":{\"definition\":\"max-cell-reduction-monitor-window-v1\",\"windowLength\":50,\"stabilityTolerance\":0.001,\"residualRatioTolerance\":0.001,\"absoluteFallback\":0.00001,\"referenceResidual\":" << r.convergenceReference
+                summary << "\"engineeringConvergence\":{\"definition\":\"max-cell-reduction-monitor-window-v2\",\"windowLength\":50,\"stabilityTolerance\":0.001,\"residualRatioTolerance\":0.001,\"absoluteFallback\":0.00001,\"referenceResidual\":" << r.convergenceReference
                     << ",\"residualMax\":" << w.residualMax << ",\"velocityPath\":" << w.velocityPath
                     << ",\"pressurePath\":" << w.pressurePath << ",\"monitorRange\":" << w.monitorRange << ",\"monitorNames\":[";
                 for(std::size_t j=0;j<r.monitorNames.size();++j){if(j)summary<<',';summary<<std::quoted(r.monitorNames[j]);}

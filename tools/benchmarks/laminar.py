@@ -12,6 +12,7 @@ import csv
 import json
 import math
 import platform
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -306,6 +307,13 @@ def main():
     args=parser.parse_args();args.output=args.output.resolve();args.flow_cli=args.flow_cli.resolve();args.mesh_cli=args.mesh_cli.resolve()
     args.output.mkdir(parents=True,exist_ok=True)
     args.binary_hash=meshio.sha256_file(args.flow_cli)
+    # A queued run must not pick up a later rebuild of build/ midway through
+    # the study. Keep one executable per content hash in the study directory.
+    binary=args.output/'binaries'/('flow-'+args.binary_hash+args.flow_cli.suffix)
+    binary.parent.mkdir(exist_ok=True)
+    if not binary.exists():shutil.copy2(args.flow_cli,binary)
+    if meshio.sha256_file(binary)!=args.binary_hash:raise ValueError('benchmark executable snapshot hash mismatch')
+    args.flow_cli=binary
     for case in args.cases:
         for level in args.levels:prepare(case,level,args.output,args.mesh_cli,args.timeout,args.mesh_layout)
     if args.prepare_only:return

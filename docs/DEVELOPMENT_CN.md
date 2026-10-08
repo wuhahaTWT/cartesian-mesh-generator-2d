@@ -70,6 +70,10 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 不可压内部实现入口为 `src/fv/Incompressible2D.cpp`；工况与预设在 `FlowCase2D.cpp`，动量在 `FlowMomentum2D.cpp`，Rhie–Chow 在 `FlowFlux2D.cpp`，压力线性循环在 `FlowPressure2D.hpp`，监测在 `FlowConvergence2D.cpp`，受力在 `FlowForces2D.cpp`。私有参数接口集中于 `FlowSolverDetail2D.hpp`，公共求解 API 保持不变。纯重构的六个代表例逐场哈希见 `artifacts/current/laminar-foundation/refactor-hashes.json`；数值修改须另行比较精度，不能援引重构哈希作为修复证据。
 
+`--convergence engineering` 是独立的稳态层流停止模式：最大单元动量残差须低于 `--tolerance`，50 步连续性和流量不平衡仍各低于 `1e-8`，场变化累计及归一化物理监测范围低于既有 `1e-3`，残差下降三阶或低于 `1e-5`；必须用普通严格线性步确认。监测包含动能、各边界组流量/受力/平均压力/力矩。窗口稳定不保证远离固定点的慢模态已经衰减，故须针对压降、受力和参考误差选择容差；已有方腔反例及容差扫描见 `engineering-simplec.json`。不能将 `1e-5` 作为通用精度设置。
+
+`--coupling simplec --pressure-relaxation 1` 显式试验稳态层流 SIMPLEC。校正响应采用松弛动量行的 `area/(diag+sum(offDiagonal))`，预测 Rhie–Chow 仍保留原系数以共享固定点方程；非正对角明确失败，非定常及物性耦合不支持。SIMPLE、压力松弛 0.25 和 strict 仍为默认。旧 DFG 已发现非物理解分支，旧圆环该组控制失败，故当前不推荐自动切换。`tools/benchmarks/laminar.py` 在输出目录保存按哈希命名的求解器快照，排队运行不会混入后续重新构建的版本。
+
 ### 与网格产品一致的求解规模
 
 云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。

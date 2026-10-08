@@ -45,6 +45,9 @@ static FlowResult2D solveFlow(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
+    ensure(c.coupling==FlowCoupling2D::Simple ||
+           (c.coupling==FlowCoupling2D::SimpleC && !previous && !material),
+           "SIMPLEC requires steady laminar flow");
     ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
            "Pressure corrections must be in [1,4]");
     ensure(!material || c.pressureCorrectionPasses==4,
@@ -205,7 +208,7 @@ static FlowResult2D solveFlow(
     // backflow, including candidate rejection and physical-time initialization.
     const auto pressureGradientStencil=detail::buildFlowGradientStencil2D(m,b.fixedP,true);
     detail::ChangingFlowGradientStencil2D velocityGradientU(m),velocityGradientV(m);
-    Vec ra(n);
+    Vec ra(n), correctionResponse(c.coupling==FlowCoupling2D::SimpleC?n:0);
     Vec pc(n);
     Vec df(nf);
     const double h = b.ymax - b.ymin;
@@ -359,6 +362,7 @@ static FlowResult2D solveFlow(
     };
     refreshMomentum();
     for (std::size_t it = 1; it <= c.maxIterations; ++it) {
+        const bool finalCertification=certifyNext;
         strictLinearIteration=!c.adaptiveLinear || certifyNext;
         certifyNext=false;
         linearRelativeTolerance=linearPolicy.relative(strictLinearIteration);
@@ -385,16 +389,32 @@ static FlowResult2D solveFlow(
         const auto gup=velocityGradientU.apply(r.u,b.u,b.fixedU),gvp=velocityGradientV.apply(r.v,b.v,b.fixedV);
         const auto predicted=rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,gup,gvp,gp,forceGradient,
             oldFluxDefect,previous!=nullptr,timeStep,df);
+        if(c.coupling==FlowCoupling2D::SimpleC) {
+            // Approximate neighbouring velocity corrections by the local
+            // correction: aP' = aP + sum(aPN), with signed off-diagonals.
+            // This changes only the correction preconditioner, not the
+            // predicted face equation or the residual used for acceptance.
+            for(std::size_t i=0;i<n;++i) {
+                double du=au.diag[i],dv=av.diag[i];
+                for(auto k=pattern.rows[i];k<pattern.rows[i+1];++k){du+=au.off[k];dv+=av.off[k];}
+                const double diagonal=std::max(du,dv);
+                ensure(std::isfinite(diagonal) && diagonal>0,
+                       "SIMPLEC correction diagonal is not positive; reduce velocity relaxation");
+                correctionResponse[i]=m.cells[i].area/diagonal;
+            }
+            for(std::size_t id=0;id<nf;++id)df[id]=interpolate(m.faces[id],correctionResponse)*m.faces[id].transmissibility;
+        }
+        const auto& pressureResponse=c.coupling==FlowCoupling2D::SimpleC?correctionResponse:ra;
         // rAU and the orthogonal pressure coefficients stay fixed across the
         // four non-orthogonal corrections. Assemble and pin once; only the
         // explicit correction/RHS changes. The next SIMPLE iteration resets
         // the matrix and invalidates its IC(0) factorization.
-        const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,ra,df,predicted,pressureGradientStencil,zeros,linearSolve);
+        const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,pressureResponse,df,predicted,pressureGradientStencil,zeros,linearSolve);
         const auto correctionGradient=pressureGradientStencil.apply(pc,zeros);
         const auto gc=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
         double du=0,dp=0;
-        for(std::size_t i=0;i<n;++i){r.u[i]-=ra[i]*gc[i].x;r.v[i]-=ra[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
+        for(std::size_t i=0;i<n;++i){r.u[i]-=pressureResponse[i]*gc[i].x;r.v[i]-=pressureResponse[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
             finite(r.u[i]);finite(r.v[i]);finite(r.p[i]);du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);}
         Vec div(n);r.globalImbalance=0;
         for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];double flux=predicted[id];
@@ -417,7 +437,7 @@ static FlowResult2D solveFlow(
             if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
         bool acceleratedCandidate=false;
         const bool baseConverged=detail::strictFlowConverged2D(it,mr,du,dp,continuity,r.globalRelativeImbalance,c.tolerance,materialConverged);
-        if(accelerated && it>=c.andersonStart && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
+        if(accelerated && !finalCertification && it>=c.andersonStart && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
             const auto candidate=accelerator.propose(previousScaled,packState());
             if(candidate) {
                 ++r.performance.accelerationCandidates;
@@ -485,13 +505,13 @@ static FlowResult2D solveFlow(
         if(it<=10)r.convergenceReference=std::max(r.convergenceReference,step.momentumResidual);
         r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
-        // Only an ordinary SIMPLE step can certify the fixed-point and all
-        // original stopping gates. An extrapolated field is never the final
+        // Only an ordinary step can certify the selected convergence mode.
+        // An extrapolated field is never the final
         // convergence proof, even when its momentum residual is small.
         const bool stoppingCandidate=c.convergence==FlowConvergence2D::Engineering
-            ? baseConverged && detail::engineeringWindow2D(r.history,r.convergenceReference,c.tolerance).accepted : baseConverged;
-        if(stoppingCandidate && !acceleratedCandidate) {
-            if(strictLinearIteration){r.converged=true;break;}
+            ? detail::engineeringWindow2D(r.history,r.convergenceReference,c.tolerance).accepted : baseConverged;
+        if(stoppingCandidate) {
+            if(strictLinearIteration && !acceleratedCandidate){r.converged=true;break;}
             certifyNext=true;
         }
         if(c.adaptiveLinear)linearPolicy.observe(std::max({mr,du,dp,continuity}));

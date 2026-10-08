@@ -87,7 +87,7 @@ public:
     explicit FlowCaseJson(std::string text):text_(std::move(text)){}
     std::map<std::string,std::string> read(){
         std::map<std::string,std::string> options;std::set<std::string> keys;std::string format;
-        const std::set<std::string> strings{"case","linear-policy","convergence","steady-acceleration","viscous-stress","convection","outlet-backflow","pressure-preconditioner"};
+        const std::set<std::string> strings{"case","linear-policy","convergence","coupling","steady-acceleration","viscous-stress","convection","outlet-backflow","pressure-preconditioner"};
         expect('{');
         if(!take('}'))do{
             const auto key=string();expect(':');if(!keys.insert(key).second)fail("duplicate key "+key);
