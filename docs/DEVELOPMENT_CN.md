@@ -105,6 +105,17 @@ build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm
 
 有向面几何回归在 `tests/solver_export_test.cpp::reversedCentreConnectorRegression`，使用实际 DFG 面 4591 的两单元多边形，保留三个尺度、端点反转及 patch-local 检查。`evaluateSolverFaceGeometry2D` 的法向来自 owner 的 CCW 顶点循环；内部面要求 owner 到面、面到 neighbour、owner 到 neighbour 的有向法向距离均正，边界要求 owner 到面为正，与 FVM 原有可容许条件一致。原无向 nonorthogonality 诊断仍保留，不能再单独放行反向中心。`quality-normal-distance-fields.tar.gz` 包含原 3,086 格失败输入及修复后 3,085 格输入、真实 u/v/p/flux；后续求解仍须通过原 strict 条件和物理误差检查，固定几何 5,891 格的误差恶化见 `dfg-controlled-refinement.json`。
 
+### 开源求解器机制对照
+
+参考为容器实际 OpenCFD v2412（head `45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c`）及 MOOSE 固定 commit `410cc90c7e8e6165e77caafb7e49ac206d5ba6b5`，具体来源 URL、源码哈希、参数和真实结果在 `artifacts/current/laminar-foundation/open-source-mechanisms.json`。外部源码只读，归档保存独立推导的修改、原生算子探针及真实场，不包含外部代码片段。
+
+- OpenFOAM 先构造单元 HbyA，再按选定的 `flux(HbyA)` 插值；默认 `linear` 自身没有 skew 修正。本地速度做 skew，而 `I(rAU Gp)` 没有相同重构。补齐整体 H 只小幅改善圆环误差，未解决 SIMPLE 映射增长。普通固定速度壁的 `fixedFluxPressure` 经 `constrainHbyA` 后可以得到零 snGrad，不能据此推断必须给非零壁压梯度。
+- MOOSE 默认压力动量与 RC 使用同一压力 GG 梯度，外推边界值与 GG 联立；本地用多环 LS 外推后另算守恒 Gauss 压力力。在同权重、常标量 D、同梯度条件下，MOOSE 的中心连线分解系数为 `(S·d)/|d|²`，本地 over-relaxed 系数为 `|S|²/(S·d)`；两者都是离散选择，差异不是修复证明。本次没有直接改变非正交分解或移植 MOOSE 边界 fallback。
+- 本地原压力通量精确分为 `−Dbar*T*(Δp−Lbar·d) + I[D*(G−L)]·S + w*(1−w)*(Di−Dj)*(Li−Lj)·S`，L 为 LS、G 为守恒 Gauss。`rc_terms.cpp` 调用原生网格、动量、重构和通量算子，对保留模式、DFG 单格压力脉冲及真实圆环压力作符号/项贡献诊断；不是另建 Python 方程审计。DFG 此探针固定诊断黏度 `.1`，不冒充 Re20 物理计算。消除已观察向量的负能量项不代表全压力空间半正定，也没有消除完整 SIMPLE 增长。
+- OpenFOAM 内部转置黏性项由单元梯度插值得到；本地额外按 compact normal derivative 调整面梯度。仅替换内部转置项的实验令圆环压力误差更大，壁面及 trace 项保持原状。此试验的第一份 SIMPLE 探针因 weak inline 符号使用原头文件而排除；正式比较重新编译所有调用单元，场与映射使用一致的实验头文件。
+
+四个严格 field solve 使用原 6,208 格、`nu=.1`、`speed=.5`、inertia=1；映射探针单独设 inertia=0，在相同 SIMPLE 松弛和四次压力修正下执行 180 次。观测模式和残差单列，不称完整谱界。`open-source-mechanisms-fields.tar.gz` 的消费者是后续原生机制研究：保留场、通量、压力向量、分解面贡献、完整命令/成本与原创补丁；产品运行仍用前述 coupled JSON 算例。四个试改都不属于产品修复，不能改默认或据此继续高密度链。
+
 ### 与网格产品一致的求解规模
 
 云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。

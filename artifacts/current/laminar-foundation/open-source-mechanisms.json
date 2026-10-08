@@ -1,0 +1,867 @@
+{
+  "scope": "Read open-source mechanisms, independently derive minimal experiments on the original 6208-cell annulus. Product defaults/discretization unchanged; four prototype changes rejected.",
+  "sourceHead": "03accc5",
+  "sources": {
+    "OpenCFD_v2412": {
+      "scope": "只读开源机制对照；未构建、未启动完整矩阵、未修改 core/docs/git；未将外部源码复制进产品源码。",
+      "observed_at_utc": "2026-10-08",
+      "reference": {
+        "distribution": "OpenCFD OpenFOAM v2412（不是 Foundation OpenFOAM-12）",
+        "container": "cartmesh-openfoam-matrix",
+        "root": "/usr/lib/openfoam/openfoam2412",
+        "api": 2412,
+        "patch": 0,
+        "build": "_45e7c4a0-20241224",
+        "head": "45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c",
+        "version_evidence": [
+          "META-INFO/api-info",
+          "META-INFO/build-info",
+          "META-INFO/manifest.txt"
+        ],
+        "url_base": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/",
+        "url_note": "URLs按容器发布manifest的真实head生成；本次源码来自容器直接读取，并未远程下载验证URLs。",
+        "sources": [
+          {
+            "path": "applications/solvers/incompressible/simpleFoam/pEqn.H",
+            "sha256": "5c4d209051724fa640b6d8f760425499722d20a395e9afdd29eb2089e9fc45b0",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/applications/solvers/incompressible/simpleFoam/pEqn.H"
+          },
+          {
+            "path": "applications/solvers/incompressible/simpleFoam/UEqn.H",
+            "sha256": "65c598a3b1761b8057dc7e55cd5da2ab3f45e8b43465eb0ef396e40fb3f75b9f",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/applications/solvers/incompressible/simpleFoam/UEqn.H"
+          },
+          {
+            "path": "src/finiteVolume/cfdTools/general/constrainHbyA/constrainHbyA.C",
+            "sha256": "b19727ba48d7992fbacc011d4347d60ed54b2b91dee425c30b1259a4c6b71a08",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/cfdTools/general/constrainHbyA/constrainHbyA.C"
+          },
+          {
+            "path": "src/finiteVolume/finiteVolume/fvc/fvcFlux.C",
+            "sha256": "ef01045cfd82819fdc870a224d95817fa1478a136b485f9327d9e4ddb5ad19e5",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/finiteVolume/fvc/fvcFlux.C"
+          },
+          {
+            "path": "src/finiteVolume/cfdTools/general/constrainPressure/constrainPressure.C",
+            "sha256": "a0c1f2d558785a6d414c519d3f0be241ca815a95490f354cd557665ee682b82b",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/cfdTools/general/constrainPressure/constrainPressure.C"
+          },
+          {
+            "path": "src/finiteVolume/fields/fvPatchFields/derived/fixedFluxPressure/fixedFluxPressureFvPatchScalarField.C",
+            "sha256": "397adeba8ad56cbda72b9bcbedaa1ea807bb1dd2967f1957ffd4f0773d7038d7",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/fields/fvPatchFields/derived/fixedFluxPressure/fixedFluxPressureFvPatchScalarField.C"
+          },
+          {
+            "path": "src/finiteVolume/finiteVolume/gradSchemes/leastSquaresGrad/leastSquaresGrad.C",
+            "sha256": "e03feaec1d162d1051b13ac5790a213f04d8e50610310f78877cf29ec38401d0",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/finiteVolume/gradSchemes/leastSquaresGrad/leastSquaresGrad.C"
+          },
+          {
+            "path": "src/finiteVolume/finiteVolume/gradSchemes/leastSquaresGrad/leastSquaresVectors.C",
+            "sha256": "1060f56355472cb29327dfda7082ccc57371f222922585df5a8a8775aa83f502",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/finiteVolume/gradSchemes/leastSquaresGrad/leastSquaresVectors.C"
+          },
+          {
+            "path": "src/finiteVolume/finiteVolume/gradSchemes/gaussGrad/gaussGrad.C",
+            "sha256": "4e6458dcad128a2ffd2c0fd8619b9a70b99681389283e19512d6e2899b9d3fbe",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/finiteVolume/gradSchemes/gaussGrad/gaussGrad.C"
+          },
+          {
+            "path": "src/finiteVolume/finiteVolume/snGradSchemes/correctedSnGrad/correctedSnGrad.C",
+            "sha256": "2d3684bd5e8fbe2ea66fa5138f03ba124566c133c09b36a910816bb3fdc78e3c",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/finiteVolume/snGradSchemes/correctedSnGrad/correctedSnGrad.C"
+          },
+          {
+            "path": "src/TurbulenceModels/turbulenceModels/linearViscousStress/linearViscousStress.C",
+            "sha256": "f28f4a6bb9a5d4448226fa6407f505808fb2c2840b224a435d36fa898d30ea5f",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/TurbulenceModels/turbulenceModels/linearViscousStress/linearViscousStress.C"
+          },
+          {
+            "path": "src/finiteVolume/fvMesh/fvGeometryScheme/basic/basicFvGeometryScheme.C",
+            "sha256": "813a8fba400176fd318ec84531c61c33707654780da09b8d032770794d13d884",
+            "sourceURL": "https://develop.openfoam.com/Development/openfoam/-/blob/45e7c4a005ff9a310cdc073f65d8fbd2b29e1a0c/src/finiteVolume/fvMesh/fvGeometryScheme/basic/basicFvGeometryScheme.C"
+          }
+        ],
+        "additional_read_paths": [
+          "src/finiteVolume/interpolation/surfaceInterpolation/schemes/linear/linear.H",
+          "src/finiteVolume/interpolation/surfaceInterpolation/surfaceInterpolationScheme/surfaceInterpolationScheme.H",
+          "src/finiteVolume/interpolation/surfaceInterpolation/surfaceInterpolationScheme/surfaceInterpolationScheme.C",
+          "src/finiteVolume/finiteVolume/snGradSchemes/snGradScheme/snGradScheme.C",
+          "src/finiteVolume/fields/fvPatchFields/basic/fixedGradient/fixedGradientFvPatchField.C",
+          "src/TurbulenceModels/turbulenceModels/laminar/Stokes/Stokes.C"
+        ]
+      },
+      "local_reference": {
+        "branch": "codex/cfd-development",
+        "head": "4ac9d51",
+        "preexisting_uncommitted_changes": "coupled + quality + benchmark changes preserved; this research did not alter them",
+        "paths": [
+          "src/fv/FlowFlux2D.cpp",
+          "src/fv/FlowMomentum2D.cpp",
+          "src/fv/FlowPressure2D.hpp",
+          "src/fv/Incompressible2D.cpp",
+          "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp",
+          "src/fv/FvMesh2D.cpp"
+        ],
+        "path_correction": "仓库detail在include/cartmesh2d/fv/detail，不是src/fv/detail。"
+      },
+      "observed_external_case": {
+        "path_in_container": "/work/outputs/openfoam-agent/annulus-bl-f256-s2-r24-preview",
+        "grad": "leastSquares",
+        "face_flux_interpolation": "linear",
+        "laplacian": "Gauss linear corrected",
+        "snGrad": "corrected",
+        "pressure_walls": {
+          "housing": "zeroGradient",
+          "rotor": "zeroGradient"
+        },
+        "transpose_stress_divergence": "Gauss linear",
+        "note": "只读既有控制文件；本次未运行该算例。"
+      },
+      "derivations": {
+        "notation": "I为相同owner/neighbour线性插值，s=Cface-I(Ccell)，G为本地保守压力梯度，r=rAU，S为面积法向量。",
+        "HbyA_order": {
+          "openfoam": "先在cell形成HbyA=rAU*UEqn.H()，调用constrainHbyA，再通过flux(HbyA)插值整个HbyA；linear默认无skew修正。若动量线性解精确，可由U+rAU*grad(p)恢复cell HbyA；有限线性残差须单列。",
+          "local": "faceH=S·[I(U)+I(grad U)·s+I(rG)]，压力compact flux另减去。",
+          "identity_defect": "对U=-rG、线性固定边界重构一致时，I(U)+I(rG)=0，但本地仍有S·I(grad U)·s=-S·I(grad(rG))·s。整体先形成H=U+rG再以同一线性算子重构可消除此项。",
+          "limit": "整体带skew的H重构是独立算子一致性方案，不能说它就是OpenFOAM默认linear；当s=0或grad(rG)=0时差异消失。已有under-relaxation flux-defect项必须独立保留检查。"
+        },
+        "wall_pressure": {
+          "openfoam_constrainHbyA": "对不可assignable的U patch（含fixedValue），除p为fixedFluxExtrapolatedPressure外，HbyA.boundary直接赋为U.boundary。",
+          "fixedFluxPressure": "constrainPressure将snGrad p设置为(phiHbyA-Ubc·S)/(|S|*rAUboundary)，fixedFluxPressure缓存该gradient以供fixedGradient计算patch p。普通fixedValue壁面使分子为0，故此情形并不会产生非零法向p梯度。",
+          "actual_cases": "本次查看的外部圆环p墙实际是zeroGradient，不是fixedFluxPressure。不能把源码具有fixedFluxPressure误写为已运行对照使用它。",
+          "local": "墙面通量直接置0；压力和pc的LS重构省略未固定墙面、扩展graph rings，然后pface=powner+gowner·(Cface-Cowner)。这与OpenFOAM的patch-value/normal-gradient闭合不同，但墙面法向通量一样为0。",
+          "inference": "不能根据两者都不透壁就认为壁压重构相同；也不能把fixedFluxPressure直接解释为真实物理非零壁压导数的恢复。"
+        },
+        "gradients": {
+          "local_LS": "每个样本用单位方向d/|d|及差值/|d|，等价于LS权重1/|d|²；压力未知墙面省略，并为缺墙/病态格扩展2至6rings，directional condition target=16。",
+          "openfoam_LS": "内部face对owner权重|S|*(1-w_OF)/|d|²，对neighbour权重|S|*w_OF/|d|²，w_OF为owner插值权重；非耦合boundary使用patch.delta和patch值差。未见本地同类pressure多环策略。leastSquaresGrad完成后修正boundary gradient normal到patch.snGrad。",
+          "openfoam_Gauss": "G=(sum face S*pface)/V，face interpolation由grad scheme子插值指定，随后boundary gradient normal修正到patch.snGrad。",
+          "local_dual_gradient": "本地pressure LS梯度用于压力face skew/非正交flux，而Gauss(重构pface)用于cell动量和速度校正。OF若grad(p)=leastSquares，则UEqn压力force、velocity corrector与snGrad correction使用该选定LS gradient，不是本地的LS+Gauss双算子组合。"
+        },
+        "corrected_snGrad": {
+          "interior": "OpenFOAM delta=1/max(n·d,0.05|d|)，修正向量=n-d*delta。无0.05截断时乘|S|恰为本地T=|S|/(n·d)、C=S-Td；不是全然不同的内部几何分解。",
+          "boundary": "OF basicFvGeometryScheme非耦合boundary correction vectors置0，snGrad由patch.snGrad提供。本地Dirichlet面仍用C=S-T(Cface-Cowner)及cell gradient修正，因此内部公式相同不能外推为边界相同。",
+          "test_gate": "若网格所有cos(nonOrth)>=0.05，OF几何截断在内部不生效；先读已有网格质量值即可排除它，不需要大求解。"
+        },
+        "Newtonian_stress": {
+          "openfoam": "Stokes.nuEff=nu。linearViscousStress组装-fvm::laplacian(nu,U)-fvc::div(nu*dev2(T(grad(U))))；dev2(A)=A-(2/3)tr(A)I。指定Gauss linear时内部transpose face张量直接插值cell张量。",
+          "local": "每个velocity scalar的viscousFaceGradient把face梯度normal分量重设为compact二点+非正交导数；再构造transpose flux -nu*(grad U)^T·S。constantTrace墙还去掉原有cell tangential correction。本地没有-2/3 div(U)I项。",
+          "meaning": "连续constant-nu不可压时transpose divergence=grad div(U)=0，trace correction也为0；离散face-flux守恒并不强制cell-reconstructed div(U)=0，因此两种离散应力并非相同。该差异可以反馈压力但未证实是当前发散原因。",
+          "trace_dimension": "OF系三维张量、empty z面时仍用2/3；原生二维数学应力采用完整对称梯度也有合理性。此处是参考差异与实验假设，不能无分析地照搬三维偏应力系数。"
+        }
+      },
+      "minimal_testable_hypotheses": [
+        {
+          "id": "H1_partial_skew_reconstruction",
+          "question": "压力补偿与速度面重构不同算子造成的faceH抵消缺陷，是否驱动局部压力-速度误差放大？",
+          "diagnostic": "冻结mesh/rAU与pressure-gradient policy，先构造cell U=-rAU*G(p)并检查H相关face flux；再仅将faceH重构改为整体H=U+rAU*G(p)，保持pressure compact flux/壁面/relaxation-defect项不变。",
+          "prediction": "静态identity诊断内面H残量应降到浮点/线性重构误差；若短步误差增益不改善则它不是足够原因。",
+          "execution_owner": "root负责最小原生诊断，本文件仅提供推导。"
+        },
+        {
+          "id": "H2_transpose_flux_closure",
+          "question": "transpose应力再施加compact-normal重构是否产生与保守面通量不一致的离散grad(div U)反馈？",
+          "diagnostic": "冻结压力/HbyA/墙面处理，仅在内部face将transpose梯度由compact-normal版本换为I(cell grad)。独立记录cell reconstructed div(U)、transpose-force差和局部误差增益。trace项另作独立A/B，不能与重构同时改变。",
+          "prediction": "如果反馈来自compact transpose，内部face应力差应集中在gradient normal修正较大的cut-cell，短步增长模式应可改变；只变trace后的等效pressure变动需与原物理压力区分。",
+          "execution_status": "建议，未执行。"
+        }
+      ],
+      "qualification": "源码差异是真实只读证据；H1/H2为可实验机制假设，未由本次研究确认为通用修复或物理精度提升。",
+      "artifact_consumer": "供当前root的最小诊断和后续同算子实验读取；保存真实版本、来源URL、hash与推导，未保存整份外部源码副本。"
+    },
+    "MOOSE": {
+      "metadata": {
+        "repository": "idaholab/moose",
+        "source_ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+        "source_commit_date": "2026-10-08T14:32:08Z",
+        "access": "Connected GitHub read-only fetch_file + commit metadata",
+        "scope": "Selective source excerpts for mechanism comparison; no product files changed, no build or benchmark started.",
+        "sources": [
+          {
+            "path": "modules/navier_stokes/src/userobjects/INSFVRhieChowInterpolator.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "8aa6e8b64c8392a89992f112cf9ea95cdb895676",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/userobjects/INSFVRhieChowInterpolator.C"
+          },
+          {
+            "path": "modules/navier_stokes/src/variables/INSFVVariable.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "aa2b325d88f84d71038b501fd3efce093e670dc9",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/variables/INSFVVariable.C"
+          },
+          {
+            "path": "framework/src/variables/MooseVariableFV.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "d83dc8108f672290d36729eb7b5e289c0fa1d5ca",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/framework/src/variables/MooseVariableFV.C"
+          },
+          {
+            "path": "framework/include/utils/GreenGaussGradient.h",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "634a20d86b371351fe9c199559caa18d8561222a",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/framework/include/utils/GreenGaussGradient.h"
+          },
+          {
+            "path": "modules/navier_stokes/src/variables/INSFVVelocityVariable.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "11a27be8d747ddcf467634f3366ad0f14e5fd099",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/variables/INSFVVelocityVariable.C"
+          },
+          {
+            "path": "modules/navier_stokes/src/fvkernels/INSFVMomentumPressure.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "9d2e3b99f877e857e3f0742a9f37fe8a10cda287",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/fvkernels/INSFVMomentumPressure.C"
+          },
+          {
+            "path": "modules/navier_stokes/src/fvkernels/INSFVMomentumDiffusion.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "bd7e1b8741f48cf075be2492648a390923156dae",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/fvkernels/INSFVMomentumDiffusion.C"
+          },
+          {
+            "path": "modules/navier_stokes/src/fvbcs/INSFVNoSlipWallBC.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "c1bda7a581b7b25018a0808ddcc96123ee46fb27",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/fvbcs/INSFVNoSlipWallBC.C"
+          },
+          {
+            "path": "framework/src/mesh/FaceInfo.C",
+            "ref": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+            "blob_sha": "b0de45fe4230a0a7de2de0b69efbf409b21878d6",
+            "url": "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/framework/src/mesh/FaceInfo.C"
+          }
+        ]
+      },
+      "mechanisms": {
+        "local_revision": "4ac9d51 on codex/cfd-development; existing uncommitted changes retained",
+        "definitions": {
+          "S": "owner outward area vector",
+          "d": "neighbor-center minus owner-center",
+          "w": "local neighborWeight; equals 1-gC for a bracketed MOOSE FaceInfo",
+          "D": "scalar area/momentum diagonal, held constant in the first isolation experiment",
+          "L": "local least-squares pressure gradient",
+          "G": "local conservativePressureGradient from reconstructed shared face pressure",
+          "T": "|S|²/(S·d)",
+          "K": "(S·d)/|d|²"
+        },
+        "findings": [
+          {
+            "mechanism": "RC 非正交分解",
+            "source": [
+              "INSFVRhieChowInterpolator.C:611-618,752-805",
+              "MooseVariableFV.C:651-685"
+            ],
+            "local": [
+              "src/fv/FlowFlux2D.cpp:19-20",
+              "src/fv/FvMesh2D.cpp:86-94"
+            ],
+            "math": "相同插值、D_x=D_y=D、G=L、无松弛/时间附加项时：local pressure RC=-D*T*(Δp-Lbar·d)；MOOSE pressure RC=-D*K*(Δp-Lbar·d)。T/K=sec²θ，θ 为 S 与 d 夹角。正交面等价，倾斜面不同。两种分解均可能合理，差异本身不证明缺陷。",
+            "hypothesis": "困难圆环若压力缺陷集中在高 θ 面，过强非正交 RC 是待测机制。",
+            "minimal_experiment": "只取一个现有圆环网格/冻结场，先常 D，用现有插值计算两种 face pressure RC；按 θ 分组记录绝对差及相邻单元散度。线性 p 应同时接近零；再用二次 p 或已有圆环解析 p。当前只建议，未执行。"
+          },
+          {
+            "mechanism": "动量压力梯度与 compact 压力梯度分离",
+            "source": [
+              "INSFVMomentumPressure.C:28-45",
+              "MooseVariableFV.C:585-614",
+              "INSFVRhieChowInterpolator.C:611-618,805"
+            ],
+            "local": [
+              "src/fv/Incompressible2D.cpp:314-325",
+              "src/fv/FlowFlux2D.cpp:19-20",
+              "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp:236-281"
+            ],
+            "math": "本地压力 RC 精确分解：-Dbar*T*(Δp-Lbar·d) + I[D*(G-L)]·S + w*(1-w)*(Di-Dj)*(Li-Lj)·S。第二项是两梯度差，第三项是 D-梯度的插值协方差。MOOSE 默认 pressure momentum 和 RC 使用同一 GG 变量梯度；若显式开启 skewness 配置，需要逐个配置核对，不能泛称所有配置相同。",
+            "hypothesis": "圆环壁面附近 I[D*(G-L)]·S 可能比两点高频压力项更大，单独换 T 不能解决。",
+            "minimal_experiment": "同一个冻结网格/场同时输出三项与其散度，先常 D 去掉协方差，再读实际 momentum diagonal 的 D。只有确定主导项后才建议一个最小求解 A/B，勿同时改梯度和分解。"
+          },
+          {
+            "mechanism": "压力壁面外推闭合",
+            "source": [
+              "MooseVariableFV.C:45-52,553-564,601-602",
+              "GreenGaussGradient.h:70-83,193-255",
+              "INSFVVariable.C:87-105"
+            ],
+            "local": [
+              "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp:117-205,252-258",
+              "src/fv/Incompressible2D.cpp:314-318"
+            ],
+            "math": "MOOSE 默认无 Dirichlet 压力边界 pf=pi+g_i·d_if，同时 g_i=Σ_f pf*S_if/V_i；由局部增广系统一起解。奇异时 GreenGaussGradient 只退回一项外推。本地先以省略未知壁面行的多环 LS 得 L，再 pf=pi+L_i·d_if，最后另算守恒 G，一般 L!=G。二项外推语义已存在，差异在闭合方法；不能说本地壁面压力默认零法向梯度。",
+            "hypothesis": "壁面压力 L 与 G 的差解释部分压力误差或 RC 欠一致；局部隐式闭合是否优于多环 LS 尚无证据。",
+            "minimal_experiment": "以相同单元/面数据计算每个壁面单元 L-G，以及二项边界闭合 2×2 矩阵的条件数/可解性；线性 p 和一个二次 p 各一次即可。多壁面角单元可能奇异，不能无条件移植 MOOSE fallback。"
+          },
+          {
+            "mechanism": "速度梯度/边界语义",
+            "source": [
+              "INSFVVelocityVariable.C:111-128,132-199,315-340,415-434",
+              "INSFVNoSlipWallBC.C:23-30"
+            ],
+            "local": [
+              "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp:117-156",
+              "src/fv/FlowMomentum2D.cpp:81-102"
+            ],
+            "math": "MOOSE INSFVVelocityVariable 单元梯度为 GG，Dirichlet no-slip 值进入面和；fully-developed flow 特别采用 g_face=(I-nnᵀ)g_cell 并使二项边界值与 GG 同时闭合。本地速度为归一化距离 LS；未知速度边界给 LS 额外零法向行，而不是用 GG 解 fully-developed 边界外推。no-slip 壁面 Dirichlet 重构与此必须区分。",
+            "hypothesis": "速度梯度可影响偏斜面速度及壁面扩散，但不足以直接断言圆环压力主误差来自速度。",
+            "minimal_experiment": "同网格用线性速度和二次速度检查 LS 的面重构/compact 扩散缺陷，区分 no-slip 与 open/fully-developed 边界；保持压力算子冻结。优先完成压力三项分解，再决定是否需要这一项。"
+          }
+        ],
+        "limits": [
+          "未构建 MOOSE，未运行 MOOSE 或本地算例。",
+          "MOOSE RC 内部面才加 pressure correction；边界 getVelocity 直接返回边界速度 functor（INSFVRhieChowInterpolator.C:547-564）。本地 outlet/opening 有压力修正；这属于边界/耦合体系差异，不能直接删除本地出口修正。",
+          "MOOSE D 为分量向量、系数从残差/AD 导数收集；本地为共同 scalar diagonal，并有 SIMPLE 松弛与旧通量缺陷补偿。不建议凭 MOOSE 公式删去这些补偿。",
+          "本证据包由源码片段和原创代数对照组成，不包含产品实现或历史大矩阵运行。"
+        ]
+      }
+    }
+  },
+  "baseline": {
+    "metrics": {
+      "velocityL2": 0.0011443369121579916,
+      "pressureL2": 0.02776200848186756,
+      "housingTorque": 0.4181983128777028,
+      "housingTorqueError": 0.001625069692338437,
+      "rotorTorque": -0.4196762969079486,
+      "rotorTorqueError": 0.0019033572710290543
+    },
+    "summary": "outputs/pressure-agent/product-annulus.json",
+    "fieldArchive": "coupled-stability-fields.tar.gz",
+    "outerMapLast": {
+      "iteration": 180.0,
+      "normRatio": 2.6731413494112513,
+      "rayleigh": -2.6731413494112513,
+      "cellEigenResidual": 1.3717130734956747e-10,
+      "fluxEigenResidual": 2.560608354841478e-11,
+      "worstCell": 3710.0,
+      "x": -0.4580120900015699,
+      "y": 0.22004507185656785
+    },
+    "outerMapCost": {
+      "command": [
+        "outputs/open-source-reference/hbya/baseline-probe",
+        "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+        "outputs/laminar-inputs/annulus-l7.boundaries",
+        "outer",
+        "symmetric",
+        "180",
+        "1"
+      ],
+      "binarySha256": "9cceddd45beb64c6706f241d4185f2009641e6a7940684d7bf39f48c7eea21cf",
+      "returnCode": 0,
+      "wallSeconds": 18.116619890999573,
+      "cpuSeconds": 18.112407,
+      "peakRssKiB": 19368,
+      "measurement": "wait4 of the native child only; includes input read, solve and export"
+    }
+  },
+  "controls": {
+    "fieldSolve": {
+      "nu": 0.1,
+      "speed": 0.5,
+      "momentumInertia": 1,
+      "convection": "face-limited-linear",
+      "coupling": "coupled",
+      "linearPolicy": "adaptive",
+      "tolerance": 1e-08,
+      "pressurePreconditioner": "ic0"
+    },
+    "mapProbe": {
+      "nu": 0.1,
+      "speed": 0.5,
+      "momentumInertia": 0,
+      "coupling": "simple",
+      "velocityRelaxation": 0.6,
+      "pressureRelaxation": 0.25,
+      "pressureCorrectionPasses": 4,
+      "iterations": 180,
+      "pressurePreconditioner": "ic0"
+    },
+    "difference": "Physical rotating-annulus fields include inertia; the production SIMPLE map isolates Stokes. Ratios are observed power-iteration modes, not spectral bounds."
+  },
+  "experiments": [
+    {
+      "experiment": "complete-H-skew",
+      "promotedToProduct": false,
+      "source": "hbya/consistent_flux.cpp",
+      "sourceSha256": "19b2455555b849725034bf9e34998df13c8d533355b02ed55febc46b98dc1fa6",
+      "strictConverged": true,
+      "strictLinearFinal": true,
+      "iterations": 10,
+      "metrics": {
+        "velocityL2": 0.0010695733365597559,
+        "pressureL2": 0.02645293047590909,
+        "housingTorque": 0.4182242655085166,
+        "housingTorqueError": 0.001563112350134641,
+        "rotorTorque": -0.4196559902653544,
+        "rotorTorqueError": 0.001854878732831983
+      },
+      "residuals": {
+        "momentumResidual": 4.3108413065810277e-13,
+        "continuity": 8.857720313610996e-14,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "fluxConsistency": 0
+      },
+      "nativeCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/flow-cli",
+          "--mesh",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "--output",
+          "outputs/open-source-reference/hbya/annulus-coupled",
+          "--nu",
+          ".1",
+          "--speed",
+          ".5",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--coupling",
+          "coupled",
+          "--linear-policy",
+          "adaptive",
+          "--profile"
+        ],
+        "binarySha256": "31506264cd7202c4dd262e3863351bd195c64d3a11b6ead0d134149f209aa6dd",
+        "returnCode": 0,
+        "wallSeconds": 5.861735075999604,
+        "cpuSeconds": 5.851696,
+        "peakRssKiB": 52496,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "outerMapLast": {
+        "iteration": 180.0,
+        "normRatio": 2.6484447616872564,
+        "rayleigh": -2.648444761687257,
+        "cellEigenResidual": 1.4398450661368629e-10,
+        "fluxEigenResidual": 2.7184132774845035e-11,
+        "worstCell": 3710.0,
+        "x": -0.4580120900015699,
+        "y": 0.22004507185656785
+      },
+      "outerMapCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/coupling-probe",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "outer",
+          "symmetric",
+          "180",
+          "1"
+        ],
+        "binarySha256": "b7b2ae233d089cad1472ecdc22f4f699fa6ab609f8e5174a27690cf09e30eb95",
+        "returnCode": 0,
+        "wallSeconds": 17.610148473000663,
+        "cpuSeconds": 17.603574,
+        "peakRssKiB": 21916,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "qualification": "No spatial accuracy or SIMPLE stability repair; observed map ratios remain above 1."
+    },
+    {
+      "experiment": "common-Gauss-pressure-gradient",
+      "promotedToProduct": false,
+      "source": "hbya/common_gradient_flux.cpp",
+      "sourceSha256": "8455a11937006fb89039982eda27b246b0fae8456618fca91b7b2911a33bcf36",
+      "strictConverged": true,
+      "strictLinearFinal": true,
+      "iterations": 10,
+      "metrics": {
+        "velocityL2": 0.001073684831869273,
+        "pressureL2": 0.029044095847244024,
+        "housingTorque": 0.41827114323463793,
+        "housingTorqueError": 0.0014512000226378741,
+        "rotorTorque": -0.41968656536318544,
+        "rotorTorqueError": 0.0019278714021619403
+      },
+      "residuals": {
+        "momentumResidual": 3.730945345366876e-13,
+        "continuity": 1.221255171304407e-13,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "fluxConsistency": 0
+      },
+      "nativeCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/flow-common-gradient",
+          "--mesh",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "--output",
+          "outputs/open-source-reference/hbya/annulus-common-gradient",
+          "--nu",
+          ".1",
+          "--speed",
+          ".5",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--coupling",
+          "coupled",
+          "--linear-policy",
+          "adaptive",
+          "--profile"
+        ],
+        "binarySha256": "cdab4bd7df852454491a7a939d150ed6d4387d7ca5c8d1496985332c2346ef9f",
+        "returnCode": 0,
+        "wallSeconds": 5.260394986999017,
+        "cpuSeconds": 5.254193,
+        "peakRssKiB": 49372,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "outerMapLast": {
+        "iteration": 180.0,
+        "normRatio": 2.6690470965792223,
+        "rayleigh": -2.6690470965792223,
+        "cellEigenResidual": 1.4223327793563814e-10,
+        "fluxEigenResidual": 2.5919286197151756e-11,
+        "worstCell": 3710.0,
+        "x": -0.4580120900015699,
+        "y": 0.22004507185656785
+      },
+      "outerMapCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/probe-common-gradient",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "outer",
+          "symmetric",
+          "180",
+          "1"
+        ],
+        "binarySha256": "4ca829c54dccc54256be09fb80757a41a42450a579c3a2bad02d520c9ce3ba1a",
+        "returnCode": 0,
+        "wallSeconds": 18.871444615000655,
+        "cpuSeconds": 18.855,
+        "peakRssKiB": 19300,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "qualification": "No spatial accuracy or SIMPLE stability repair; observed map ratios remain above 1."
+    },
+    {
+      "experiment": "face-coefficient-LS-pressure-defect",
+      "promotedToProduct": false,
+      "source": "hbya/face_coefficient_flux.cpp",
+      "sourceSha256": "8836e83284e63a7537c02bad478c3bbdae27bd2568457ede48cb8bdabe388957",
+      "strictConverged": true,
+      "strictLinearFinal": true,
+      "iterations": 10,
+      "metrics": {
+        "velocityL2": 0.0009502688746516816,
+        "pressureL2": 0.026753849748959824,
+        "housingTorque": 0.41838498289795406,
+        "housingTorqueError": 0.001179427845587689,
+        "rotorTorque": -0.41987482507786617,
+        "rotorTorqueError": 0.002377308364809555
+      },
+      "residuals": {
+        "momentumResidual": 1.846916571427385e-12,
+        "continuity": 6.778110277036124e-14,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "fluxConsistency": 0
+      },
+      "nativeCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/flow-face-coefficient",
+          "--mesh",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "--output",
+          "outputs/open-source-reference/hbya/annulus-face-coefficient",
+          "--nu",
+          ".1",
+          "--speed",
+          ".5",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--coupling",
+          "coupled",
+          "--linear-policy",
+          "adaptive",
+          "--profile"
+        ],
+        "binarySha256": "1c1c4131f3d53b93468d3c66cc2fcc856cdbe88908efd421d4bd836e59c268b2",
+        "returnCode": 0,
+        "wallSeconds": 5.3592461309999635,
+        "cpuSeconds": 5.355972,
+        "peakRssKiB": 49456,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "outerMapLast": {
+        "iteration": 180.0,
+        "normRatio": 2.80401278713841,
+        "rayleigh": -2.80401278713841,
+        "cellEigenResidual": 1.4329662148807497e-10,
+        "fluxEigenResidual": 2.7129028214942707e-11,
+        "worstCell": 3710.0,
+        "x": -0.4580120900015699,
+        "y": 0.22004507185656785
+      },
+      "outerMapCost": {
+        "command": [
+          "outputs/open-source-reference/hbya/probe-face-coefficient",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "outer",
+          "symmetric",
+          "180",
+          "1"
+        ],
+        "binarySha256": "661555213316f042d6ec22af190111b7f815ff366580cdf58c07d014ac2e7f53",
+        "returnCode": 0,
+        "wallSeconds": 16.95108142600111,
+        "cpuSeconds": 16.941451999999998,
+        "peakRssKiB": 19368,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "qualification": "No spatial accuracy or SIMPLE stability repair; observed map ratios remain above 1."
+    },
+    {
+      "experiment": "interpolated-internal-transpose-gradient",
+      "promotedToProduct": false,
+      "source": "transpose/include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp",
+      "sourceSha256": "26eb0f5bf61633dbfc2056351f9d765a8b6aa677840d48116b3e37088ed78d1e",
+      "strictConverged": true,
+      "strictLinearFinal": true,
+      "iterations": 10,
+      "metrics": {
+        "velocityL2": 0.0012007416655111767,
+        "pressureL2": 0.0384066783085597,
+        "housingTorque": 0.4182840277887645,
+        "housingTorqueError": 0.0014204404154561966,
+        "rotorTorque": -0.4199570133313797,
+        "rotorTorqueError": 0.0025735183669710684
+      },
+      "residuals": {
+        "momentumResidual": 3.660098605626491e-13,
+        "continuity": 8.138060960129707e-14,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "fluxConsistency": 0
+      },
+      "nativeCost": {
+        "command": [
+          "outputs/open-source-reference/transpose/flow-cli",
+          "--mesh",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "--output",
+          "outputs/open-source-reference/transpose/annulus",
+          "--nu",
+          ".1",
+          "--speed",
+          ".5",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--coupling",
+          "coupled",
+          "--linear-policy",
+          "adaptive",
+          "--profile"
+        ],
+        "binarySha256": "1800176379ea1d5937e4e64caeac06a72c215c85353d175eb3ab31711e9d4811",
+        "returnCode": 0,
+        "wallSeconds": 5.5301723219999985,
+        "cpuSeconds": 5.521186,
+        "peakRssKiB": 49392,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "outerMapLast": {
+        "iteration": 180.0,
+        "normRatio": 2.0072817565504435,
+        "rayleigh": -2.0072813916213987,
+        "cellEigenResidual": 0.0006029968236885921,
+        "fluxEigenResidual": 0.0007949482826530518,
+        "worstCell": 2504.0,
+        "x": 0.47051216941791546,
+        "y": -0.19635402914744318
+      },
+      "outerMapCost": {
+        "command": [
+          "outputs/open-source-reference/transpose/probe-consistent-header",
+          "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "outputs/laminar-inputs/annulus-l7.boundaries",
+          "outer",
+          "symmetric",
+          "180",
+          "1"
+        ],
+        "binarySha256": "623a48b9decbaef7e88fae1dd930ade5d41ec34d00ffc30d5b3b354c197693ba",
+        "returnCode": 0,
+        "wallSeconds": 16.847639538002113,
+        "cpuSeconds": 16.843124,
+        "peakRssKiB": 19312,
+        "measurement": "wait4 of the native child only; includes input read, solve and export"
+      },
+      "qualification": "No spatial accuracy or SIMPLE stability repair; observed map ratios remain above 1."
+    }
+  ],
+  "pressureTermDecomposition": {
+    "definition": "Native pressure flux with zero cell velocity, homogeneous velocity traces, unrelaxed diffusion rAU. Sum p_i times integrated cell divergence; sign diagnostic, not physical energy budget.",
+    "nu": 0.1,
+    "DFGNote": "DFG pulse/mode use diagnostic nu=.1, not the physical Re20 nu=.001.",
+    "nativeProbeSourceSha256": "231422b231f898ef60848b4d84c2585de7657d9e75cccb8582d8d8739c08bd32",
+    "terms": {
+      "annulus-field-terms": {
+        "cells": 6208,
+        "terms": {
+          "baseLS": {
+            "pressureEnergy": 0.0003301132990538358,
+            "faceFluxL2": 0.0004031304753985689
+          },
+          "gradientMismatch": {
+            "pressureEnergy": -0.00019750873057945863,
+            "faceFluxL2": 0.0003587606286697814
+          },
+          "rAUCovariance": {
+            "pressureEnergy": 9.946846522498029e-05,
+            "faceFluxL2": 0.0001461110034197768
+          },
+          "nativeTotal": {
+            "pressureEnergy": 0.00023207303369935744,
+            "faceFluxL2": 0.0004170839853239296
+          },
+          "projectedBaseLS": {
+            "pressureEnergy": 0.00020406289854919805,
+            "faceFluxL2": 0.00035249039970738146
+          }
+        },
+        "maximumDecompositionError": 2.710505431213761e-20,
+        "maximumNativePressureFlux": 0.00011391326810633992
+      },
+      "annulus-mode-terms": {
+        "cells": 6208,
+        "terms": {
+          "baseLS": {
+            "pressureEnergy": 1.1367422577846695,
+            "faceFluxL2": 0.04880305735901811
+          },
+          "gradientMismatch": {
+            "pressureEnergy": -1.354863761807894,
+            "faceFluxL2": 0.07584025546254852
+          },
+          "rAUCovariance": {
+            "pressureEnergy": -1.454433619454964,
+            "faceFluxL2": 0.05927081061276128
+          },
+          "nativeTotal": {
+            "pressureEnergy": -1.672555123478188,
+            "faceFluxL2": 0.06845879628340716
+          },
+          "projectedBaseLS": {
+            "pressureEnergy": 0.611316331144459,
+            "faceFluxL2": 0.036552429883339344
+          }
+        },
+        "maximumDecompositionError": 2.0816681711721685e-17,
+        "maximumNativePressureFlux": 0.0522522387790704
+      },
+      "dfg-mode-terms": {
+        "cells": 3063,
+        "terms": {
+          "baseLS": {
+            "pressureEnergy": 0.733274092879565,
+            "faceFluxL2": 0.0072017057002377515
+          },
+          "gradientMismatch": {
+            "pressureEnergy": -4.067319022533484,
+            "faceFluxL2": 0.04438822621208828
+          },
+          "rAUCovariance": {
+            "pressureEnergy": 0.002882693984357636,
+            "faceFluxL2": 0.0006433771532034112
+          },
+          "nativeTotal": {
+            "pressureEnergy": -3.3311622356695607,
+            "faceFluxL2": 0.0386570465616971
+          },
+          "projectedBaseLS": {
+            "pressureEnergy": 0.6909385425281513,
+            "faceFluxL2": 0.006728296122403799
+          }
+        },
+        "maximumDecompositionError": 4.682398132421772e-18,
+        "maximumNativePressureFlux": 0.021494431786272965
+      },
+      "dfg-pulse-terms": {
+        "cells": 3063,
+        "terms": {
+          "baseLS": {
+            "pressureEnergy": 0.00011564462658967756,
+            "faceFluxL2": 8.276435357995624e-05
+          },
+          "gradientMismatch": {
+            "pressureEnergy": -0.00030468636927162454,
+            "faceFluxL2": 0.00039875739329338155
+          },
+          "rAUCovariance": {
+            "pressureEnergy": -9.960723015423205e-06,
+            "faceFluxL2": 1.0935748248650874e-05
+          },
+          "nativeTotal": {
+            "pressureEnergy": -0.0001990024656973702,
+            "faceFluxL2": 0.00037011753609673444
+          },
+          "projectedBaseLS": {
+            "pressureEnergy": 0.00011194529793009023,
+            "faceFluxL2": 7.993272454563755e-05
+          }
+        },
+        "maximumDecompositionError": 2.412720410694671e-20,
+        "maximumNativePressureFlux": 0.0002570631932540673
+      }
+    },
+    "interpretation": "At retained negative-energy pressure vectors the LS base term is positive. Mixed LS/Gauss pressure gradients and rAU covariance account exactly for the negative total. Removing these contributions alone did not fix the complete SIMPLE update. No assertion of positive semidefiniteness for all pressure vectors."
+  },
+  "excludedAttempts": [
+    {
+      "path": "outputs/open-source-reference/transpose/annulus-map.log",
+      "reason": "The first probe object was compiled with the original inline header; its weak symmetricViscousCorrection symbol selected the original operator. Excluded; recompiled every calling translation unit with the same experimental header and reran as annulus-map-consistent-header."
+    }
+  ],
+  "limitations": [
+    "Pressure accuracy on the real polygon wall remains unresolved.",
+    "Wall pressure closure, corner traces, momentum/pressure compatibility, force accuracy and DFG spatial convergence remain open.",
+    "The prototype H skew change is a consistency experiment, not OpenFOAM default linear interpolation.",
+    "MOOSE uses componentwise AD coefficient gathering and variable boundary closures; the local scalar rAU experiment does not transplant the whole algorithm.",
+    "External source excerpts are not copied into product or this artifact archive.",
+    "No default changes, larger grid chain or full benchmark matrix started in this source-comparison work."
+  ]
+}

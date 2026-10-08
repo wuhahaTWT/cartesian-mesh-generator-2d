@@ -44,6 +44,8 @@ Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 
 
 新增显式 `--coupling coupled`：以原动量、Rhie–Chow、压力重构和受力算子求同一离散固定点，使用块预条件 FGMRES 与共同更新 u/v/p/flux 的线搜索；失败候选不替换最后接受步。旧 6,208 格圆环 **10 轮 / 266 次 Krylov / 求解 5.346 s** 严格收敛，旧 3,063 格 DFG **44 轮 / 5,731 次 Krylov / 求解 43.343 s** 严格收敛。**这是两张保留失败网格的耦合稳定性进展，空间精度仍未修好**：圆环压力 L2/Uref² **0.02776201**，DFG Cd **5.3952174**（低 **3.303%**）、Cl **0.0138331**、压降 **0.1066593**（低 **9.242%**）。上述时间是求解器 profile，不是完整成本或同精度提速结论。原 SIMPLE、strict、松弛与离散默认未改；coupled 仅支持稳态、恒黏度、固定边界角色和 strict，明确拒绝非定常、物性/湍流迭代、动态 opening/farfield、NormalInlet、Anderson 和 engineering。普通直管/方腔/制造解、三种对流格式、两种应力及失败保场/取消/入口条件/压力预条件器的原生回归通过。证据见[耦合结果](../artifacts/current/laminar-foundation/coupled-stability.json)及[真实场](../artifacts/current/laminar-foundation/coupled-stability-fields.tar.gz)。完整原生、前端和真实 App 验证范围同上，跨平台 CI 未完成。
 
+已按用户要求对照 **OpenCFD v2412** 和 **MOOSE** 的 Rhie–Chow、压力边界、梯度与黏性应力源码，记录固定版本、路径和哈希，独立推导实验，没有复制外部代码。原生压力 RC 的保留负能量向量可精确分解：6,208 格圆环的 LS 基项为 `+1.136742`，混合梯度项 `−1.354864`、rAU 插值协方差项 `−1.454434`，合计 `−1.672555`；DFG 对应混合梯度项也占主导。这是压力子算子的符号诊断，不是完整 SIMPLE 失稳根因的闭环证明。四个原网格独立试验均未合入：整体 H 面重构、统一 Gauss 压力梯度、面系数 LS 压力缺陷、内部转置应力单元梯度插值，圆环压力 L2 分别为 **0.026453 / 0.029044 / 0.026754 / 0.038407**，完整 Stokes SIMPLE 映射均仍观测到增长。最后一项的探针曾混用原 inline 头文件，已排除该次并统一所有调用单元的头文件重跑。**借鉴源码已产生可复核的机制与反例，仍未解决精度或默认 SIMPLE 稳定性，不能按差异照搬算法。** 见[参考来源与真实试验](../artifacts/current/laminar-foundation/open-source-mechanisms.json)、[场、原生日志及独立修改补丁](../artifacts/current/laminar-foundation/open-source-mechanisms-fields.tar.gz)。
+
 待完成：通用精度/稳定性修复及失败例回归；补齐曲壁同网格外部比较、三档收敛及与网格产品一致的 10 万至 50 万格求解；在更多工况和密度上验证工程停止/SIMPLEC 的同精度成本；通用修复后重算代表拓扑设计与基线。尚未宣称基础任务完成。
 
 | 工作 | 接手时的状态与入口 |
