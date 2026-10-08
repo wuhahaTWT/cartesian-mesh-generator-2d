@@ -26,6 +26,37 @@
 
 研究结果保留原目录，因为运行记录、图片来源和封存清单包含原路径。`outputs/combustion-foundation/` 是冻结燃烧研究，`outputs/cfd-demo-reference/` 是用户指定保留的参考包，其余网格/CFD 历史材料继续保留。源码目录杂项的原路径与恢复位置见 `outputs/repository-tidy/file-organization.json`；不把数值场、检查点或失败日志当缓存。
 
+## 不可压基础基准与云端复现
+
+`tools/benchmarks/laminar.py` 直接生成真实流体网格、显式物理边界，调用原生求解器并保存命令、二进制哈希、真实场、残差、误差及耗时。`summary.csv/json` 和 `convergence.png` 不将失败条目计入观测阶。速度误差按 `Uref`、运动学压力误差按 `Uref²` 归一化；圆环沿用 cell 0 压力基准。DFG 系数按平均入口速度 0.2、直径 0.1 定义。Ghia 原表与 Marchi Re100 分开统计。
+
+Linux 云端从 `codex/cfd-development` 构建；基准仅需 C++20、CMake、Python、Matplotlib，层流目标不依赖 Cantera。macOS 仍使用系统 `/usr/bin/clang++`。压力预条件器在 macOS 默认 Cholesky，其他平台默认 IC(0)，可显式覆盖；跨平台耗时不直接比较。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_CHEMISTRY=OFF
+cmake --build build --target cartmesh2d_cli cartmesh2d_flow_cli --parallel 4
+python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5 6 7 --workers 2
+```
+
+上述完整矩阵保留已知失败。`--mesh-layout square` 用等尺寸笛卡尔背景，适于 DFG 的长矩形外域；须使用新输出目录，不能把不同网格策略冒充同一细化序列。`--prepare-only` 只准备输入。当前细曲壁网格仍可能质量失败，求解器亦可能发散，均需继续修复。
+
+仓库保存了约 574 KiB 的原始失败输入，云端无需读取本机 `outputs/` 即可重现细圆环与 DFG：
+
+```sh
+mkdir -p outputs/laminar-inputs
+tar -xzf artifacts/current/laminar-foundation/failure-inputs.tar.gz -C outputs/laminar-inputs
+build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/annulus-l7.solver.cm2d --case custom --boundary outputs/laminar-inputs/annulus-l7.boundaries --output outputs/annulus-default --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner ic0 --max-iterations 12000 --tolerance 1e-8 --profile
+build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/dfg20-l7.solver.cm2d --case custom --boundary outputs/laminar-inputs/dfg20-l7.boundaries --output outputs/dfg-default --nu .001 --speed .3 --convection limited-linear --pressure-preconditioner ic0 --max-iterations 16000 --tolerance 1e-8 --profile
+```
+
+`tools/benchmarks/openfoam.py` 将已有 OpenFOAM 导出网格的边界重新分组，保留点、内部面、owner/neighbour 和单元编号，准备稳态层流对照。准备后在有 OpenFOAM 的环境执行 `checkMesh -case CASE`、`simpleFoam -case CASE > CASE/solve.log 2>&1`，再 `python3 tools/benchmarks/openfoam.py --output CASE --collect`。例如：
+
+```sh
+python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outputs/laminar-baseline/meshes/cavity100-l6/openfoam --mesh outputs/laminar-baseline/meshes/cavity100-l6/mesh.solver.cm2d --case cavity100
+```
+
+该对照的 OpenFOAM `linearUpwind` 与原生 `limited-linear` 分别记录，不能声称格式完全相同。OpenFOAM 自身残差通过仍须比较物理误差；未完成或中断的运行不算通过。
+
 ## 产物保留与清理
 
 维护对象是当前源码与必要测试；App 打包只包含 `desktop/src/`、原生 runtime 和样例。多平台共用同一算法源码，构建树、依赖、研究数据及安装包分别管理。[CMake](https://cmake.org/cmake/help/latest/manual/cmake.1.html#introduction-to-cmake-buildsystems)明确区分源码树和可重建的构建树。
