@@ -156,6 +156,39 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
                 assert math.isfinite(profile[key]) and profile[key] >= 0, (key, profile[key])
             assert profile['solveSeconds'] >= profile['momentumLinearSolveSeconds'] + profile['pressureLinearSolveSeconds']
             assert profile['pressurePreconditioner'] == 'ic0'
+            coupled, coupled_field = run('coupled', mesh,
+                extra=('--coupling', 'coupled', '--linear-policy', 'adaptive', '--profile'))
+            assert coupled['coupling'] == 'coupled' and coupled['strictLinearFinal']
+            assert coupled['iterations'] >= 10 and coupled['fluxConsistency'] < 1e-8
+            for key in ('pressureCorrectionPasses', 'velocityRelaxation', 'pressureRelaxation'):
+                assert coupled[key] is None
+            coupled_profile = json.loads((root / 'coupled.performance.json').read_text())
+            assert coupled_profile['simpleIterations'] == 0
+            assert coupled_profile['coupledOuterIterations'] == coupled['iterations']
+            assert coupled_profile['coupledKrylovIterations'] == coupled['coupledKrylovIterations'] > 0
+            assert coupled_profile['lineSearchTrials'] >= coupled['iterations']
+            assert coupled_profile['solveSeconds'] >= coupled_profile['coupledLinearSolveSeconds'] >= coupled_profile['pressureLinearSolveSeconds']
+            for first, second in zip(field, coupled_field):
+                assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+            case_options.update(output='coupled-case', coupling='coupled', **{'linear-policy': 'adaptive'})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('coupled-case' + suffix)).read_bytes() == (root / ('coupled' + suffix)).read_bytes()
+            run('coupled-engineering', mesh, extra=('--coupling', 'coupled', '--convergence', 'engineering'),
+                code=1, error_contains='requires strict convergence')
+            run('coupled-backflow', mesh, extra=('--coupling', 'coupled', '--outlet-backflow', 'normal-inlet'),
+                code=1, error_contains='requires outlet backflow rejection')
+            run('coupled-transient', mesh, extra=('--coupling', 'coupled', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='requires steady')
+            failure_mesh = root / 'coupled-failure.solver.cm2d'
+            rectangle(failure_mesh, 4, 4, width=1)
+            failure, _ = run('coupled-failure', failure_mesh,
+                extra=('--coupling', 'coupled', '--tolerance', '1e-30'), code=2)
+            assert failure['status'] == 'solve_failed' and failure['failureReason']
+            assert failure['iterations'] == 0 and failure['retainedState'] == 'initialization'
+            assert not failure['strictLinearFinal']
             aggregation, aggregation_field = run(
                 'aggregation', mesh,
                 extra=('--pressure-preconditioner', 'aggregation', '--profile'))

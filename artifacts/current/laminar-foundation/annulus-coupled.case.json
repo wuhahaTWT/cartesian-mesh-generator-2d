@@ -1,0 +1,20 @@
+{
+  "format": "cartmesh2d-native-flow-case-v1",
+  "options": {
+    "mesh": "../../../outputs/laminar-inputs/annulus-l7.solver.cm2d",
+    "boundary": "../../../outputs/laminar-inputs/annulus-l7.boundaries",
+    "case": "custom",
+    "output": "../../../outputs/annulus-coupled",
+    "nu": 0.1,
+    "speed": 0.5,
+    "convection": "face-limited-linear",
+    "viscous-stress": "symmetric",
+    "coupling": "coupled",
+    "convergence": "strict",
+    "pressure-preconditioner": "ic0",
+    "linear-policy": "adaptive",
+    "max-iterations": 12000,
+    "tolerance": 1e-08,
+    "profile": true
+  }
+}

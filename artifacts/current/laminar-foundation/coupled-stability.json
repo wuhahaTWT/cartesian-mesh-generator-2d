@@ -1,0 +1,119 @@
+{
+  "scope": "Explicit opt-in original Rhie-Chow coupled solver; default SIMPLE and physical discretization unchanged. No PSD or KnownTrace changes.",
+  "sourceSha256": {
+    "CMakeLists.txt": "30007b373ac22381814c79be5bbbe958a63b66ccad304c9507788521ed8b43be",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "2d3d649458910ddc3e8e98a87d66f4b6a6cf27c2b1d45912a988bb026b681749",
+    "src/fv/FlowCoupled2D.hpp": "a7aefb933a8e38b748b8fcf4e4ca252aeae6db8d2eae238ccbffa3a7ee9179a0",
+    "src/fv/FlowCoupled2D.cpp": "7d505a7a654a54815725ed5317683bd97f6114bbd755a05cb2f327a0f4a56096",
+    "src/fv/Incompressible2D.cpp": "a91f01158eb4f501bb2abcd678d38292ac2b82e53e747401da7147608e67a6e0",
+    "apps/cartmesh2d_flow_cli.cpp": "5d51addd400d695bb1b3955961c59aef5532da5c4784460aac24685d4bf1db74",
+    "tests/flow_coupled_test.cpp": "a788c117cef2a8949dea445f712d74a180bf0a5bdc0417822432a398f1319afd",
+    "tests/flow_cli_test.py": "51f3431e42ed81b6f190d770ac67b53db2081738f5a9ce05aac56ac37cd1df98"
+  },
+  "frozenBinary": "outputs/pressure-agent/product-flow-cli",
+  "binarySha256": "1cb07e2b929b489e8b24187f1ffd5b676aab6f2184b88691800dae8703f971b1",
+  "build": "outputs/pressure-agent/product-final-build.log",
+  "tests": [
+    "outputs/pressure-agent/product-ctest.log",
+    "outputs/pressure-agent/product-native-ctest.log",
+    "outputs/pressure-agent/product-final-ctest.log",
+    "outputs/pressure-agent/product-cli-final-ctest.log"
+  ],
+  "cases": [
+    {
+      "case": "annulus",
+      "summary": "outputs/pressure-agent/product-annulus.json",
+      "performance": "outputs/pressure-agent/product-annulus.performance.json",
+      "log": "outputs/pressure-agent/product-annulus.log",
+      "maxFieldDifferenceVsResearchOriginalRC": 5.924427615155992e-13,
+      "physicalMetrics": {
+        "velocityL2": 0.0011443369121579916,
+        "pressureL2": 0.02776200848186756,
+        "housingTorque": 0.4181983128777028,
+        "housingTorqueError": 0.001625069692338437,
+        "rotorTorque": -0.4196762969079486,
+        "rotorTorqueError": 0.0019033572710290543
+      },
+      "note": "Run before final diagnostic-only output refinements; same core arithmetic, confirmed against original research fixed point.",
+      "converged": true,
+      "outerIterations": 10,
+      "gmresIterations": 266,
+      "lineSearchTrials": 10,
+      "lineSearchRejected": 0,
+      "solveSeconds": 5.346455682
+    },
+    {
+      "case": "dfg20",
+      "summary": "outputs/pressure-agent/product-dfg.json",
+      "performance": "outputs/pressure-agent/product-dfg.performance.json",
+      "log": "outputs/pressure-agent/product-dfg.log",
+      "maxFieldDifferenceVsResearchOriginalRC": 6.036143807008898e-14,
+      "physicalMetrics": {
+        "Cd": 5.395217399600747,
+        "Cl": 0.013833084699090123,
+        "pressureDrop": 0.10665932584148838,
+        "CdError": -0.18431783423925285,
+        "CdRelativeError": 0.03303462143609404,
+        "ClError": 0.0032141365530901234,
+        "ClRelativeError": 0.30267937171355724,
+        "pressureDropError": -0.010860841128511628,
+        "pressureDropRelativeError": 0.09241682860512045,
+        "reference": {
+          "Cd": 5.57953523384,
+          "Cl": 0.010618948146,
+          "pressureDrop": 0.11752016697,
+          "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+          "coefficientMeanVelocity": 0.2
+        }
+      },
+      "note": "Run before final diagnostic-only output refinements; same core arithmetic, confirmed against original research fixed point.",
+      "converged": true,
+      "outerIterations": 44,
+      "gmresIterations": 5731,
+      "lineSearchTrials": 66,
+      "lineSearchRejected": 22,
+      "solveSeconds": 43.342877847
+    }
+  ],
+  "limitations": [
+    "Numerical convergence is not spatial-accuracy qualification: the original RC pressure/force error remains.",
+    "Steady constant-viscosity strict convergence only; explicit rejection of transient, material/turbulence, dynamic pressure opening/farfield, NormalInlet, Anderson and engineering stopping.",
+    "SIMPLE relaxation and pressure correction counts are inactive and exported as null in coupled summaries.",
+    "Full end-to-end wall/CPU/RSS not measured for product confirmations; native profile reports solve and nested preconditioner/Krylov costs.",
+    "Native all-target build and related tests passed; no platform or frontend qualification."
+  ],
+  "consumers": {
+    "source": "root integration review; no commit or push by this agent",
+    "productFields": "same-root comparison and physical error evidence; not transient checkpoints",
+    "researchEvidence": "findings.json retains failed split/PSD research and original prototype results",
+    "frozenBinary": "rebuildable snapshot of final opt-in product implementation"
+  },
+  "validation": {
+    "native": {
+      "passed": 104,
+      "total": 104,
+      "seconds": 51.37,
+      "log": "outputs/laminar-repair/coupled-quality-ctest.log"
+    },
+    "frontend": {
+      "passed": 191,
+      "total": 191,
+      "log": "outputs/laminar-repair/coupled-quality-frontend-permitted.log"
+    },
+    "realApp": {
+      "cells": 5216,
+      "iterations": 553,
+      "strictTolerance": 1e-08,
+      "pressurePreconditioner": "ic0",
+      "converged": true,
+      "report": "outputs/laminar-repair/coupled-quality-app/rectangle.png.json"
+    },
+    "crossPlatformCI": "not completed: api.github.com CONNECT returns 403"
+  },
+  "workingTreeSourceHead": "e711611",
+  "currentBuildBinarySha256": "1cb07e2b929b489e8b24187f1ffd5b676aab6f2184b88691800dae8703f971b1",
+  "reproduction": {
+    "annulus": "build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/annulus-coupled.case.json",
+    "dfg20": "build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20-coupled.case.json"
+  }
+}

@@ -76,6 +76,17 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 `--coupling simplec --pressure-relaxation 1` 显式试验稳态层流 SIMPLEC。校正响应采用松弛动量行的 `area/(diag+sum(offDiagonal))`，预测 Rhie–Chow 仍保留原系数以共享固定点方程；非正对角明确失败，非定常及物性耦合不支持。SIMPLE、压力松弛 0.25 和 strict 仍为默认。旧 DFG 已发现非物理解分支，旧圆环该组控制失败，故当前不推荐自动切换。`tools/benchmarks/laminar.py` 在输出目录保存按哈希命名的求解器快照，排队运行不会混入后续重新构建的版本。
 
+`--coupling coupled` 在 `FlowCoupled2D.cpp` 中直接求原未松弛稳态固定点。每次冻结真实对流通量，组装共享的动量与 Rhie–Chow 仿射算子，块 ILU(0)/压力预条件 FGMRES 提出更新，随后共同对 u/v/p/flux 回溯，重新计算候选自身 rAU、动量、连续性及面通量一致性。有限 Krylov/回溯预算耗尽明确失败并保留最后接受状态；初步即失败时 iteration 0 明确标为初始化，不能作为物理场。最终须 strict 线性步、原 strict 收敛门、全部单元连续性（包括压力基准格）及 `min(tolerance,1e-8)` 的最大面通量缺陷门。`--linear-policy adaptive` 仅控制中间 Krylov 精度，最终认证不放宽。SIMPLE 的松弛和 pressure-correction-pass 控制不用于 coupled，结果 JSON 对这些字段写 null。只支持稳态恒黏度固定边界角色；其他组合明确拒绝。它没有改压力/速度空间离散，也没有解决当前压力和受力误差。
+
+解包保留失败输入后，版本化 coupled 算例可直接运行：
+
+```sh
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/annulus-coupled.case.json
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20-coupled.case.json
+```
+
+`coupled-stability-fields.tar.gz` 保存两个实际解的 u/v/p/flux、原生残差与 profile；输入仍为原失败归档。`tests/flow_coupled_test.cpp` 检查共享固定点、源项与压力基准、支持/拒绝组合、真实线性预算失败后的场保留及严格停止条件。旧圆环/DFG 的完整运行证据与精度限制见 `coupled-stability.json`，不能把 Krylov 轮数与 SIMPLE 外迭代直接比较，profile 的嵌套压力时间不可重复累计。
+
 ### 压力速度失稳的原生诊断
 
 `tools/benchmarks/coupling_probe.cpp` 是显式构建的研究程序，直接调用生产求解器和原生动量/梯度/线性算子，不是另建方程验证链。固定旧圆环的 `nu=.1`、`Uref=.5`、速度松弛 `.6`、压力松弛 `.25`、无对流；只接受闭合且速度全规定的壁面域。macOS 用系统 Cholesky，其他平台 IC(0)。`outer` 对真实一步求解作 `T(x)=F(x)-F(0)` 幂迭代，u/v/p 用单元面积加权内积，面通量同时传播并单列特征残差；`pressure` 探测冻结扩散 rAU 下的非正交延迟修正映射。输出是观测模式，不是完整谱界；`diffusion` 的场变化阈值只判断隔离子问题衰减，不代替完整 CFD 验收。

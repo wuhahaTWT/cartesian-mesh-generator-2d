@@ -1,0 +1,376 @@
+#include "FlowCoupled2D.hpp"
+#include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
+#include <algorithm>
+#include <chrono>
+#include <limits>
+#include <sstream>
+
+namespace cartmesh2d::fv::solver_detail {
+namespace {
+using Clock=std::chrono::steady_clock;
+
+// Flexible right-preconditioned GMRES. Reorthogonalization and the final
+// explicitly recomputed residual are mandatory: the inner pressure solve is
+// deliberately inexact and therefore is not a fixed linear preconditioner.
+class CoupledKrylov {
+    const std::size_t size_,width_;
+    std::vector<Vec> basis_,preconditioned_;
+    Vec product_,residual_,work_,hessenberg_,cosine_,sine_,right_,solution_;
+public:
+    double residualNorm=0,maximumResidual=0;
+    explicit CoupledKrylov(std::size_t size):size_(size),width_(std::min<std::size_t>(100,size)),
+        basis_(width_+1,Vec(size)),preconditioned_(width_,Vec(size)),product_(size),
+        residual_(size),work_(size),hessenberg_((width_+1)*width_),cosine_(width_),
+        sine_(width_),right_(width_+1),solution_(width_) {}
+
+    template<class Apply,class Precondition>
+    void solve(Apply&& apply,Precondition&& precondition,Vec& x,const Vec& rhs,
+               double relativeTolerance,double maximumRowResidual,FlowPerformance2D& performance) {
+        constexpr std::size_t maximumIterations=2000;
+        const double rhsNorm=detail::linearNorm(rhs),target=relativeTolerance*rhsNorm;
+        const auto measure=[&] {
+            apply(x,product_);double maximum=0;
+            for(std::size_t i=0;i<size_;++i) {
+                residual_[i]=rhs[i]-product_[i];maximum=std::max(maximum,std::abs(residual_[i]));
+            }
+            maximumResidual=maximum;residualNorm=detail::linearNorm(residual_);
+            return residualNorm<=target && maximum<=maximumRowResidual;
+        };
+        // The exactly homogeneous affine system has the exact zero solution;
+        // this also avoids demanding a relative residual against a zero RHS.
+        if(rhsNorm==0)std::fill(x.begin(),x.end(),0.);
+        if(measure())return;
+        std::size_t iterations=0;
+        while(iterations<maximumIterations) {
+            for(std::size_t i=0;i<size_;++i)basis_[0][i]=residual_[i]/residualNorm;
+            std::fill(hessenberg_.begin(),hessenberg_.end(),0.);
+            std::fill(right_.begin(),right_.end(),0.);right_[0]=residualNorm;
+            std::size_t used=0;
+            for(std::size_t j=0;j<width_ && iterations<maximumIterations;++j) {
+                precondition(basis_[j],preconditioned_[j]);apply(preconditioned_[j],work_);
+                ++iterations;++performance.coupledIterations;
+                for(unsigned pass=0;pass<2;++pass)for(std::size_t k=0;k<=j;++k) {
+                    const double projection=detail::linearProduct(work_,basis_[k]);
+                    hessenberg_[k*width_+j]+=projection;
+                    for(std::size_t i=0;i<size_;++i)work_[i]-=projection*basis_[k][i];
+                }
+                const double next=detail::linearNorm(work_);hessenberg_[(j+1)*width_+j]=next;
+                if(next>0)for(std::size_t i=0;i<size_;++i)basis_[j+1][i]=work_[i]/next;
+                for(std::size_t k=0;k<j;++k) {
+                    const double a=hessenberg_[k*width_+j],b=hessenberg_[(k+1)*width_+j];
+                    hessenberg_[k*width_+j]=cosine_[k]*a+sine_[k]*b;
+                    hessenberg_[(k+1)*width_+j]=-sine_[k]*a+cosine_[k]*b;
+                }
+                const double a=hessenberg_[j*width_+j],b=hessenberg_[(j+1)*width_+j];
+                const double length=std::hypot(a,b);ensure(length>0,"Coupled FGMRES breakdown");
+                cosine_[j]=a/length;sine_[j]=b/length;
+                hessenberg_[j*width_+j]=length;hessenberg_[(j+1)*width_+j]=0;
+                right_[j+1]=-sine_[j]*right_[j];right_[j]*=cosine_[j];used=j+1;
+                if(next==0 || std::abs(right_[j+1])<target*.5)break;
+            }
+            for(std::size_t j=used;j-->0;) {
+                double value=right_[j];
+                for(std::size_t k=j+1;k<used;++k)value-=hessenberg_[j*width_+k]*solution_[k];
+                solution_[j]=finite(value/hessenberg_[j*width_+j]);
+            }
+            for(std::size_t j=0;j<used;++j)for(std::size_t i=0;i<size_;++i)
+                x[i]+=solution_[j]*preconditioned_[j][i];
+            if(measure())return;
+        }
+        std::ostringstream message;
+        message<<"Coupled FGMRES iteration limit: true scaled residual="<<residualNorm<<", target="<<target
+            <<", maximum row residual="<<maximumResidual<<", row target="<<maximumRowResidual;
+        throw std::runtime_error(message.str());
+    }
+};
+
+detail::LinearPressureMethod2D pressureMethod(PressurePreconditioner2D method) {
+    switch(method) {
+    case PressurePreconditioner2D::Jacobi:return detail::LinearPressureMethod2D::Jacobi;
+    case PressurePreconditioner2D::IncompleteCholesky0:return detail::LinearPressureMethod2D::IC0;
+    case PressurePreconditioner2D::Aggregation:return detail::LinearPressureMethod2D::Aggregation;
+    case PressurePreconditioner2D::SystemCholesky:return detail::LinearPressureMethod2D::SystemCholesky;
+    }
+    throw std::runtime_error("Invalid coupled pressure preconditioner");
+}
+
+struct CoupledMetrics {
+    FlowIteration2D step;
+    double merit=0,netFlux=0;
+    std::size_t reverseOutletFaces=0;
+};
+} // namespace
+
+FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input,const Boundary& boundary,
+    const std::function<void(const FlowIteration2D&)>& progress,const FlowInitialGuess2D* guess) {
+    const auto start=Clock::now();
+    ensure(input.convergence==FlowConvergence2D::Strict,"Coupled solving currently requires strict convergence");
+    ensure(input.steadyAcceleration==SteadyAcceleration2D::None,"Coupled solving does not support Anderson acceleration");
+    ensure(input.outletBackflow==OutletBackflow2D::Reject,"Coupled solving requires outlet backflow rejection");
+    ensure(input.faceViscosity.empty() && input.manufacturedViscositySlope==0,
+           "Coupled solving currently requires constant viscosity");
+    for(const auto role:boundary.role)
+        ensure(role!=Role::Opening && role!=Role::Farfield,"Coupled solving does not support dynamic pressure-opening/farfield boundaries");
+
+    // The steady relaxation-defect Rhie--Chow equation has the unrelaxed
+    // coefficient V/max(aU,aV) at its fixed point. Solve that equation directly;
+    // the line search supplies nonlinear damping without changing the flux law.
+    auto controls=input;controls.velocityRelaxation=1.;controls.pressureRelaxation=1.;
+    auto lowOrder=controls;lowOrder.convection=ConvectionScheme2D::Upwind;
+    const auto n=mesh.cells.size(),nf=mesh.faces.size();
+    const double height=boundary.ymax-boundary.ymin;
+    const double pressureScale=finite(controls.speed*controls.speed+controls.nu*controls.speed/height);
+    ensure(pressureScale>0,"Coupled pressure reference underflow");
+    const double consistencyTolerance=std::min(controls.tolerance,1e-8);
+    Vec zeros(nf),zeroState(3*n);
+    const std::vector<Vector2D> noSources;
+    const auto& pressureBoundary=controls.scenario=="custom"?boundary.p:zeros;
+    auto homogeneous=boundary;homogeneous.u=zeros;homogeneous.v=zeros;homogeneous.p=zeros;
+    const auto guStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedU);
+    const auto gvStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedV);
+    const auto gpStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedP,true);
+    std::vector<std::pair<std::size_t,std::size_t>> connections;
+    connections.reserve(nf);for(const auto& face:mesh.faces)if(face.neighbour)connections.emplace_back(face.owner,*face.neighbour);
+    const detail::SparsePattern2D pattern(n,connections);
+    System momentumU(pattern),momentumV(pattern),preconditionU(pattern),preconditionV(pattern),pressure(pattern);
+    detail::LinearWorkspace2D pressureWorkspace(n);
+    CoupledKrylov krylov(3*n);
+    Vec state(3*n),ra(n,1.),candidateRa(n,1.),df(nf),rowScale(3*n),rhs(3*n),base(3*n),highResidual(3*n),lowResidual(3*n);
+    Vec mu(n),mv(n),divergence(n),linearProduct(3*n),ru(n),rv(n),preU(n),preV(n),preP(n);
+    FlowResult2D result,scratch;
+    for(auto* target:{&result,&scratch}){target->u.resize(n);target->v.resize(n);target->p.resize(n);target->flux.resize(nf);}
+    result.domainHeight=height;initializeCaseSources(mesh,controls,result);
+    initializeCaseVelocity(mesh,controls,boundary,result);
+    if(guess) {
+        result.u=guess->u;result.v=guess->v;result.p=guess->p;
+        if(boundary.closed){const double gauge=result.p[0];for(auto& value:result.p)value=finite(value-gauge);}
+    }
+    for(std::size_t id=0;id<nf;++id) {
+        const auto& face=mesh.faces[id];
+        result.flux[id]=face.neighbour?interpolate(face,result.u)*face.areaVector.x+interpolate(face,result.v)*face.areaVector.y
+            :boundary.role[id]==Role::Inlet?boundary.u[id]*face.areaVector.x+boundary.v[id]*face.areaVector.y
+            :boundary.role[id]==Role::Outlet?result.u[face.owner]*face.areaVector.x+result.v[face.owner]*face.areaVector.y:0.;
+    }
+    if(guess && !guess->flux.empty()) {
+        result.flux=guess->flux;
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& face=mesh.faces[id];if(face.neighbour || boundary.role[id]==Role::Outlet)continue;
+            const double expected=boundary.role[id]==Role::Inlet?boundary.u[id]*face.areaVector.x+boundary.v[id]*face.areaVector.y:0.;
+            const double scale=controls.speed*std::hypot(face.areaVector.x,face.areaVector.y)+std::abs(expected);
+            ensure(std::abs(result.flux[id]-expected)<=64*std::numeric_limits<double>::epsilon()*scale,
+                   "Initial face flux violates prescribed boundary flux");
+            result.flux[id]=expected;
+        }
+    }
+    for(std::size_t i=0;i<n;++i){state[i]=result.u[i]/controls.speed;state[n+i]=result.v[i]/controls.speed;state[2*n+i]=result.p[i]/pressureScale;}
+    double domainArea=0,totalLength=0;
+    for(const auto& cell:mesh.cells)domainArea+=cell.area;
+    for(const auto& face:mesh.faces)totalLength+=std::hypot(face.areaVector.x,face.areaVector.y);
+    std::vector<std::size_t> monitorGroup(nf);Vec monitorLengths;
+    prepareMonitors(mesh,controls,boundary,result,monitorGroup,monitorLengths);
+
+    const auto unpack=[&](const Vec& x) {
+        for(std::size_t i=0;i<n;++i){scratch.u[i]=finite(controls.speed*x[i]);scratch.v[i]=finite(controls.speed*x[n+i]);scratch.p[i]=finite(pressureScale*x[2*n+i]);}
+    };
+    const auto forceGradient=[&](const Vec& p,const Vec& pb) {
+        return detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,p,gpStencil.apply(p,pb),pb,boundary.fixedP));
+    };
+    const auto flux=[&](const Boundary& b,const Vec& response,const Vec& pb) {
+        const auto gu=guStencil.apply(scratch.u,b.u),gv=gvStencil.apply(scratch.v,b.v),gp=gpStencil.apply(scratch.p,pb);
+        const auto pressureForce=detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,scratch.p,gp,pb,b.fixedP));
+        return rhieChowFlux(mesh,controls,b,scratch,response,scratch.u,scratch.v,gu,gv,gu,gv,gp,pressureForce,zeros,false,0,df);
+    };
+    // With frozen advective flux, the upwind operator is affine in U,V,p.
+    // Physical sources and prescribed traces belong only to its affine part.
+    const auto residual=[&](const Vec& x,Vec& out,const Boundary& b,const FlowControls2D& c,
+                            const Vec& advectiveFlux,const Vec& response,bool physical) {
+        unpack(x);const auto& pb=physical?pressureBoundary:zeros;
+        const auto gu=guStencil.apply(scratch.u,b.u),gv=gvStencil.apply(scratch.v,b.v),gp=gpStencil.apply(scratch.p,pb);
+        const auto pressureForce=detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,scratch.p,gp,pb,b.fixedP));
+        const auto stress=c.viscousStress==ViscousStress2D::Symmetric
+            ?detail::symmetricViscousCorrection(mesh,scratch.u,scratch.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+            :std::vector<Vector2D>{};
+        const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
+            ?detail::faceFrameVelocityValues(mesh,advectiveFlux,scratch.u,scratch.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV)
+            :std::vector<Vector2D>{};
+        const auto& sources=physical?result.sourceIntegrals:noSources;
+        momentum(momentumU,mesh,c,b,scratch.u,advectiveFlux,gu,pressureForce,sources,stress,faceVelocity,false,nullptr,0);
+        momentum(momentumV,mesh,c,b,scratch.v,advectiveFlux,gv,pressureForce,sources,stress,faceVelocity,true,nullptr,0);
+        momentumU.apply(scratch.u,mu);momentumV.apply(scratch.v,mv);out.assign(3*n,0.);
+        for(std::size_t i=0;i<n;++i){out[i]=mu[i]-momentumU.rhs[i];out[n+i]=mv[i]-momentumV.rhs[i];}
+        const auto q=rhieChowFlux(mesh,c,b,scratch,response,scratch.u,scratch.v,gu,gv,gu,gv,gp,pressureForce,zeros,false,0,df);
+        for(std::size_t id=0;id<nf;++id){const auto& face=mesh.faces[id];out[2*n+face.owner]+=q[id];if(face.neighbour)out[2*n+*face.neighbour]-=q[id];}
+        if(boundary.closed)out[2*n]=x[2*n];
+    };
+    const auto feasible=[&](const Vec& q) {
+        for(std::size_t id=0;id<nf;++id)if(!mesh.faces[id].neighbour && boundary.role[id]==Role::Outlet && q[id]<0)return false;
+        return true;
+    };
+    ensure(feasible(result.flux),"Coupled initial face flux violates outlet backflow rejection");
+    const auto evaluate=[&](const Vec& x,const Vec& q) {
+        ensure(feasible(q),"Coupled trial face flux violates outlet backflow rejection");
+        residual(x,linearProduct,boundary,controls,q,ra,true);
+        for(std::size_t i=0;i<n;++i) {
+            const double diagonal=std::max(momentumU.diag[i],momentumV.diag[i]);
+            ensure(diagonal>0 && std::isfinite(diagonal),"Coupled momentum diagonal is not positive");
+            candidateRa[i]=mesh.cells[i].area/diagonal;
+        }
+        const auto reconstructed=flux(boundary,candidateRa,pressureBoundary);
+        std::fill(divergence.begin(),divergence.end(),0.);CoupledMetrics metrics;double incoming=0;long double energy=0;
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& face=mesh.faces[id];const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+            divergence[face.owner]+=q[id];if(face.neighbour)divergence[*face.neighbour]-=q[id];
+            else{metrics.netFlux+=q[id];incoming+=std::max(0.,-q[id]);if(boundary.role[id]==Role::Outlet && q[id]<0)++metrics.reverseOutletFaces;}
+            const double defect=finite((q[id]-reconstructed[id])/(controls.speed*length));
+            metrics.step.fluxConsistency=std::max(metrics.step.fluxConsistency,std::abs(defect));
+            energy+=length/totalLength*defect*defect;
+        }
+        for(std::size_t i=0;i<n;++i) {
+            const double scale=(momentumU.diag[i]+momentumV.diag[i])*controls.speed;
+            const double xResidual=linearProduct[i]/scale,yResidual=linearProduct[n+i]/scale;
+            const double magnitude=std::hypot(xResidual,yResidual);
+            if(magnitude>metrics.step.momentumResidual){metrics.step.momentumResidual=magnitude;metrics.step.momentumWorstCell=i;metrics.step.momentumResidualX=xResidual;metrics.step.momentumResidualY=yResidual;}
+            const double continuity=divergence[i]/(controls.speed*std::sqrt(mesh.cells[i].area));
+            metrics.step.continuity=std::max(metrics.step.continuity,std::abs(continuity));
+            energy+=mesh.cells[i].area/domainArea*(xResidual*xResidual+yResidual*yResidual+continuity*continuity);
+        }
+        const double throughput=boundary.closed?controls.speed*height:incoming;
+        ensure(throughput>0,"Coupled flow has no positive reference throughput");
+        metrics.step.globalRelativeImbalance=finite(std::abs(metrics.netFlux)/throughput);
+        metrics.merit=finite(std::sqrt(static_cast<double>(energy)));
+        return metrics;
+    };
+    const auto converged=[&](const FlowIteration2D& step) {
+        return detail::strictFlowConverged2D(step.iteration,step.momentumResidual,step.velocityChange,
+            step.pressureChange,step.continuity,step.globalRelativeImbalance,controls.tolerance,true)
+            && step.fluxConsistency<consistencyTolerance;
+    };
+    auto accepted=evaluate(state,result.flux);
+    accepted.step.strictLinearStep=false;
+    bool certifyNext=false;
+    for(std::size_t iteration=1;iteration<=controls.maxIterations;++iteration) {
+        const Vec old=state,oldFlux=result.flux;
+        try {
+            const auto before=evaluate(old,oldFlux);ra=candidateRa;
+            residual(old,lowResidual,boundary,lowOrder,oldFlux,ra,true);
+            preconditionU.diag=momentumU.diag;preconditionU.off=momentumU.off;
+            preconditionV.diag=momentumV.diag;preconditionV.off=momentumV.off;
+            preconditionU.factorILU0();preconditionV.factorILU0();pressure.reset();
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& face=mesh.faces[id];const double coefficient=interpolate(face,ra)*face.transmissibility;
+                if(face.neighbour || boundary.fixedP[id])pressure.diag[face.owner]+=coefficient;
+                if(face.neighbour){const auto other=*face.neighbour;pressure.diag[other]+=coefficient;pressure.add(face.owner,other,-coefficient);pressure.add(other,face.owner,-coefficient);}
+            }
+            if(boundary.closed)pressure.pin(0);
+            for(std::size_t i=0;i<n;++i){rowScale[i]=preconditionU.diag[i]*controls.speed;rowScale[n+i]=preconditionV.diag[i]*controls.speed;rowScale[2*n+i]=pressure.diag[i]*pressureScale;}
+            if(boundary.closed)rowScale[2*n]=1.;
+            residual(old,highResidual,boundary,controls,oldFlux,ra,true);
+            residual(zeroState,base,boundary,lowOrder,oldFlux,ra,true);
+            for(std::size_t i=0;i<3*n;++i)rhs[i]=finite((-base[i]-highResidual[i]+lowResidual[i])/rowScale[i]);
+            const auto apply=[&](const Vec& x,Vec& y){residual(x,y,homogeneous,lowOrder,oldFlux,ra,false);for(std::size_t i=0;i<3*n;++i)y[i]/=rowScale[i];};
+            const auto precondition=[&](const Vec& x,Vec& y) {
+                for(std::size_t i=0;i<n;++i){ru[i]=x[i]*rowScale[i];rv[i]=x[n+i]*rowScale[n+i];}
+                preconditionU.preconditionILU0(ru,preU);preconditionV.preconditionILU0(rv,preV);
+                scratch.u=preU;scratch.v=preV;std::fill(scratch.p.begin(),scratch.p.end(),0.);
+                const auto q=flux(homogeneous,ra,zeros);
+                for(std::size_t i=0;i<n;++i)pressure.rhs[i]=x[2*n+i]*rowScale[2*n+i];
+                for(std::size_t id=0;id<nf;++id){const auto& face=mesh.faces[id];pressure.rhs[face.owner]-=q[id];if(face.neighbour)pressure.rhs[*face.neighbour]+=q[id];}
+                if(boundary.closed)pressure.rhs[0]=0.;
+                std::fill(preP.begin(),preP.end(),0.);
+                const auto pressureStart=controls.profile?Clock::now():Clock::time_point{};
+                const auto builds=pressure.ic0Builds(),reuses=pressure.ic0Reuses();
+                const auto cb=pressure.choleskyBuilds(),cr=pressure.choleskyRefactors(),cu=pressure.choleskyReuses();
+                const auto hb=pressure.hierarchyBuilds(),hr=pressure.hierarchyReuses(),hf=pressure.hierarchyRefreshes();
+                const auto iterations=pressure.solvePressure(preP,pressureWorkspace,pressureMethod(controls.pressurePreconditioner),1e-3);
+                auto& performance=result.performance;++performance.pressureSolves;performance.pressureIterations+=iterations;
+                performance.maxPressureIterations=std::max(performance.maxPressureIterations,iterations);
+                performance.pressureFactorizations+=pressure.ic0Builds()-builds;performance.pressureFactorReuses+=pressure.ic0Reuses()-reuses;
+                performance.pressureCholeskyBuilds+=pressure.choleskyBuilds()-cb;performance.pressureCholeskyRefactors+=pressure.choleskyRefactors()-cr;performance.pressureCholeskyReuses+=pressure.choleskyReuses()-cu;
+                performance.pressureHierarchyBuilds+=pressure.hierarchyBuilds()-hb;performance.pressureHierarchyReuses+=pressure.hierarchyReuses()-hr;performance.pressureHierarchyRefreshes+=pressure.hierarchyRefreshes()-hf;
+                performance.maxPressureHierarchyLevels=std::max(performance.maxPressureHierarchyLevels,pressure.hierarchyLevels());performance.maxPressureCoarseCells=std::max(performance.maxPressureCoarseCells,pressure.hierarchyCoarseCells());
+                if(controls.profile)performance.pressureLinearSolveSeconds+=std::chrono::duration<double>(Clock::now()-pressureStart).count();
+                const auto g=forceGradient(preP,zeros);
+                for(std::size_t i=0;i<n;++i){y[i]=(preU[i]-ra[i]*g[i].x)/controls.speed;y[n+i]=(preV[i]-ra[i]*g[i].y)/controls.speed;y[2*n+i]=preP[i]/pressureScale;}
+            };
+            bool strict=!controls.adaptiveLinear || certifyNext ||
+                (before.step.momentumResidual<100*controls.tolerance && before.step.fluxConsistency<100*consistencyTolerance && before.step.continuity<1e-8);
+            certifyNext=false;
+            bool found=false;Vec proposed=old,trial(3*n),trialFlux(nf);CoupledMetrics candidate;
+            double weight=1.,relativeTolerance=1e-13;
+            for(unsigned attempt=0;attempt<2 && !found;++attempt) {
+                relativeTolerance=strict?1e-13:std::clamp(.01*before.merit,1e-13,1e-3);
+                const auto linearStart=controls.profile?Clock::now():Clock::time_point{};
+                const auto count=result.performance.coupledIterations;++result.performance.coupledSolves;
+                const auto finishLinear=[&]{result.performance.maxCoupledIterations=std::max(result.performance.maxCoupledIterations,result.performance.coupledIterations-count);if(controls.profile)result.performance.coupledLinearSolveSeconds+=std::chrono::duration<double>(Clock::now()-linearStart).count();};
+                proposed=old;
+                try{krylov.solve(apply,precondition,proposed,rhs,relativeTolerance,strict?.01*controls.tolerance:std::numeric_limits<double>::infinity(),result.performance);}
+                catch(...){finishLinear();throw;}finishLinear();
+                unpack(proposed);const auto proposedFlux=flux(boundary,ra,pressureBoundary);
+                weight=1.;
+                for(std::size_t id=0;id<nf;++id)if(!mesh.faces[id].neighbour && boundary.role[id]==Role::Outlet && proposedFlux[id]<0)
+                    weight=std::min(weight,.95*oldFlux[id]/(oldFlux[id]-proposedFlux[id]));
+                ensure(weight>0 && std::isfinite(weight),"Coupled update has no feasible direction at the outlet");
+                for(unsigned backtrack=0;backtrack<24;++backtrack) {
+                    ++result.performance.lineSearchTrials;
+                    for(std::size_t i=0;i<3*n;++i)trial[i]=finite(old[i]+weight*(proposed[i]-old[i]));
+                    for(std::size_t id=0;id<nf;++id)trialFlux[id]=finite(oldFlux[id]+weight*(proposedFlux[id]-oldFlux[id]));
+                    candidate=evaluate(trial,trialFlux);
+                    candidate.step.iteration=iteration;candidate.step.velocityChange=0;candidate.step.pressureChange=0;
+                    for(std::size_t i=0;i<n;++i){candidate.step.velocityChange=std::max(candidate.step.velocityChange,std::hypot(trial[i]-old[i],trial[n+i]-old[n+i]));candidate.step.pressureChange=std::max(candidate.step.pressureChange,std::abs(trial[2*n+i]-old[2*n+i]));}
+                    // The merit chooses a step only. It never replaces the
+                    // maximum-cell, field-change, continuity or strict gates.
+                    auto roundoffCandidate=candidate.step;roundoffCandidate.iteration=std::max<std::size_t>(10,iteration);
+                    if(candidate.merit<=before.merit*(1.-1e-4*weight) || converged(roundoffCandidate)){found=true;break;}
+                    ++result.performance.lineSearchRejected;weight*=.5;
+                }
+                if(!found && !strict){strict=true;continue;}
+                if(!found)throw std::runtime_error("Coupled line search found no residual-decreasing feasible step");
+            }
+            ensure(found,"Coupled line search failed");
+            unpack(trial);
+            if(!result.monitorNames.empty()) {
+                scratch.flux=trialFlux;scratch.monitorNames=result.monitorNames;
+                const auto gp=gpStencil.apply(scratch.p,pressureBoundary),gu=guStencil.apply(scratch.u,boundary.u),gv=gvStencil.apply(scratch.v,boundary.v);
+                const auto pf=detail::pressureFaceValues(mesh,scratch.p,gp,pressureBoundary,boundary.fixedP);
+                const auto stress=controls.viscousStress==ViscousStress2D::Symmetric?detail::symmetricViscousCorrection(mesh,scratch.u,scratch.v,gu,gv,boundary.u,boundary.v,boundary.fixedU,boundary.fixedV,boundary.constantU,boundary.constantV,controls.nu):std::vector<Vector2D>{};
+                candidate.step.monitors=physicalMonitors(mesh,controls,boundary,scratch,monitorGroup,monitorLengths,pressureScale,pf,gu,gv,stress);
+            }
+            // Commit only a fully evaluated candidate. Scratch fields used by
+            // Krylov, preconditioning and rejected trials never own the result.
+            state=trial;result.flux=trialFlux;
+            result.u=scratch.u;result.v=scratch.v;result.p=scratch.p;
+            accepted=candidate;accepted.step.strictLinearStep=strict;
+            accepted.step.linearRelativeTolerance=relativeTolerance;
+            accepted.step.coupledLinearResidual=krylov.residualNorm;accepted.step.lineSearchWeight=weight;
+            result.globalImbalance=accepted.netFlux;result.globalRelativeImbalance=accepted.step.globalRelativeImbalance;
+            if(iteration<=10)result.convergenceReference=std::max(result.convergenceReference,accepted.step.momentumResidual);
+            result.history.push_back(accepted.step);
+        } catch(const std::runtime_error& error) {
+            result.failureReason=error.what();
+            if(result.history.empty())result.history.push_back(accepted.step);
+            break;
+        }
+        const auto& step=result.history.back();
+        if(progress && (iteration==1 || iteration%10==0))progress(step);
+        if(converged(step)) {
+            if(step.strictLinearStep){result.converged=true;break;}
+            certifyNext=true;
+        }
+        if(controls.stopRequested && controls.stopRequested()){result.stopped=true;break;}
+    }
+    // Independently refresh rAU from the retained flux before any success is
+    // returned. The divergence includes the gauge cell, not its pinned row.
+    const auto final=evaluate(state,result.flux);
+    result.globalImbalance=final.netFlux;result.globalRelativeImbalance=final.step.globalRelativeImbalance;
+    if(result.converged) {
+        auto finalStep=final.step;const auto& last=result.history.back();
+        finalStep.iteration=last.iteration;finalStep.velocityChange=last.velocityChange;finalStep.pressureChange=last.pressureChange;
+        if(!converged(finalStep) || final.reverseOutletFaces!=0){result.converged=false;result.failureReason="Coupled final residual/flux consistency certification failed";}
+    }
+    const auto gp=gpStencil.apply(result.p,pressureBoundary),gu=guStencil.apply(result.u,boundary.u),gv=gvStencil.apply(result.v,boundary.v);
+    const auto stress=controls.viscousStress==ViscousStress2D::Symmetric?detail::symmetricViscousCorrection(mesh,result.u,result.v,gu,gv,boundary.u,boundary.v,boundary.fixedU,boundary.fixedV,boundary.constantU,boundary.constantV,controls.nu):std::vector<Vector2D>{};
+    postprocessForces(mesh,controls,boundary,result,pressureBoundary,gp,gu,gv,stress);
+    if(controls.profile)result.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-start).count();
+    return result;
+}
+} // namespace cartmesh2d::fv::solver_detail

@@ -17,6 +17,7 @@
 
 #include "FlowSolverDetail2D.hpp"
 #include "FlowPressure2D.hpp"
+#include "FlowCoupled2D.hpp"
 namespace cartmesh2d::fv {
 using namespace solver_detail;
 static FlowResult2D solveFlow(
@@ -46,8 +47,8 @@ static FlowResult2D solveFlow(
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
     ensure(c.coupling==FlowCoupling2D::Simple ||
-           (c.coupling==FlowCoupling2D::SimpleC && !previous && !material),
-           "SIMPLEC requires steady laminar flow");
+           ((c.coupling==FlowCoupling2D::SimpleC || c.coupling==FlowCoupling2D::Coupled) && !previous && !material),
+           "SIMPLEC and coupled solving require steady constant-property laminar flow");
     ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
            "Pressure corrections must be in [1,4]");
     ensure(!material || c.pressureCorrectionPasses==4,
@@ -123,6 +124,12 @@ static FlowResult2D solveFlow(
     }
     ensure(pending.size() == n,
            "Flow requires one connected fluid region with an unambiguous pressure reference");
+
+    if(c.coupling==FlowCoupling2D::Coupled) {
+        auto coupled=solveCoupledFlow2D(m,c,b,progress,guess);
+        if(c.profile)coupled.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-solveStart).count();
+        return coupled;
+    }
 
     std::vector<std::pair<std::size_t, std::size_t>> connections;
     connections.reserve(nf);

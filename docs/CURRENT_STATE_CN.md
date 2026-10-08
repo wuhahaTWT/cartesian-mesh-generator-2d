@@ -42,6 +42,8 @@ T01 双管已恢复用户提供的[原始输入包](../artifacts/current/laminar
 
 Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 3,086 格的面 4591，owner/neighbour 连线反向却因绝对值公式被判为约 65.96°、质量通过，随后 FVM 拒绝。全局与 patch-local 现在共同检查正法向距离及中心跨面括定，候选修复评分也识别该问题；没有增加容差或放宽质量门。原两单元几何在三个物理尺度及存储端点反转下的回归均拒绝。相同生成参数得到 **3,085 格、768 个边界层格**，流体面积保持 `0.8941491721076131`，真实质量/FVM 通过；AA16 在 **581 轮 / 12.759 s** 严格收敛，Cd 误差仍为 **1.861%**。固定同一 128 段多边形细化到 5,891 格后，Cd 误差 **1.934%**、Cl 变号，故这只是几何质量修复，未授予空间精度资格；高密度升级暂停等待离散修复。见[修复证据](../artifacts/current/laminar-foundation/quality-normal-distance.json)、[固定几何对照](../artifacts/current/laminar-foundation/dfg-controlled-refinement.json)及[原坏网格与修复后真实场](../artifacts/current/laminar-foundation/quality-normal-distance-fields.tar.gz)。当前完整原生 **104/104**、前端 **191/191** 通过；真实 App 的 5,216 格直管在 strict `1e-8`、IC(0) 下 553 轮收敛。跨平台 CI 尚未完成。
 
+新增显式 `--coupling coupled`：以原动量、Rhie–Chow、压力重构和受力算子求同一离散固定点，使用块预条件 FGMRES 与共同更新 u/v/p/flux 的线搜索；失败候选不替换最后接受步。旧 6,208 格圆环 **10 轮 / 266 次 Krylov / 求解 5.346 s** 严格收敛，旧 3,063 格 DFG **44 轮 / 5,731 次 Krylov / 求解 43.343 s** 严格收敛。**这是两张保留失败网格的耦合稳定性进展，空间精度仍未修好**：圆环压力 L2/Uref² **0.02776201**，DFG Cd **5.3952174**（低 **3.303%**）、Cl **0.0138331**、压降 **0.1066593**（低 **9.242%**）。上述时间是求解器 profile，不是完整成本或同精度提速结论。原 SIMPLE、strict、松弛与离散默认未改；coupled 仅支持稳态、恒黏度、固定边界角色和 strict，明确拒绝非定常、物性/湍流迭代、动态 opening/farfield、NormalInlet、Anderson 和 engineering。普通直管/方腔/制造解、三种对流格式、两种应力及失败保场/取消/入口条件/压力预条件器的原生回归通过。证据见[耦合结果](../artifacts/current/laminar-foundation/coupled-stability.json)及[真实场](../artifacts/current/laminar-foundation/coupled-stability-fields.tar.gz)。完整原生、前端和真实 App 验证范围同上，跨平台 CI 未完成。
+
 待完成：通用精度/稳定性修复及失败例回归；补齐曲壁同网格外部比较、三档收敛及与网格产品一致的 10 万至 50 万格求解；在更多工况和密度上验证工程停止/SIMPLEC 的同精度成本；通用修复后重算代表拓扑设计与基线。尚未宣称基础任务完成。
 
 | 工作 | 接手时的状态与入口 |

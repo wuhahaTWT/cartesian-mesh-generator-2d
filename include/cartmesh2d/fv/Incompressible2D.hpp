@@ -15,7 +15,7 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
 enum class FlowConvergence2D { Strict, Engineering };
-enum class FlowCoupling2D { Simple, SimpleC };
+enum class FlowCoupling2D { Simple, SimpleC, Coupled };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -52,8 +52,9 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
-    // Optional steady laminar correction response. The predicted Rhie--Chow
-    // flux retains SIMPLE's coefficient so the converged equations are shared.
+    // SimpleC changes the segregated correction response. Coupled solves the
+    // same steady equations with block FGMRES and a residual-based line search;
+    // SIMPLE relaxation and pressure-correction pass controls do not apply.
     FlowCoupling2D coupling = FlowCoupling2D::Simple;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
@@ -111,6 +112,11 @@ struct FlowState2D {
 };
 
 struct FlowPerformance2D {
+    // Coupled work includes rejected trial solves. Counts are always recorded;
+    // elapsed times are collected only when profile is enabled.
+    std::size_t coupledSolves = 0, coupledIterations = 0, maxCoupledIterations = 0;
+    std::size_t lineSearchTrials = 0, lineSearchRejected = 0;
+    double coupledLinearSolveSeconds = 0;
     std::size_t accelerationCandidates = 0, accelerationAccepted = 0, accelerationRejected = 0;
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
@@ -150,6 +156,10 @@ struct FlowIteration2D {
     double pressureLinearResidual = 0;
     double linearRelativeTolerance = 1e-11;
     bool strictLinearStep = true;
+    // Coupled only: |phi - RhieChow(U,p,rAU(phi))|/(Uref*face length).
+    double fluxConsistency = 0;
+    double coupledLinearResidual = 0;
+    double lineSearchWeight = 1;
     double globalRelativeImbalance = 0;
     std::vector<double> monitors;
 };
@@ -181,6 +191,10 @@ struct FlowResult2D {
     std::vector<Vector2D> temporalIntegrals;
     bool converged = false;
     bool stopped = false;
+    // Coupled numerical failures retain the last accepted diagnostic iterate.
+    // If no step was accepted, history contains only an iteration-zero
+    // diagnostic of the unchanged initialization. Neither is a physical state.
+    std::string failureReason;
     std::vector<double> u;
     std::vector<double> v;
     std::vector<double> p;
