@@ -57,6 +57,8 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 该对照的 OpenFOAM `linearUpwind` 与原生 `limited-linear` 分别记录，不能声称格式完全相同。OpenFOAM 自身残差通过仍须比较物理误差；未完成或中断的运行不算通过。
 
+`artifacts/current/laminar-foundation/rejected-implicit-pressure.patch` 保留未奏效的完整非正交压力 GMRES 试验，可在原 `6ec4edf` 求解器上复现，CLI 选项为 `--pressure-correction implicit`。它只用于解释已试过的方向，不应在未解决问题时作为修复合入。对应细圆环第 10/20 轮动量残差约 `4309.5 / 694436`，故下一步须继续检查外迭代动量—压力耦合，而不能假定只换压力线性求解器即可消除发散。
+
 ## 产物保留与清理
 
 维护对象是当前源码与必要测试；App 打包只包含 `desktop/src/`、原生 runtime 和样例。多平台共用同一算法源码，构建树、依赖、研究数据及安装包分别管理。[CMake](https://cmake.org/cmake/help/latest/manual/cmake.1.html#introduction-to-cmake-buildsystems)明确区分源码树和可重建的构建树。
