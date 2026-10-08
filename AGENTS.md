@@ -42,3 +42,9 @@
 - 常规构建只用 `build/`，实验用忽略提交的 `outputs/` 或临时目录；不建长期隐藏工作区、baseline-source、整份源码副本或日期命名试改应用。
 - 文档固定为 README、本规则及 docs 三份；展示素材索引合入开发指南，当前状态只放关键证据和待办，过程交给 Git。删除入口时同步修复引用。
 - 少量证据放 artifacts，大网格/安装包保留本地或发布附件，不提交缓存、依赖或大批网格。清理分支不删除原始场、失败记录、复现材料及用户指定保留的参考包。
+
+## Cursor Cloud specific instructions
+
+- 构建、测试和桌面启动命令以 `docs/DEVELOPMENT_CN.md` 为准。Cloud Agent 镜像里 `/usr/bin/c++` 是 Clang 18，会选用 GCC 14 的 libstdc++；未安装 `libstdc++-14-dev` 时 CMake 在链接测试程序时报 `cannot find -lstdc++`。系统 `g++`（GCC 13）本身可以链接。环境安装会补上 `libstdc++-14-dev`。
+- 没有需要常驻的服务。桌面是 Electron：先完成 `npm --prefix desktop run build:native`，再用 `npm --prefix desktop start`。本机图形会话里若沙箱或 GPU 初始化失败，按 Linux CI 同样加上 `--no-sandbox --disable-gpu`。
+- `build/`、`desktop/node_modules/`、`desktop/runtime/` 由安装生成且不提交。OpenFOAM 与 `tools/optimization/` 虚拟环境不是默认开发环境的一部分。
