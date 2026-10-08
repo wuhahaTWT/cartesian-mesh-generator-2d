@@ -1,0 +1,3015 @@
+{
+  "schema": "cartmesh2d-t01-double-pipe-recompute-v1",
+  "inputs": {
+    "schema": "cartmesh2d-t01-double-pipe-inputs-v1",
+    "physicalAccuracyQualified": false,
+    "scope": "Frozen-version evidence; rerun after the general CFD repair.",
+    "source": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries",
+    "cases": [
+      {
+        "reynolds": 0,
+        "problem": {
+          "nx": 36,
+          "ny": 24,
+          "width": 1.5,
+          "height": 1,
+          "viscosity": 1.0,
+          "alpha_max": 360000.0,
+          "volume_fraction": 0.3333333333333333,
+          "filter_radius": 0.055,
+          "port_width": 0.16666666666666666,
+          "case": "double-pipe",
+          "linear_residual_limit": 1e-08,
+          "reynolds": 0.0,
+          "newton_residual_limit": 1e-11,
+          "newton_iterations": 60
+        },
+        "originalStatus": "stationary",
+        "originalOptimizationSeconds": 1.69181079196278,
+        "independentGeometry": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "construction": "independent rectangles",
+          "fluidRegion": "interior",
+          "components": 2,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "d09994bf200193b97c2034e38a85fd1c8c29fbf38828a1afe81f75a5bd1f797c"
+            },
+            {
+              "file": "fluid-component-1.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "5d0ea7214a82f86acb3205959ebfc40c01f65aae68a8b7b5e2e4bf52825b8631"
+            }
+          ],
+          "vertices": 8,
+          "fluidArea": 0.5,
+          "designArea": 1.5,
+          "boundarySha256": "95d56d68ba088e3121128499fc4c9122667f6d89146cd2cb9c1ce95e9deb6010",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.0,
+                0.16666666666666663,
+                0.0
+              ],
+              [
+                0.0,
+                0.16666666666666674,
+                0.0,
+                0.16666666666666674
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "outlet_0"
+              ],
+              [
+                "inlet_1",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                false
+              ],
+              [
+                false,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "fields": [
+          {
+            "label": "candidate",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-0/final.npz",
+            "sha256": "0549b74d0f121f778b3e442446555748da72de6840eea80660915af897e7ef19",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 66.97312205409068,
+            "porousObjective": 66.97312205409432,
+            "objectiveDifference": 3.637978807091713e-12,
+            "recomputedRhoMaximumDifference": 0.0,
+            "densityVolumeFraction": 0.3333333333333333,
+            "geometry": {
+              "components": 2,
+              "holes": 0,
+              "vertices": 168,
+              "rawSharpArea": 0.5,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.0,
+                    0.16666666666666663,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.16666666666666652,
+                    0.0,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "outlet_0"
+                  ],
+                  [
+                    "inlet_1",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    false
+                  ],
+                  [
+                    false,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              },
+              "maximumDistanceToIndependentRectangle": 2.482534153247273e-16,
+              "areaDifferenceFromIndependent": 0.0
+            },
+            "porousSolveSeconds": 0.010534944999562867,
+            "porousLinearResidual": 2.1316282072802996e-14,
+            "porousContinuity": 8.50178272813822e-14,
+            "porousAdjointResidual": 1.363404904127078e-09,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 2.1316282072802996e-14,
+                "iterations": 0,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.002288174728585854,
+              "solidDissipationFraction": 0.2525478466880054,
+              "solidDragDissipation": 0.23618914132426214,
+              "dissipationReconstructionRelativeError": 2.1082296824593408e-16,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 0.0004,
+            "scaledPorousTotalPressurePower": 0.026789248821637728,
+            "scaledPorousBoundaryPressureDrop": 6.027580984868487,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          },
+          {
+            "label": "geometricSeed",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-0/reference-geometricSeed.npz",
+            "sha256": "b24aba9f004e34a6943fd7df1deb2f8b1a59862f3b5e6ca60bb7efc5293adf32",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 66.97312205409114,
+            "porousObjective": 66.97312205409456,
+            "objectiveDifference": 3.424815986363683e-12,
+            "recomputedRhoMaximumDifference": 0.0,
+            "densityVolumeFraction": 0.33333333333333326,
+            "geometry": {
+              "components": 2,
+              "holes": 0,
+              "vertices": 168,
+              "rawSharpArea": 0.5,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.0,
+                    0.16666666666666663,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.16666666666666652,
+                    0.0,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "outlet_0"
+                  ],
+                  [
+                    "inlet_1",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    false
+                  ],
+                  [
+                    false,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              },
+              "maximumDistanceToIndependentRectangle": 2.482534153247273e-16,
+              "areaDifferenceFromIndependent": 0.0
+            },
+            "porousSolveSeconds": 0.010450108999975782,
+            "porousLinearResidual": 1.5976370764925315e-14,
+            "porousContinuity": 7.928618317917516e-14,
+            "porousAdjointResidual": 1.8109073029005554e-09,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 1.5976370764925315e-14,
+                "iterations": 0,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.0022881747285862972,
+              "solidDissipationFraction": 0.25254784668800645,
+              "solidDragDissipation": 0.23618914132426405,
+              "dissipationReconstructionRelativeError": 0.0,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 0.0004,
+            "scaledPorousTotalPressurePower": 0.026789248821637825,
+            "scaledPorousBoundaryPressureDrop": 6.027580984868508,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          },
+          {
+            "label": "engineering",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-0/reference-engineering.npz",
+            "sha256": "ec585a08e61102afa3c7c1338365a2aa2e5b0f7af34f4625926743aaf0646530",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 91.39894427378559,
+            "porousObjective": 91.39894427378358,
+            "objectiveDifference": -2.0037305148434825e-12,
+            "recomputedRhoMaximumDifference": 3.3306690738754696e-16,
+            "densityVolumeFraction": 0.3333333333333333,
+            "geometry": {
+              "components": 1,
+              "holes": 0,
+              "vertices": 160,
+              "rawSharpArea": 0.5013056414282787,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.16666666666666652,
+                    0.16666666666666663,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "inlet_1",
+                    "outlet_0",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    true
+                  ],
+                  [
+                    true,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              }
+            },
+            "porousSolveSeconds": 0.012171104000117339,
+            "porousLinearResidual": 2.5191969722403542e-14,
+            "porousContinuity": 7.809947985567652e-14,
+            "porousAdjointResidual": 9.919589997893618e-10,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 2.5191969722403542e-14,
+                "iterations": 0,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.004134809212612312,
+              "solidDissipationFraction": 0.1570492917923471,
+              "solidDragDissipation": 1.6321151937790326,
+              "dissipationReconstructionRelativeError": 1.5502952428094783e-16,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 0.0004,
+            "scaledPorousTotalPressurePower": 0.03655957770951344,
+            "scaledPorousBoundaryPressureDrop": 8.22590498464052,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          }
+        ],
+        "candidateVsSeedRhoMaximumDifference": 1.8405416080113923e-15,
+        "candidateVsSeedRhoUnequalValues": 8
+      },
+      {
+        "reynolds": 50,
+        "problem": {
+          "nx": 36,
+          "ny": 24,
+          "width": 1.5,
+          "height": 1,
+          "viscosity": 1.0,
+          "alpha_max": 360000.0,
+          "volume_fraction": 0.3333333333333333,
+          "filter_radius": 0.055,
+          "port_width": 0.16666666666666666,
+          "case": "double-pipe",
+          "linear_residual_limit": 1e-08,
+          "reynolds": 50.0,
+          "newton_residual_limit": 1e-11,
+          "newton_iterations": 60
+        },
+        "originalStatus": "stationary",
+        "originalOptimizationSeconds": 1.540739333955571,
+        "independentGeometry": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "construction": "independent rectangles",
+          "fluidRegion": "interior",
+          "components": 2,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "d09994bf200193b97c2034e38a85fd1c8c29fbf38828a1afe81f75a5bd1f797c"
+            },
+            {
+              "file": "fluid-component-1.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "5d0ea7214a82f86acb3205959ebfc40c01f65aae68a8b7b5e2e4bf52825b8631"
+            }
+          ],
+          "vertices": 8,
+          "fluidArea": 0.5,
+          "designArea": 1.5,
+          "boundarySha256": "95d56d68ba088e3121128499fc4c9122667f6d89146cd2cb9c1ce95e9deb6010",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.0,
+                0.16666666666666663,
+                0.0
+              ],
+              [
+                0.0,
+                0.16666666666666674,
+                0.0,
+                0.16666666666666674
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "outlet_0"
+              ],
+              [
+                "inlet_1",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                false
+              ],
+              [
+                false,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "fields": [
+          {
+            "label": "candidate",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-50/final.npz",
+            "sha256": "81ce97af41775409296a34b1a04122c60eddb3b3040da3cd4b50bde922bf7391",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 63.98409608835814,
+            "porousObjective": 63.98409608835819,
+            "objectiveDifference": 4.973799150320701e-14,
+            "recomputedRhoMaximumDifference": 0.0,
+            "densityVolumeFraction": 0.33333333333333326,
+            "geometry": {
+              "components": 2,
+              "holes": 0,
+              "vertices": 168,
+              "rawSharpArea": 0.5,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.0,
+                    0.16666666666666663,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.16666666666666652,
+                    0.0,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "outlet_0"
+                  ],
+                  [
+                    "inlet_1",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    false
+                  ],
+                  [
+                    false,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              },
+              "maximumDistanceToIndependentRectangle": 2.482534153247273e-16,
+              "areaDifferenceFromIndependent": 0.0
+            },
+            "porousSolveSeconds": 0.08198761099993135,
+            "porousLinearResidual": 8.008745182182375e-15,
+            "porousContinuity": 4.5465340476821807e-17,
+            "porousAdjointResidual": 7.942369186573405e-10,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 1.3962316151734775e-14,
+                "iterations": 0,
+                "accepted": true
+              },
+              {
+                "inertia": 450.0,
+                "residual": 8.008745182182375e-15,
+                "iterations": 3,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.0021957932513161854,
+              "solidDissipationFraction": 0.2433279362682617,
+              "solidDragDissipation": 0.2217031845111307,
+              "dissipationReconstructionRelativeError": 4.171894518324876e-16,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 1.777777777777778e-08,
+            "scaledPorousTotalPressurePower": 1.1374950415708126e-06,
+            "scaledPorousBoundaryPressureDrop": 0.0002559363843534327,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          },
+          {
+            "label": "geometricSeed",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-50/reference-geometricSeed.npz",
+            "sha256": "6005d0224bed5d6d22f525c6788b4d652285ada26ed8f8b53460f548ef148727",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 63.98409608835816,
+            "porousObjective": 63.984096088358164,
+            "objectiveDifference": 7.105427357601002e-15,
+            "recomputedRhoMaximumDifference": 0.0,
+            "densityVolumeFraction": 0.33333333333333326,
+            "geometry": {
+              "components": 2,
+              "holes": 0,
+              "vertices": 168,
+              "rawSharpArea": 0.5,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.0,
+                    0.16666666666666663,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.16666666666666652,
+                    0.0,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "outlet_0"
+                  ],
+                  [
+                    "inlet_1",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    false
+                  ],
+                  [
+                    false,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              },
+              "maximumDistanceToIndependentRectangle": 2.482534153247273e-16,
+              "areaDifferenceFromIndependent": 0.0
+            },
+            "porousSolveSeconds": 0.08061678499962,
+            "porousLinearResidual": 6.419107669650902e-15,
+            "porousContinuity": 5.763212173118257e-17,
+            "porousAdjointResidual": 1.493116418383909e-09,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 1.5976370764925315e-14,
+                "iterations": 0,
+                "accepted": true
+              },
+              {
+                "inertia": 450.0,
+                "residual": 6.419107669650902e-15,
+                "iterations": 3,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.002195793251316186,
+              "solidDissipationFraction": 0.24332793626826166,
+              "solidDragDissipation": 0.2217031845111306,
+              "dissipationReconstructionRelativeError": 4.171894518324876e-16,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 1.777777777777778e-08,
+            "scaledPorousTotalPressurePower": 1.137495041570812e-06,
+            "scaledPorousBoundaryPressureDrop": 0.0002559363843534326,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          },
+          {
+            "label": "engineering",
+            "file": "/workspace/cartesian-mesh-generator-2d/outputs/topology-fidelity/b-retries/double-pipe-re-50/reference-engineering.npz",
+            "sha256": "fd66c158167b12b0d7700e26e3b898ca4684d90e3ce1499e727ecd04845b0a6f",
+            "q": 0.1,
+            "beta": 6.0,
+            "storedObjective": 146.60170985188665,
+            "porousObjective": 146.60170985188662,
+            "objectiveDifference": -2.842170943040401e-14,
+            "recomputedRhoMaximumDifference": 3.3306690738754696e-16,
+            "densityVolumeFraction": 0.3333333333333333,
+            "geometry": {
+              "components": 1,
+              "holes": 0,
+              "vertices": 144,
+              "rawSharpArea": 0.5051668649687934,
+              "portConnectivity": {
+                "ports": [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ],
+                "coverageLengths": [
+                  [
+                    0.16666666666666663,
+                    0.16666666666666652,
+                    0.16666666666666663,
+                    0.16666666666666652
+                  ]
+                ],
+                "allPortsCovered": true,
+                "componentPorts": [
+                  [
+                    "inlet_0",
+                    "inlet_1",
+                    "outlet_0",
+                    "outlet_1"
+                  ]
+                ],
+                "inletToOutletReachability": [
+                  [
+                    true,
+                    true
+                  ],
+                  [
+                    true,
+                    true
+                  ]
+                ],
+                "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+              }
+            },
+            "porousSolveSeconds": 0.1168335370002751,
+            "porousLinearResidual": 1.438849039914202e-13,
+            "porousContinuity": 8.910871308409961e-17,
+            "porousAdjointResidual": 3.4992808650713397e-09,
+            "newtonHistory": [
+              {
+                "inertia": 0.0,
+                "residual": 2.3254125897603268e-14,
+                "iterations": 0,
+                "accepted": true
+              },
+              {
+                "inertia": 450.0,
+                "residual": 1.438849039914202e-13,
+                "iterations": 5,
+                "accepted": true
+              }
+            ],
+            "porousLeakage": {
+              "solidFluxFraction": 0.005550469434945783,
+              "solidDissipationFraction": 0.08198998792028532,
+              "solidDragDissipation": 3.5788842127425142,
+              "dissipationReconstructionRelativeError": 3.881583236548273e-16,
+              "definition": "Absolute internal MAC face volume throughput through mean face rho<0.5 / all absolute internal face throughput; solid-cell share of positive drag+viscous energy; repeated crossings counted."
+            },
+            "physicalNormalization": 1.777777777777778e-08,
+            "scaledPorousTotalPressurePower": 2.606252619589096e-06,
+            "scaledPorousBoundaryPressureDrop": 0.0005864068394075463,
+            "normalizationNote": "J_B converted to the native speed/viscosity scale; not a sharp-wall CFD result."
+          }
+        ],
+        "candidateVsSeedRhoMaximumDifference": 1.7295193055488767e-15,
+        "candidateVsSeedRhoUnequalValues": 8
+      }
+    ],
+    "sourceHashes": {
+      "tools/optimization/t01_double_pipe_recompute.py": "eb9114df1a2de314fbda9c159974d244bca0a404620bf891c7b5b8580bde22eb",
+      "tools/optimization/native_flow.py": "22ea5c83a66a25aadc998ddfe283166f1e8fb09fefd19b69073a241552fd92c6",
+      "tools/optimization/brinkman.py": "e28c0125a4a41854e91ed66776247629fd012bd66bc23a4d47c05d93b9413ecd",
+      "tools/optimization/navier_stokes_brinkman.py": "0be1a6c3d2d755645b12c917421df4320ad20bdb265d40c9582b8494858d3d76",
+      "tools/optimization/topology_artifacts.py": "6096af8d3d99af6de25bd14bf25b8b527da6c9aadf120707f2c44a0f83b9a6d4"
+    },
+    "archive": {
+      "path": "/workspace/attachments/2a8fb2b9-2be0-4c46-9642-dab3e6478a86/t01-double-pipe-originals.zip",
+      "sha256": "bfd6a084e6c9763bc045cb48ccbe7dec748a5e1736bba5b832d9bc8db9d9b7f0",
+      "members": [
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/accepted-design.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/extraction.json",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/final.analysis.vtk",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/fluid-component-0.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/fluid-component-1.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/fluid.svg",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/fluid.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/history.csv",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/progress.json",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/reference-engineering.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/reference-geometricSeed.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/reference-uniformPorous.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-0-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-0-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-1-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-1-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-2-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/snapshots/stage-2-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-0/summary.json",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/accepted-design.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/extraction.json",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/final.analysis.vtk",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/fluid-component-0.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/fluid-component-1.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/fluid.svg",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/fluid.xy",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/history.csv",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/progress.json",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/reference-engineering.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/reference-geometricSeed.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/reference-uniformPorous.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-0-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-0-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-1-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-1-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-2-final.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/snapshots/stage-2-initial.npz",
+          "unpackedFileMatches": true
+        },
+        {
+          "member": "outputs/topology-fidelity/b-retries/double-pipe-re-50/summary.json",
+          "unpackedFileMatches": true
+        }
+      ]
+    },
+    "executables": {
+      "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/bin/mesh-cli": "bf6221294b35acc0cada0b2083f098e142b6d6b3c90a8c6d8fed8edc77835551",
+      "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/efficiency-curved-fixed/flow-cli": "6fdf07218b9c8f584e1e974691c8a57253fd4b539bc1990a7e95daa463e7b674"
+    },
+    "preparationSeconds": 0.4166560980002032
+  },
+  "native": [
+    {
+      "reynolds": 0,
+      "label": "candidate",
+      "level": 6,
+      "pressurePower": 0.03835113361160401,
+      "inletFlux": 0.004444444444444447,
+      "fluxWeightedPressureDrop": 8.629005062610897,
+      "totalPressurePower": 0.03835113361160401,
+      "dimensionlessTotalPower": 95.87783402901003,
+      "cells": 4800,
+      "area": 0.49999999999999994,
+      "iterations": [
+        347,
+        379
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before/candidate-level-6/summary.json",
+      "summarySha256": "d96851eb9861ca300c853848c4fdcfefe614acc61d48d8586d072145b87e765e",
+      "components": [
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.25,
+          "iterations": 347,
+          "residuals": {
+            "continuity": 2.9925064653837536e-10,
+            "globalRelativeImbalance": 1.1053779961668617e-16,
+            "momentumResidual": 4.290568561283807e-09,
+            "velocityChange": 2.1450730653886874e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0009966116384163338,
+            "maxU": 0.019981746672404002,
+            "maxAbsV": 5.908355734832245e-06,
+            "minPressure": -8.48404176486608,
+            "maxPressure": 0.001878456528976965
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before/candidate-level-6/component-0/level-6/mesh.solver.cm2d",
+          "meshSha256": "31149dfa300d098051901113d8fde01f6986051e2e0428af8d31dc837574e427",
+          "flowSummarySha256": "2c8c3c7ff9b6350ef637be51fecf9554a451573f1f6131ffb3ae36b6c76b824f",
+          "boundarySha256": "3517bea5ea577951408a0877d3357556cf2e480a91cca8dd06db060882b2592f",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.38333333333333336
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0068041381743976816,
+              "p50": 0.0068041381743977085,
+              "p95": 0.0068041381743977536,
+              "max": 0.006804138174397768
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0027777777777777493,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.0027777777777778048,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666558,
+            "min_edge_length": 0.004166666666666624,
+            "max_cell_edge_length_ratio": 6.000000000000063,
+            "max_centroid_vertex_mean_offset_normalized": 2.242540583977011e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.24999999999999994,
+          "iterations": 379,
+          "residuals": {
+            "continuity": 1.2225309153947755e-10,
+            "globalRelativeImbalance": 1.7101595205064326e-16,
+            "momentumResidual": 7.428749364264946e-09,
+            "velocityChange": 3.7033620087652906e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0009966119699101068,
+            "maxU": 0.019981746143219303,
+            "maxAbsV": 5.909348819938487e-06,
+            "minPressure": -8.48404031724661,
+            "maxPressure": 0.001878378188739992
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before/candidate-level-6/component-1/level-6/mesh.solver.cm2d",
+          "meshSha256": "39448979e756176f684b65dcd7a8d792546193f3eb46833f999abffaaf61a6f1",
+          "flowSummarySha256": "d0f8cefa22738e4026e58c5e25207223a2ce5d8bd0f031ba972170394f624f90",
+          "boundarySha256": "402e449980834322ffea51d0813e9ec6c012b768c4ecbe901753222047537f46",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666667,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397647,
+              "p50": 0.0068041381743977085,
+              "p95": 0.006804138174397799,
+              "max": 0.006804138174397813
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0027777777777776937,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666453,
+            "min_edge_length": 0.004166666666666541,
+            "max_cell_edge_length_ratio": 6.000000000000183,
+            "max_centroid_vertex_mean_offset_normalized": 2.432376777795272e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.010206207261596574,
+      "meshSeconds": 0.1857964209993952,
+      "flowSeconds": 1.9591895229996226,
+      "nativeProcessSeconds": 2.1449859439990178,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 0.9999999061297603,
+      "candidatePhysicalImprovementVsIndependent": 9.387023969242847e-08,
+      "porousGapRelativeToNative": -0.3014743946569541
+    },
+    {
+      "reynolds": 0,
+      "label": "engineering",
+      "level": 6,
+      "pressurePower": 0.03190033101613604,
+      "inletFlux": 0.004444444444444446,
+      "fluxWeightedPressureDrop": 7.177574478630606,
+      "totalPressurePower": 0.03190033101613604,
+      "dimensionlessTotalPower": 79.7508275403401,
+      "cells": 1864,
+      "area": 0.5000000002340825,
+      "iterations": [
+        228
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before/baseline-level-6/summary.json",
+      "summarySha256": "a2bfc48e7ca91b03ad4d2d25d63990fa88bfd85b646ace56b7975b4d8521096c",
+      "components": [
+        {
+          "cells": 1864,
+          "faces": 3916,
+          "area": 0.5000000002340825,
+          "iterations": 228,
+          "residuals": {
+            "continuity": 9.704631735710796e-11,
+            "globalRelativeImbalance": 1.829591166069289e-17,
+            "momentumResidual": 2.4873122832808316e-09,
+            "velocityChange": 1.2420019752899291e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 5.688956284375157e-06,
+            "maxU": 0.033142680762908334,
+            "maxAbsV": 0.010975038272171203,
+            "minPressure": -7.109083880806916,
+            "maxPressure": 0.030243033013882856
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before/baseline-level-6/level-6/mesh.solver.cm2d",
+          "meshSha256": "8ace00306076a0931b33865ac44a2fe0aac8ab07647cc3d731a9e042e59cffb3",
+          "flowSummarySha256": "0607f0add1997a61b45a6d55ca2464726604913b7a9b0a7c89f7a503539eb6e3",
+          "boundarySha256": "de5a8d9e9867e2493412d20a4befdf2695b6c76715a82beee9e5b00a2fe882c9",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0013943900610705676,
+              "p50": 0.011536977587386213,
+              "p95": 0.011536977587386267,
+              "max": 0.012860021099353448
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00022331308669661313,
+              "p50": 0.007986111111111138,
+              "p95": 0.016666666666666757,
+              "max": 0.017740984509231977
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.0028291757185102515,
+              "p50": 0.013910744217193276,
+              "p95": 0.01839068351262374,
+              "max": 0.022299905913490726
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.0006429137636129045,
+              "p50": 0.00722409988236351,
+              "p95": 0.016666666666666673,
+              "max": 0.016926949760102387
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2053,
+            "edges": 3812,
+            "cells": 1760,
+            "internal_edges": 3404,
+            "boundary_edges": 408,
+            "source_cut_cells": 288,
+            "source_full_cells": 1532,
+            "source_small_cells": 60
+          },
+          "constructionQuality": {
+            "min_cell_area": 3.574505647248307e-05,
+            "min_edge_length": 4.957505467950707e-05,
+            "max_cell_edge_length_ratio": 504.28587848506055,
+            "max_centroid_vertex_mean_offset_normalized": 0.48734629234846893,
+            "min_cut_cell_area_fraction": 4.895479387557481e-06
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.016378044555844275,
+      "meshSeconds": 1.0480467159995897,
+      "flowSeconds": 0.6173799680000229,
+      "nativeProcessSeconds": 1.6654266839996126,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 0.8317962213245281,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": 0.14605637449406478
+    },
+    {
+      "reynolds": 0,
+      "label": "independent",
+      "level": 6,
+      "pressurePower": 0.03835113721163446,
+      "inletFlux": 0.004444444444444449,
+      "fluxWeightedPressureDrop": 8.629005872617745,
+      "totalPressurePower": 0.03835113721163446,
+      "dimensionlessTotalPower": 95.87784302908614,
+      "cells": 4800,
+      "area": 0.5,
+      "iterations": [
+        347,
+        347
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-6/summary.json",
+      "summarySha256": "58a58cc428bd3c3f45a0a691c196ae0986b82b1a8f31641cda04527660af9ff3",
+      "components": [
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.24999999999999994,
+          "iterations": 347,
+          "residuals": {
+            "continuity": 3.195399974873799e-10,
+            "globalRelativeImbalance": 7.089665768518495e-17,
+            "momentumResidual": 4.085418250674593e-09,
+            "velocityChange": 2.042514826423433e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0009966116493513387,
+            "maxU": 0.019981746573226426,
+            "maxAbsV": 5.908415950960703e-06,
+            "minPressure": -8.484041898483728,
+            "maxPressure": 0.00187846258844188
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-6/component-0/level-6/mesh.solver.cm2d",
+          "meshSha256": "e39ded8fe09fbf6d0a6f236ef5fdc0c19f70677a29a4c019753d8551df0bcd78",
+          "flowSummarySha256": "e48348207867edc0c37d3df6656de8d2fb272964c7edb8f4289f9ee364ded4d5",
+          "boundarySha256": "2a7cbc1f114b2de4f564d575933aab7140f391a155002234e2cdd56b173897be",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.3833333333333333
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397693,
+              "p50": 0.0068041381743977085,
+              "p95": 0.0068041381743977536,
+              "max": 0.006804138174397768
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666593,
+            "min_edge_length": 0.004166666666666652,
+            "max_cell_edge_length_ratio": 6.000000000000053,
+            "max_centroid_vertex_mean_offset_normalized": 2.2425405839770034e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.2500000000000001,
+          "iterations": 347,
+          "residuals": {
+            "continuity": 3.0466972149143915e-10,
+            "globalRelativeImbalance": 0,
+            "momentumResidual": 4.23584651298533e-09,
+            "velocityChange": 2.117709864347818e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0009966116408233264,
+            "maxU": 0.01998174664688197,
+            "maxAbsV": 5.908370435490419e-06,
+            "minPressure": -8.48404179122593,
+            "maxPressure": 0.0018784587940243733
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-6/component-1/level-6/mesh.solver.cm2d",
+          "meshSha256": "57bcb6029e712ba49c7efb3552c15183305dd319cdb036dd36d651fdf04311f4",
+          "flowSummarySha256": "45f85209a366a3e83a2ee59f8ba963a75a8341bd1cfadcf98d641cbfccd4a9c7",
+          "boundarySha256": "b5338c3a603e77d070b3fe0b384aba70a40046086094f5006eeb286fbe3b9b2a",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397693,
+              "p50": 0.0068041381743977085,
+              "p95": 0.006804138174397799,
+              "max": 0.006804138174397813
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666593,
+            "min_edge_length": 0.004166666666666652,
+            "max_cell_edge_length_ratio": 6.000000000000053,
+            "max_centroid_vertex_mean_offset_normalized": 2.4323767777952557e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.010206207261596576,
+      "meshSeconds": 0.2760983119997036,
+      "flowSeconds": 3.0807199689998015,
+      "nativeProcessSeconds": 3.356818280999505,
+      "measuredEndToEndSeconds": 4.096812557000703,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.0,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": null
+    },
+    {
+      "reynolds": 0,
+      "label": "candidate",
+      "level": 7,
+      "pressurePower": 0.038387818728275847,
+      "inletFlux": 0.004444444444444447,
+      "fluxWeightedPressureDrop": 8.63725921386206,
+      "totalPressurePower": 0.038387818728275847,
+      "dimensionlessTotalPower": 95.96954682068962,
+      "cells": 19200,
+      "area": 0.4999999999999999,
+      "iterations": [
+        1613,
+        1808
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before-fine/candidate-level-7/summary.json",
+      "summarySha256": "1836a14700c6b455884af85b725adedc09ae7b356acf470abf15ffa7d9bb3c1c",
+      "components": [
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.25,
+          "iterations": 1613,
+          "residuals": {
+            "continuity": 2.234710146813612e-10,
+            "globalRelativeImbalance": 2.8460307027744485e-17,
+            "momentumResidual": 4.116461079332484e-09,
+            "velocityChange": 2.0592784837909367e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004991475229753947,
+            "maxU": 0.01999580279564521,
+            "maxAbsV": 1.5514300257724933e-06,
+            "minPressure": -8.56440308493177,
+            "maxPressure": 0.001092600288215016
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before-fine/candidate-level-7/component-0/level-7/mesh.solver.cm2d",
+          "meshSha256": "bd38f8de2e5cd1df4158822d7faefcf40f264c3030ceb4b7e50f38d86f1ee43e",
+          "flowSummarySha256": "7a5028111f42de25c4449afd9e7edb55e44688a8eb6f91c39b470f0bd993ad85",
+          "boundarySha256": "49391051e38f42e4c80020d4b1f57da7db169d32286c7f065badc925f38e54a5",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.38333333333333336
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.003402069087198835,
+              "p50": 0.0034020690871988542,
+              "p95": 0.0034020690871988915,
+              "max": 0.003402069087198922
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0013888888888888655,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888921,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.604166666666631e-05,
+            "min_edge_length": 0.002083333333333298,
+            "max_cell_edge_length_ratio": 6.000000000000107,
+            "max_centroid_vertex_mean_offset_normalized": 4.35116785763366e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.24999999999999992,
+          "iterations": 1808,
+          "residuals": {
+            "continuity": 8.220440314680153e-11,
+            "globalRelativeImbalance": 1.702536223981144e-17,
+            "momentumResidual": 3.229179993665595e-09,
+            "velocityChange": 1.6159180351631322e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004991474199771773,
+            "maxU": 0.019995802195224878,
+            "maxAbsV": 1.5525060597699659e-06,
+            "minPressure": -8.564436436202723,
+            "maxPressure": 0.0010934241045206417
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before-fine/candidate-level-7/component-1/level-7/mesh.solver.cm2d",
+          "meshSha256": "043de87912860297132088080afff3b5fe3029306bf41e54d8e9a0b990b14722",
+          "flowSummarySha256": "1831fa3b57525b73e31e05d81bbec06afb6d42aa039ef0bf94de984ad9507da7",
+          "boundarySha256": "d1f4232dfa348d487484305a8041fa6e901e95f57656e50facde60893cdb0d8a",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666667,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871987558,
+              "p50": 0.00340206908719885,
+              "p95": 0.003402069087198945,
+              "max": 0.0034020690871989674
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666665093e-05,
+            "min_edge_length": 0.002083333333333215,
+            "max_cell_edge_length_ratio": 6.000000000000426,
+            "max_centroid_vertex_mean_offset_normalized": 4.864753555590447e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.005103103630798287,
+      "meshSeconds": 0.6716349710004579,
+      "flowSeconds": 35.074241819000235,
+      "nativeProcessSeconds": 35.74587679000069,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 0.9999986739738733,
+      "candidatePhysicalImprovementVsIndependent": 1.326026126680091e-06,
+      "porousGapRelativeToNative": -0.3021419369706151
+    },
+    {
+      "reynolds": 0,
+      "label": "engineering",
+      "level": 7,
+      "pressurePower": 0.03216391194707586,
+      "inletFlux": 0.004444444444444442,
+      "fluxWeightedPressureDrop": 7.236880188092073,
+      "totalPressurePower": 0.03216391194707586,
+      "dimensionlessTotalPower": 80.40977986768964,
+      "cells": 7008,
+      "area": 0.5000000002340825,
+      "iterations": [
+        1063
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before-fine/baseline-level-7/summary.json",
+      "summarySha256": "865dfc07845462e761379a097ed1b39818b1f19a2ff8ba44bf95db0e1dfa9d32",
+      "components": [
+        {
+          "cells": 7008,
+          "faces": 14312,
+          "area": 0.5000000002340825,
+          "iterations": 1063,
+          "residuals": {
+            "continuity": 3.39030162190578e-11,
+            "globalRelativeImbalance": 7.972697616031103e-17,
+            "momentumResidual": 1.0773879538640013e-09,
+            "velocityChange": 5.385621467299967e-10,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": -6.499570708729464e-05,
+            "maxU": 0.03332004399076376,
+            "maxAbsV": 0.01113310343643898,
+            "minPressure": -7.244407542258648,
+            "maxPressure": 0.03277284857097678
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re0-engineering-before-fine/baseline-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "2f1a2e574c95cce5abe1002d17ec6c59e674c268d33121b3143b9d86c04d1ea3",
+          "flowSummarySha256": "9bf04b96e7832b8da47c50ec6c7fb5dbb60239dcc73054dba42807174e5b463e",
+          "boundarySha256": "d20b7f0c46e7895bcc852063b45e8ef6d97d9ec59daf02c3526780b49af4284c",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.000921783249601279,
+              "p50": 0.0057684887936930935,
+              "p95": 0.005768488793693145,
+              "max": 0.006049137381719277
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00016436181358602962,
+              "p50": 0.0043908441328832475,
+              "p95": 0.008649097842692103,
+              "max": 0.00998321511928719
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.000694444444444405,
+              "p50": 0.008311843112953916,
+              "p95": 0.009326718610041558,
+              "max": 0.010138985732846106
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.00026402646769665625,
+              "p50": 0.0030622730042510456,
+              "p95": 0.008333333333333331,
+              "max": 0.008647110418683905
+            }
+          },
+          "constructionCounts": {
+            "vertices": 7305,
+            "edges": 14168,
+            "cells": 6864,
+            "internal_edges": 13488,
+            "boundary_edges": 680,
+            "source_cut_cells": 584,
+            "source_full_cells": 6388,
+            "source_small_cells": 108
+          },
+          "constructionQuality": {
+            "min_cell_area": 7.87572139383286e-06,
+            "min_edge_length": 4.957505467950707e-05,
+            "max_cell_edge_length_ratio": 252.1429392425325,
+            "max_centroid_vertex_mean_offset_normalized": 0.4064918370921803,
+            "min_cut_cell_area_fraction": 1.9581917550229966e-05
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.008446717231970803,
+      "meshSeconds": 5.193896278000466,
+      "flowSeconds": 9.336909492999439,
+      "nativeProcessSeconds": 14.530805770999905,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 0.8378665514849087,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": 0.13666452543678245
+    },
+    {
+      "reynolds": 0,
+      "label": "independent",
+      "level": 7,
+      "pressurePower": 0.03838786963159392,
+      "inletFlux": 0.004444444444444442,
+      "fluxWeightedPressureDrop": 8.637270667108638,
+      "totalPressurePower": 0.03838786963159392,
+      "dimensionlessTotalPower": 95.96967407898481,
+      "cells": 19200,
+      "area": 0.5,
+      "iterations": [
+        1510,
+        1642
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-7/summary.json",
+      "summarySha256": "01a1984365cf2cb50d9d4bc32446531566455de6a3ce45e16fb799bf8e181bb8",
+      "components": [
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.24999999999999994,
+          "iterations": 1510,
+          "residuals": {
+            "continuity": 2.0819974237621403e-10,
+            "globalRelativeImbalance": 6.467096552286584e-17,
+            "momentumResidual": 6.160783307489951e-09,
+            "velocityChange": 3.0898668123156833e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004991477453167043,
+            "maxU": 0.01999580121247084,
+            "maxAbsV": 1.5545740675339064e-06,
+            "minPressure": -8.564447674752106,
+            "maxPressure": 0.001093067863814094
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-7/component-0/level-7/mesh.solver.cm2d",
+          "meshSha256": "d4aadfa47719821cfbc6fa9b62e8205ed7bf1aa33dce2297e91f5291d51a492d",
+          "flowSummarySha256": "2d9885231c70003e5dc19bf64f2b2372d8374289757217d8246a5bcefc71812d",
+          "boundarySha256": "1c211ccfe366579ef324656aec0c95ec0a62e7cbdd82242da86e27526085da26",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.3833333333333333
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871988464,
+              "p50": 0.0034020690871988542,
+              "p95": 0.0034020690871988915,
+              "max": 0.003402069087198922
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666666482e-05,
+            "min_edge_length": 0.002083333333333326,
+            "max_cell_edge_length_ratio": 6.000000000000107,
+            "max_centroid_vertex_mean_offset_normalized": 2.4323767777952235e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.2500000000000001,
+          "iterations": 1642,
+          "residuals": {
+            "continuity": 1.441408091709262e-10,
+            "globalRelativeImbalance": 2.79520872593919e-17,
+            "momentumResidual": 2.981923554657564e-09,
+            "velocityChange": 1.4915369711942916e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004991474596290235,
+            "maxU": 0.019995802521305565,
+            "maxAbsV": 1.552213080565785e-06,
+            "minPressure": -8.56441473786185,
+            "maxPressure": 0.0010930744869591636
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re0-level-7/component-1/level-7/mesh.solver.cm2d",
+          "meshSha256": "0161edf97e206d1bac395b3d0ea7e984dc70351f1f84816525560d876380eb6b",
+          "flowSummarySha256": "2cc8d6244148c5940b0e04f71682df1d6ca332900d527e0a850b0168c06e0e41",
+          "boundarySha256": "f757a6b6974f6e32152e8b76388242464526e8a6e10ff4bdaf1000e23743aacb",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871987558,
+              "p50": 0.0034020690871988516,
+              "p95": 0.003402069087198945,
+              "max": 0.0034020690871989674
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666665093e-05,
+            "min_edge_length": 0.002083333333333215,
+            "max_cell_edge_length_ratio": 6.000000000000426,
+            "max_centroid_vertex_mean_offset_normalized": 3.076740298213713e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.005103103630798288,
+      "meshSeconds": 0.8076335500009009,
+      "flowSeconds": 37.857099257998925,
+      "nativeProcessSeconds": 38.664732807999826,
+      "measuredEndToEndSeconds": 40.5974684949997,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.0,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": null
+    },
+    {
+      "reynolds": 50,
+      "label": "candidate",
+      "level": 6,
+      "pressurePower": 1.7044625075950222e-06,
+      "inletFlux": 0.004444444444444447,
+      "fluxWeightedPressureDrop": 0.00038350406420887976,
+      "totalPressurePower": 1.7044625075950222e-06,
+      "dimensionlessTotalPower": 95.87601605221998,
+      "cells": 4800,
+      "area": 0.49999999999999994,
+      "iterations": [
+        642,
+        593
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before/candidate-level-6/summary.json",
+      "summarySha256": "bc443572907d170e55a1cbe0fe4d3cddeedf84d25ada4cc0c0d773828368cddb",
+      "components": [
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.25,
+          "iterations": 642,
+          "residuals": {
+            "continuity": 5.574449144659759e-11,
+            "globalRelativeImbalance": 1.1053779961668617e-16,
+            "momentumResidual": 9.920749033737416e-09,
+            "velocityChange": 4.9591382569658254e-09,
+            "pressureChange": 1.5495203461891944e-09
+          },
+          "fieldExtrema": {
+            "minU": 0.0009954740614867437,
+            "maxU": 0.01998290070672654,
+            "maxAbsV": 9.359507172870805e-06,
+            "minPressure": -0.00037702182921507904,
+            "maxPressure": 1.2354948894783054e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before/candidate-level-6/component-0/level-6/mesh.solver.cm2d",
+          "meshSha256": "31149dfa300d098051901113d8fde01f6986051e2e0428af8d31dc837574e427",
+          "flowSummarySha256": "d133bf22e24f0ca7b32eb2f9d97122b29fbf4f6e98e97e85d395997fd3b42d9e",
+          "boundarySha256": "3517bea5ea577951408a0877d3357556cf2e480a91cca8dd06db060882b2592f",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.38333333333333336
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0068041381743976816,
+              "p50": 0.0068041381743977085,
+              "p95": 0.0068041381743977536,
+              "max": 0.006804138174397768
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0027777777777777493,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.0027777777777778048,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666558,
+            "min_edge_length": 0.004166666666666624,
+            "max_cell_edge_length_ratio": 6.000000000000063,
+            "max_centroid_vertex_mean_offset_normalized": 2.242540583977011e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.24999999999999994,
+          "iterations": 593,
+          "residuals": {
+            "continuity": 5.89247094152976e-11,
+            "globalRelativeImbalance": 1.1485766764768315e-16,
+            "momentumResidual": 9.647589168559718e-09,
+            "velocityChange": 4.756384302777548e-09,
+            "pressureChange": 1.859528921460452e-09
+          },
+          "fieldExtrema": {
+            "minU": 0.0009954740614619884,
+            "maxU": 0.019982900706752217,
+            "maxAbsV": 9.361122316716464e-06,
+            "minPressure": -0.0003770218396739905,
+            "maxPressure": 1.2354948820190509e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before/candidate-level-6/component-1/level-6/mesh.solver.cm2d",
+          "meshSha256": "91bba95dcdfad5f5d5c950083a032fe23c3064265bc83bc614bb31434749fe79",
+          "flowSummarySha256": "8678089ff240956ea01d529ebc5c1ed2dca8e6a41c4ad38f92ee81d390007288",
+          "boundarySha256": "a676ea6815517e88922c8ea7c8505e7d65f4a26bfcc1ce72d4fca7dbbb339ff3",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397647,
+              "p50": 0.0068041381743977085,
+              "p95": 0.006804138174397799,
+              "max": 0.006804138174397813
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0027777777777776937,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666453,
+            "min_edge_length": 0.004166666666666541,
+            "max_cell_edge_length_ratio": 6.000000000000183,
+            "max_centroid_vertex_mean_offset_normalized": 2.432376777795272e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.010206207261596574,
+      "meshSeconds": 0.1756619560001127,
+      "flowSeconds": 4.663901944000827,
+      "nativeProcessSeconds": 4.83956390000094,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 0.9999999967869663,
+      "candidatePhysicalImprovementVsIndependent": 3.2130337279667742e-09,
+      "porousGapRelativeToNative": -0.33263710025760235
+    },
+    {
+      "reynolds": 50,
+      "label": "engineering",
+      "level": 6,
+      "pressurePower": 1.9606864275002633e-06,
+      "inletFlux": 0.004444444444444446,
+      "fluxWeightedPressureDrop": 0.0004411544461875591,
+      "totalPressurePower": 1.9606864275002633e-06,
+      "dimensionlessTotalPower": 110.2886115468898,
+      "cells": 1811,
+      "area": 0.5000000003047548,
+      "iterations": [
+        543
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before/baseline-level-6/summary.json",
+      "summarySha256": "840d2e8d24ca9f91c1041c2b66e7cd756c503ab92d919aa074d0924d5a5f1f81",
+      "components": [
+        {
+          "cells": 1811,
+          "faces": 3808,
+          "area": 0.5000000003047548,
+          "iterations": 543,
+          "residuals": {
+            "continuity": 3.9197425774348604e-11,
+            "globalRelativeImbalance": 1.829591166069289e-17,
+            "momentumResidual": 7.786349181101992e-09,
+            "velocityChange": 3.6861722424956585e-09,
+            "pressureChange": 2.0600748080868847e-09
+          },
+          "fieldExtrema": {
+            "minU": -0.001614705445392231,
+            "maxU": 0.02640012581540306,
+            "maxAbsV": 0.021593911769997955,
+            "minPressure": -0.0007964160946315484,
+            "maxPressure": 3.034683975796034e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before/baseline-level-6/level-6/mesh.solver.cm2d",
+          "meshSha256": "42388fbafd2356cc43d1b75faea1760b40180598a338315ef4c612254bfe6a6b",
+          "flowSummarySha256": "942fc95de962472eef1409f85c46c2cc8285376d27c1e30bd114302659e29082",
+          "boundarySha256": "0b949cdc80fad2967e63de8c31c647da149517b59f956ad8bd8947bb78645cdc",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0007987333152545117,
+              "p50": 0.011536977587386213,
+              "p95": 0.011536977587386267,
+              "max": 0.014158736821688042
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0011419354591833708,
+              "p50": 0.00798611111111112,
+              "p95": 0.01666666666666668,
+              "max": 0.01668101799764701
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.0023858443935946484,
+              "p50": 0.011945324433760438,
+              "p95": 0.01843568329614639,
+              "max": 0.02620506785819089
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.00042635173791283343,
+              "p50": 0.008947351172256438,
+              "p95": 0.016666666666666673,
+              "max": 0.016861178612160115
+            }
+          },
+          "constructionCounts": {
+            "vertices": 1995,
+            "edges": 3734,
+            "cells": 1740,
+            "internal_edges": 3350,
+            "boundary_edges": 384,
+            "source_cut_cells": 264,
+            "source_full_cells": 1552,
+            "source_small_cells": 76
+          },
+          "constructionQuality": {
+            "min_cell_area": 3.528490546457072e-05,
+            "min_edge_length": 0.0008757582999414648,
+            "max_cell_edge_length_ratio": 28.54668919686073,
+            "max_centroid_vertex_mean_offset_normalized": 0.4133260008530424,
+            "min_cut_cell_area_fraction": 0.0013687235980663604
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.016615972973955104,
+      "meshSeconds": 0.8659598550002556,
+      "flowSeconds": 1.74087410500033,
+      "nativeProcessSeconds": 2.6068339600005856,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.1503253444788402,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": 0.32925519503487555
+    },
+    {
+      "reynolds": 50,
+      "label": "independent",
+      "level": 6,
+      "pressurePower": 1.7044625130715178e-06,
+      "inletFlux": 0.004444444444444449,
+      "fluxWeightedPressureDrop": 0.00038350406544109114,
+      "totalPressurePower": 1.7044625130715178e-06,
+      "dimensionlessTotalPower": 95.87601636027286,
+      "cells": 4800,
+      "area": 0.5,
+      "iterations": [
+        637,
+        637
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-6/summary.json",
+      "summarySha256": "2bbe322f6821d0f88c52bc403f39641b5fe11771144141b25141bacbafc6eb92",
+      "components": [
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.24999999999999994,
+          "iterations": 637,
+          "residuals": {
+            "continuity": 5.5991741036163686e-11,
+            "globalRelativeImbalance": 7.089665768518495e-17,
+            "momentumResidual": 9.928688014105511e-09,
+            "velocityChange": 4.962893263950898e-09,
+            "pressureChange": 1.5796534987070848e-09
+          },
+          "fieldExtrema": {
+            "minU": 0.0009954740614867518,
+            "maxU": 0.019982900706726557,
+            "maxAbsV": 9.359495080559983e-06,
+            "minPressure": -0.0003770218291195752,
+            "maxPressure": 1.2354948890694135e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-6/component-0/level-6/mesh.solver.cm2d",
+          "meshSha256": "e39ded8fe09fbf6d0a6f236ef5fdc0c19f70677a29a4c019753d8551df0bcd78",
+          "flowSummarySha256": "d87a6dc08c36d9e624cb5860a52db8584731b49e7c441ca97872e3d5a44b79c5",
+          "boundarySha256": "2a7cbc1f114b2de4f564d575933aab7140f391a155002234e2cdd56b173897be",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.3833333333333333
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397693,
+              "p50": 0.0068041381743977085,
+              "p95": 0.0068041381743977536,
+              "max": 0.006804138174397768
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666593,
+            "min_edge_length": 0.004166666666666652,
+            "max_cell_edge_length_ratio": 6.000000000000053,
+            "max_centroid_vertex_mean_offset_normalized": 2.2425405839770034e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 2400,
+          "faces": 4900,
+          "area": 0.2500000000000001,
+          "iterations": 637,
+          "residuals": {
+            "continuity": 5.594739014308393e-11,
+            "globalRelativeImbalance": 0,
+            "momentumResidual": 9.928107324706016e-09,
+            "velocityChange": 4.96261144655199e-09,
+            "pressureChange": 1.5790693134575678e-09
+          },
+          "fieldExtrema": {
+            "minU": 0.0009954740614867366,
+            "maxU": 0.019982900706726578,
+            "maxAbsV": 9.359497910452782e-06,
+            "minPressure": -0.00037702182911762125,
+            "maxPressure": 1.2354948892389543e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-6/component-1/level-6/mesh.solver.cm2d",
+          "meshSha256": "57bcb6029e712ba49c7efb3552c15183305dd319cdb036dd36d651fdf04311f4",
+          "flowSummarySha256": "f85f4da0aa025ed9637059142390b45f1360d63cdcaa4e2a5bc638e9c8fc929b",
+          "boundarySha256": "b5338c3a603e77d070b3fe0b384aba70a40046086094f5006eeb286fbe3b9b2a",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "6": 4096
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.006804138174397693,
+              "p50": 0.0068041381743977085,
+              "p95": 0.006804138174397799,
+              "max": 0.006804138174397813
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.016666666666666607,
+              "p95": 0.016666666666666757,
+              "max": 0.016666666666666757
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002777777777777768,
+              "p50": 0.002777777777777768,
+              "p95": 0.016666666666666673,
+              "max": 0.016666666666666673
+            }
+          },
+          "constructionCounts": {
+            "vertices": 2501,
+            "edges": 4900,
+            "cells": 2400,
+            "internal_edges": 4700,
+            "boundary_edges": 200,
+            "source_cut_cells": 0,
+            "source_full_cells": 2400,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 0.00010416666666666593,
+            "min_edge_length": 0.004166666666666652,
+            "max_cell_edge_length_ratio": 6.000000000000053,
+            "max_centroid_vertex_mean_offset_normalized": 2.4323767777952557e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.010206207261596576,
+      "meshSeconds": 0.16483266200066282,
+      "flowSeconds": 3.9534565389994896,
+      "nativeProcessSeconds": 4.118289201000152,
+      "measuredEndToEndSeconds": 4.626442011000108,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.0,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": null
+    },
+    {
+      "reynolds": 50,
+      "label": "candidate",
+      "level": 7,
+      "pressurePower": 1.7061164244962714e-06,
+      "inletFlux": 0.004444444444444445,
+      "fluxWeightedPressureDrop": 0.000383876195511661,
+      "totalPressurePower": 1.706116424496271e-06,
+      "dimensionlessTotalPower": 95.96904887791524,
+      "cells": 19200,
+      "area": 0.4999999999999999,
+      "iterations": [
+        2430,
+        2335
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before-fine/candidate-level-7/summary.json",
+      "summarySha256": "96cd5437575b26a4c2aa717598fdd2162a729dc7a62a382b8ad15113e64db25f",
+      "components": [
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.25,
+          "iterations": 2430,
+          "residuals": {
+            "continuity": 2.6021731266951565e-10,
+            "globalRelativeImbalance": 2.8460307027744485e-17,
+            "momentumResidual": 9.861968618911502e-09,
+            "velocityChange": 5.00350359254608e-09,
+            "pressureChange": 2.7879489402903188e-09
+          },
+          "fieldExtrema": {
+            "minU": 0.0004990305168661935,
+            "maxU": 0.01999582469981097,
+            "maxAbsV": 2.820896211580075e-06,
+            "minPressure": -0.0003806314232411777,
+            "maxPressure": 5.848453963622123e-08
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before-fine/candidate-level-7/component-0/level-7/mesh.solver.cm2d",
+          "meshSha256": "bd38f8de2e5cd1df4158822d7faefcf40f264c3030ceb4b7e50f38d86f1ee43e",
+          "flowSummarySha256": "db2fd0dc5c6856832283792fc2eed3447000674b2d3b9f8a59c9f76f276bc1d2",
+          "boundarySha256": "49391051e38f42e4c80020d4b1f57da7db169d32286c7f065badc925f38e54a5",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.38333333333333336
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.003402069087198835,
+              "p50": 0.0034020690871988542,
+              "p95": 0.0034020690871988915,
+              "max": 0.003402069087198922
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0013888888888888655,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888921,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.604166666666631e-05,
+            "min_edge_length": 0.002083333333333298,
+            "max_cell_edge_length_ratio": 6.000000000000107,
+            "max_centroid_vertex_mean_offset_normalized": 4.35116785763366e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.24999999999999992,
+          "iterations": 2335,
+          "residuals": {
+            "continuity": 1.942743192505124e-10,
+            "globalRelativeImbalance": 2.1599340154984664e-16,
+            "momentumResidual": 6.924469211628221e-09,
+            "velocityChange": 3.450522070693871e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.000499030516868145,
+            "maxU": 0.019995824699801962,
+            "maxAbsV": 2.8134012912821142e-06,
+            "minPressure": -0.00038063135256319075,
+            "maxPressure": 5.8484322213259457e-08
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before-fine/candidate-level-7/component-1/level-7/mesh.solver.cm2d",
+          "meshSha256": "3ee28a6c33992b6a06634511c89d33dbf8770872addafef4fe757c35fca43ba6",
+          "flowSummarySha256": "e8783e191e0052dd138ea33e8a13a51cccf800a83ff0833c90e4bd12aa308b10",
+          "boundarySha256": "b36940630de10f07b96bb3eb14110b38a16730d02a69fe9ae3f92c4d47e4e682",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871987558,
+              "p50": 0.00340206908719885,
+              "p95": 0.003402069087198945,
+              "max": 0.0034020690871989674
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666665093e-05,
+            "min_edge_length": 0.002083333333333215,
+            "max_cell_edge_length_ratio": 6.000000000000426,
+            "max_centroid_vertex_mean_offset_normalized": 4.3511678576336164e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.005103103630798287,
+      "meshSeconds": 0.7051170900003854,
+      "flowSeconds": 69.67245323399948,
+      "nativeProcessSeconds": 70.37757032399986,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.00000003471516,
+      "candidatePhysicalImprovementVsIndependent": -3.4715160079912266e-08,
+      "porousGapRelativeToNative": -0.3332840448408106
+    },
+    {
+      "reynolds": 50,
+      "label": "engineering",
+      "level": 7,
+      "pressurePower": 1.9326673184409513e-06,
+      "inletFlux": 0.004444444444444442,
+      "fluxWeightedPressureDrop": 0.0004348501466492143,
+      "totalPressurePower": 1.9326673184409518e-06,
+      "dimensionlessTotalPower": 108.71253666230352,
+      "cells": 7016,
+      "area": 0.5000000003047548,
+      "iterations": [
+        1555
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before-fine/baseline-level-7/summary.json",
+      "summarySha256": "194ad903939b8eb8038deba561863768fefb7e7a060a46623488ee6dbc91d927",
+      "components": [
+        {
+          "cells": 7016,
+          "faces": 14338,
+          "area": 0.5000000003047548,
+          "iterations": 1555,
+          "residuals": {
+            "continuity": 9.767713848832255e-11,
+            "globalRelativeImbalance": 7.972697616031103e-17,
+            "momentumResidual": 9.307283669298467e-09,
+            "velocityChange": 4.7276257023974895e-09,
+            "pressureChange": 2.3694159230249e-09
+          },
+          "fieldExtrema": {
+            "minU": -0.0014024852560281895,
+            "maxU": 0.0265098643123503,
+            "maxAbsV": 0.023087401878934783,
+            "minPressure": -0.000757052046957706,
+            "maxPressure": 3.0030424613698344e-07
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-repair/t01-re50-engineering-before-fine/baseline-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "d48044c314d0e04e75f21d1f6e31490232f4bfe6460e22c6399b5f57674c0a4e",
+          "flowSummarySha256": "c54ceb665297fd6efe9ed4ca54bd3c62a0162634921a7de887baad013876714e",
+          "boundarySha256": "67196eeea65f16e9e68d869a043bf72b4b10082a5418039d441d3f67975acc7a",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.8833333333333333
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0008767305531576477,
+              "p50": 0.0057684887936930935,
+              "p95": 0.005768488793693145,
+              "max": 0.005849782202386873
+            },
+            "wall_edge_length_over_reference": {
+              "min": 2.910566125908681e-05,
+              "p50": 0.003998245247282021,
+              "p95": 0.008340508998823467,
+              "max": 0.00945534096222218
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.000694444444444405,
+              "p50": 0.0070840132069773165,
+              "p95": 0.009208589877682357,
+              "max": 0.009739065855462166
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.00020029346522032072,
+              "p50": 0.0026820481363782132,
+              "p95": 0.008333333333333331,
+              "max": 0.009018136454345878
+            }
+          },
+          "constructionCounts": {
+            "vertices": 7323,
+            "edges": 14250,
+            "cells": 6928,
+            "internal_edges": 13594,
+            "boundary_edges": 656,
+            "source_cut_cells": 532,
+            "source_full_cells": 6460,
+            "source_small_cells": 64
+          },
+          "constructionQuality": {
+            "min_cell_area": 8.003703768741752e-06,
+            "min_edge_length": 4.365849188863022e-05,
+            "max_cell_edge_length_ratio": 286.31314228367273,
+            "max_centroid_vertex_mean_offset_normalized": 0.2891622844253748,
+            "min_cut_cell_area_fraction": 0.0013102762132899686
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.008441900170737388,
+      "meshSeconds": 2.208767870999509,
+      "flowSeconds": 20.97869537599945,
+      "nativeProcessSeconds": 23.18746324699896,
+      "measuredEndToEndSeconds": null,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.1327875154266949,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": 0.34852625421922767
+    },
+    {
+      "reynolds": 50,
+      "label": "independent",
+      "level": 7,
+      "pressurePower": 1.7061163652681681e-06,
+      "inletFlux": 0.004444444444444442,
+      "fluxWeightedPressureDrop": 0.00038387618218533806,
+      "totalPressurePower": 1.7061163652681681e-06,
+      "dimensionlessTotalPower": 95.96904554633446,
+      "cells": 19200,
+      "area": 0.5,
+      "iterations": [
+        2445,
+        2326
+      ],
+      "source": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-7/summary.json",
+      "summarySha256": "8f5a3a03f1069c3e3775c435b043f149136642099399c23cfd23def92b27bae5",
+      "components": [
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.24999999999999994,
+          "iterations": 2445,
+          "residuals": {
+            "continuity": 1.233120811508857e-10,
+            "globalRelativeImbalance": 6.467096552286584e-17,
+            "momentumResidual": 6.320121355066825e-09,
+            "velocityChange": 3.1587242775980065e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004990305168724877,
+            "maxU": 0.019995824699813848,
+            "maxAbsV": 2.8091743347010993e-06,
+            "minPressure": -0.00038063131272447434,
+            "maxPressure": 5.848446619493118e-08
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-7/component-0/level-7/mesh.solver.cm2d",
+          "meshSha256": "d4aadfa47719821cfbc6fa9b62e8205ed7bf1aa33dce2297e91f5291d51a492d",
+          "flowSummarySha256": "a28150fa5cf14b3a5b9920498cd89b2355782a8d21a924a32c521584b873a5cf",
+          "boundarySha256": "1c211ccfe366579ef324656aec0c95ec0a62e7cbdd82242da86e27526085da26",
+          "meshDomain": [
+            -0.05,
+            0.11666666666666668,
+            1.55,
+            0.3833333333333333
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871988464,
+              "p50": 0.0034020690871988542,
+              "p95": 0.0034020690871988915,
+              "max": 0.003402069087198922
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666666482e-05,
+            "min_edge_length": 0.002083333333333326,
+            "max_cell_edge_length_ratio": 6.000000000000107,
+            "max_centroid_vertex_mean_offset_normalized": 2.4323767777952235e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        },
+        {
+          "cells": 9600,
+          "faces": 19400,
+          "area": 0.2500000000000001,
+          "iterations": 2326,
+          "residuals": {
+            "continuity": 1.4422040674119804e-10,
+            "globalRelativeImbalance": 2.79520872593919e-17,
+            "momentumResidual": 8.299917903526754e-09,
+            "velocityChange": 4.134049132259396e-09,
+            "pressureChange": 0
+          },
+          "fieldExtrema": {
+            "minU": 0.0004990305168580233,
+            "maxU": 0.01999582469981592,
+            "maxAbsV": 2.813363431238863e-06,
+            "minPressure": -0.0003806313549331296,
+            "maxPressure": 5.8484538349855824e-08
+          },
+          "meshPath": "/workspace/cartesian-mesh-generator-2d/outputs/t01-agent/independent-re50-level-7/component-1/level-7/mesh.solver.cm2d",
+          "meshSha256": "0161edf97e206d1bac395b3d0ea7e984dc70351f1f84816525560d876380eb6b",
+          "flowSummarySha256": "83220358c61f737419901213a074a2792949b2d30e56ee051d2fc5f5ef8a7172",
+          "boundarySha256": "f757a6b6974f6e32152e8b76388242464526e8a6e10ff4bdaf1000e23743aacb",
+          "meshDomain": [
+            -0.05,
+            0.6166666666666666,
+            1.55,
+            0.8833333333333334
+          ],
+          "levelHistogram": {
+            "7": 16384
+          },
+          "referenceLength": 1.5,
+          "actualResolution": {
+            "sqrt_area_over_reference": {
+              "min": 0.0034020690871987558,
+              "p50": 0.0034020690871988516,
+              "p95": 0.003402069087198945,
+              "max": 0.0034020690871989674
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.00138888888888881,
+              "p50": 0.008333333333333304,
+              "p95": 0.008333333333333378,
+              "max": 0.008333333333333451
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.001388888888888884,
+              "p50": 0.001388888888888884,
+              "p95": 0.008333333333333331,
+              "max": 0.008333333333333331
+            }
+          },
+          "constructionCounts": {
+            "vertices": 9801,
+            "edges": 19400,
+            "cells": 9600,
+            "internal_edges": 19000,
+            "boundary_edges": 400,
+            "source_cut_cells": 0,
+            "source_full_cells": 9600,
+            "source_small_cells": 0
+          },
+          "constructionQuality": {
+            "min_cell_area": 2.6041666666665093e-05,
+            "min_edge_length": 0.002083333333333215,
+            "max_cell_edge_length_ratio": 6.000000000000426,
+            "max_centroid_vertex_mean_offset_normalized": 3.076740298213713e-14,
+            "min_cut_cell_area_fraction": 1
+          },
+          "meshTopologyValid": true,
+          "solverQualityPassed": true
+        }
+      ],
+      "effectiveH": 0.005103103630798288,
+      "meshSeconds": 0.85439539500112,
+      "flowSeconds": 71.23589127499963,
+      "nativeProcessSeconds": 72.09028667000075,
+      "measuredEndToEndSeconds": 73.85329917300078,
+      "postprocessedPowerDifference": 0.0,
+      "nativeFlowConverged": true,
+      "physicalAccuracyQualified": false,
+      "normalizedToIndependent": 1.0,
+      "candidatePhysicalImprovementVsIndependent": null,
+      "porousGapRelativeToNative": null
+    }
+  ],
+  "comparisons": [
+    {
+      "reynolds": 0,
+      "porousCandidateMinusEngineering": -24.425822219689266,
+      "porousCandidateReductionVsEngineering": 0.26724403015555886,
+      "pairedLevels": [
+        {
+          "level": 6,
+          "nativeCandidateMinusEngineering": 16.127006488669934,
+          "nativeCandidateReductionVsEngineering": -0.20221741875358545,
+          "candidateMinusIndependentRelative": -9.387023969242847e-08
+        },
+        {
+          "level": 7,
+          "nativeCandidateMinusEngineering": 15.55976695299998,
+          "nativeCandidateReductionVsEngineering": -0.19350590162792147,
+          "candidateMinusIndependentRelative": -1.326026126680091e-06
+        }
+      ],
+      "observedGridChanges": {
+        "candidate": {
+          "signedJChange": 0.09171279167958346,
+          "relativeChange": 0.0009556447302073905,
+          "cells": [
+            4800,
+            19200
+          ],
+          "effectiveH": [
+            0.010206207261596574,
+            0.005103103630798287
+          ],
+          "totalNativeProcessSeconds": 37.89086273399971
+        },
+        "engineering": {
+          "signedJChange": 0.6589523273495388,
+          "relativeChange": 0.008194927637332332,
+          "cells": [
+            1864,
+            7008
+          ],
+          "effectiveH": [
+            0.016378044555844275,
+            0.008446717231970803
+          ],
+          "totalNativeProcessSeconds": 16.196232454999517
+        },
+        "independent": {
+          "signedJChange": 0.09183104989867275,
+          "relativeChange": 0.0009568757087066285,
+          "cells": [
+            4800,
+            19200
+          ],
+          "effectiveH": [
+            0.010206207261596576,
+            0.005103103630798288
+          ],
+          "totalNativeProcessSeconds": 42.02155108899933
+        }
+      },
+      "reversalObservedBothLevels": true,
+      "nativeOrderSameBothLevels": true,
+      "absoluteFineSeparationMinusObservedGridChanges": 14.809101833970857,
+      "physicalRankingResolved": false,
+      "candidateTopologyBenefitEstablished": false,
+      "topologyConclusion": "Candidate and geometric-seed density fields differ only at roundoff, and both sharp boundaries match two independent rectangles. No topology gain over straight pipes is demonstrated."
+    },
+    {
+      "reynolds": 50,
+      "porousCandidateMinusEngineering": -82.61761376352842,
+      "porousCandidateReductionVsEngineering": 0.5635515018685522,
+      "pairedLevels": [
+        {
+          "level": 6,
+          "nativeCandidateMinusEngineering": -14.412595494669816,
+          "nativeCandidateReductionVsEngineering": 0.13068072299144162,
+          "candidateMinusIndependentRelative": -3.2130337279667742e-09
+        },
+        {
+          "level": 7,
+          "nativeCandidateMinusEngineering": -12.743487784388279,
+          "nativeCandidateReductionVsEngineering": 0.11722187868703404,
+          "candidateMinusIndependentRelative": 3.4715160079912266e-08
+        }
+      ],
+      "observedGridChanges": {
+        "candidate": {
+          "signedJChange": 0.09303282569526061,
+          "relativeChange": 0.0009694044776208017,
+          "cells": [
+            4800,
+            19200
+          ],
+          "effectiveH": [
+            0.010206207261596574,
+            0.005103103630798287
+          ],
+          "totalNativeProcessSeconds": 75.2171342240008
+        },
+        "engineering": {
+          "signedJChange": -1.5760748845862764,
+          "relativeChange": -0.014497636914517756,
+          "cells": [
+            1811,
+            7016
+          ],
+          "effectiveH": [
+            0.016615972973955104,
+            0.008441900170737388
+          ],
+          "totalNativeProcessSeconds": 25.794297206999545
+        },
+        "independent": {
+          "signedJChange": 0.09302918606159949,
+          "relativeChange": 0.0009693665861945498,
+          "cells": [
+            4800,
+            19200
+          ],
+          "effectiveH": [
+            0.010206207261596576,
+            0.005103103630798288
+          ],
+          "totalNativeProcessSeconds": 76.2085758710009
+        }
+      },
+      "reversalObservedBothLevels": false,
+      "nativeOrderSameBothLevels": true,
+      "absoluteFineSeparationMinusObservedGridChanges": 11.074380074106742,
+      "physicalRankingResolved": false,
+      "candidateTopologyBenefitEstablished": false,
+      "topologyConclusion": "Candidate and geometric-seed density fields differ only at roundoff, and both sharp boundaries match two independent rectangles. No topology gain over straight pipes is demonstrated."
+    }
+  ],
+  "physicalAccuracyQualified": false,
+  "repairedSolverQualified": false,
+  "preservedOriginalArchive": {
+    "path": "artifacts/current/laminar-foundation/t01-originals.zip",
+    "sha256": "bfd6a084e6c9763bc045cb48ccbe7dec748a5e1736bba5b832d9bc8db9d9b7f0",
+    "bytes": 769757
+  },
+  "scope": "Fixed original T01 material fields and independent rectangle CFD; current frozen solver only.",
+  "metricDefinitions": {
+    "pressureDrop": "Flux-weighted inlet-minus-outlet static kinematic pressure [m\u00b2/s\u00b2].",
+    "power": "Pressure power per fluid density and unit out-of-plane depth [m4/s3]; not W.",
+    "dimensionlessJ": "Total kinematic pressure power / (nu*S\u00b2/mu), S=.02, mu=1. Equal prescribed ports cancel kinetic power.",
+    "normalization": "Native J divided by independently solved rectangles at that Re and level; porous J divided by the existing geometric seed at that Re.",
+    "cost": "NativeProcessSeconds includes all recorded native meshing, solves and export for both components. All solves cold-start. Legacy Python orchestration overhead was not measured; the independent run additionally records complete orchestration elapsed time. Porous recomputation is a subset of preparation time and is not added again. Interpreter startup and report/plot rendering are outside the recorded orchestration intervals.",
+    "mesh": "Same meshing controls and level, different bounding boxes and actual cell sizes. Report actual cells, domains and wall resolution; equal level is not equal cell density."
+  },
+  "limitations": [
+    "Two grids provide observed sensitivity, not an uncertainty bound or physical-accuracy qualification.",
+    "General incompressible CFD repair is pending; all native conclusions here refer to the explicitly frozen binary.",
+    "Porous scores retain the original 36 x 24 MAC discretization; no MAC spatial convergence is established.",
+    "Engineering porous fields have density volume 1/3; sharp contours are shifted to exact candidate area .5. This projection is part of the reported model-to-sharp gap.",
+    "Recorded wall times were acquired while other research jobs used the shared machine; they are total measured costs, not an isolated speedup benchmark."
+  ],
+  "reportGeneratorSha256": "f47a18a8a371d7b7886f9f102753b6e036a0af738a4f956c47f191977883c198",
+  "totalRecordedNativeProcessSeconds": 273.3286535799998,
+  "newIndependentNativeProcessSeconds": 118.23012696000023,
+  "newIndependentEndToEndSeconds": 123.17402223600129,
+  "newPreparationSeconds": 0.4166560980002032,
+  "newPreparationAndIndependentSeconds": 123.5906783340015,
+  "newPorousRecomputeSeconds": 0.31259409099948243
+}

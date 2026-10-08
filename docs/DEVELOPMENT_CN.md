@@ -647,6 +647,55 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python 
 
 T01 驱动不再设置独立磁盘阈值或逐候选扫描全部历史结果；文件系统错误直接上报。每次实验使用新的输出目录，保留原始场和失败记录。汇总脚本的 `--matrix/--ranking/--artifact` 可指向新结果；历史结果继续保存在 `outputs/topology-fidelity/`。
 
+### T01 双管原始输入与冻结版复算
+
+[t01-originals.zip](../artifacts/current/laminar-foundation/t01-originals.zip) 是用户上传原包的逐字节副本，769,757 字节，SHA-256 为 `bfd6a084e6c9763bc045cb48ccbe7dec748a5e1736bba5b832d9bc8db9d9b7f0`。其 40 个文件包含 Re=0/50 原候选、`reference-geometricSeed.npz`、`reference-engineering.npz`、XY 和原始摘要，解压到仓库根目录后恢复 `outputs/topology-fidelity/b-retries/double-pipe-re-{0,50}/`。它是后续重算消费者的原始材料，保留原 ZIP、NPZ 和 XY；已有原始目录无需重复解压。
+
+`tools/optimization/t01_double_pipe_recompute.py` 复用现有 Brinkman 评分器、`native_flow.py` 和原生求解器，没有新增方程审计链或重新优化设计。`prepare` 核对 ZIP 内全部文件、重评六份固定材料场、冻结 mesher，并从端口中心和宽度独立生成每管四个角点的矩形；`native` 每次只求一个 Re 和一档网格；`report` 核对求解二进制、网格哈希与数值控制，用现有面 CSV 后处理重算功率，输出 JSON、原生/多孔 CSV、排序/成本图及真实边界图。
+
+本次产物为 **修复前冻结版本（frozen pre-repair）证据**：[汇总](../artifacts/current/t01-frozen-double-pipe.json)、[原生表](../artifacts/current/t01-frozen-double-pipe.csv)、[多孔表](../artifacts/current/t01-frozen-double-pipe-porous.csv)。使用的 flow-cli SHA-256 为 `6fdf07218b9c8f584e1e974691c8a57253fd4b539bc1990a7e95daa463e7b674`，mesher 为 `bf6221294b35acc0cada0b2083f098e142b6d6b3c90a8c6d8fed8edc77835551`。原 ZIP 不含二进制；复现同一冻结版本须使用上述匹配快照，不能把新编译的求解器当作同一记录。修复后使用另一固定快照和新输出目录，候选、工程参照及独立矩形必须全部重算。当前结果、限制和待办见[当前状态](CURRENT_STATE_CN.md#当前研究与接手入口)，不授予修复后物理精度或可靠排序资格。
+
+以下在已有 NumPy/SciPy/Matplotlib/contourpy 的 Python 环境中执行；云环境可先 `source /workspace/cartmesh2d-cloud-setup/activate.sh`。新工作区先解压原包，再准备独立输入；`T01_FLOW` 必须指向本次比较使用的固定求解器：
+
+```sh
+python -m zipfile -e artifacts/current/laminar-foundation/t01-originals.zip .
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1
+T01_FLOW=outputs/laminar-repair/efficiency-curved-fixed/flow-cli
+T01_MESH=outputs/t01-agent/bin/mesh-cli
+T01_OUT=outputs/t01-recompute-new
+python tools/optimization/t01_double_pipe_recompute.py prepare \
+  --output "$T01_OUT/independent" --flow-cli "$T01_FLOW" --mesh-cli "$T01_MESH"
+```
+
+以下是**一个档位**的完整计算块。先做 Re=0、level6，读取候选、工程参照及独立矩形的 `summary.json`、收敛/守恒、场和成本，再改为 level7；随后按同样顺序做 Re=50。不要一次并发启动四个档位。level6 使用 `T01_FINE=`，level7 使用 `T01_FINE=-fine`；原生严格停止 `1e-8`、峰值速度 `.02`、松弛 `.2`、一遍压力校正、Anderson 默认 4/10、aggregation/adaptive、Laplacian 黏性和 limited-linear 对流与本次冻结对照一致。
+
+```sh
+T01_RE=0
+T01_LEVEL=6
+T01_FINE=
+python tools/optimization/compare_sharp_designs.py \
+  "outputs/topology-fidelity/b-retries/double-pipe-re-$T01_RE" \
+  --baseline reference-engineering.npz --area-target candidate \
+  --output "$T01_OUT/comparison/t01-re${T01_RE}-engineering-frozen${T01_FINE}" \
+  --levels "$T01_LEVEL" --reynolds "$T01_RE" --speed .02 --small-alpha .1 \
+  --iterations 16000 --timeout 1800 --tolerance 1e-8 \
+  --mesh-cli "$T01_OUT/independent/bin/mesh-cli" --flow-cli "$T01_FLOW"
+python tools/optimization/t01_double_pipe_recompute.py native \
+  --output "$T01_OUT/independent" --flow-cli "$T01_FLOW" \
+  --reynolds "$T01_RE" --level "$T01_LEVEL" --iterations 16000 --timeout 1800
+```
+
+完成四个档位后汇总，失败档位保留并先处理，不用解析值补全。`report` 使用独立矩形的实算 J 归一化原生结果，多孔结果则使用同模型的原几何种子 J；工程轮廓投影到面积 `.5`，该投影仍是多孔与锐壁差距的一部分。
+
+```sh
+python tools/optimization/t01_double_pipe_recompute.py report \
+  --output "$T01_OUT/independent" --flow-cli "$T01_FLOW" \
+  --comparison-root "$T01_OUT/comparison" --comparison-suffix engineering-frozen \
+  --artifact "$T01_OUT/t01-frozen-double-pipe"
+```
+
+真实网格、场和日志在本次 `outputs/t01-agent/` 与既有 `outputs/laminar-repair/t01-re{0,50}-engineering-before[-fine]/`；新运行使用上面的新目录。原始输入包供继续求解，JSON/CSV/两图供结论复核，构建快照和大网格留在本地。成本区分原生子进程、独立求解完整编排和输入准备；多孔重评是准备时间的子集，不重复累加。旧候选/工程记录没有完整 Python 编排计时，解释器启动及报告绘图也不在计时区间，报告显式保留这些限制。这些运行全部从冷启动开始，未使用粗解映射；同 level 的工程合流管与双矩形实际格数/壁面尺寸不同，须读报告中的网格域、实际格数和分辨率，不能据 level 数字声称等密度。
+
 ### T01 独立审查与研究选择
 
 `outputs/topology-fidelity/independent-review-001/` 保存本轮审查驱动、重新求解的状态和新原生失败。`review.py` 从原始面CSV/边界文件重建端口功率，对动能项另用四点Gauss积分；不调用原报告的 `pressure_metrics` 或 `ranking`。它重新运行现有MAC状态算子，用另写的边界功函数核对66个原预测，再把每个保存的物理ρ场放到共同 `Da_w=1e-3/1e-4/1e-5` 下评分。共同参数下不重新优化、不再次滤波/投影；模型、端口、物性和目标在每个案例/Re分组内相同。这是对原分析器的独立复算与统计审查，不是独立CFD求解器对照。
