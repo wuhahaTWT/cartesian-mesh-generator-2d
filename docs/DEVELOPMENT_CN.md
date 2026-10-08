@@ -89,6 +89,21 @@ build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20
 
 `coupled-stability-fields.tar.gz` 保存两个实际解的 u/v/p/flux、原生残差与 profile；输入仍为原失败归档。`tests/flow_coupled_test.cpp` 检查共享固定点、源项与压力基准、支持/拒绝组合、真实线性预算失败后的场保留及严格停止条件。旧圆环/DFG 的完整运行证据与精度限制见 `coupled-stability.json`，不能把 Krylov 轮数与 SIMPLE 外迭代直接比较，profile 的嵌套压力时间不可重复累计。
 
+### 完整动量响应与壁面分段修复
+
+`--coupling simple-consistent` 复用 `FlowCoupled2D` 的共同方程核和 FGMRES，将 SIMPLE 的完整冻结动量响应、压力和守恒面通量一起求解。设原紧凑对角为 `aU/aV`、`D=max(aU,aV)`，原速度松弛为 `alphaU`，则附加对角分别为 `hU=D/alphaU-aU`、`hV=D/alphaU-aV`，右端加入同样的 `hU*Uold/hV*Vold`；非正交扩散及对称应力都在原生线性作用内。面压力系数仍为 `rAU=alphaU*V/D`，面方程保留 `(1-alphaU)*(phiOld-T(Uold))`，其中 `T` 是原偏斜修正速度插值。压力未知量是 `pHat=pOld+pc`，保存时才取 `pOld+alphaP*pc`，速度和面通量共享完整校正。固定点处这些松弛项消去，恢复原未松弛动量与 Rhie–Chow 方程。
+
+该选项保留 `--velocity-relaxation` / `--pressure-relaxation`；`--pressure-corrections` 不参与，summary 明确输出 null。与 `coupled` 相同，仅支持恒黏度、固定边界角色、稳态 strict，不支持动态 opening/farfield、NormalInlet、Anderson、engineering、非定常或材料更新。原收敛门、最终严格线性步及所有单元的连续性和面通量一致性检查保持。迭代上限或线搜索失败保留最后接受场，不能算成功。默认仍为 `simple`，`coupled` 则直接求未松弛固定点；完整响应选项不是大规模效率保证。
+
+```sh
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/annulus-coupled.case.json --coupling simple-consistent --convection upwind --output outputs/annulus-response
+build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20-coupled.case.json --coupling simple-consistent --output outputs/dfg-response
+```
+
+速度梯度现在把**同一单元、同一物理边界组、相接且共线**的边界分面视为一条长度加权的重构样本，避免网格导出多切一段就改变该直壁的 LS 权重。边界组来自 custom 的名称/类型或预设的角色，保持固定，齐次 Krylov 与真实边界使用同一模板；实时边界值仍逐面读取。不同边界组、不相接片段及超出舍入识别预算的转角不合并；预算内的极小真实折角可能被判为共线，不改变几何本身。识别采用 `128*epsilon*坐标或边长尺度` 的坐标构造舍入预算，不是新增网格或物理验收阈值。真实单元、面、边界值、黏性/压力通量和受力积分均不合并；压力梯度模板保持原规则。
+
+回归位于 `flow_face_test.cpp`（分段不变、仿射精确、缩放/平移、断开片段、转角及缓存）和 `flow_coupled_test.cpp`（松弛不改变固定点、非对称滑移对角、源项、失败保场及入口约束）。实际失败例与限制由[当前状态](CURRENT_STATE_CN.md)及 `artifacts/current/laminar-foundation/targeted-repair.json` 维护；早期纯重构哈希仅对应其历史版本。
+
 ### 压力速度失稳的原生诊断
 
 `tools/benchmarks/momentum_terms_probe.cpp` 直接消费共同方程核，保存动量预测、压力校正、各面黏性/压力项及 LS/Gauss 梯度。构建 `cartmesh2d_flow_momentum_probe` 后运行 `build/cartmesh2d_flow_momentum_probe MESH BOUNDARIES STEPS BLOCK CELL WEIGHT power`；`BLOCK=0/1/2` 分别为原更新、壁面 compact 转置应力隐式 2×2 块、全部 compact 转置应力隐式块，其他重构项及原 scalar rAU 保留。`CELL=3710` 对应用户编号 3711，权重 `.5` 只改变探测映射。拆分前后同场残差恒等式和原生产一步的逐场差异必须先核对；幂迭代模式不构成完整谱界或物理验收。原基线源码/头文件、CSV 与哈希保存在 `momentum-splitting-traces.tar.gz` / `momentum-splitting.json`，当前核一步另有记录。
@@ -203,6 +218,8 @@ python3 tools/benchmarks/cell_step.py \
 ## 分支与里程碑
 
 只维护 `main`（已验证集成）和 `codex/cfd-development`（后续开发），网格和 CFD 修复统一从开发线推进。三条实验功能、临时集成及旧网格维护分支已完整进入 main，旧分支名可删除，提交历史仍可查。
+
+暂停分支若含未合入提交，先以 `archive/2026-10-08/<原分支名>` 保存远端 annotated tag，并核对 peeled commit，才删除原分支引用。本次 6 条暂停分支的精确 SHA 和独有提交数见 `artifacts/current/laminar-foundation/targeted-repair.json`；恢复可用 `git switch -c <恢复分支名> archive/2026-10-08/<原分支名>`。归档不等于已集成或精度通过。共同核重构 PR #10 已快进进入开发线，重复分支已删除；独立云环境 PR #9 及其分支保留。
 
 `mesher-v0.3.0` 固定指向网格里程碑 `691c97e`，不移动。切换前先处理当前改动，切换后按需要重建原生程序和 runtime，避免源码与旧包混用。集成须按当次授权及验证范围进行，不自动合并后续功能。
 

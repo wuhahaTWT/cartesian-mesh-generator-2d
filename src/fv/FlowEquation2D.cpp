@@ -14,8 +14,8 @@ std::vector<Vector2D> FlowEquation2D::pressureForce(const Vec& pressure,
 }
 
 std::vector<Vector2D> FlowEquation2D::velocityGradient(const Vec& field, const Boundary& boundary, bool y) {
-    return y ? velocityV_.apply(field, boundary.v, boundary.fixedV)
-             : velocityU_.apply(field, boundary.u, boundary.fixedU);
+    return y ? velocityV_.apply(field, boundary.v, boundary.fixedV, boundary.gradientGroups)
+             : velocityU_.apply(field, boundary.u, boundary.fixedU, boundary.gradientGroups);
 }
 
 FlowReconstruction2D FlowEquation2D::reconstruct(const FlowResult2D& field,

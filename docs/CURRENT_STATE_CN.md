@@ -4,78 +4,48 @@
 
 ## 当前研究与接手入口
 
-当前先把**不可压 CFD 的精度、稳定性和效率基础做扎实**，再用可靠的真实壁面 CFD 纠正下一轮流道拓扑演化。Linux 云环境已从远端 `codex/cfd-development` 的 `3585683` 接续研发，使用 GCC Release 与 IC(0)。新的燃烧、可压缩、SST、浸入边界扩展冻结，已有功能与测试保留。
+当前集中修复**原生二维不可压层流的压力—速度耦合与曲壁离散**。唯一开发线为 `codex/cfd-development`，共同方程核重构和本轮修复均在该线；`main` 仍为已验证集成版本。燃烧、可压缩、SST、浸入边界扩展保持冻结，已有功能和测试保留。
 
-本任务修复的是**原生二维不可压层流 Navier–Stokes 求解器**：速度、压力、质量守恒及压降/壁面受力。求解规模须与网格产品对齐，千格至万格基准用于定位问题，不能作为最终规模交付。当前产品目标数量到 50 万，Cut-cell / 共形边界层的历史壁面深度边界分别为 11 / 8；云端须在产品真实流体网格上完成约 **10 万、30 万、50 万格**的代表性曲壁求解，验证精度、稳定性及完整成本，覆盖现有两类求解网格。记录实际流体格数、计算域、壁面尺寸与细化分布，不能只对齐 level 数字。现有 102,017 格喷管只有指定控制下的收敛与性能证据，50 万格曲壁未收敛；这些仍是待补齐的能力。规模与精度验收方法见[开发指南](DEVELOPMENT_CN.md#与网格产品一致的求解规模)。
+本轮改了两处有直接证据的问题，完整命令、输入/源码/二进制哈希、实际场和失败对照见[定向修复记录](../artifacts/current/laminar-foundation/targeted-repair.json)及[复现说明](DEVELOPMENT_CN.md#完整动量响应与壁面分段修复)。
 
-**执行时逐级增加网格数量**：先修复现有约 3 千/6 千格失败例，再沿同一物理问题推进到约 1 万、3 万、10 万、30 万、50 万格；实际档位按受控的空间细化产生，以上数量是规模示意。每档检查完整收敛、守恒、物理误差及成本，再决定下一档；出现发散、明显非物理解或无法解释的误差恶化，先在该级修复并回查受影响的小例。粗网格不套用最终细网格误差阈值，要通过相邻档建立精度趋势。10 万至 50 万是后续目标，不能从当前失败的小例直接跳到大规模，也不预先并发启动整串高密度求解。
+- **压力校正的动量响应不完整**：新增显式 `--coupling simple-consistent`，在共同方程核内求解完整冻结动量响应、压力和守恒面通量，保留原速度/压力松弛及对应面通量松弛项。没有去掉对称黏性应力，也没有放宽原 strict、最终线性或面通量一致性门。
+- **直壁分段改变梯度权重**：同一物理边界组中，相接且共线的分面合为一个长度加权速度梯度样本；真实网格面、逐面边界值和通量积分全部保留。压力梯度不改。分段不变、仿射精确、缩放/平移、不同组/转角/断开片段和实时边界缓存均有原生回归。
 
-云端已复现圆环与 DFG 默认发散，并加入显式 `--anderson-history` / `--anderson-start` 研究控制。原默认仍为不加速；启用 Anderson 时原四向量、第 10 步开始的设置也保留。使用 16 向量、首步开始积累历史，旧 3063 格 DFG 在 **1281 轮**严格收敛，6208 格圆环在 **1002 轮**严格收敛。DFG 只提早开始但仍用四向量、或只扩大历史但仍等到第 10 步，都失败。原生 CTest **102/102**、前端 **191/191** 通过；默认 Poiseuille 的 cells/faces 文件哈希与修改前相同。
+原网格和原边界的最终复跑中，484/1,672/6,208 格圆环的 `coupled` 均 **10 轮**严格收敛；6,208 格去掉对流后仍为 **10 轮**。3,063 格 DFG 的 `limited-linear` 为 **43 轮**。保留速度松弛 `.6`、压力松弛 `.25` 的 `simple-consistent`，6,208 格圆环为 **2,025 轮**、3,063 格 DFG 为 **499 轮**；原 `simple` 40 轮失败前缀仍未收敛。中间 Krylov 使用 adaptive，最终必须普通 strict 认证。所有成本包含实际记录，但并行测试干扰了计时，不作同精度提速结论。
 
-不可压求解器已将工况初始化/边界预设、动量组装、Rhie–Chow 通量、压力修正、收敛监测和受力后处理拆为独立模块。纯重构以 `5672a87` 为对照，方腔、制造解、非定常 Taylor–Green、Poiseuille、旧圆环和旧 DFG 六例的 **u/v/p/flux 哈希与迭代数全部相同**，原生 **102/102** 通过；[逐场哈希](../artifacts/current/laminar-foundation/refactor-hashes.json)保留。版本化 `--case-file` 已加入并通过 CLI 字段一致性、覆盖规则和拒绝非法输入的回归；工程停止与 SIMPLEC 的验证范围见下文。
+**壁面修复改善了圆环，尚未取得通用精度资格。** 在同为 `face-limited-linear` 的前后对照中，6,208 格圆环去常数压力 L2/Uref² 从 **0.0276885 降到约 0.0184991**，速度 L2/Uref 从 **0.00114367 降到约 0.00059334**。DFG 阻力误差约 **3.303%→3.296%**，但升力误差 **30.27%→48.32%**，压降误差约 **9.26%**；这些反例保留。圆形解析解与原多边形壁面 trace 并非同一边界问题，圆环数字是同一参考下的诊断，不能混为多边形真解误差。upwind 的独立记录也保留，不混用格式计算改善比例。
 
-工程停止已解除“全部 strict 条件再加窗口”的重复门，仍要求最大单元动量残差上限、质量守恒、50 步场/物理量窗口和普通严格线性最终步；新增边界平均压力和力矩监测。Poiseuille 同网格工程停止为 **61 轮 / 0.268 s**，紧容差参考 **331 轮 / 1.079 s**，压降和壁面阻力差分别约 **0.0111% / 0.0118%**。方腔工程 `1e-5` 会损失 Marchi 精度，不能按该容差宣称同精度提速；收紧至 `1e-8` 后为 **2291 轮 / 24.02 s**、Marchi RMSE **0.00090166**，严格 `1e-9` 为 **2957 轮 / 33.54 s**、**0.00089932**。默认模式/容差/松弛未改。新增原生工程收敛/物理量回归通过，完整原生 **103/103** 通过。
+**默认仍是 SIMPLE，困难圆环默认发散尚未修好。** 单独壁面分段修复后的 Stokes 观测模式仍约 `−2.73207`，旧值为 `−2.67314`；本轮稳定收敛来自完整响应路径。新选项目前只支持稳态、恒黏度、固定边界角色、strict，与现有 `coupled` 共用实现，尚未接入桌面控件；动态 opening/farfield、NormalInlet、Anderson、engineering、非定常及材料更新明确拒绝。不能从两张困难网格外推任意几何或几十万格。
 
-SIMPLEC 作为显式研究选项加入。直管/方腔保持同一收敛场但没有明显迭代数收益；旧圆环在压力松弛 1 下失败。旧 DFG 从零初值产生 **Cd=6.06312 / 5.39522** 两个不同分支，交换完整 u/v/p/flux 初值后分别保留原分支（98 / 58 轮再收敛），说明不能把较短迭代当可靠物理提速。[工程与 SIMPLEC 对照](../artifacts/current/laminar-foundation/engineering-simplec.json)及[代表场](../artifacts/current/laminar-foundation/engineering-fields.tar.gz)保留。批处理已固定二进制快照；曾引用运行中 build 文件的批次不用于成本结论。
+本轮 GCC Release / Cantera OFF 的 **105 项原生 CTest 全部通过**：首次并行运行有两项超时，在原控制下串行复跑均通过。前端 **191/191**；重建 runtime 后真实 Linux App 的 **1,300 格通道 / 168 轮**严格收敛，结果显示和导出检查通过。前端进程测试在默认沙箱中未完成，允许本地 IPC 的网络权限后完整重跑通过；失败日志仍保留。此次 macOS/Windows 平台 CI 未运行。
 
-这尚不是精度修复：DFG `Cd=6.0631245`（误差 **8.667%**）、`Cl=-0.5728154`、压降 `0.10719345`；圆环压力 L2/Uref² 仍 **0.02775795**。两张旧网格通过 OpenFOAM v2412 标准 checkMesh，但无限制梯度/非正交修正的 simpleFoam 同样发散。显式加上梯度与非正交限制器后，DFG 在 630 轮收敛（CPU 11.95 s），Cd=5.1782551（误差 7.192%）、Cl=0.6261126、压降=0.09826234，仍不合格；圆环到 16,000 轮仍不收敛。原网格同构导出、真实 OpenFOAM 场与日志见 [外部对照](../artifacts/current/laminar-foundation/openfoam-old-mesh.json)及[场归档](../artifacts/current/laminar-foundation/openfoam-old-mesh-fields.tar.gz)。压力校正、重构与小单元几何仍在研究，默认设置未调整。[控制对照](../artifacts/current/laminar-foundation/early-anderson.json)及[真实场](../artifacts/current/laminar-foundation/early-anderson-fields.tar.gz)保留。
+后续先处理**DFG 升力/压降与圆环残余压力误差**，再减少完整响应路径的迭代成本并研究默认稳定性。逐级以约 1 万、3 万、10 万、30 万、50 万实际流体格推进；遇到发散或无法解释的精度恶化，先在该级修复并回查小例。产品 Cut-cell / 共形边界层的历史壁面深度边界为 11 / 8；两类网格都须验证，不能只比较 level。已有 102,017 格喷管仅证明指定控制下收敛，50 万格曲壁未收敛，高密度升级仍暂停。[规模验收方法](DEVELOPMENT_CN.md#与网格产品一致的求解规模)保持。
 
-新增入口 `tools/benchmarks/laminar.py`：方腔 Re100/400/1000、DFG Re20、旋转圆环、Poiseuille，三档网格、两种对流格式。首轮 36 个矩阵条目中 24 个收敛、8 个未通过网格质量门、4 个求解失败。失败计入结果，不降低质量门。新结果及可异机重跑的输入见 [基线](../artifacts/current/laminar-foundation/baseline.json)，复现见[开发指南](DEVELOPMENT_CN.md#不可压基础基准与云端复现)。
+历史诊断和未采用方案集中保留在下面的证据入口，避免将过程叙述当成当前状态：
 
-- 方腔 Re100 的 limited-linear/Marchi RMSE 为 `0.004080 → 0.0009002 → 0.0002163`，末两档观测阶 `2.082 / 2.011`；最细 15,876 格需 8,590 轮。Ghia 指标单列，Re400 原表可疑条目未静默删去。
-- 旧 6,208 格圆环默认控制再次发散；启用现有 Anderson、保持速度松弛 0.6 可在 980 轮收敛，但压力归一化 L2 仍 `0.02775795`。完全隐式非正交压力算子的试验未解决发散，未保留为产品功能；[失败补丁](../artifacts/current/laminar-foundation/rejected-implicit-pressure.patch)及基线 JSON 内的日志已上传，原始场保留在 `outputs/laminar-foundation/`。
-- DFG 使用等尺寸笛卡尔背景可生成通过现有质量门的 3,063 格网格，但默认 SIMPLE 及松弛 0.2 + Anderson 均发散。下一步检查动量预测中显式对称黏性应力、壁面压力重构及耦合稳定性；尚无 DFG 精度通过结论。
-- 同网格 OpenFOAM 已在 Linux Docker v2412 上完成旧 DFG/圆环的失败与限制器对照；其他工况及细化序列尚待完成。原首次 Docker 中断记录仍属历史失败。
-
-云端接续前的本机基线已完成：系统 Clang Release 网格/流动 CLI 构建、完整 36 条目基线、额外圆环/DFG 失败定位、Python 语法检查和 IC(0) Poiseuille 小例运行。当时求解器产品源码恢复为 `6ec4edf`，没有把未奏效的试验算作修复；当时未重新运行完整 CTest、前端或跨平台 CI。接续后的代码与验证进展见上文；基础小例的默认发散、物理误差和高密度能力须由同一套通用实现共同解决，单个十万格案例收敛不能替代小例验收。
-
-本机原生算子诊断复现旧圆环 **484 / 1672 格分别 180 / 586 轮收敛，6208 格默认发散**。在相同细网格上去掉对流仍发散，而单独调用原生黏性动量子问题可稳定衰减；故惯性对流不是该失败的必要条件。完整 Stokes SIMPLE 一步误差映射的观测模式约为 **0.91369 / 0.97564 / −2.67314**；细网格整体半步阻尼后仍出现约 **1.04892** 的增长模式。冻结扩散 rAU 的压力非正交修正映射在细网格也有约 **−1.04394** 的模式。压力内循环阻尼、取消壁面压力外推、取消速度面偏斜修正及整体阻尼均未修好，试改源码已恢复；不能把增加校正次数、减小步长或放宽停止条件当成通用修复。这些是该输入上的失稳证据，不是完整谱界或物理精度结论；重构/非正交算子与压力—速度耦合的具体致因仍需继续分解。见[诊断数据](../artifacts/current/laminar-foundation/coupling-diagnosis.json)、[原生日志与失败补丁](../artifacts/current/laminar-foundation/coupling-diagnosis-traces.tar.gz)及[复现入口](DEVELOPMENT_CN.md#压力速度失稳的原生诊断)。
-
-T01 双管已恢复用户提供的[原始输入包](../artifacts/current/laminar-foundation/t01-originals.zip)，并完成 **修复前冻结版本（frozen pre-repair）** 的固定输入复算。六份原材料场重新评分；另由每管四个角点独立构造两直管，Re=0/50 各按 4,800→19,200 实际流体格串行求解，四组、八个分量均通过原生网格质量门和 strict `1e-8` 收敛门。原候选与直管种子的密度最大差仅 `1.84e-15`，锐壁到独立矩形最大距离 `2.48e-16`；独立 CFD 与候选的压降相对差至多 `1.33e-6`，没有相对两直管的拓扑收益证据。
-
-| Re | 原候选细档压降 | 等面积工程参照细档压降 | 独立两直管细档压降 | 当前冻结版排序观测 |
-| --- | --- | --- | --- | --- |
-| 0 | 8.637259214 | 7.236880188 | 8.637270667 | 多孔模型预测候选好 26.724%，真实壁面候选反而差 19.351%；两档均反转 |
-| 50 | 0.000383876196 | 0.000434850147 | 0.000383876182 | 多孔模型预测候选好 56.355%，真实壁面细档仅好 11.722%；两档排序一致 |
-
-压降单位为运动学压力 `m²/s²`，上述百分比均以工程参照为分母。工程参照细档分别为 7,008/7,016 格；同 level 不等于同单元密度。新独立计算的完整编排为 **123.174 s**，加输入准备共 **123.591 s**；多孔重评包含在准备时间内。复用的八条候选/工程记录与新四条独立记录合计原生网格、求解及导出进程时间 **273.329 s**，不是本次新增耗时，也不构成隔离性能对照。见[数据及来源](../artifacts/current/t01-frozen-double-pipe.json)、[排序与成本图](../artifacts/current/t01-frozen-double-pipe.png)、[实际边界图](../artifacts/current/t01-frozen-double-pipe-geometry.png)及[复现命令](DEVELOPMENT_CN.md#t01-双管原始输入与冻结版复算)。**两网格变化不是误差界；通用 CFD 精度修复、MAC 空间收敛及物理排序资格仍未证明，修复后须重新计算。**
-
-Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 3,086 格的面 4591，owner/neighbour 连线反向却因绝对值公式被判为约 65.96°、质量通过，随后 FVM 拒绝。全局与 patch-local 现在共同检查正法向距离及中心跨面括定，候选修复评分也识别该问题；没有增加容差或放宽质量门。原两单元几何在三个物理尺度及存储端点反转下的回归均拒绝。相同生成参数得到 **3,085 格、768 个边界层格**，流体面积保持 `0.8941491721076131`，真实质量/FVM 通过；AA16 在 **581 轮 / 12.759 s** 严格收敛，Cd 误差仍为 **1.861%**。固定同一 128 段多边形细化到 5,891 格后，Cd 误差 **1.934%**、Cl 变号，故这只是几何质量修复，未授予空间精度资格；高密度升级暂停等待离散修复。见[修复证据](../artifacts/current/laminar-foundation/quality-normal-distance.json)、[固定几何对照](../artifacts/current/laminar-foundation/dfg-controlled-refinement.json)及[原坏网格与修复后真实场](../artifacts/current/laminar-foundation/quality-normal-distance-fields.tar.gz)。当前完整原生 **104/104**、前端 **191/191** 通过；真实 App 的 5,216 格直管在 strict `1e-8`、IC(0) 下 553 轮收敛。跨平台 CI 尚未完成。
-
-新增显式 `--coupling coupled`：以原动量、Rhie–Chow、压力重构和受力算子求同一离散固定点，使用块预条件 FGMRES 与共同更新 u/v/p/flux 的线搜索；失败候选不替换最后接受步。旧 6,208 格圆环 **10 轮 / 266 次 Krylov / 求解 5.346 s** 严格收敛，旧 3,063 格 DFG **44 轮 / 5,731 次 Krylov / 求解 43.343 s** 严格收敛。**这是两张保留失败网格的耦合稳定性进展，空间精度仍未修好**：圆环压力 L2/Uref² **0.02776201**，DFG Cd **5.3952174**（低 **3.303%**）、Cl **0.0138331**、压降 **0.1066593**（低 **9.242%**）。上述时间是求解器 profile，不是完整成本或同精度提速结论。原 SIMPLE、strict、松弛与离散默认未改；coupled 仅支持稳态、恒黏度、固定边界角色和 strict，明确拒绝非定常、物性/湍流迭代、动态 opening/farfield、NormalInlet、Anderson 和 engineering。普通直管/方腔/制造解、三种对流格式、两种应力及失败保场/取消/入口条件/压力预条件器的原生回归通过。证据见[耦合结果](../artifacts/current/laminar-foundation/coupled-stability.json)及[真实场](../artifacts/current/laminar-foundation/coupled-stability-fields.tar.gz)。完整原生、前端和真实 App 验证范围同上，跨平台 CI 未完成。
-
-已按用户要求对照 **OpenCFD v2412** 和 **MOOSE** 的 Rhie–Chow、压力边界、梯度与黏性应力源码，记录固定版本、路径和哈希，独立推导实验，没有复制外部代码。原生压力 RC 的保留负能量向量可精确分解：6,208 格圆环的 LS 基项为 `+1.136742`，混合梯度项 `−1.354864`、rAU 插值协方差项 `−1.454434`，合计 `−1.672555`；DFG 对应混合梯度项也占主导。这是压力子算子的符号诊断，不是完整 SIMPLE 失稳根因的闭环证明。四个原网格独立试验均未合入：整体 H 面重构、统一 Gauss 压力梯度、面系数 LS 压力缺陷、内部转置应力单元梯度插值，圆环压力 L2 分别为 **0.026453 / 0.029044 / 0.026754 / 0.038407**，完整 Stokes SIMPLE 映射均仍观测到增长。最后一项的探针曾混用原 inline 头文件，已排除该次并统一所有调用单元的头文件重跑。**借鉴源码已产生可复核的机制与反例，仍未解决精度或默认 SIMPLE 稳定性，不能按差异照搬算法。** 见[参考来源与真实试验](../artifacts/current/laminar-foundation/open-source-mechanisms.json)、[场、原生日志及独立修改补丁](../artifacts/current/laminar-foundation/open-source-mechanisms-fields.tar.gz)。
-
-已完成旧圆环单元 **3711（代码零基 3710）及相邻小格 3711** 的真实一步分解。新原生入口 `tools/benchmarks/cell_step.py` 用 GNU ld 只读包裹实际动量组装和 Rhie–Chow 调用；包裹/未包裹、记录开关的 u/v/p/flux 逐位相同。恢复 `−2.67314135` 模态后，速度沿输入模态的投影由动量预测 **+0.27992803** 加压力修正 **−2.95306938** 得到最终 **−2.67314135**，明确放大发生阶段。进一步保留实际隐式矩阵，把 11 个来源分别经过原生预测、通量和压力修正传播，再相加：内部显式对称黏性项贡献 **−1.83636981**，动量松弛 **−0.86172099**，RC 压力非正交项 **+0.44980064**；最终 u/v 闭合差约 `1e-11 m/s`。这些是完整耦合步的来源响应，不是删项后的特征值；不能由最大项宣布唯一根因。模态场是任意归一化误差，不能当实际物理解。分项已支持继续聚焦显式应力—压力修正反馈，尚未找到并修好具体错误系数，也未修好压力精度；没有新离散改动。相关原生测试 **4/4** 通过，研究工具仅验证 Linux GNU ld，未作平台 CI。见[一步分项及来源闭合](../artifacts/current/laminar-foundation/cell-step-diagnosis.json)、[实际模态场与原生记录](../artifacts/current/laminar-foundation/cell-step-diagnosis-traces.tar.gz)及[复现说明](DEVELOPMENT_CN.md#单元一步分项与来源传播)。
-
-共同方程核重构在隔离分支 `codex/laminar-core-refactor` 以 `2e94198` 为基线完成：SIMPLE、coupled 和原生探针共用重构、动量组装、冻结残差及压力块，FGMRES 独立为内部模块，默认控制和离散公式保持原样。九个基础路径的 u/v/p/flux 逐位相同；旧圆环/DFG 四组场 CSV、迭代数及成功/失败状态也相同。完整原生 **105 项均通过**（并行首次两项超时，原控制下串行复跑通过），前端 **191/191**；新 runtime 的真实 App 通道 **1,300 格 / 168 轮**严格收敛。跨平台 CI 未运行，耗时有并行干扰，不作性能结论。见[共同核证据](../artifacts/current/laminar-foundation/core-refactor.json)及[原场与检查记录](../artifacts/current/laminar-foundation/core-refactor-fields.tar.gz)。新增对照中的 DFG `face-limited-linear` 在 28 轮达到 Krylov 上限，重构前后均失败；上文 44 轮成功使用 `limited-linear`，两种格式不能混为同一控制。
-
-并行局部实验均未成为数值修复：壁面 compact 转置应力隐式 2×2 块使观测模式 **−2.67314→−2.74360**；全 compact 块降至 **−1.29632**，整体半步仍增长 **1.05004**。MOOSE 完整向量应力的参考启发了二次壁面原型，粗圆环压力 L2 略降 **0.033316→0.029623**，细圆环却出现 **9 个非正动量响应行**；保留原对角的 RHS-only 细档到预算时停止，未取得最终解。原壁面 divU 投影使粗档压力误差升至 **0.069340**。精确圆形场与规定多边形壁面 trace 不完全相容，不能据局部解析牵引误差判定唯一根因。真实细圆环压力 L2/Uref² 仍为 **0.02775795**，默认 SIMPLE 发散尚未闭环。见[动量拆分反例](../artifacts/current/laminar-foundation/momentum-splitting.json)、[二次壁面试验与开源来源](../artifacts/current/laminar-foundation/wall-refactor-experiments.json)及[原生复现](DEVELOPMENT_CN.md#压力速度失稳的原生诊断)。
-
-已实际接入独立 **FreeFEM 4.15 二维内核**，在原 484/1,672/6,208 个圆环多边形上进行正面积扇形三角剖分，原单元、边界和面速度均保留。CR/P0、原逐面速度均值、Laplacian 黏性下，三档 Stokes 均 **2 步**、含惯性 NS 均 **4 步**收敛；细档为 24,836 个三角形、100,328 个混合 DOF，NS 归一化弱残差 **1.40e-14**。圆形参考压力的去常数 L2/Uref² 为 **0.02430→0.01578→0.009541**，该参考与原多边形不穿透边界仍不完全相容。另用 P2/P1 对称应力、解析速度在原多边形边界的节点插值，三档 NS 均 **3 步**收敛，压力误差 **0.001091→0.0003037→0.00007734**；细档速度误差 **1.05e-6**。后一控制改变了边界，有限元 DOF/应力离散也与原 FV 不同，不能作为同一离散方程或同精度速度比较。十个最终外部案例通过，研究转换器构建及非法组合拒绝检查通过；本轮未重跑完整产品/App/平台 CI。见[实际内核结果](../artifacts/current/laminar-foundation/open-source-core.json)、[场与失败记录](../artifacts/current/laminar-foundation/open-source-core-fields.tar.gz)和[复跑入口](DEVELOPMENT_CN.md#原生二维开源内核实际对照)。
-
-原生对照将**默认 SIMPLE 失稳与压力边界敏感性分开**：原边界 Stokes 压力形态与 NS 的圆形参考压力偏差相关系数 **0.999825**，去压力常数只消除细档约 **0.5% 的误差平方**。将原生边界换成完整解析 trace 及可接受的速度入口/出口角色，coupled Stokes/NS 都在 **10 步**严格收敛，NS 去常数压力诊断由 **0.02769 降至 0.003077**；完全相同新边界的 SIMPLE 仍发散，最后第 100 步报告动量 **1.96e8**、连续性 **247.1**，随后在线性迭代限处抛错，没有返回末场。这支持边界/壁面重构对压力误差有重大贡献，并明确默认迭代失稳另需修复；改变 trace 和角色尚不能定位唯一错误系数。产品默认未改变，高密度升级继续暂停。
-
-待完成：通用精度/稳定性修复及失败例回归；将圆环外部对照用于原生离散修复，补齐 DFG 等曲壁的受控外部比较及与网格产品一致的 10 万至 50 万格求解；在更多工况和密度上验证工程停止/SIMPLEC 的同精度成本；通用修复后重算代表拓扑设计与基线。尚未宣称基础任务完成。
-
-| 工作 | 接手时的状态与入口 |
+| 证据 | 已知结论与限制 |
 | --- | --- |
-| T01：保真度差距与排序 | 预定实验及交付完成；主索引为 [fidelity-completion.json](../artifacts/current/native-topology-fidelity-completion.json)。文献优化流道、MAC 空间收敛及可信排序误差仍有研究限制，原“18 对反转”不是已证实结论。 |
-| T02：真实壁面反馈 | 在线控制器已实现并跑通；代码 `tools/optimization/closed_loop_topology.py`，主索引 [feedback.json](../artifacts/current/native-topology-feedback.json)，[方法与运行命令](DEVELOPMENT_CN.md#t02真实壁面反馈驱动材料更新)。Re=0 总收益主要来自结构提案，校正增量约 0.0256%；Re=50 校正组落后于同控制对照，尚未证明方法优势。 |
-| 当前需要解决的问题 | 校正怎样产生更有效的新材料方向和连接变化，以及何时值得花一次真实复算；现有失败和对照可直接用于方法改进。T03 换热应用、T04 比赛材料尚未开展。 |
-| 本地工作区 | 根目录；开发线 `codex/cfd-development` 已含单元诊断 `ca31d5d`，并行共同核重构在 `codex/laminar-core-refactor`。T01/T02 和清理仍保留于历史；接手先读当前 `git status`，研究分支未合入 main。 |
+| [原生基线](../artifacts/current/laminar-foundation/baseline.json)、[早期 Anderson](../artifacts/current/laminar-foundation/early-anderson.json) | 36 条基线含全部失败；方腔 Re100 细化接近二阶。扩大历史可使旧圆环/DFG 收敛，但未修好精度，默认控制未改。 |
+| [共同核重构](../artifacts/current/laminar-foundation/core-refactor.json)、[早期逐场哈希](../artifacts/current/laminar-foundation/refactor-hashes.json) | 历史纯重构前后逐位相同；本轮数值修复另行验收，不能沿用纯重构哈希。 |
+| [失稳探针](../artifacts/current/laminar-foundation/coupling-diagnosis.json)、[单步动量拆分](../artifacts/current/laminar-foundation/momentum-splitting.json) | 去对流仍失稳，单独黏性子问题可衰减；预测和压力校正的误差放大不一致。标量阻尼及增加压力校正次数未消除全部观测增长模式。 |
+| [完整联立求解](../artifacts/current/laminar-foundation/coupled-stability.json)、[工程停止与 SIMPLEC](../artifacts/current/laminar-foundation/engineering-simplec.json) | coupled 已可求原离散固定点；工程停止需同精度对照，SIMPLEC 的 DFG 曾出现不同非物理解分支，均不能按迭代数自动改默认。 |
+| [OpenFOAM 原网格](../artifacts/current/laminar-foundation/openfoam-old-mesh.json)、[FreeFEM 二维内核](../artifacts/current/laminar-foundation/open-source-core.json) | OpenFOAM 通过标准 checkMesh 仍可发散。FreeFEM 三档圆环确实收敛，但应力、DOF 或边界 trace 不同；不是直接替换全部网格的资格证明。原生解析 trace 控制大幅降低压力偏差，SIMPLE 仍发散。 |
+| [有向法向距离修复](../artifacts/current/laminar-foundation/quality-normal-distance.json)、[固定几何细化](../artifacts/current/laminar-foundation/dfg-controlled-refinement.json) | 修掉反向中心连线漏检，3,085 格/768 个边界层格可通过质量并收敛；细化后 Cd 未改善、Cl 变号，不能代替离散精度修复。 |
+| [二次壁面与开源参考](../artifacts/current/laminar-foundation/wall-refactor-experiments.json) | 二次重构细档出现 9 个非正动量响应行；原型/失败补丁保留，没有作为产品修复或裁剪响应。 |
+| [T01 原输入冻结版复算](../artifacts/current/t01-frozen-double-pipe.json)、[原始输入包](../artifacts/current/laminar-foundation/t01-originals.zip) | 原候选实际上接近两直管；Re=0 对工程参照的真实壁面排序反转，Re=50 的真实收益远小于多孔预测。修复后未重算，不宣称可信拓扑排序。 |
+| [T01 保真度](../artifacts/current/native-topology-fidelity-completion.json)、[T02 在线反馈](../artifacts/current/native-topology-feedback.json) | 实现和原输入保留；Re=0 的校正增量很小，Re=50 未优于同控制对照，尚未证明方法优势。T03/T04 未开展。 |
 
-建议先读本节及[拓扑研究详细状态](#独立研究流体拓扑优化原型)，再读开发指南中的[文件与结果导航](DEVELOPMENT_CN.md#本地研究文件导航)。Claude 原任务单、过程日志和早期尝试保留；它们记录当时的指导，当前状态以本文件为准。原始场、失败、运行环境和现有构建均保留。
+接手先核对 Git 状态；代码/复现见[开发指南](DEVELOPMENT_CN.md)，原始场、失败及指定参考包均保留。另一聊天的未提交研究不因本次分支整理自动合入。
 
-## 验证冗余清理
+## 既有验证冗余清理
 
-按本轮确认的范围，删除重复防护、过度兜底和独立验证脚本，保留核心算法约束与失败判定。独立 Python 拓扑/方程重建、专项扫描及其专用测试和 CI 入口已移除；共用的数据读取、几何计算、初值映射和输入准备移到 `tools/flow/`。原生求解链入口改为 `tools/optimization/native_flow.py`，不再生成独立审计通过标记。T01 的任意磁盘停机阈值、逐候选目录扫描，以及将文件/编程错误吞为候选失败的兜底已删除；桌面 runtime 检查集中到最终打包入口。
+此前按用户确认范围删除重复防护、过度兜底和独立验证脚本，保留核心算法约束与失败判定。独立 Python 拓扑/方程重建、专项扫描及其专用测试和 CI 入口已移除；共用的数据读取、几何计算、初值映射和输入准备移到 `tools/flow/`。原生求解链入口改为 `tools/optimization/native_flow.py`，不再生成独立审计通过标记。T01 的任意磁盘停机阈值、逐候选目录扫描，以及将文件/编程错误吞为候选失败的兜底已删除；桌面 runtime 检查集中到最终打包入口。
 
 原生几何、拓扑、Solver 质量、物理约束、NaN 和收敛失败判定继续保留。原始设计、真实场、失败记录、参考包未删除。下文既有审计和测试数字属于清理前的对应版本，不能当作当前测试数量。
 
-修改前的源码及未提交差异保存在 `outputs/verification-cleanup-6gxhncca/`，包含 `source-before.zip`、`preexisting.patch`、删除清单和本轮运行日志。当前清理在开发线，尚未提交。
+修改前的源码及未提交差异保存在 `outputs/verification-cleanup-6gxhncca/`，包含 `source-before.zip`、`preexisting.patch`、删除清单和本轮运行日志。这些历史清理已由开发线提交保留。
 
-本轮在 macOS 用系统 Clang 完成原生构建及桌面 runtime 构建；相关原生测试 22 项、拓扑研究测试 42 项、前端测试 191 项通过。实际提取几何重新生成网格，1 步预算正确返回未收敛，同网格续算累计 155 步收敛；一次短闭环和新报告绘图已运行。此处仅确认清理后的调用链，不新增方法优势或物理精度结论；未运行全量 CTest、跨平台 CI、打包 App 或燃烧研究全流程。
+该历史清理在 macOS 用系统 Clang 完成原生构建及桌面 runtime 构建；相关原生测试 22 项、拓扑研究测试 42 项、前端测试 191 项通过。实际提取几何重新生成网格，1 步预算正确返回未收敛，同网格续算累计 155 步收敛；一次短闭环和新报告绘图已运行。此处仅确认清理后的调用链，不新增方法优势或物理精度结论；未运行全量 CTest、跨平台 CI、打包 App 或燃烧研究全流程。
 
 ## 当前交付
 
@@ -161,7 +131,7 @@ Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 
 
 T01 入口：[补齐索引](../artifacts/current/native-topology-fidelity-completion.json)、[审查](../artifacts/current/native-topology-fidelity-review.json)、[固定排名](../artifacts/current/native-topology-fidelity-fixed-ranking.png)、[真实场](../artifacts/current/native-topology-fidelity-native-fields.png)。T02 入口：[反馈数据](../artifacts/current/native-topology-feedback.json)、[实际演化图](../artifacts/current/native-topology-feedback.png)、[方法与命令](DEVELOPMENT_CN.md#t02真实壁面反馈驱动材料更新)。旧连接原型来源 `d13c175` 已进入 main，入口为[连接对照](../artifacts/current/native-fluid-topology-connectivity.json)和[细化](../artifacts/current/native-fluid-topology-candidate-refinement.png)。
 
-T01/T02 当前改动尚未提交。对应历史版本的研究测试与原生/前端构建结果支持实现，独立验证链现已移除；本轮文档压缩不增加测试、App、平台、外部 checkMesh 或物理资格。下一步围绕校正增量与新连接生成能力推进，T03 换热、T04 比赛材料未开展，燃烧保持冻结。
+T01/T02 的既有实现已由 Git 历史保留。对应历史版本的研究测试与原生/前端构建结果支持实现，独立验证链现已移除；本轮文档压缩不增加测试、App、平台、外部 checkMesh 或物理资格。下一步围绕校正增量与新连接生成能力推进，T03 换热、T04 比赛材料未开展，燃烧保持冻结。
 
 ## 已验证的规模和性能
 
@@ -184,18 +154,20 @@ T01/T02 当前改动尚未提交。对应历史版本的研究测试与原生/�
 | 问题 | 当前结论与下一步 |
 | --- | --- |
 | 细圆环网格 | 轴附近身份修复消除了未分类边，但 7,233 格诊断网格仍有 68 项 Solver 失败；研究修复得到的 7,071 格通过质量和独立面积检查，尚需成为通用产品流程。[拓扑记录](../artifacts/current/native-annulus-axis-fixed.json) |
-| 圆环压力 | 原细圆环压力 L2 约 2.776%；研究网格约 **0.564%**，仍高于既定 **0.5%**。原网格解析 trace/边界角色对照使去常数诊断约 2.769%→0.308%，需分清边界一致性与离散误差；调压力零点只消除约 0.5% 的误差平方。[原网格对照](../artifacts/current/laminar-foundation/open-source-core.json)、[研究网格](../artifacts/current/native-annulus-repaired-research.json) |
-| 默认稳定性 | strict、速度松弛 .6、4 次压力校正在困难圆环仍失败。研究阻尼曾使同条件 1,341→262 轮，但未进入发布求解器，也无十万格完整对照；优先减少外迭代并验证通用性 |
+| 圆环压力 | 原细圆环同格式分段修复后去常数压力诊断约 2.769%→1.850%，仍未达标；历史研究网格约 **0.564%**，高于既定 **0.5%**。解析 trace/边界角色对照约 2.769%→0.308%，需继续分离边界一致性与离散误差。[原网格对照](../artifacts/current/laminar-foundation/open-source-core.json)、[研究网格](../artifacts/current/native-annulus-repaired-research.json) |
+| 默认稳定性 | 默认 SIMPLE 在困难圆环仍失败；显式 coupled / simple-consistent 已在原圆环和 DFG 通过严格收敛。保留松弛的完整响应成本较高，尚无十万格完整对照；先处理物理误差，再验证默认策略 |
 | 复杂几何和输入 | 窄缝、尖角、多环及层终止仍可能显式失败；SVG 的 transform/use 等完整语义未覆盖，图片识别不保证几何正确。不得靠删格、平滑原折线或放宽质量门掩盖问题 |
 
 未取得通用湍流、复杂曲壁换热或长期非定常精度资格。拓扑、Solver 质量、外部 checkMesh、离散方程收敛和物理精度必须分别判断；Q1 已取消。
 
 ## 工作区与证据保留
 
+本轮将开发入口统一为 `codex/cfd-development`；重构 PR #10 已快进合入开发线，重复的重构分支已删除。6 条暂停功能分支先保存为 `archive/2026-10-08/<原分支名>` 的远端 annotated tag，再删除原远端分支。每个 tag 已核对精确提交，未合入的独有历史仍可恢复；`main` 和固定里程碑不移动，独立云环境 PR #9 保留。清理了 8 份已与原 `result.zip` 逐文件核对的重复解包目录和 3 个 Python 缓存目录，释放约 **80.6 MB**。原始输入、实际场、失败、续算材料、参考包及当前 runtime 保留；清单见本轮[修复记录](../artifacts/current/laminar-foundation/targeted-repair.json)。
+
 - 本次目录治理删除 21 个旧 macOS 安装包及 21 个配套 blockmap，保留 0.4.40、0.4.41、现有 App/runtime 和全部研究数据；删除清单与目录计量见 `outputs/repository-tidy/storage-cleanup.json`。本轮未运行求解、全量测试或平台 CI，不增加数值/物理资格。
 - 打包保留、CI 期限和任务产物收尾规则已接入现有入口，见[开发指南](DEVELOPMENT_CN.md#产物保留与清理)。当前状态的燃烧与拓扑逐轮叙述已压缩，旧段落在 `outputs/repository-tidy/retired-state-sections.json.gz`；原证据索引、失败记录及复现方法保留。
 - 根目录是后续开发入口；常规构建用 `build/`，实验用忽略提交的 `outputs/`，运行包用 `desktop/dist/`。只维护 README、AGENTS 和 docs 内三份文档，旧过程查 Git。
-- 当前另有 `~/.codex/worktrees/compressible-laminar/cartesian-mesh-generator-2d`（`codex/compressible-laminar`）和 `.claude/worktrees/suspicious-jepsen-e0adde`。它们的状态按各自检出解释；本轮未改动外部工作区、提交、标签或研究结果。
+- 历史 macOS 的额外 worktree 按各自本地检出解释；本次 Linux 只有根工作区，没有删除其他电脑上的未提交研究。暂停远端分支先归档精确提交，再整理分支名。
 - 本次文件整理将源码目录的 Python 缓存和 Finder 杂项移入 `outputs/repository-tidy/recoverable-cache/`，旧 T01 启动/自动续跑脚本移入 `outputs/codex_tasks/retired_launchers/` 并取消可执行标记；恢复位置见 `outputs/repository-tidy/file-organization.json`。实验和原始结果未搬动，未释放或删除大批数值数据。
-- 原有归档索引、实验历史和展示素材的未提交工作继续保留。历史六张大网格图片说明已并入[开发指南](DEVELOPMENT_CN.md#历史展示素材)，图片及来源证据保留。
+- 原有归档索引、实验历史和展示素材继续保留。历史六张大网格图片说明已并入[开发指南](DEVELOPMENT_CN.md#历史展示素材)，图片及来源证据保留。
 - `outputs/cfd-demo-reference/` 是用户指定保留的旧 WebGPU demo，含源码、独立试玩、原 Git 历史和角色素材，常规清理不得删除。入口为包内 `README_CN.md` 和 `启动试玩.command`；复制核对及启动、推进、暂停已检查，原桌面 `cfd-rebuild` 副本已按用户确认删除。它没有并入原生求解器，也不新增物理精度资格。

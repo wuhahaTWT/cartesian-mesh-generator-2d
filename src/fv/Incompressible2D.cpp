@@ -47,7 +47,8 @@ static FlowResult2D solveFlow(
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
     ensure(c.coupling==FlowCoupling2D::Simple ||
-           ((c.coupling==FlowCoupling2D::SimpleC || c.coupling==FlowCoupling2D::Coupled) && !previous && !material),
+           ((c.coupling==FlowCoupling2D::SimpleC || c.coupling==FlowCoupling2D::Coupled ||
+             c.coupling==FlowCoupling2D::SimpleConsistent) && !previous && !material),
            "SIMPLEC and coupled solving require steady constant-property laminar flow");
     ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
            "Pressure corrections must be in [1,4]");
@@ -125,7 +126,7 @@ static FlowResult2D solveFlow(
     ensure(pending.size() == n,
            "Flow requires one connected fluid region with an unambiguous pressure reference");
 
-    if(c.coupling==FlowCoupling2D::Coupled) {
+    if(c.coupling==FlowCoupling2D::Coupled || c.coupling==FlowCoupling2D::SimpleConsistent) {
         auto coupled=solveCoupledFlow2D(m,c,b,progress,guess);
         if(c.profile)coupled.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-solveStart).count();
         return coupled;

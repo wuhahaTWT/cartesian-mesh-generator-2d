@@ -171,9 +171,10 @@ int main(int argc, char** argv) {
                     << "Native 2D incompressible laminar flow (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
             "--case-file FILE.json: native flow case v1; relative paths use its directory, explicit CLI options override.\n"
-            "--coupling simple|simplec|coupled: steady laminar pressure/velocity solve (default simple).\n"
+            "--coupling simple|simplec|simple-consistent|coupled: steady laminar pressure/velocity solve (default simple).\n"
             "  coupled uses FGMRES and line search; strict convergence, constant viscosity and fixed boundary roles only.\n"
             "  SIMPLE relaxation and pressure-correction-pass controls do not apply to coupled.\n"
+            "  simple-consistent uses the full momentum response and both SIMPLE relaxations; pressure passes do not apply.\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
@@ -243,8 +244,8 @@ int main(int argc, char** argv) {
                 if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
             } else if (a == "--coupling") {
-                if(v!="simple" && v!="simplec" && v!="coupled")throw std::invalid_argument("coupling must be simple, simplec or coupled");
-                controls.coupling=v=="coupled"?fv::FlowCoupling2D::Coupled:v=="simplec"?fv::FlowCoupling2D::SimpleC:fv::FlowCoupling2D::Simple;
+                if(v!="simple" && v!="simplec" && v!="coupled" && v!="simple-consistent")throw std::invalid_argument("coupling must be simple, simplec, simple-consistent or coupled");
+                controls.coupling=v=="coupled"?fv::FlowCoupling2D::Coupled:v=="simple-consistent"?fv::FlowCoupling2D::SimpleConsistent:v=="simplec"?fv::FlowCoupling2D::SimpleC:fv::FlowCoupling2D::Simple;
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
             } else if (a == "--initial-guess") {
@@ -363,7 +364,7 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("initial-guess requires an actual steady solve");
         if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
             throw std::invalid_argument("Engineering convergence requires steady laminar flow");
-        if(controls.coupling==fv::FlowCoupling2D::Coupled && timeStep>0)
+        if((controls.coupling==fv::FlowCoupling2D::Coupled || controls.coupling==fv::FlowCoupling2D::SimpleConsistent) && timeStep>0)
             throw std::invalid_argument("Coupled solving requires steady constant-property laminar flow");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
@@ -602,15 +603,17 @@ int main(int argc, char** argv) {
             faces<<'\n';
         }
 
+        const bool consistent=controls.coupling==fv::FlowCoupling2D::SimpleConsistent;
+        const bool coupled=controls.coupling==fv::FlowCoupling2D::Coupled || consistent;
         auto history = out(prefix, ".residuals.csv");
         history << "iteration,momentumResidual,continuity,velocityChange,pressureChange";
-        if(controls.coupling==fv::FlowCoupling2D::Coupled)
+        if(coupled)
             history << ",fluxConsistency,globalRelativeImbalance,linearRelativeTolerance,strictLinearStep,coupledLinearResidual,lineSearchWeight";
         history << '\n';
         for (auto h : r.history) {
             history << h.iteration << ',' << h.momentumResidual << ',' << h.continuity << ','
                     << h.velocityChange << ',' << h.pressureChange;
-            if(controls.coupling==fv::FlowCoupling2D::Coupled)
+            if(coupled)
                 history << ',' << h.fluxConsistency << ',' << h.globalRelativeImbalance << ',' << h.linearRelativeTolerance
                     << ',' << (h.strictLinearStep?1:0) << ',' << h.coupledLinearResidual << ',' << h.lineSearchWeight;
             history << '\n';
@@ -627,15 +630,16 @@ int main(int argc, char** argv) {
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const bool counterflowCase=controls.scenario == "counterflow";
-        const bool coupled=controls.coupling==fv::FlowCoupling2D::Coupled;
-        const char* coupling=coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":"simple";
+        const char* coupling=consistent?"simple-consistent":coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":"simple";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
         if (timeStep==0) {
             summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
                     << "\"coupling\":" << std::quoted(coupling) << ",\n";
-            if(coupled)summary << "\"pressureCorrectionPasses\":null,\n\"velocityRelaxation\":null,\n\"pressureRelaxation\":null,\n";
+            if(consistent)summary << "\"pressureCorrectionPasses\":null,\n\"velocityRelaxation\":" << controls.velocityRelaxation
+                                 << ",\n\"pressureRelaxation\":" << controls.pressureRelaxation << ",\n";
+            else if(coupled)summary << "\"pressureCorrectionPasses\":null,\n\"velocityRelaxation\":null,\n\"pressureRelaxation\":null,\n";
             else summary << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
                          << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
                          << "\"pressureRelaxation\":" << controls.pressureRelaxation << ",\n";
@@ -810,7 +814,7 @@ int main(int argc, char** argv) {
                              : "explicit pressure outlet faces, prescribed kinematic pressure")
                                  : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
-                << "\"method\":\"cell-centred FVM; " << (coupled?"coupled FGMRES with consistent-field line search":"SIMPLE") << "; Rhie-Chow; shared-face pressure; "
+                << "\"method\":\"cell-centred FVM; " << (consistent?"SIMPLE full momentum response with consistent-field line search":coupled?"coupled FGMRES with consistent-field line search":"SIMPLE") << "; Rhie-Chow; shared-face pressure; "
                 << convection << " momentum convection; corrected diffusion\",\n"
                 << "\"scope\":\"" << (timeStep>0 ? "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
                                                   : "steady constant-property laminar flow; no turbulence or accuracy certification") << "\"\n}\n";
@@ -848,6 +852,7 @@ int main(int argc, char** argv) {
                         << ",\n\"faces\":" << mesh.faces.size()
                         << ",\n\"simpleIterations\":" << (coupled?0:timeStep>0?totalInnerIterations:last.iteration)
                         << ",\n\"coupledOuterIterations\":" << (coupled?last.iteration:0)
+                        << ",\n\"coupling\":" << std::quoted(coupling)
                         << ",\n\"coupledLinearSolves\":" << p.coupledSolves
                         << ",\n\"coupledKrylovIterations\":" << p.coupledIterations
                         << ",\n\"maxCoupledKrylovIterations\":" << p.maxCoupledIterations

@@ -18,6 +18,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     b.fixedP.assign(nf, false);
     b.constantU.assign(nf, false);
     b.constantV.assign(nf, false);
+    b.gradientGroups.resize(nf);
     b.xmin = b.ymin = std::numeric_limits<double>::infinity();
     b.xmax = b.ymax = -b.xmin;
     for (const auto& f : m.faces) {
@@ -44,6 +45,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                "Custom pressure outlets currently require explicit backflow rejection");
         std::vector<bool> seen(nf, false);
         std::map<std::string, FlowBoundaryKind2D> namedKinds;
+        std::map<std::string, std::size_t> gradientGroups;
         b.p.resize(nf);
         std::size_t inletCount = 0, outletCount = 0, openingCount = 0;
         std::size_t velocityOutletCount = 0;
@@ -63,6 +65,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             const auto [it, inserted] = namedKinds.emplace(condition.name, condition.kind);
             ensure(inserted || it->second == condition.kind,
                    "One named boundary cannot mix physical condition types");
+            b.gradientGroups[id]=gradientGroups.emplace(condition.name,gradientGroups.size()).first->second;
             ensure(std::isfinite(condition.velocity.x) && std::isfinite(condition.velocity.y) &&
                    std::isfinite(condition.pressure), "Non-finite custom boundary value");
             const double length = std::hypot(face.areaVector.x, face.areaVector.y);
@@ -226,6 +229,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             }
         }
 
+        b.gradientGroups[id]=static_cast<std::size_t>(b.role[id]);
         b.constantU[id]=b.role[id]==Role::Wall || b.role[id]==Role::Lid;
         b.constantV[id]=b.constantU[id];
         switch (b.role[id]) {

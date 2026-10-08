@@ -15,7 +15,7 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
 enum class FlowConvergence2D { Strict, Engineering };
-enum class FlowCoupling2D { Simple, SimpleC, Coupled };
+enum class FlowCoupling2D { Simple, SimpleC, Coupled, SimpleConsistent };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -55,6 +55,9 @@ struct FlowControls2D {
     // SimpleC changes the segregated correction response. Coupled solves the
     // same steady equations with block FGMRES and a residual-based line search;
     // SIMPLE relaxation and pressure-correction pass controls do not apply.
+    // SimpleConsistent retains both SIMPLE relaxations but solves the complete
+    // frozen momentum/pressure response together, including symmetric stress
+    // and the matching face relaxation defect. Pressure passes do not apply.
     FlowCoupling2D coupling = FlowCoupling2D::Simple;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;

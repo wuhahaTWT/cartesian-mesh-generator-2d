@@ -41,6 +41,9 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
     // The steady relaxation-defect Rhie--Chow equation has the unrelaxed
     // coefficient V/max(aU,aV) at its fixed point. Solve that equation directly;
     // the line search supplies nonlinear damping without changing the flux law.
+    const bool consistent=input.coupling==FlowCoupling2D::SimpleConsistent;
+    const double alphaU=consistent?input.velocityRelaxation:1.;
+    const double alphaP=consistent?input.pressureRelaxation:1.;
     auto controls=input;controls.velocityRelaxation=1.;controls.pressureRelaxation=1.;
     auto lowOrder=controls;lowOrder.convection=ConvectionScheme2D::Upwind;
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
@@ -61,6 +64,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
     CoupledKrylov krylov(3*n);
     Vec state(3*n),ra(n,1.),candidateRa(n,1.),df(nf),rowScale(3*n),rhs(3*n),base(3*n),highResidual(3*n),lowResidual(3*n);
     Vec divergence(n),linearProduct(3*n),ru(n),rv(n),preU(n),preV(n),preP(n);
+    Vec relaxationU(n),relaxationV(n),faceDefect(nf),noResponse(n);
     FlowResult2D result,scratch;
     for(auto* target:{&result,&scratch}){target->u.resize(n);target->v.resize(n);target->p.resize(n);target->flux.resize(nf);}
     result.domainHeight=height;initializeCaseSources(mesh,controls,result);
@@ -163,17 +167,52 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
         try {
             const auto before=evaluate(old,oldFlux);ra=candidateRa;
             residual(old,lowResidual,boundary,lowOrder,oldFlux,ra,true);
+            // A diagonal pressure correction discards precisely the off-row
+            // viscous response present in the predictor. Solve the full frozen
+            // response instead. The added diagonal and its old-field source
+            // cancel at the fixed point, including unequal slip diagonals.
+            for(std::size_t i=0;i<n;++i) {
+                const double common=std::max(momentumU.diag[i],momentumV.diag[i]);
+                relaxationU[i]=consistent?common/alphaU-momentumU.diag[i]:0.;
+                relaxationV[i]=consistent?common/alphaU-momentumV.diag[i]:0.;
+                ra[i]*=alphaU;
+            }
+            if(consistent) {
+                unpack(old);
+                const auto interpolated=flux(boundary,noResponse,pressureBoundary);
+                for(std::size_t id=0;id<nf;++id) {
+                    const auto& face=mesh.faces[id];
+                    faceDefect[id]=(face.neighbour || boundary.role[id]==Role::Outlet)
+                        ?(1-alphaU)*(oldFlux[id]-interpolated[id]):0.;
+                }
+            }
             preconditionU.diag=momentumU.diag;preconditionU.off=momentumU.off;
             preconditionV.diag=momentumV.diag;preconditionV.off=momentumV.off;
+            for(std::size_t i=0;i<n;++i){preconditionU.diag[i]+=relaxationU[i];preconditionV.diag[i]+=relaxationV[i];}
             preconditionU.factorILU0();preconditionV.factorILU0();
             for(std::size_t id=0;id<nf;++id)df[id]=interpolate(mesh.faces[id],ra)*mesh.faces[id].transmissibility;
             assemblePressureBlock2D(pressure,mesh,boundary,df);
             for(std::size_t i=0;i<n;++i){rowScale[i]=preconditionU.diag[i]*controls.speed;rowScale[n+i]=preconditionV.diag[i]*controls.speed;rowScale[2*n+i]=pressure.diag[i]*pressureScale;}
             if(boundary.closed)rowScale[2*n]=1.;
             residual(old,highResidual,boundary,controls,oldFlux,ra,true);
+            if(consistent)residual(old,lowResidual,boundary,lowOrder,oldFlux,ra,true);
             residual(zeroState,base,boundary,lowOrder,oldFlux,ra,true);
             for(std::size_t i=0;i<3*n;++i)rhs[i]=finite((-base[i]-highResidual[i]+lowResidual[i])/rowScale[i]);
-            const auto apply=[&](const Vec& x,Vec& y){residual(x,y,homogeneous,lowOrder,oldFlux,ra,false);for(std::size_t i=0;i<3*n;++i)y[i]/=rowScale[i];};
+            for(std::size_t i=0;i<n;++i) {
+                rhs[i]+=relaxationU[i]*controls.speed*old[i]/rowScale[i];
+                rhs[n+i]+=relaxationV[i]*controls.speed*old[n+i]/rowScale[n+i];
+            }
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& face=mesh.faces[id];
+                rhs[2*n+face.owner]-=faceDefect[id]/rowScale[2*n+face.owner];
+                if(face.neighbour)rhs[2*n+*face.neighbour]+=faceDefect[id]/rowScale[2*n+*face.neighbour];
+            }
+            if(boundary.closed)rhs[2*n]=0.;
+            const auto apply=[&](const Vec& x,Vec& y){
+                residual(x,y,homogeneous,lowOrder,oldFlux,ra,false);
+                for(std::size_t i=0;i<n;++i){y[i]+=relaxationU[i]*controls.speed*x[i];y[n+i]+=relaxationV[i]*controls.speed*x[n+i];}
+                for(std::size_t i=0;i<3*n;++i)y[i]/=rowScale[i];
+            };
             const auto precondition=[&](const Vec& x,Vec& y) {
                 for(std::size_t i=0;i<n;++i){ru[i]=x[i]*rowScale[i];rv[i]=x[n+i]*rowScale[n+i];}
                 preconditionU.preconditionILU0(ru,preU);preconditionV.preconditionILU0(rv,preV);
@@ -211,7 +250,12 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
                 proposed=old;
                 try{krylov.solve(apply,precondition,proposed,rhs,relativeTolerance,strict?.01*controls.tolerance:std::numeric_limits<double>::infinity(),result.performance);}
                 catch(...){finishLinear();throw;}finishLinear();
-                unpack(proposed);const auto proposedFlux=flux(boundary,ra,pressureBoundary);
+                unpack(proposed);auto proposedFlux=flux(boundary,ra,pressureBoundary);
+                for(std::size_t id=0;id<nf;++id)proposedFlux[id]+=faceDefect[id];
+                // The pressure in the block solve is p_old + pc. Only the
+                // stored pressure is relaxed; U and the conservative face flux
+                // share the complete, unrelaxed correction response.
+                if(consistent && alphaP!=1.)for(std::size_t i=0;i<n;++i)proposed[2*n+i]=old[2*n+i]+alphaP*(proposed[2*n+i]-old[2*n+i]);
                 weight=1.;
                 for(std::size_t id=0;id<nf;++id)if(!mesh.faces[id].neighbour && boundary.role[id]==Role::Outlet && proposedFlux[id]<0)
                     weight=std::min(weight,.95*oldFlux[id]/(oldFlux[id]-proposedFlux[id]));

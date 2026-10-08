@@ -603,6 +603,98 @@ void wallTraceAndSlipStress(const FvMesh2D& mesh) {
     }
 }
 
+void boundarySubdivisionGradient() {
+    // The same straight wall and piecewise constant trace, with one top edge
+    // represented either once or by three real, unequal-length segments.
+    const auto whole=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{0,0},{1,0},{1,1},{0,1}}}}));
+    const auto split=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{0,0},{1,0},{1,1},{.7,1},{.2,1},{0,1}}}}));
+    const auto trace=[](const auto& mesh) {
+        std::vector<double> bc(mesh.faces.size());
+        for(std::size_t id=0;id<bc.size();++id){const auto p=mesh.faces[id].centre;
+            bc[id]=p.y==1?.8:p.y==0?.5:p.x==0?.1:.3;}
+        return bc;
+    };
+    const std::vector<double> field{.4};
+    const auto bc=trace(whole),splitBC=trace(split);
+    const std::vector<bool> fixed(whole.faces.size(),true),splitFixed(split.faces.size(),true);
+    const std::vector<std::size_t> groups(whole.faces.size(),0),splitGroups(split.faces.size(),0);
+    const auto original=flowGradient(whole,field,bc,fixed,false,nullptr,groups);
+    const auto divided=flowGradient(split,field,splitBC,splitFixed,false,nullptr,splitGroups);
+    near(original[0].x,divided[0].x,4e-15,"same wall trace: splitting preserves gradient x");
+    near(original[0].y,divided[0].y,4e-15,"same wall trace: splitting preserves gradient y");
+    const auto previous=flowGradient(split,field,splitBC,splitFixed);
+    check(std::hypot(previous[0].x-divided[0].x,previous[0].y-divided[0].y)>.01,
+          "unequal subdivision exposes the original equal-face weighting defect");
+
+    const auto cached=cartmesh2d::fv::detail::buildFlowGradientStencil2D(split,splitFixed,false,splitGroups);
+    for(const double value:{.4,.17,-.9}) {
+        auto liveBC=splitBC;for(std::size_t id=0;id<liveBC.size();++id)liveBC[id]+=.13*id;
+        const std::vector<double> live{value};const auto direct=flowGradient(split,live,liveBC,splitFixed,false,nullptr,splitGroups);
+        const auto repeated=cached.apply(live,liveBC);
+        near(direct[0].x,repeated[0].x,0,"boundary mean cached/uncached exact x");
+        near(direct[0].y,repeated[0].y,0,"boundary mean cached/uncached exact y");
+    }
+
+    // Distinct physical trace IDs on the same line must keep separate rows.
+    auto distinct=splitGroups;for(std::size_t id=0;id<distinct.size();++id)distinct[id]=id;
+    const auto separate=flowGradient(split,field,splitBC,splitFixed,false,nullptr,distinct);
+    near(separate[0].x,previous[0].x,0,"different physical trace groups preserve jump x");
+    near(separate[0].y,previous[0].y,0,"different physical trace groups preserve jump y");
+    cartmesh2d::fv::detail::ChangingFlowGradientStencil2D changing(split);
+    (void)changing.apply(field,splitBC,splitFixed,splitGroups);
+    const auto changed=changing.apply(field,splitBC,splitFixed,distinct);
+    near(changed[0].x,separate[0].x,0,"cache rebuilds on physical trace group change x");
+    near(changed[0].y,separate[0].y,0,"cache rebuilds on physical trace group change y");
+
+    const auto linear=[](Point2D p){return 1.2+.3*p.x-.7*p.y;};
+    auto affineBC=splitBC;for(std::size_t id=0;id<affineBC.size();++id)affineBC[id]=linear(split.faces[id].centre);
+    const auto affine=flowGradient(split,{linear(split.cells[0].centre)},affineBC,splitFixed,false,nullptr,splitGroups);
+    near(affine[0].x,.3,4e-15,"grouped straight boundary preserves affine gradient x");
+    near(affine[0].y,-.7,4e-15,"grouped straight boundary preserves affine gradient y");
+
+    auto unknown=fixed,splitUnknown=splitFixed;
+    for(std::size_t id=0;id<unknown.size();++id)if(whole.faces[id].centre.y==1)unknown[id]=false;
+    for(std::size_t id=0;id<splitUnknown.size();++id)if(split.faces[id].centre.y==1)splitUnknown[id]=false;
+    const auto freeWhole=flowGradient(whole,field,bc,unknown,false,nullptr,groups);
+    const auto freeSplit=flowGradient(split,field,splitBC,splitUnknown,false,nullptr,splitGroups);
+    near(freeWhole[0].x,freeSplit[0].x,4e-15,"split zero-normal boundary preserves gradient x");
+    near(freeWhole[0].y,freeSplit[0].y,4e-15,"split zero-normal boundary preserves gradient y");
+
+    for(const double scale:{1e-6,1e6})for(const double translation:{17.,1e6}) {
+        auto transformedWhole=whole,transformedSplit=split;
+        const auto transform=[&](auto& mesh){
+            for(auto& cell:mesh.cells){cell.centre={scale*(cell.centre.x+translation),scale*(cell.centre.y-translation)};cell.area*=scale*scale;}
+            for(auto& face:mesh.faces){face.centre={scale*(face.centre.x+translation),scale*(face.centre.y-translation)};
+                face.areaVector=face.areaVector*scale;face.correction=face.correction*scale;}
+        };
+        transform(transformedWhole);transform(transformedSplit);
+        const auto a=flowGradient(transformedWhole,field,bc,fixed,false,nullptr,groups);
+        const auto b=flowGradient(transformedSplit,field,splitBC,splitFixed,false,nullptr,splitGroups);
+        const double rounding=256*std::numeric_limits<double>::epsilon()*(translation+2);
+        near(scale*a[0].x,scale*b[0].x,rounding,"split-wall gradient scales/translates consistently x");
+        near(scale*a[0].y,scale*b[0].y,rounding,"split-wall gradient scales/translates consistently y");
+    }
+
+    // A star-shaped concave cell has two top fragments separated by a notch.
+    // Sharing a supporting line and a trace ID must not collapse the gap.
+    const auto notched=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{0,0},{3,0},{3,2},{2,2},{1.5,1.9},{1,2},{0,2}}}}));
+    const auto corner=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{0,0},{1,0},{1,1},{.5,1.00001},{0,1}}}}));
+    for(const auto* mesh:{&notched,&corner}) {
+        const std::vector<bool> allFixed(mesh->faces.size(),true);
+        const std::vector<std::size_t> oneGroup(mesh->faces.size(),0);
+        std::vector<double> traceValues(mesh->faces.size());
+        for(std::size_t id=0;id<traceValues.size();++id)traceValues[id]=.17*id;
+        const auto pointRows=flowGradient(*mesh,field,traceValues,allFixed);
+        const auto groupedRows=flowGradient(*mesh,field,traceValues,allFixed,false,nullptr,oneGroup);
+        near(pointRows[0].x,groupedRows[0].x,0,"real corner/disconnected fragments retain separate rows x");
+        near(pointRows[0].y,groupedRows[0].y,0,"real corner/disconnected fragments retain separate rows y");
+    }
+}
+
 
 void frameLimitedVectorReconstruction() {
     using cartmesh2d::fv::detail::faceFrameVelocityValues;
@@ -693,6 +785,7 @@ int main() {
         exponentialFaceRefinement();
         affineSymmetricStress(skew, "skew mesh");
         wallTraceAndSlipStress(rectangularMesh(3, 3));
+        boundarySubdivisionGradient();
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

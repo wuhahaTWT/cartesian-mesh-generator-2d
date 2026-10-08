@@ -23,6 +23,9 @@ struct Boundary {
     std::vector<bool> fixedP;
     std::vector<bool> constantU;
     std::vector<bool> constantV;
+    // Reconstruction groups are fixed physical patches, independent of trace
+    // values (including homogeneous Krylov actions). They do not merge faces.
+    std::vector<std::size_t> gradientGroups;
     double xmin = 0;
     double xmax = 0;
     double ymin = 0;

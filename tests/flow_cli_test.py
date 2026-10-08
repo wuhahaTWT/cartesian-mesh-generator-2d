@@ -176,6 +176,24 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert result.returncode == 0, result.stderr
             for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
                 assert (root / ('coupled-case' + suffix)).read_bytes() == (root / ('coupled' + suffix)).read_bytes()
+            consistent, consistent_field = run('consistent', mesh,
+                extra=('--coupling', 'simple-consistent', '--linear-policy', 'adaptive',
+                       '--velocity-relaxation', '.7', '--pressure-relaxation', '.4', '--profile'))
+            assert consistent['coupling'] == 'simple-consistent' and consistent['strictLinearFinal']
+            assert consistent['pressureCorrectionPasses'] is None
+            assert consistent['velocityRelaxation'] == .7 and consistent['pressureRelaxation'] == .4
+            assert consistent['fluxConsistency'] < 1e-8
+            for first, second in zip(coupled_field, consistent_field):
+                assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+            case_options.update(output='consistent-case', coupling='simple-consistent',
+                                **{'velocity-relaxation': .7, 'pressure-relaxation': .4})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('consistent-case' + suffix)).read_bytes() == (root / ('consistent' + suffix)).read_bytes()
+            run('consistent-transient', mesh, extra=('--coupling', 'simple-consistent', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='requires steady')
             run('coupled-engineering', mesh, extra=('--coupling', 'coupled', '--convergence', 'engineering'),
                 code=1, error_contains='requires strict convergence')
             run('coupled-backflow', mesh, extra=('--coupling', 'coupled', '--outlet-backflow', 'normal-inlet'),
