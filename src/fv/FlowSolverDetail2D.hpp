@@ -62,6 +62,10 @@ Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,con
     const std::vector<Vector2D>& gv,const std::vector<Vector2D>& gup,const std::vector<Vector2D>& gvp,
     const std::vector<Vector2D>& gp,const std::vector<Vector2D>& forceGradient,const Vec& oldFluxDefect,
     bool previous,double timeStep,Vec& df);
+Vec steadyRhieChowFlux(const FvMesh2D&,const FlowControls2D&,const Boundary&,const FlowResult2D&,
+    const Vec& response,const std::vector<Vector2D>& gu,const std::vector<Vector2D>& gv,
+    const std::vector<Vector2D>& gp,const std::vector<Vector2D>& pressureForce,
+    const Vec& noFluxDefect,Vec& coefficients);
 void prepareMonitors(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,FlowResult2D& r,
     std::vector<std::size_t>& monitorGroup,Vec& monitorLengths);
 Vec physicalMonitors(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,

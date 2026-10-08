@@ -1,0 +1,254 @@
+{
+  "format": "cartmesh2d-native-momentum-splitting-probe-v1",
+  "sourceCommit": "2e94198",
+  "headersFrozenToSourceCommit": true,
+  "source": "tools/benchmarks/momentum_terms_probe.cpp",
+  "sourceSha256": "03619fbe27ad4c85ad0df0aba9e3817d15eceacd9112414380599447095b064e",
+  "compiler": "/usr/bin/c++ -O2 -DNDEBUG -std=c++20",
+  "linkLibraries": {
+    "outputs/laminar-refactor/baseline/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+    "outputs/laminar-refactor/baseline/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+  },
+  "frozenHeaders": {
+    "outputs/local-mechanism/baseline-headers/FlowPressure2D.hpp": "0edca0570f0fa56a764fc143acca397df452091c31a83343fdaf89b66a9b6510",
+    "outputs/local-mechanism/baseline-headers/FlowSolverDetail2D.hpp": "60a3452219d4fec7b4e1299d3021b652f0494581df86ce1eebfc21a361c8f90f"
+  },
+  "mesh": {
+    "cells": 6208,
+    "faces": 12910,
+    "cellZeroBased": 3710,
+    "cellUserLabel": 3711,
+    "area": 0.00046164693927073,
+    "centre": [
+      -0.4580120900015699,
+      0.22004507185656785
+    ],
+    "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+    "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+  },
+  "physicalControls": {
+    "nu": 0.1,
+    "speed": 0.5,
+    "momentumInertia": 0,
+    "velocityRelaxation": 0.6,
+    "pressureRelaxation": 0.25,
+    "pressureCorrectionPasses": 4,
+    "pressurePreconditioner": "ic0",
+    "viscousStress": "symmetric"
+  },
+  "splitting": {
+    "scope1": "Move wall compact transpose d*n*n^T*(Uowner) from lagged RHS to the implicit 2-by-2 cell velocity block; retain every reconstructed and nonorthogonal term.",
+    "scope2": "Also move shared internal compact transpose d*n*n^T*(Uowner-Uneighbour) into the implicit 2N velocity matrix.",
+    "pressureResponse": "Unchanged native scalar rAU, Rhie-Chow face flux, pressure correction and pressure/velocity update.",
+    "fixedPointIdentity": "At the same old velocity the transformed linear system has the same residual: Anew*Uold-bnew=Aold*Uold-bold.",
+    "sameFieldResidualMaximumDifference": {
+      "wall": 4.440892098500626e-16,
+      "allCompact": 8.881784197001252e-16
+    }
+  },
+  "records": [
+    {
+      "name": "baseline-power.csv",
+      "blockScope": 0,
+      "steps": 120,
+      "weight": 1,
+      "normRatio": 2.6731413493434286,
+      "rayleigh": -2.6731413493434286,
+      "eigenResidual": 1.7308529347977811e-13,
+      "worstCellZeroBased": 3710,
+      "productionOneStepMaximumError": 0.0,
+      "logSha256": "95e8f9e76cb563868ed318fa6a4c2d5c2b71d37e67868714a12b55b74f5b5386",
+      "command": [
+        "outputs/local-mechanism/momentum_terms_probe_verified",
+        "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+        "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+        "120",
+        "0",
+        "3710",
+        "1",
+        "power"
+      ],
+      "probeOptimization": "-O3"
+    },
+    {
+      "name": "wall-block-power.csv",
+      "blockScope": 1,
+      "steps": 120,
+      "weight": 1,
+      "normRatio": 2.7435967517554682,
+      "rayleigh": -2.7435967517554687,
+      "eigenResidual": 5.5781144885906516e-14,
+      "worstCellZeroBased": 3710,
+      "productionOneStepMaximumError": 0.0,
+      "logSha256": "0b44e9539399f251a8b822d6fbfb1e5b5b30d009cfe5d17711f90f16abd5e97f",
+      "command": [
+        "outputs/local-mechanism/momentum_terms_probe_verified",
+        "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+        "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+        "120",
+        "1",
+        "3710",
+        "1",
+        "power"
+      ],
+      "probeOptimization": "-O3"
+    },
+    {
+      "name": "compact-block-power.csv",
+      "blockScope": 2,
+      "steps": 100,
+      "weight": 1,
+      "normRatio": 1.2963224350758005,
+      "rayleigh": -1.2963224350757931,
+      "eigenResidual": 1.0513128936338409e-07,
+      "worstCellZeroBased": 3710,
+      "productionOneStepMaximumError": 0.0,
+      "logSha256": "fe3ef8bb0f947b5453c9501cbed194daaba1c8f57c8b868ecd3ce1a2f58074bc",
+      "command": [
+        "outputs/local-mechanism/momentum_terms_probe_verified",
+        "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+        "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+        "100",
+        "2",
+        "3710",
+        "1",
+        "power"
+      ],
+      "probeOptimization": "-O2"
+    },
+    {
+      "name": "baseline-half-power.csv",
+      "blockScope": 0,
+      "steps": 300,
+      "weight": 0.5,
+      "normRatio": 1.048924804189621,
+      "rayleigh": 1.0489248041390054,
+      "eigenResidual": 9.823938309123437e-06,
+      "worstCellZeroBased": 8,
+      "productionOneStepMaximumError": 0.0,
+      "logSha256": "bde5997421c16938495845780f66d4a899b5b200ab46077b8056b3b3e8b132b5",
+      "command": [
+        "outputs/local-mechanism/momentum_terms_probe_verified",
+        "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+        "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+        "300",
+        "0",
+        "3710",
+        "0.5",
+        "power"
+      ],
+      "probeOptimization": "-O2"
+    },
+    {
+      "name": "compact-block-half-power.csv",
+      "blockScope": 2,
+      "steps": 300,
+      "weight": 0.5,
+      "normRatio": 1.0500389370131151,
+      "rayleigh": 1.0500389369813177,
+      "eigenResidual": 7.782296092492033e-06,
+      "worstCellZeroBased": 8,
+      "productionOneStepMaximumError": 0.0,
+      "logSha256": "1943a8382b53daf2e717d577d4fd51d801dce7a8bed6f58681c11dbd1716d8c5",
+      "command": [
+        "outputs/local-mechanism/momentum_terms_probe_verified",
+        "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+        "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+        "300",
+        "2",
+        "3710",
+        "0.5",
+        "power"
+      ],
+      "probeOptimization": "-O2"
+    }
+  ],
+  "firstStepCell": {
+    "first_predictor": [
+      -0.04425479928741196,
+      -0.09381668193796684
+    ],
+    "first_pc": [
+      -6.043272913775788
+    ],
+    "first_accepted": [
+      -1.9971593025946557,
+      0.18702189242742523,
+      -1.510818228443947
+    ]
+  },
+  "firstStepIntegratedMomentumTerms": {
+    "interior_laplacian": [
+      -1.2001975393378446,
+      0.30624758681060155
+    ],
+    "interior_transpose": [
+      -1.0068162028553693,
+      0.2158075770757691
+    ],
+    "wall_laplacian": [
+      -0.25502088445258636,
+      0.08987985772839845
+    ],
+    "wall_transpose": [
+      -0.24286198389225255,
+      0.11642572324391304
+    ],
+    "gauss_pressure": [
+      0.7193608742157619,
+      -0.10344811127572728
+    ]
+  },
+  "firstStepPressureGradients": {
+    "LS": [
+      379.6816105775476,
+      287.5684700868187
+    ],
+    "Gauss": [
+      1558.2489842825473,
+      -224.08490661531448
+    ]
+  },
+  "result": "Rejected as product fixes: wall-only implicit transpose worsens the observed negative mode; all compact transpose reduces its magnitude but leaves it above one; the all-compact half map still grows.",
+  "limits": [
+    "This isolates iteration splitting, not spatial accuracy; no converged solution is asserted.",
+    "Observed power modes and residuals are not full spectral bounds.",
+    "The complete reconstructed/nonorthogonal viscous operator remains partly explicit in scopes 1 and 2.",
+    "No default controls or product source files were changed.",
+    "Diagnostics call the production FV and linear operators; term bookkeeping is checked against a production one-step solve."
+  ],
+  "retention": {
+    "consumer": "Native laminar debugging and review of whether a future pressure/velocity or full momentum change removes these retained modes.",
+    "inputs": "Use the existing tracked failure-inputs.tar.gz; the extracted copies and frozen binaries/libraries in outputs are rebuildable temporary files.",
+    "logs": "The CSV and this JSON are numerical evidence; the benchmark source is the reproducible diagnostic entrypoint."
+  },
+  "refactoredBuildCompatibility": {
+    "headers": "Current shared-equation refactor headers, no baseline-headers include",
+    "compileCommand": "/usr/bin/c++ -O2 -DNDEBUG -std=c++20 -Iinclude -Isrc/fv -Wall -Wextra -Wpedantic tools/benchmarks/momentum_terms_probe.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/local-mechanism/momentum_terms_probe_refactored",
+    "nativeOneStepMaximumError": 0.0,
+    "log": "refactored-one-step.csv",
+    "logSha256": "9c8b1d55ca5e7509d43c61a1c5d2b94c265b5acf62e4c8963e4895c304765392",
+    "librarySha256": "4e0dee55838c811c7356148c0ae2847dce3870e0ad4c950b53da636ba80e2fea"
+  },
+  "baselineProbeSource": "outputs/local-mechanism/baseline-probe.cpp",
+  "baselineProbeSourceSha256": "03619fbe27ad4c85ad0df0aba9e3817d15eceacd9112414380599447095b064e",
+  "currentCoreOneStep": {
+    "source": "tools/benchmarks/momentum_terms_probe.cpp",
+    "sourceSha256": "c247af8730b865e769de4c5c779d94a194119c623a525f15e83fca38a6e7e393",
+    "equationCore": "FlowEquation2D::reconstruct/assembleMomentum/velocityGradient, shared FlowPressure2D correction",
+    "nativeOneStepMaximumError": 0.0,
+    "command": [
+      "outputs/local-mechanism/momentum_terms_probe_current_core",
+      "outputs/local-mechanism/inputs/annulus-l7.solver.cm2d",
+      "outputs/local-mechanism/inputs/annulus-l7.boundaries",
+      "1",
+      "0",
+      "3710",
+      "1",
+      "power"
+    ],
+    "log": "current-core-one-step.csv",
+    "logSha256": "9c8b1d55ca5e7509d43c61a1c5d2b94c265b5acf62e4c8963e4895c304765392",
+    "librarySha256": "4e0dee55838c811c7356148c0ae2847dce3870e0ad4c950b53da636ba80e2fea"
+  }
+}

@@ -1,21 +1,12 @@
 #pragma once
-#include "FlowSolverDetail2D.hpp"
+#include "FlowEquation2D.hpp"
 namespace cartmesh2d::fv::solver_detail {
 template<class LinearSolve>
 Vec solvePressureCorrection(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,
     FlowResult2D& r,System& ap,Vec& pc,const Vec& ra,const Vec& df,const Vec& predicted,
     const detail::FlowGradientStencil2D& pressureGradientStencil,const Vec& zeros,LinearSolve&& linearSolve){
     const auto nf=m.faces.size();
-        ap.reset();
-        for (std::size_t id=0;id<nf;++id) {
-            const auto& f=m.faces[id]; const auto i=f.owner;
-            if (f.neighbour) {
-                const auto j=*f.neighbour;
-                ap.diag[i]+=df[id]; ap.diag[j]+=df[id];
-                ap.add(i,j,-df[id]); ap.add(j,i,-df[id]);
-            } else if (b.fixedP[id]) ap.diag[i]+=df[id];
-        }
-        if (b.closed) ap.pin(0);
+        assemblePressureBlock2D(ap,m,b,df);
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
         for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
             std::fill(ap.rhs.begin(),ap.rhs.end(),0.);

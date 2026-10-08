@@ -1,0 +1,517 @@
+{
+  "scope": "Read-only numerical design review plus independent native C++ wall prototypes. No product src/include/CMake/docs edits or commits. No default/threshold changes.",
+  "baseline": "2e94198; frozen native archives from outputs/laminar-refactor/baseline",
+  "input": "outputs/laminar-refactor/inputs/annulus-l{5,6,7}.solver.cm2d and .boundaries",
+  "controls": {
+    "scenario": "custom",
+    "nu": 0.1,
+    "speed": 0.5,
+    "tolerance": 1e-08,
+    "viscousStress": "symmetric",
+    "convection": "face-limited-linear",
+    "coupling": "coupled",
+    "adaptiveLinear": true,
+    "pressurePreconditioner": "ic0",
+    "maximumOuterIterations": 40,
+    "maximumOuterIterationOverrides": {
+      "original-l7": 12000,
+      "quadratic-original-diagonal-l7": 12000
+    }
+  },
+  "sourceSha256": {
+    "wall-audit.cpp": "cda167f653fa3ac17cd0d61a5834267131cf4506c79a1d97528fe14da4985fbf",
+    "wall-diagonal-audit.cpp": "9e724098015290954655485bd91b8caadb00423c1c9f0ffa75ca6b2b2b185951",
+    "wall-solve.cpp": "caf3ba10b009e73ebc7b480435e2bfc60568666871f2478746d44028026e59cc",
+    "wall-wrappers.cpp": "081866573a55315ec5bed901bcf9810e71607a56ca529cb8006a8531ad2889bb",
+    "QuadraticWallPrototype.hpp": "c3ba04d22c22e82b80faec0912919dae66d861c9f654b3d6471dcde87aa9e040",
+    "momentum-base.cpp": "ece50e3fd3e5cbfcdd00a9693734f574fa8f0f0ecdb5f33885c9db2c97f2062a",
+    "forces-base.cpp": "ae7a4ad9aa84f3c44a71c4beaf70ff24105eff8ccf365a7e3a4a77df04a688e7"
+  },
+  "librarySha256": {
+    "libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+    "libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+  },
+  "audit": {
+    "l7": {
+      "cells": 6208,
+      "faces": 12910,
+      "wallStress": {
+        "laplacian": {
+          "housing": {
+            "linearTractionError": {
+              "rms": 0.0016727520231214418,
+              "maximum": 0.0043639996708095905
+            },
+            "quadraticTractionError": {
+              "rms": 0.0009574056412127106,
+              "maximum": 0.0030095535307537013
+            }
+          },
+          "rotor": {
+            "linearTractionError": {
+              "rms": 0.15603012148209575,
+              "maximum": 3.487217885900422
+            },
+            "quadraticTractionError": {
+              "rms": 0.2579066228481335,
+              "maximum": 2.5193193903425595
+            }
+          }
+        },
+        "symmetric": {
+          "housing": {
+            "linearTractionError": {
+              "rms": 0.0015636736892279434,
+              "maximum": 0.007268630571006274
+            },
+            "quadraticTractionError": {
+              "rms": 0.000956100655899866,
+              "maximum": 0.003005443289723385
+            }
+          },
+          "rotor": {
+            "linearTractionError": {
+              "rms": 0.3117687578972163,
+              "maximum": 6.996471445058044
+            },
+            "quadraticTractionError": {
+              "rms": 0.5160080433126666,
+              "maximum": 5.038638277218061
+            }
+          }
+        }
+      },
+      "circleFieldVsPrescribedPolygonTrace": {
+        "housing": {
+          "normalMismatch": {
+            "rms": 1.685099282175609e-07,
+            "maximum": 2.3710700641175206e-07
+          },
+          "tangentialMismatch": {
+            "rms": 4.1854338112086414e-05,
+            "maximum": 5.0200637869308704e-05
+          }
+        },
+        "rotor": {
+          "normalMismatch": {
+            "rms": 0.0018773414047130697,
+            "maximum": 0.006001081708842731
+          },
+          "tangentialMismatch": {
+            "rms": 5.5978322027694724e-05,
+            "maximum": 6.275224753970321e-05
+          }
+        },
+        "minimumWallNormalDistance": 0.00023527836542917103,
+        "minimumDistanceFace": 3698
+      },
+      "pressure": {
+        "wallPressure": {
+          "rms": 0.00012343377053262414,
+          "maximum": 0.0006424153603966504
+        },
+        "leastSquaresGradient": {
+          "rms": 0.003969910584240031,
+          "maximum": 0.039380514832267934
+        },
+        "conservativeGradient": {
+          "rms": 0.0029155038938921377,
+          "maximum": 0.03647164531807983
+        },
+        "exactFaceConservativeGradient": {
+          "rms": 0.0007644706447305401,
+          "maximum": 0.01985418939128826
+        }
+      },
+      "quadraticPolynomialGradient": {
+        "original": {
+          "rms": 0.009045189253664697,
+          "maximum": 0.07850671475045047
+        },
+        "quadratic": {
+          "rms": 1.9504144611317233e-13,
+          "maximum": 3.5435211076563055e-12
+        }
+      }
+    },
+    "l7ExactSmoothTraceDiagnostic": {
+      "cells": 6208,
+      "faces": 12910,
+      "wallStress": {
+        "laplacian": {
+          "housing": {
+            "linearTractionError": {
+              "rms": 0.0006025374218532351,
+              "maximum": 0.0023687614336695972
+            },
+            "quadraticTractionError": {
+              "rms": 3.5323031827357705e-05,
+              "maximum": 9.853017162781905e-05
+            }
+          },
+          "rotor": {
+            "linearTractionError": {
+              "rms": 0.00889494130210837,
+              "maximum": 0.04296872622320888
+            },
+            "quadraticTractionError": {
+              "rms": 0.0003777361865221437,
+              "maximum": 0.0030508464522746893
+            }
+          }
+        },
+        "symmetric": {
+          "housing": {
+            "linearTractionError": {
+              "rms": 0.0008919392875036853,
+              "maximum": 0.0026481128422640066
+            },
+            "quadraticTractionError": {
+              "rms": 7.237880183992366e-05,
+              "maximum": 0.0001987856912617321
+            }
+          },
+          "rotor": {
+            "linearTractionError": {
+              "rms": 0.010308148179774636,
+              "maximum": 0.043684808513849475
+            },
+            "quadraticTractionError": {
+              "rms": 0.0006045032764878721,
+              "maximum": 0.004677539799904715
+            }
+          }
+        }
+      },
+      "pressure": {
+        "wallPressure": {
+          "rms": 0.00012343377053262414,
+          "maximum": 0.0006424153603966504
+        },
+        "leastSquaresGradient": {
+          "rms": 0.003969910584240031,
+          "maximum": 0.039380514832267934
+        },
+        "conservativeGradient": {
+          "rms": 0.0029155038938921377,
+          "maximum": 0.03647164531807983
+        },
+        "exactFaceConservativeGradient": {
+          "rms": 0.0007644706447305401,
+          "maximum": 0.01985418939128826
+        }
+      },
+      "quadraticPolynomialGradient": {
+        "original": {
+          "rms": 0.009045189253664697,
+          "maximum": 0.07850671475045047
+        },
+        "quadratic": {
+          "rms": 1.9504144611317233e-13,
+          "maximum": 3.5435211076563055e-12
+        }
+      }
+    },
+    "l7QuadraticResponse": {
+      "cells": 6208,
+      "nonpositiveQuadraticOwnerRows": 9,
+      "minimumQuadraticOwnComponentDiagonal": -4.654308060659951,
+      "worstCell": 3719,
+      "baseOwnComponentDiagonal": 0.7478620035079464,
+      "quadraticUOwnComponentDiagonal": -4.654308060659951,
+      "quadraticVOwnComponentDiagonal": -3.1022227880558413,
+      "x": -0.44145489806183114,
+      "y": 0.24106612280433298,
+      "nonpositiveRows": [
+        {
+          "cell": 1351,
+          "base": 0.7139048165168972,
+          "u": -0.0730565412122588,
+          "v": -0.36489280882678987
+        },
+        {
+          "cell": 1461,
+          "base": 0.7139048165168882,
+          "u": -0.3648928088269501,
+          "v": -0.07305654121236727
+        },
+        {
+          "cell": 2184,
+          "base": 0.7139048165168893,
+          "u": -0.07305654121234484,
+          "v": -0.3648928088269172
+        },
+        {
+          "cell": 2491,
+          "base": 0.7139048165169,
+          "u": -0.3648928088264254,
+          "v": -0.07305654121200078
+        },
+        {
+          "cell": 3718,
+          "base": 0.7139048165168957,
+          "u": -0.3648928088269652,
+          "v": -0.07305654121237715
+        },
+        {
+          "cell": 3719,
+          "base": 0.7478620035079464,
+          "u": -4.654308060659951,
+          "v": -3.1022227880558413
+        },
+        {
+          "cell": 4019,
+          "base": 0.7139048165168872,
+          "u": -0.073056541212418,
+          "v": -0.364892808827025
+        },
+        {
+          "cell": 4742,
+          "base": 0.7139048165168909,
+          "u": -0.3648928088266046,
+          "v": -0.07305654121212735
+        },
+        {
+          "cell": 4850,
+          "base": 0.7139048165168967,
+          "u": -0.07305654121234029,
+          "v": -0.36489280882691244
+        }
+      ]
+    }
+  },
+  "original": {
+    "5": {
+      "converged": true,
+      "cells": 484,
+      "iterations": 10,
+      "velocityL2": 0.00920347794647408,
+      "pressureL2": 0.03331614498224997,
+      "pressureErrorMean": -0.001949605886273188,
+      "pressureMeanFreeL2": 0.033259052201866916,
+      "momentumResidual": 1.1988101059840315e-13,
+      "continuity": 2.301900432399923e-14,
+      "fluxConsistency": 1.0675221390626504e-17,
+      "strictLinearFinal": true,
+      "Krylov": 141,
+      "wallSeconds": 0.624891866,
+      "namedWallLoads": [
+        {
+          "name": "housing",
+          "torque": 0.4129227927799559,
+          "torqueRelativeError": 0.014219446206394306
+        },
+        {
+          "name": "rotor",
+          "torque": -0.4135459968154648,
+          "torqueRelativeError": 0.01273165616430352
+        }
+      ]
+    },
+    "6": {
+      "converged": true,
+      "cells": 1672,
+      "iterations": 10,
+      "velocityL2": 0.002268668380199063,
+      "pressureL2": 0.02067127725874047,
+      "pressureErrorMean": -0.003293903101640641,
+      "pressureMeanFreeL2": 0.02040715330134811,
+      "momentumResidual": 1.0185712856756872e-13,
+      "continuity": 4.1201485229635076e-14,
+      "fluxConsistency": 0,
+      "strictLinearFinal": true,
+      "Krylov": 173,
+      "wallSeconds": 3.664123506,
+      "namedWallLoads": [
+        {
+          "name": "housing",
+          "torque": 0.4176647704967904,
+          "torqueRelativeError": 0.002898808301406873
+        },
+        {
+          "name": "rotor",
+          "torque": -0.4193202377070386,
+          "torqueRelativeError": 0.0010533285431563297
+        }
+      ]
+    },
+    "7": {
+      "converged": true,
+      "cells": 6208,
+      "iterations": 10,
+      "velocityL2": 0.0011436711406240532,
+      "pressureL2": 0.027757945734317783,
+      "pressureErrorMean": -0.0019621545994483887,
+      "pressureMeanFreeL2": 0.027688508459597357,
+      "momentumResidual": 3.475941894303152e-13,
+      "continuity": 1.0317916714083655e-13,
+      "fluxConsistency": 0,
+      "strictLinearFinal": true,
+      "Krylov": 267,
+      "wallSeconds": 13.641703651,
+      "namedWallLoads": [
+        {
+          "name": "housing",
+          "torque": 0.41819895450451516,
+          "torqueRelativeError": 0.0016235379211563556
+        },
+        {
+          "name": "rotor",
+          "torque": -0.41967692323534006,
+          "torqueRelativeError": 0.001904852517534203
+        }
+      ]
+    }
+  },
+  "experiments": [
+    {
+      "name": "quadratic-total-wall-stress-original-diagonal",
+      "macro": null,
+      "changes": "Reconstruct full wall grad(U) with existing rank-checked QR, replace complete Laplacian/symmetric wall stress, and use identical defect in momentum and force output; original pressure/RC/interior untouched.",
+      "l7Status": "Interrupted after approximately148s wall/115s CPU without terminal accepted state; not physical or convergence evidence.",
+      "trace": "annulus-l7-quadratic-symmetric.interrupted.txt",
+      "promoted": false
+    },
+    {
+      "name": "quadratic-total-wall-stress-own-component-response",
+      "macro": "QW_OWNER_RESPONSE",
+      "changes": "Same quadratic physical total stress; replace wall compact owner diagonal by exact QR own-component coefficient and add equal deltaDiag*field to RHS, keeping momentum residual unchanged by diagonal extraction. rAU follows new diagonal.",
+      "l5": {
+        "converged": true,
+        "cells": 484,
+        "iterations": 10,
+        "velocityL2": 0.007015221834161495,
+        "pressureL2": 0.02962296381468217,
+        "pressureErrorMean": -0.0025943590289222197,
+        "pressureMeanFreeL2": 0.029509139031747757,
+        "momentumResidual": 1.400116388160756e-13,
+        "continuity": 3.48054260323775e-14,
+        "fluxConsistency": 8.5401771125012e-17,
+        "strictLinearFinal": true,
+        "Krylov": 156,
+        "wallSeconds": 0.864052175,
+        "namedWallLoads": [
+          {
+            "name": "housing",
+            "torque": 0.4167187272601605,
+            "torqueRelativeError": 0.005157320163731412
+          },
+          {
+            "name": "rotor",
+            "torque": -0.41420588230817396,
+            "torqueRelativeError": 0.011156295593714073
+          }
+        ]
+      },
+      "l7Status": "Native rejection: Coupled momentum diagonal is not positive.",
+      "l7Trace": "annulus-l7-quadratic-owner-symmetric.log",
+      "promoted": false
+    },
+    {
+      "name": "linear-wall-tensor-divergence-constraint",
+      "macro": "QW_DIVFREE_BASE",
+      "changes": "Original compact viscous-face grad(U); change only normal-normal gradient tensor by -trace(grad(U))*n*n^T on impermeable walls, preserving tangential derivatives/shear; same complete symmetric traction in momentum and force output. Interior/pressure/RC/diagonal unchanged.",
+      "l5": {
+        "converged": true,
+        "cells": 484,
+        "iterations": 10,
+        "velocityL2": 0.013276999004158284,
+        "pressureL2": 0.06934035191270191,
+        "pressureErrorMean": -0.0012013557058137123,
+        "pressureMeanFreeL2": 0.06932994409232891,
+        "momentumResidual": 1.4926453409403888e-13,
+        "continuity": 4.5028990161424554e-14,
+        "fluxConsistency": 4.270088556250601e-17,
+        "strictLinearFinal": true,
+        "Krylov": 186,
+        "wallSeconds": 0.525932086,
+        "namedWallLoads": [
+          {
+            "name": "housing",
+            "torque": 0.41091218774459354,
+            "torqueRelativeError": 0.01901941215614497
+          },
+          {
+            "name": "rotor",
+            "torque": -0.40931477209786254,
+            "torqueRelativeError": 0.022832961101388587
+          }
+        ]
+      },
+      "nextLevel": "Not started because coarse velocity and pressure errors increased.",
+      "promoted": false
+    }
+  ],
+  "openSource": {
+    "repository": "idaholab/moose",
+    "reference": "410cc90c7e8e6165e77caafb7e49ac206d5ba6b5",
+    "files": [
+      {
+        "path": "modules/navier_stokes/src/variables/INSFVVelocityVariable.C",
+        "sha256": "2e099c25096f4cf21efa80ea30a7ff8160703d4050d693257aa5db0f770a25e4"
+      },
+      {
+        "path": "modules/navier_stokes/src/fvkernels/INSFVMomentumDiffusion.C",
+        "sha256": "6f6dd20f01db14a87a0ff630c598939c44f8529511653454e03458f6bf2f1186"
+      }
+    ],
+    "urls": [
+      "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/variables/INSFVVelocityVariable.C",
+      "https://github.com/idaholab/moose/blob/410cc90c7e8e6165e77caafb7e49ac206d5ba6b5/modules/navier_stokes/src/fvkernels/INSFVMomentumDiffusion.C"
+    ],
+    "finding": "Complete-expansion diffusion obtains U/V gradient rows with the same face argument, builds the entire tensor, then transposes it. Boundary Taylor expansions may be solved as a coupled gradient/trace system. MOOSE singularity fallback to one-term expansion is NOT transplanted. No external code copied to product."
+  },
+  "designRequirements": [
+    "One vector face-stress operator must return the physical integrated flux and its complete sparse derivative/coefficient map, including cross-component and nonlocal wall DOFs; scalar momentum and forces consume it.",
+    "Pressure-velocity response and preconditioning must correspond to the actual extracted operator. High-order polynomial reproduction alone cannot establish positive scalar rAU or a stable fixed-point map.",
+    "Boundary trace semantics use actual polygon normals/face centres, with constant vs smooth trace derivatives explicit. Circle exact-field traction residual must identify incompatibility with prescribed polygon traces.",
+    "Wall divergence constraints cannot be used to cancel normal stresses without physical-case validation; the simplest such projection doubled coarse pressure error here.",
+    "The shared FlowEquation kernel proposed by root is appropriate to make these operator contracts testable; these wall prototypes do not justify changing defaults."
+  ],
+  "limitations": [
+    "No spatial-accuracy qualification or stability repair demonstrated on6208 cells by these wall candidates.",
+    "Runtime costs overlap the parent build and concurrent work, so are not isolation performance comparisons.",
+    "Native circle traction audits have prescribed-polygon boundary mismatch; exact smooth-trace case is reconstruction consistency only.",
+    "The prototype paired U/V hook exists solely because old scalar momentum API omits the other component; do not ship it.",
+    "No larger mesh chain or DFG tests started."
+  ],
+  "artifactConsumers": {
+    "results.json": "Root numerical-review and current-state evidence; summarizes accepted and rejected candidates.",
+    "*.cells.csv": "Representative original fields and coarse candidate fields for future same-input comparison.",
+    "native cpp/hpp and archives": "Rebuildable research prototypes; archives/binaries are temporary and not repository deliverables.",
+    "downloaded MOOSE source": "Temporary read-only reference; URLs and hashes preserve provenance."
+  },
+  "requiredResearchFiles": [
+    "QuadraticWallPrototype.hpp",
+    "wall-wrappers.cpp",
+    "wall-solve.cpp",
+    "wall-audit.cpp",
+    "wall-diagonal-audit.cpp",
+    "momentum-base.cpp",
+    "forces-base.cpp"
+  ],
+  "reproduceCommands": [
+    "c++ -std=c++20 -O2 -DNDEBUG -Iinclude -Isrc/fv -Ioutputs/numerical-design outputs/numerical-design/wall-audit.cpp outputs/numerical-design/libcartmesh2d_fv.a outputs/numerical-design/libcartmesh2d.a -o outputs/numerical-design/wall-audit",
+    "outputs/numerical-design/wall-audit outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+    "outputs/numerical-design/wall-audit outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d outputs/laminar-refactor/inputs/annulus-l7.boundaries analytic",
+    "c++ -std=c++20 -O2 -DNDEBUG -Iinclude -Isrc/fv -Ioutputs/numerical-design outputs/numerical-design/wall-diagonal-audit.cpp outputs/numerical-design/libcartmesh2d_fv.a outputs/numerical-design/libcartmesh2d.a -o outputs/numerical-design/wall-diagonal-audit",
+    "outputs/numerical-design/wall-diagonal-audit outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+    "c++ -std=c++20 -O2 -DNDEBUG -Iinclude -Isrc/fv -Dmomentum=baselineMomentum -c outputs/numerical-design/momentum-base.cpp -o outputs/numerical-design/momentum-base.o",
+    "c++ -std=c++20 -O2 -DNDEBUG -Iinclude -Isrc/fv -DpostprocessForces=baselinePostprocessForces -c outputs/numerical-design/forces-base.cpp -o outputs/numerical-design/forces-base.o",
+    "c++ -std=c++20 -O2 -DNDEBUG -Iinclude -c outputs/numerical-design/wall-solve.cpp -o outputs/numerical-design/wall-solve.o",
+    "c++ -std=c++20 -O2 -DNDEBUG -DQW_OWNER_RESPONSE -Iinclude -Isrc/fv -Ioutputs/numerical-design -c outputs/numerical-design/wall-wrappers.cpp -o outputs/numerical-design/wall-owner-wrappers.o",
+    "c++ outputs/numerical-design/wall-solve.o outputs/numerical-design/wall-owner-wrappers.o outputs/numerical-design/momentum-base.o outputs/numerical-design/forces-base.o outputs/numerical-design/libcartmesh2d_fv.a outputs/numerical-design/libcartmesh2d.a -o outputs/numerical-design/quadratic-owner-wall-solve",
+    "outputs/numerical-design/quadratic-owner-wall-solve outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d outputs/laminar-refactor/inputs/annulus-l5.boundaries symmetric coupled outputs/numerical-design/reproduce-l5-quadratic 40",
+    "outputs/numerical-design/quadratic-owner-wall-solve outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d outputs/laminar-refactor/inputs/annulus-l7.boundaries symmetric coupled outputs/numerical-design/reproduce-l7-quadratic 40",
+    "c++ -std=c++20 -O2 -DNDEBUG -DQW_DIVFREE_BASE -Iinclude -Isrc/fv -Ioutputs/numerical-design -c outputs/numerical-design/wall-wrappers.cpp -o outputs/numerical-design/wall-divfree-wrappers.o",
+    "c++ outputs/numerical-design/wall-solve.o outputs/numerical-design/wall-divfree-wrappers.o outputs/numerical-design/momentum-base.o outputs/numerical-design/forces-base.o outputs/numerical-design/libcartmesh2d_fv.a outputs/numerical-design/libcartmesh2d.a -o outputs/numerical-design/divfree-wall-solve",
+    "outputs/numerical-design/divfree-wall-solve outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d outputs/laminar-refactor/inputs/annulus-l5.boundaries symmetric coupled outputs/numerical-design/reproduce-l5-divfree 40"
+  ],
+  "concreteCoreIntegration": {
+    "returnValue": "FaceStressEvaluation2D: physical integrated Vector2D traction per face plus sparse 2x2 coefficient blocks indexed by source cell, affine prescribed-trace term, wall recovery geometry, and native own-response validity diagnostics.",
+    "assembly": "Build sparse pattern from all actual stress coefficients before assembly, including QR second/third graph ring DOFs; assemble same-cell off-component terms into vector momentum block. Flux correction/source splitting must preserve the exact residual.",
+    "response": "Extract pressure response from the complete 2x2 momentum block/operator used for prediction. A rank-full QR derivative can have negative scalar owner coefficients; retaining or clamping a fabricated scalar diagonal is not a validated response.",
+    "reuse": "Cache only geometry and boundary masks per immutable equation context. Keep live field/trace values, homogeneous affine evaluation, and accepted-step state distinct. Share wall traction exactly between residual, physical monitors and load output.",
+    "acceptance": "Require same prescribed polygon trace semantics, physical curved-wall errors and neighboring small-grid trends in addition to polynomial reproduction and complete solver residuals. Failed response/rank must be explicit."
+  }
+}

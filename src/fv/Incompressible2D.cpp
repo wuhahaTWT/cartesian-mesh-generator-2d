@@ -213,8 +213,8 @@ static FlowResult2D solveFlow(
     const auto& pressureBoundary = c.scenario == "custom" ? b.p : zeros;
     // fixedP is constant. Velocity caches detect every mask change caused by
     // backflow, including candidate rejection and physical-time initialization.
-    const auto pressureGradientStencil=detail::buildFlowGradientStencil2D(m,b.fixedP,true);
-    detail::ChangingFlowGradientStencil2D velocityGradientU(m),velocityGradientV(m);
+    FlowEquation2D equation(m,b.fixedP);
+    const auto& pressureGradientStencil=equation.pressureStencil();
     Vec ra(n), correctionResponse(c.coupling==FlowCoupling2D::SimpleC?n:0);
     Vec pc(n);
     Vec df(nf);
@@ -270,7 +270,7 @@ static FlowResult2D solveFlow(
         updateOutletBoundary(b,m,c,r.flux);
         r.time=previous->time+timeStep; r.timeStep=timeStep;
         r.previousU=previous->u; r.previousV=previous->v;
-        const auto oldGu=velocityGradientU.apply(r.u,b.u,b.fixedU),oldGv=velocityGradientV.apply(r.v,b.v,b.fixedV);
+        const auto oldGu=equation.velocityGradient(r.u,b,false),oldGv=equation.velocityGradient(r.v,b,true);
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=m.faces[id];
             if (!f.neighbour) {
@@ -293,8 +293,10 @@ static FlowResult2D solveFlow(
     // residual are exactly the systems needed at the start of the next SIMPLE
     // iteration. Refresh after every field/flux/boundary update, then transfer
     // numeric storage and apply relaxation without rebuilding the same rows.
-    std::vector<Vector2D> gp,gu,gv,forceGradient,stressCorrection;
-    Vec pressureFaces;
+    FlowReconstruction2D reconstruction;
+    auto& gp=reconstruction.gp;auto& gu=reconstruction.gu;auto& gv=reconstruction.gv;
+    auto& forceGradient=reconstruction.pressureForce;auto& stressCorrection=reconstruction.stress;
+    auto& pressureFaces=reconstruction.pressureFaces;
     bool materialConverged=!material;
     const auto refreshMomentum = [&](bool updateMaterial=false) {
         updateOutletBoundary(b,m,c,r.flux);
@@ -311,18 +313,8 @@ static FlowResult2D solveFlow(
             ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
             validateViscosity(m,c);
         }
-        gp=pressureGradientStencil.apply(r.p,pressureBoundary);
-        gu=velocityGradientU.apply(r.u,b.u,b.fixedU);
-        gv=velocityGradientV.apply(r.v,b.v,b.fixedV);
-        pressureFaces=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
-        forceGradient=detail::conservativePressureGradient(m,pressureFaces);
-        stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu,c.faceViscosity)
-            : std::vector<Vector2D>{};
-        const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
-            ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,false,previous?&previous->u:nullptr,timeStep);
-        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,true,previous?&previous->v:nullptr,timeStep);
+        reconstruction=equation.reconstruct(r,c,b,pressureBoundary,r.flux);
+        equation.assembleMomentum(checkU,checkV,r,c,b,reconstruction,r.flux,r.sourceIntegrals,previous,timeStep);
     };
     const auto takeRelaxed = [&](System& destination,System& source,const Vec& field) {
         destination.diag.swap(source.diag);
@@ -393,7 +385,7 @@ static FlowResult2D solveFlow(
         linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
-        const auto gup=velocityGradientU.apply(r.u,b.u,b.fixedU),gvp=velocityGradientV.apply(r.v,b.v,b.fixedV);
+        const auto gup=equation.velocityGradient(r.u,b,false),gvp=equation.velocityGradient(r.v,b,true);
         const auto predicted=rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,gup,gvp,gp,forceGradient,
             oldFluxDefect,previous!=nullptr,timeStep,df);
         if(c.coupling==FlowCoupling2D::SimpleC) {
@@ -417,9 +409,7 @@ static FlowResult2D solveFlow(
         // explicit correction/RHS changes. The next SIMPLE iteration resets
         // the matrix and invalidates its IC(0) factorization.
         const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,pressureResponse,df,predicted,pressureGradientStencil,zeros,linearSolve);
-        const auto correctionGradient=pressureGradientStencil.apply(pc,zeros);
-        const auto gc=detail::conservativePressureGradient(m,
-            detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
+        const auto gc=equation.pressureForce(pc,zeros,b.fixedP);
         double du=0,dp=0;
         for(std::size_t i=0;i<n;++i){r.u[i]-=pressureResponse[i]*gc[i].x;r.v[i]-=pressureResponse[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
             finite(r.u[i]);finite(r.v[i]);finite(r.p[i]);du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);}

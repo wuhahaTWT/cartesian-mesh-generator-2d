@@ -48,6 +48,10 @@ Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 
 
 已完成旧圆环单元 **3711（代码零基 3710）及相邻小格 3711** 的真实一步分解。新原生入口 `tools/benchmarks/cell_step.py` 用 GNU ld 只读包裹实际动量组装和 Rhie–Chow 调用；包裹/未包裹、记录开关的 u/v/p/flux 逐位相同。恢复 `−2.67314135` 模态后，速度沿输入模态的投影由动量预测 **+0.27992803** 加压力修正 **−2.95306938** 得到最终 **−2.67314135**，明确放大发生阶段。进一步保留实际隐式矩阵，把 11 个来源分别经过原生预测、通量和压力修正传播，再相加：内部显式对称黏性项贡献 **−1.83636981**，动量松弛 **−0.86172099**，RC 压力非正交项 **+0.44980064**；最终 u/v 闭合差约 `1e-11 m/s`。这些是完整耦合步的来源响应，不是删项后的特征值；不能由最大项宣布唯一根因。模态场是任意归一化误差，不能当实际物理解。分项已支持继续聚焦显式应力—压力修正反馈，尚未找到并修好具体错误系数，也未修好压力精度；没有新离散改动。相关原生测试 **4/4** 通过，研究工具仅验证 Linux GNU ld，未作平台 CI。见[一步分项及来源闭合](../artifacts/current/laminar-foundation/cell-step-diagnosis.json)、[实际模态场与原生记录](../artifacts/current/laminar-foundation/cell-step-diagnosis-traces.tar.gz)及[复现说明](DEVELOPMENT_CN.md#单元一步分项与来源传播)。
 
+共同方程核重构在隔离分支 `codex/laminar-core-refactor` 以 `2e94198` 为基线完成：SIMPLE、coupled 和原生探针共用重构、动量组装、冻结残差及压力块，FGMRES 独立为内部模块，默认控制和离散公式保持原样。九个基础路径的 u/v/p/flux 逐位相同；旧圆环/DFG 四组场 CSV、迭代数及成功/失败状态也相同。完整原生 **105 项均通过**（并行首次两项超时，原控制下串行复跑通过），前端 **191/191**；新 runtime 的真实 App 通道 **1,300 格 / 168 轮**严格收敛。跨平台 CI 未运行，耗时有并行干扰，不作性能结论。见[共同核证据](../artifacts/current/laminar-foundation/core-refactor.json)及[原场与检查记录](../artifacts/current/laminar-foundation/core-refactor-fields.tar.gz)。新增对照中的 DFG `face-limited-linear` 在 28 轮达到 Krylov 上限，重构前后均失败；上文 44 轮成功使用 `limited-linear`，两种格式不能混为同一控制。
+
+并行局部实验均未成为数值修复：壁面 compact 转置应力隐式 2×2 块使观测模式 **−2.67314→−2.74360**；全 compact 块降至 **−1.29632**，整体半步仍增长 **1.05004**。MOOSE 完整向量应力的参考启发了二次壁面原型，粗圆环压力 L2 略降 **0.033316→0.029623**，细圆环却出现 **9 个非正动量响应行**；保留原对角的 RHS-only 细档到预算时停止，未取得最终解。原壁面 divU 投影使粗档压力误差升至 **0.069340**。精确圆形场与规定多边形壁面 trace 不完全相容，不能据局部解析牵引误差判定唯一根因。真实细圆环压力 L2/Uref² 仍为 **0.02775795**，默认 SIMPLE 发散尚未闭环。见[动量拆分反例](../artifacts/current/laminar-foundation/momentum-splitting.json)、[二次壁面试验与开源来源](../artifacts/current/laminar-foundation/wall-refactor-experiments.json)及[原生复现](DEVELOPMENT_CN.md#压力速度失稳的原生诊断)。
+
 待完成：通用精度/稳定性修复及失败例回归；补齐曲壁同网格外部比较、三档收敛及与网格产品一致的 10 万至 50 万格求解；在更多工况和密度上验证工程停止/SIMPLEC 的同精度成本；通用修复后重算代表拓扑设计与基线。尚未宣称基础任务完成。
 
 | 工作 | 接手时的状态与入口 |
@@ -55,7 +59,7 @@ Solver 质量门已修复**有向法向距离漏检**：原 DFG 共形边界层 
 | T01：保真度差距与排序 | 预定实验及交付完成；主索引为 [fidelity-completion.json](../artifacts/current/native-topology-fidelity-completion.json)。文献优化流道、MAC 空间收敛及可信排序误差仍有研究限制，原“18 对反转”不是已证实结论。 |
 | T02：真实壁面反馈 | 在线控制器已实现并跑通；代码 `tools/optimization/closed_loop_topology.py`，主索引 [feedback.json](../artifacts/current/native-topology-feedback.json)，[方法与运行命令](DEVELOPMENT_CN.md#t02真实壁面反馈驱动材料更新)。Re=0 总收益主要来自结构提案，校正增量约 0.0256%；Re=50 校正组落后于同控制对照，尚未证明方法优势。 |
 | 当前需要解决的问题 | 校正怎样产生更有效的新材料方向和连接变化，以及何时值得花一次真实复算；现有失败和对照可直接用于方法改进。T03 换热应用、T04 比赛材料尚未开展。 |
-| 本地工作区 | 根目录、`codex/cfd-development`；接手基线为 `6ec4edf`，T01/T02 和清理已在其历史中。新增基准继续在开发线，接手先读当前 `git status`。 |
+| 本地工作区 | 根目录；开发线 `codex/cfd-development` 已含单元诊断 `ca31d5d`，并行共同核重构在 `codex/laminar-core-refactor`。T01/T02 和清理仍保留于历史；接手先读当前 `git status`，研究分支未合入 main。 |
 
 建议先读本节及[拓扑研究详细状态](#独立研究流体拓扑优化原型)，再读开发指南中的[文件与结果导航](DEVELOPMENT_CN.md#本地研究文件导航)。Claude 原任务单、过程日志和早期尝试保留；它们记录当时的指导，当前状态以本文件为准。原始场、失败、运行环境和现有构建均保留。
 

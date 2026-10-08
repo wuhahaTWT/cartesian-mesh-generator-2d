@@ -3,11 +3,12 @@
 #include <map>
 #include <limits>
 namespace cartmesh2d::fv::solver_detail {
-Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,
+namespace {
+Vec rhieChowFluxWithRelaxation(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,
     const Vec& ra,const Vec& oldU,const Vec& oldV,const std::vector<Vector2D>& gu,
     const std::vector<Vector2D>& gv,const std::vector<Vector2D>& gup,const std::vector<Vector2D>& gvp,
     const std::vector<Vector2D>& gp,const std::vector<Vector2D>& forceGradient,const Vec& oldFluxDefect,
-    bool previous,double timeStep,Vec& df) {
+    bool previous,double timeStep,Vec& df,double relaxation) {
     const auto nf=m.faces.size();
         Vec predicted(nf);
         for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
@@ -26,14 +27,14 @@ Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,con
                     // under-relaxation defect; otherwise the dt -> 0 response
                     // depends on the arbitrary inner relaxation factor.
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
-                        +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
+                        +(1-relaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 } else {
                     // The face equation must retain the same implicit
                     // relaxation as the cell momentum equation. Otherwise
                     // the converged Rhie--Chow flux depends on alphaU.
                     const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
                     const double oldVf=interpolate(f,oldV)+dot(interpolateGradient(f,gv),skew);
-                    predicted[id]+=(1-c.velocityRelaxation)*
+                    predicted[id]+=(1-relaxation)*
                         (r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 }
             }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield){
@@ -41,12 +42,29 @@ Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,con
                     ? f.transmissibility*(b.p[id]-r.p[i]) : -f.transmissibility*r.p[i];
                 predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(pressureDifference+dot(gp[i],f.correction));
                 if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
-                    +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);
-                else predicted[id]+=(1-c.velocityRelaxation)*
+                    +(1-relaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);
+                else predicted[id]+=(1-relaxation)*
                     (r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
             else predicted[id]=0;
         }
     return predicted;
+}
+}
+Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,
+    const Vec& ra,const Vec& oldU,const Vec& oldV,const std::vector<Vector2D>& gu,
+    const std::vector<Vector2D>& gv,const std::vector<Vector2D>& gup,const std::vector<Vector2D>& gvp,
+    const std::vector<Vector2D>& gp,const std::vector<Vector2D>& forceGradient,const Vec& oldFluxDefect,
+    bool previous,double timeStep,Vec& df) {
+    return rhieChowFluxWithRelaxation(m,c,b,r,ra,oldU,oldV,gu,gv,gup,gvp,gp,forceGradient,
+        oldFluxDefect,previous,timeStep,df,c.velocityRelaxation);
+}
+
+Vec steadyRhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,
+    const Vec& response,const std::vector<Vector2D>& gu,const std::vector<Vector2D>& gv,
+    const std::vector<Vector2D>& gp,const std::vector<Vector2D>& pressureForce,
+    const Vec& noFluxDefect,Vec& coefficients) {
+    return rhieChowFluxWithRelaxation(m,c,b,r,response,r.u,r.v,gu,gv,gu,gv,gp,pressureForce,
+        noFluxDefect,false,0,coefficients,1.);
 }
 }

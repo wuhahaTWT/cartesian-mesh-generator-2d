@@ -70,7 +70,9 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 `artifacts/current/laminar-foundation/rejected-implicit-pressure.patch` 保留未奏效的完整非正交压力 GMRES 试验，可在原 `6ec4edf` 求解器上复现，CLI 选项为 `--pressure-correction implicit`。它只用于解释已试过的方向，不应在未解决问题时作为修复合入。对应细圆环第 10/20 轮动量残差约 `4309.5 / 694436`，故下一步须继续检查外迭代动量—压力耦合，而不能假定只换压力线性求解器即可消除发散。
 
-不可压内部实现入口为 `src/fv/Incompressible2D.cpp`；工况与预设在 `FlowCase2D.cpp`，动量在 `FlowMomentum2D.cpp`，Rhie–Chow 在 `FlowFlux2D.cpp`，压力线性循环在 `FlowPressure2D.hpp`，监测在 `FlowConvergence2D.cpp`，受力在 `FlowForces2D.cpp`。私有参数接口集中于 `FlowSolverDetail2D.hpp`，公共求解 API 保持不变。纯重构的六个代表例逐场哈希见 `artifacts/current/laminar-foundation/refactor-hashes.json`；数值修改须另行比较精度，不能援引重构哈希作为修复证据。
+不可压内部实现入口为 `src/fv/Incompressible2D.cpp`；工况与预设在 `FlowCase2D.cpp`，动量在 `FlowMomentum2D.cpp`，Rhie–Chow 在 `FlowFlux2D.cpp`，压力线性循环在 `FlowPressure2D.hpp`，监测在 `FlowConvergence2D.cpp`，受力在 `FlowForces2D.cpp`。`FlowEquation2D` 统一 SIMPLE、coupled 和原生诊断的梯度/压力力/应力重构、双分量动量与冻结残差；几何缓存归单次求解所有，边界值及场值实时读取，不持有接受解。正交压力块由两个耦合路径共用，`FlowKrylov2D.hpp` 保存原 FGMRES 实现。齐次线性作用和非零边界/源项分开；物理连续性检查包含压力参考格，只有线性系统替换 gauge 行。coupled 工作数组按需分配。私有参数接口集中于 `FlowSolverDetail2D.hpp`，公共求解 API 保持不变。
+
+早期模块拆分的六例哈希见 `artifacts/current/laminar-foundation/refactor-hashes.json`；共同方程核以 `2e94198` 为对照，九个基础路径及四组旧圆环/DFG 结果见 `core-refactor.json` 和 `core-refactor-fields.tar.gz`。归档包含原生 C++ 场对照驱动、逐位场、实际 CLI 命令、成功与失败 CSV、检查日志及真实 App 截图；原输入复用 `failure-inputs.tar.gz`。`tests/flow_equation_test.cpp` 检查冻结 Upwind 方程的仿射性、共享面守恒、压力边界及改变边界掩码后的实时值，`4096*epsilon` 是浮点装配一致性预算，不能作为空间精度门。数值修改须另行比较精度，不能援引重构哈希作为修复证据。
 
 `--convergence engineering` 是独立的稳态层流停止模式：最大单元动量残差须低于 `--tolerance`，50 步连续性和流量不平衡仍各低于 `1e-8`，场变化累计及归一化物理监测范围低于既有 `1e-3`，残差下降三阶或低于 `1e-5`；必须用普通严格线性步确认。监测包含动能、各边界组流量/受力/平均压力/力矩。窗口稳定不保证远离固定点的慢模态已经衰减，故须针对压降、受力和参考误差选择容差；已有方腔反例及容差扫描见 `engineering-simplec.json`。不能将 `1e-5` 作为通用精度设置。
 
@@ -88,6 +90,10 @@ build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20
 `coupled-stability-fields.tar.gz` 保存两个实际解的 u/v/p/flux、原生残差与 profile；输入仍为原失败归档。`tests/flow_coupled_test.cpp` 检查共享固定点、源项与压力基准、支持/拒绝组合、真实线性预算失败后的场保留及严格停止条件。旧圆环/DFG 的完整运行证据与精度限制见 `coupled-stability.json`，不能把 Krylov 轮数与 SIMPLE 外迭代直接比较，profile 的嵌套压力时间不可重复累计。
 
 ### 压力速度失稳的原生诊断
+
+`tools/benchmarks/momentum_terms_probe.cpp` 直接消费共同方程核，保存动量预测、压力校正、各面黏性/压力项及 LS/Gauss 梯度。构建 `cartmesh2d_flow_momentum_probe` 后运行 `build/cartmesh2d_flow_momentum_probe MESH BOUNDARIES STEPS BLOCK CELL WEIGHT power`；`BLOCK=0/1/2` 分别为原更新、壁面 compact 转置应力隐式 2×2 块、全部 compact 转置应力隐式块，其他重构项及原 scalar rAU 保留。`CELL=3710` 对应用户编号 3711，权重 `.5` 只改变探测映射。拆分前后同场残差恒等式和原生产一步的逐场差异必须先核对；幂迭代模式不构成完整谱界或物理验收。原基线源码/头文件、CSV 与哈希保存在 `momentum-splitting-traces.tar.gz` / `momentum-splitting.json`，当前核一步另有记录。
+
+`wall-refactor-experiments.json` / `wall-refactor-experiments.tar.gz` 保存独立 C++ 二次壁面完整应力及 divU 投影原型、原场和失败日志。复现这些旧实验须在 `2e94198` 编译同版本库与头文件，再按 JSON 命令重建；不能把旧库链接到新 inline 头文件。外部 MOOSE 参考只记录固定提交、URL 和哈希，归档不复制其代码。原型使用的 U/V 配对包装仅供研究。二次 QR 精确再现多项式不保证动量响应正性；细圆环九个非正 owner 行被原检查明确拒绝，未做裁剪或替代响应。继续开发者消费这些最小反例及原始场；本机 `outputs/` 中库、二进制、对象文件可重建，不作为交付归档。
 
 `tools/benchmarks/coupling_probe.cpp` 是显式构建的研究程序，直接调用生产求解器和原生动量/梯度/线性算子，不是另建方程验证链。固定旧圆环的 `nu=.1`、`Uref=.5`、速度松弛 `.6`、压力松弛 `.25`、无对流；只接受闭合且速度全规定的壁面域。macOS 用系统 Cholesky，其他平台 IC(0)。`outer` 对真实一步求解作 `T(x)=F(x)-F(0)` 幂迭代，u/v/p 用单元面积加权内积，面通量同时传播并单列特征残差；`pressure` 探测冻结扩散 rAU 下的非正交延迟修正映射。输出是观测模式，不是完整谱界；`diffusion` 的场变化阈值只判断隔离子问题衰减，不代替完整 CFD 验收。
 

@@ -1,88 +1,14 @@
 #include "FlowCoupled2D.hpp"
+#include "FlowEquation2D.hpp"
+#include "FlowKrylov2D.hpp"
 #include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include <sstream>
 
 namespace cartmesh2d::fv::solver_detail {
 namespace {
 using Clock=std::chrono::steady_clock;
-
-// Flexible right-preconditioned GMRES. Reorthogonalization and the final
-// explicitly recomputed residual are mandatory: the inner pressure solve is
-// deliberately inexact and therefore is not a fixed linear preconditioner.
-class CoupledKrylov {
-    const std::size_t size_,width_;
-    std::vector<Vec> basis_,preconditioned_;
-    Vec product_,residual_,work_,hessenberg_,cosine_,sine_,right_,solution_;
-public:
-    double residualNorm=0,maximumResidual=0;
-    explicit CoupledKrylov(std::size_t size):size_(size),width_(std::min<std::size_t>(100,size)),
-        basis_(width_+1,Vec(size)),preconditioned_(width_,Vec(size)),product_(size),
-        residual_(size),work_(size),hessenberg_((width_+1)*width_),cosine_(width_),
-        sine_(width_),right_(width_+1),solution_(width_) {}
-
-    template<class Apply,class Precondition>
-    void solve(Apply&& apply,Precondition&& precondition,Vec& x,const Vec& rhs,
-               double relativeTolerance,double maximumRowResidual,FlowPerformance2D& performance) {
-        constexpr std::size_t maximumIterations=2000;
-        const double rhsNorm=detail::linearNorm(rhs),target=relativeTolerance*rhsNorm;
-        const auto measure=[&] {
-            apply(x,product_);double maximum=0;
-            for(std::size_t i=0;i<size_;++i) {
-                residual_[i]=rhs[i]-product_[i];maximum=std::max(maximum,std::abs(residual_[i]));
-            }
-            maximumResidual=maximum;residualNorm=detail::linearNorm(residual_);
-            return residualNorm<=target && maximum<=maximumRowResidual;
-        };
-        // The exactly homogeneous affine system has the exact zero solution;
-        // this also avoids demanding a relative residual against a zero RHS.
-        if(rhsNorm==0)std::fill(x.begin(),x.end(),0.);
-        if(measure())return;
-        std::size_t iterations=0;
-        while(iterations<maximumIterations) {
-            for(std::size_t i=0;i<size_;++i)basis_[0][i]=residual_[i]/residualNorm;
-            std::fill(hessenberg_.begin(),hessenberg_.end(),0.);
-            std::fill(right_.begin(),right_.end(),0.);right_[0]=residualNorm;
-            std::size_t used=0;
-            for(std::size_t j=0;j<width_ && iterations<maximumIterations;++j) {
-                precondition(basis_[j],preconditioned_[j]);apply(preconditioned_[j],work_);
-                ++iterations;++performance.coupledIterations;
-                for(unsigned pass=0;pass<2;++pass)for(std::size_t k=0;k<=j;++k) {
-                    const double projection=detail::linearProduct(work_,basis_[k]);
-                    hessenberg_[k*width_+j]+=projection;
-                    for(std::size_t i=0;i<size_;++i)work_[i]-=projection*basis_[k][i];
-                }
-                const double next=detail::linearNorm(work_);hessenberg_[(j+1)*width_+j]=next;
-                if(next>0)for(std::size_t i=0;i<size_;++i)basis_[j+1][i]=work_[i]/next;
-                for(std::size_t k=0;k<j;++k) {
-                    const double a=hessenberg_[k*width_+j],b=hessenberg_[(k+1)*width_+j];
-                    hessenberg_[k*width_+j]=cosine_[k]*a+sine_[k]*b;
-                    hessenberg_[(k+1)*width_+j]=-sine_[k]*a+cosine_[k]*b;
-                }
-                const double a=hessenberg_[j*width_+j],b=hessenberg_[(j+1)*width_+j];
-                const double length=std::hypot(a,b);ensure(length>0,"Coupled FGMRES breakdown");
-                cosine_[j]=a/length;sine_[j]=b/length;
-                hessenberg_[j*width_+j]=length;hessenberg_[(j+1)*width_+j]=0;
-                right_[j+1]=-sine_[j]*right_[j];right_[j]*=cosine_[j];used=j+1;
-                if(next==0 || std::abs(right_[j+1])<target*.5)break;
-            }
-            for(std::size_t j=used;j-->0;) {
-                double value=right_[j];
-                for(std::size_t k=j+1;k<used;++k)value-=hessenberg_[j*width_+k]*solution_[k];
-                solution_[j]=finite(value/hessenberg_[j*width_+j]);
-            }
-            for(std::size_t j=0;j<used;++j)for(std::size_t i=0;i<size_;++i)
-                x[i]+=solution_[j]*preconditioned_[j][i];
-            if(measure())return;
-        }
-        std::ostringstream message;
-        message<<"Coupled FGMRES iteration limit: true scaled residual="<<residualNorm<<", target="<<target
-            <<", maximum row residual="<<maximumResidual<<", row target="<<maximumRowResidual;
-        throw std::runtime_error(message.str());
-    }
-};
 
 detail::LinearPressureMethod2D pressureMethod(PressurePreconditioner2D method) {
     switch(method) {
@@ -126,9 +52,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
     const std::vector<Vector2D> noSources;
     const auto& pressureBoundary=controls.scenario=="custom"?boundary.p:zeros;
     auto homogeneous=boundary;homogeneous.u=zeros;homogeneous.v=zeros;homogeneous.p=zeros;
-    const auto guStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedU);
-    const auto gvStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedV);
-    const auto gpStencil=detail::buildFlowGradientStencil2D(mesh,boundary.fixedP,true);
+    FlowEquation2D equation(mesh,boundary.fixedP);
     std::vector<std::pair<std::size_t,std::size_t>> connections;
     connections.reserve(nf);for(const auto& face:mesh.faces)if(face.neighbour)connections.emplace_back(face.owner,*face.neighbour);
     const detail::SparsePattern2D pattern(n,connections);
@@ -136,7 +60,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
     detail::LinearWorkspace2D pressureWorkspace(n);
     CoupledKrylov krylov(3*n);
     Vec state(3*n),ra(n,1.),candidateRa(n,1.),df(nf),rowScale(3*n),rhs(3*n),base(3*n),highResidual(3*n),lowResidual(3*n);
-    Vec mu(n),mv(n),divergence(n),linearProduct(3*n),ru(n),rv(n),preU(n),preV(n),preP(n);
+    Vec divergence(n),linearProduct(3*n),ru(n),rv(n),preU(n),preV(n),preP(n);
     FlowResult2D result,scratch;
     for(auto* target:{&result,&scratch}){target->u.resize(n);target->v.resize(n);target->p.resize(n);target->flux.resize(nf);}
     result.domainHeight=height;initializeCaseSources(mesh,controls,result);
@@ -173,33 +97,19 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
         for(std::size_t i=0;i<n;++i){scratch.u[i]=finite(controls.speed*x[i]);scratch.v[i]=finite(controls.speed*x[n+i]);scratch.p[i]=finite(pressureScale*x[2*n+i]);}
     };
     const auto forceGradient=[&](const Vec& p,const Vec& pb) {
-        return detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,p,gpStencil.apply(p,pb),pb,boundary.fixedP));
+        return equation.pressureForce(p,pb,boundary.fixedP);
     };
     const auto flux=[&](const Boundary& b,const Vec& response,const Vec& pb) {
-        const auto gu=guStencil.apply(scratch.u,b.u),gv=gvStencil.apply(scratch.v,b.v),gp=gpStencil.apply(scratch.p,pb);
-        const auto pressureForce=detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,scratch.p,gp,pb,b.fixedP));
-        return rhieChowFlux(mesh,controls,b,scratch,response,scratch.u,scratch.v,gu,gv,gu,gv,gp,pressureForce,zeros,false,0,df);
+        const auto reconstruction=equation.reconstruct(scratch,b,pb);
+        return equation.steadyFlux(scratch,controls,b,reconstruction,response,df);
     };
     // With frozen advective flux, the upwind operator is affine in U,V,p.
     // Physical sources and prescribed traces belong only to its affine part.
     const auto residual=[&](const Vec& x,Vec& out,const Boundary& b,const FlowControls2D& c,
                             const Vec& advectiveFlux,const Vec& response,bool physical) {
-        unpack(x);const auto& pb=physical?pressureBoundary:zeros;
-        const auto gu=guStencil.apply(scratch.u,b.u),gv=gvStencil.apply(scratch.v,b.v),gp=gpStencil.apply(scratch.p,pb);
-        const auto pressureForce=detail::conservativePressureGradient(mesh,detail::pressureFaceValues(mesh,scratch.p,gp,pb,b.fixedP));
-        const auto stress=c.viscousStress==ViscousStress2D::Symmetric
-            ?detail::symmetricViscousCorrection(mesh,scratch.u,scratch.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
-            :std::vector<Vector2D>{};
-        const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
-            ?detail::faceFrameVelocityValues(mesh,advectiveFlux,scratch.u,scratch.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV)
-            :std::vector<Vector2D>{};
-        const auto& sources=physical?result.sourceIntegrals:noSources;
-        momentum(momentumU,mesh,c,b,scratch.u,advectiveFlux,gu,pressureForce,sources,stress,faceVelocity,false,nullptr,0);
-        momentum(momentumV,mesh,c,b,scratch.v,advectiveFlux,gv,pressureForce,sources,stress,faceVelocity,true,nullptr,0);
-        momentumU.apply(scratch.u,mu);momentumV.apply(scratch.v,mv);out.assign(3*n,0.);
-        for(std::size_t i=0;i<n;++i){out[i]=mu[i]-momentumU.rhs[i];out[n+i]=mv[i]-momentumV.rhs[i];}
-        const auto q=rhieChowFlux(mesh,c,b,scratch,response,scratch.u,scratch.v,gu,gv,gu,gv,gp,pressureForce,zeros,false,0,df);
-        for(std::size_t id=0;id<nf;++id){const auto& face=mesh.faces[id];out[2*n+face.owner]+=q[id];if(face.neighbour)out[2*n+*face.neighbour]-=q[id];}
+        unpack(x);
+        equation.frozenResidual(momentumU,momentumV,scratch,c,b,physical?pressureBoundary:zeros,
+            advectiveFlux,response,physical?result.sourceIntegrals:noSources,out,df,false);
         if(boundary.closed)out[2*n]=x[2*n];
     };
     const auto feasible=[&](const Vec& q) {
@@ -255,13 +165,9 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
             residual(old,lowResidual,boundary,lowOrder,oldFlux,ra,true);
             preconditionU.diag=momentumU.diag;preconditionU.off=momentumU.off;
             preconditionV.diag=momentumV.diag;preconditionV.off=momentumV.off;
-            preconditionU.factorILU0();preconditionV.factorILU0();pressure.reset();
-            for(std::size_t id=0;id<nf;++id) {
-                const auto& face=mesh.faces[id];const double coefficient=interpolate(face,ra)*face.transmissibility;
-                if(face.neighbour || boundary.fixedP[id])pressure.diag[face.owner]+=coefficient;
-                if(face.neighbour){const auto other=*face.neighbour;pressure.diag[other]+=coefficient;pressure.add(face.owner,other,-coefficient);pressure.add(other,face.owner,-coefficient);}
-            }
-            if(boundary.closed)pressure.pin(0);
+            preconditionU.factorILU0();preconditionV.factorILU0();
+            for(std::size_t id=0;id<nf;++id)df[id]=interpolate(mesh.faces[id],ra)*mesh.faces[id].transmissibility;
+            assemblePressureBlock2D(pressure,mesh,boundary,df);
             for(std::size_t i=0;i<n;++i){rowScale[i]=preconditionU.diag[i]*controls.speed;rowScale[n+i]=preconditionV.diag[i]*controls.speed;rowScale[2*n+i]=pressure.diag[i]*pressureScale;}
             if(boundary.closed)rowScale[2*n]=1.;
             residual(old,highResidual,boundary,controls,oldFlux,ra,true);
@@ -330,10 +236,9 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
             unpack(trial);
             if(!result.monitorNames.empty()) {
                 scratch.flux=trialFlux;scratch.monitorNames=result.monitorNames;
-                const auto gp=gpStencil.apply(scratch.p,pressureBoundary),gu=guStencil.apply(scratch.u,boundary.u),gv=gvStencil.apply(scratch.v,boundary.v);
-                const auto pf=detail::pressureFaceValues(mesh,scratch.p,gp,pressureBoundary,boundary.fixedP);
-                const auto stress=controls.viscousStress==ViscousStress2D::Symmetric?detail::symmetricViscousCorrection(mesh,scratch.u,scratch.v,gu,gv,boundary.u,boundary.v,boundary.fixedU,boundary.fixedV,boundary.constantU,boundary.constantV,controls.nu):std::vector<Vector2D>{};
-                candidate.step.monitors=physicalMonitors(mesh,controls,boundary,scratch,monitorGroup,monitorLengths,pressureScale,pf,gu,gv,stress);
+                const auto reconstructed=equation.reconstruct(scratch,controls,boundary,pressureBoundary,trialFlux);
+                candidate.step.monitors=physicalMonitors(mesh,controls,boundary,scratch,monitorGroup,monitorLengths,
+                    pressureScale,reconstructed.pressureFaces,reconstructed.gu,reconstructed.gv,reconstructed.stress);
             }
             // Commit only a fully evaluated candidate. Scratch fields used by
             // Krylov, preconditioning and rejected trials never own the result.
@@ -367,9 +272,9 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
         finalStep.iteration=last.iteration;finalStep.velocityChange=last.velocityChange;finalStep.pressureChange=last.pressureChange;
         if(!converged(finalStep) || final.reverseOutletFaces!=0){result.converged=false;result.failureReason="Coupled final residual/flux consistency certification failed";}
     }
-    const auto gp=gpStencil.apply(result.p,pressureBoundary),gu=guStencil.apply(result.u,boundary.u),gv=gvStencil.apply(result.v,boundary.v);
-    const auto stress=controls.viscousStress==ViscousStress2D::Symmetric?detail::symmetricViscousCorrection(mesh,result.u,result.v,gu,gv,boundary.u,boundary.v,boundary.fixedU,boundary.fixedV,boundary.constantU,boundary.constantV,controls.nu):std::vector<Vector2D>{};
-    postprocessForces(mesh,controls,boundary,result,pressureBoundary,gp,gu,gv,stress);
+    const auto reconstructed=equation.reconstruct(result,controls,boundary,pressureBoundary,result.flux);
+    postprocessForces(mesh,controls,boundary,result,pressureBoundary,
+        reconstructed.gp,reconstructed.gu,reconstructed.gv,reconstructed.stress);
     if(controls.profile)result.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-start).count();
     return result;
 }
