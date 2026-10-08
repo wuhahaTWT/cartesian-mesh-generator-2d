@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['tools/optimization/**', 'tests/flow_topology_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
+    paths: ['tools/optimization/**', 'tools/flow/**', 'tests/flow_topology_test.py', 'tests/navier_stokes_topology_test.py', 'tests/topology_fidelity_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
   pull_request:
-    paths: ['tools/optimization/**', 'tests/flow_topology_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
+    paths: ['tools/optimization/**', 'tools/flow/**', 'tests/flow_topology_test.py', 'tests/navier_stokes_topology_test.py', 'tests/topology_fidelity_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
 
 permissions:
   contents: read
@@ -37,5 +37,9 @@ jobs:
           cache-dependency-path: tools/optimization/requirements.txt
       - name: Install optional research dependencies
         run: python -m pip install -r tools/optimization/requirements.txt
-      - name: Test fluid topology research and guarded native interfaces
+      - name: Test fluid topology research and native interfaces
         run: python tests/flow_topology_test.py
+      - name: Test nonlinear Brinkman analysis and full discrete adjoint
+        run: python tests/navier_stokes_topology_test.py
+      - name: Test matched controls, leakage, uncertainty and ranking
+        run: python tests/topology_fidelity_test.py

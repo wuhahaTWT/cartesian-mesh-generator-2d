@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-09-20T23:09:42.455191+08:00",
+  "packages": [
+    {
+      "name": "01-source-and-reports.tar.gz",
+      "bytes": 39980611,
+      "sha256": "a70b54197b29b96ceac9f779d8eb39074fbd7adc65a6903f1fd815c9c794c987",
+      "checksum_matches": true,
+      "local_comparison": {
+        "identical": 593,
+        "changed": 1
+      }
+    },
+    {
+      "name": "02-logs-and-configs.tar.gz",
+      "bytes": 86949238,
+      "sha256": "9018e259097cca65021f7523330fb4fd2822cfbcc434e6acf3a5858df8565458",
+      "checksum_matches": true,
+      "local_comparison": {
+        "identical": 9543,
+        "missing": 190
+      }
+    },
+    {
+      "name": "03-high-density-and-sst.tar.gz",
+      "bytes": 290486058,
+      "sha256": "8e4a12f13ef68b5ab20dbb0912cee0e3bfb6827b7665409f526afc2e1df4c66c",
+      "checksum_matches": true,
+      "local_comparison": {
+        "missing": 886
+      }
+    },
+    {
+      "name": "04-reference-cases.tar.gz",
+      "bytes": 132447916,
+      "sha256": "83bd02af22b71a32866da88a911dbfce5412ef267a762ef8369fefb44ec687d2",
+      "checksum_matches": true,
+      "local_comparison": {
+        "missing": 1010
+      }
+    }
+  ],
+  "cloud_state": "User reports cloud copy deleted; no cloud request made",
+  "conclusion": "All archived report/image/source files remain locally except the newer current-state document; do not restore bulk fields or duplicate logs",
+  "added_gallery_links": 24,
+  "restored_files": 0,
+  "local_archive_deleted": false
+}

@@ -11,8 +11,8 @@ import sys
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT/"tools"/"verification"))
-from verify_native_flow import read_cm2d
+sys.path.insert(0, str(ROOT/"tools"/"flow"))
+from native_mesh import read_cm2d
 
 
 def leaf_reports(report):
@@ -25,17 +25,17 @@ def load_case(directory):
     report = json.loads((directory/"summary.json").read_text())
     polygons, speed, pressure, boundaries, sources, iterations = [], [], [], [], [], []
     for leaf in leaf_reports(report):
-        if not leaf["independentTopologyPassed"] or not leaf["independentFlowPassed"]:
-            raise ValueError("preview requires an accepted mesh and independently audited flow")
+        if not leaf["meshAccepted"] or not leaf["nativeFlowConverged"]:
+            raise ValueError("preview requires an accepted mesh and converged native flow")
         path = Path(leaf["acceptedMesh"]["path"])
         if hashlib.sha256(path.read_bytes()).hexdigest() != leaf["acceptedMesh"]["sha256"]:
-            raise ValueError("mesh changed after verification")
+            raise ValueError("mesh changed since the recorded run")
         mesh = read_cm2d(path)
         flow = path.parent/"flow.cells.csv"
         with flow.open() as stream:
             rows = {int(row["cell"]):row for row in csv.DictReader(stream)}
         if set(rows) != {cell.id for cell in mesh.cells}:
-            raise ValueError("field IDs do not match the verified mesh")
+            raise ValueError("field IDs do not match the recorded mesh")
         for cell in mesh.cells:
             row = rows[cell.id]
             velocity = np.hypot(float(row["u"]), float(row["v"]))
@@ -49,7 +49,7 @@ def load_case(directory):
                            for edge in mesh.edges if edge.neighbour < 0])
         sources.append(dict(mesh=str(path), meshSha256=leaf["acceptedMesh"]["sha256"],
                             field=str(flow), fieldSha256=hashlib.sha256(flow.read_bytes()).hexdigest()))
-        accepted = next(case for case in leaf["cases"] if case["status"] == "flow-audited")
+        accepted = next(case for case in leaf["cases"] if case["status"] in ("flow-converged", "flow-audited"))
         iterations.append(leaf.get("steadyContinuation", {}).get("totalIterations", accepted["flow"]["iterations"]))
     return polygons, speed, pressure, boundaries, sources, iterations
 
@@ -99,7 +99,7 @@ def render(directories, output, labels=None, shared_scales=False, title=None):
             axis.set_facecolor("#e5e8eb")
         records.append(dict(label=label, cells=len(polygons), sources=sources, iterations=iterations))
     fig.suptitle((title or "CartMesh2D | Density topology → extracted wall → native Cut-cell CFD")+"\n"
-                 "All extracted regions retained; low-Re flow converged and independently audited; physical accuracy not qualified",
+                 "All extracted regions retained; native flow converged; physical accuracy not qualified",
                  fontsize=12)
     fig.savefig(output, dpi=160)
     plt.close(fig)

@@ -1,0 +1,112 @@
+{
+  "现有高密翼型：Re=1e6 实际 OpenFOAM 求解": [
+    {
+      "path": "artifacts/current/airfoil-rans-Re1e6-fields.png",
+      "label": "速度与压力场"
+    },
+    {
+      "path": "artifacts/current/airfoil-rans-Re1e6-histories.png",
+      "label": "残差与物理量历史"
+    },
+    {
+      "path": "artifacts/current/airfoil-rans-Re1e6-streamlines.png",
+      "label": "流线"
+    },
+    {
+      "path": "artifacts/current/airfoil-rans-Re1e6-surfaceCp.png",
+      "label": "表面压力系数"
+    }
+  ],
+  "跨平台桌面构建": [
+    {
+      "path": "artifacts/current/desktop-platforms-linux.png",
+      "label": "Linux 桌面运行"
+    },
+    {
+      "path": "artifacts/current/desktop-platforms-linux-mesh.png",
+      "label": "Linux 真实网格"
+    },
+    {
+      "path": "artifacts/current/desktop-platforms-win.png",
+      "label": "Windows 桌面运行"
+    },
+    {
+      "path": "artifacts/current/desktop-platforms-win-mesh.png",
+      "label": "Windows 真实网格"
+    }
+  ],
+  "PNG / JPG 图片输入": [
+    {
+      "path": "artifacts/current/raster-import-dialog.png",
+      "label": "图片轮廓导入"
+    },
+    {
+      "path": "artifacts/current/raster-import-mesh.png",
+      "label": "图片生成的真实网格"
+    }
+  ],
+  "本次交付：取消 Q1、修复目标求解器质量、侧栏伸缩": [
+    {
+      "path": "artifacts/current/desktop-quality-sidebar.png",
+      "label": "质量侧栏"
+    },
+    {
+      "path": "artifacts/current/nozzle-target-quality.png",
+      "label": "喷管目标质量检查"
+    },
+    {
+      "path": "artifacts/current/nozzle-short-face-repair.png",
+      "label": "短面修复记录"
+    }
+  ],
+  "桌面 0.3：双主题、数量配置与图片托管": [
+    {
+      "path": "artifacts/current/desktop-modern-0.3.png",
+      "label": "现代桌面主题"
+    },
+    {
+      "path": "artifacts/current/desktop-duet-0.3.png",
+      "label": "另一桌面主题"
+    }
+  ],
+  "已有 CFD 与精度边界": [
+    {
+      "path": "artifacts/current/harmonic-mms-convergence.png",
+      "label": "制造解细化误差"
+    },
+    {
+      "path": "artifacts/current/nozzle-flow-convergence.png",
+      "label": "喷管流动收敛历史"
+    },
+    {
+      "path": "artifacts/current/nozzle-flow-validation.png",
+      "label": "喷管三档网格比较"
+    }
+  ],
+  "修复前核心的规模证据": [
+    {
+      "path": "展示素材/01_circle_pure_153208.png",
+      "label": "历史十万级网格：01_circle_pure_153208"
+    },
+    {
+      "path": "展示素材/02_naca_pure_133810.png",
+      "label": "历史十万级网格：02_naca_pure_133810"
+    },
+    {
+      "path": "展示素材/03_nozzle_pure_141488.png",
+      "label": "历史十万级网格：03_nozzle_pure_141488"
+    },
+    {
+      "path": "展示素材/04_circle_hybrid_164970.png",
+      "label": "历史十万级网格：04_circle_hybrid_164970"
+    },
+    {
+      "path": "展示素材/05_naca_hybrid_140305.png",
+      "label": "历史十万级网格：05_naca_hybrid_140305"
+    },
+    {
+      "path": "展示素材/06_nozzle_hybrid_148375.png",
+      "label": "历史十万级网格：06_nozzle_hybrid_148375"
+    }
+  ]
+}

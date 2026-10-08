@@ -1,0 +1,66 @@
+{
+  "status": "生成完成",
+  "detail": "手动生成成功；可导出结果包　0.39 s",
+  "counters": "完整单元\n65,536\n外部\n52,480\n内部\n12,540\n相交（未裁切）\n516",
+  "gates": "背景网格\n已生成\n详情",
+  "histogram": "每层级单元数\nL8\n65,536",
+  "log": "已读入 1 个闭合环（顶点 32）\n源单位 m，输出单位 m（换算 1）；保留物理尺寸。\n正在生成纯笛卡尔背景网格网格…\nmesh_mode=background-uniform\nsolver_ready=false\nretains_solid_interior=true\nleaf_count=65536\ninside_cells=12540\noutside_cells=52480\nintersected_cells=516\nbackground_area=16\ndomain_area=16\nrefinement_seconds=0.026636375\nbalance_seconds=0.014093207999999999\nwrite_seconds=0.342937875\ntotal_seconds=0.38554333299999999\nbackground_json=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-uniform/mesh-G7H6wH/circle.background.json\nvtk=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-uniform/mesh-G7H6wH/circle.background.vtk\n完整笛卡尔背景网格已生成；内部单元保留，未生成流体求解拓扑。\n",
+  "cellBudget": null,
+  "adaptive": null,
+  "initialVortex": null,
+  "flowCase": null,
+  "bundledChineseFontLoaded": true,
+  "theme": "modern",
+  "interactionChecks": false,
+  "euler": null,
+  "thermal": null,
+  "flow": null,
+  "background": {
+    "rejected": [
+      "runFlow",
+      "runThermal",
+      "runEuler"
+    ],
+    "displayMode": "classification",
+    "panelsHidden": true,
+    "legend": "外部 52,480　\n内部 12,540　\n相交 516　"
+  },
+  "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-uniform.zip",
+  "previewTiming": {
+    "drawSubmissionMs": [
+      0.30000001192092896,
+      0.29999999701976776,
+      0.09999999403953552,
+      0.20000000298023224,
+      0.09999999403953552,
+      0.30000001192092896
+    ],
+    "note": "Canvas command submission; excludes asynchronous GPU completion"
+  },
+  "home": {
+    "emptyVisible": true,
+    "released": true,
+    "geometryCleared": true,
+    "exportAvailable": true,
+    "mainPreviewReleased": true,
+    "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-uniform-home.zip"
+  },
+  "layout": {
+    "bottomReachable": true,
+    "pageHeight": 560,
+    "windowHeight": 560,
+    "geometry": {
+      "bodyHeight": 560,
+      "innerHeight": 560,
+      "canvasHeight": 313,
+      "shellBottom": 560
+    },
+    "wallpaper": {
+      "image": "none",
+      "canvasBackground": "rgb(251, 252, 248)",
+      "welcomeHidden": false
+    },
+    "sidebarCollapsed": false,
+    "sidebarExpanded": true
+  }
+}

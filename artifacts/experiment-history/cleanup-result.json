@@ -1,0 +1,12 @@
+{
+  "completed": "2026-09-20T22:21:51.020304+08:00",
+  "deleted_files": 5728,
+  "deleted_logical_bytes": 17406858476,
+  "deleted_allocated_bytes": 17420296192,
+  "retained_files": 14044,
+  "retained_logical_bytes": 476814729,
+  "retained_sha256_verified": 14044,
+  "free_space_delta": 15730302976,
+  "no_cloud_upload": true,
+  "not_all_deleted_data_backed_up": true
+}

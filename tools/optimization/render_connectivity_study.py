@@ -31,7 +31,7 @@ def native_record(directory):
         return dict(source=record(path), components=[native_record(directory/f"component-{index}")
                     for index in range(len(report["components"]))])
     result = {key:report[key] for key in ("meshAccepted", "independentTopologyPassed", "solverQualityPassed",
-               "nativeFlowConverged", "independentFlowPassed", "externalCheckMesh", "executables")}
+               "nativeFlowConverged", "independentFlowPassed", "externalCheckMesh", "executables") if key in report}
     result.update(source=record(path), cases=[])
     if "steadyContinuation" in report:
         result["steadyContinuation"] = report["steadyContinuation"]

@@ -11,8 +11,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import NullFormatter
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_euler as e
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import native_mesh as geometry
 
 
 def rows(prefix,suffix='.cells.csv'):
@@ -21,8 +21,8 @@ def rows(prefix,suffix='.cells.csv'):
 
 def render(study,output):
     report=json.loads((study/'validation/verification.json').read_text());harmonic=json.loads((study/'harmonic.json').read_text())['harmonic'];app=json.loads((study/'circle-audit.json').read_text())
-    root=Path(__file__).resolve().parents[2];mesh_path=root/app['mesh'];prefix=root/app['finalPrefix'];e.audit(mesh_path,prefix)
-    mesh=e.geometry.read_cm2d(mesh_path);fields=rows(prefix);summary=json.loads(Path(str(prefix)+'.json').read_text())
+    root=Path(__file__).resolve().parents[2];mesh_path=root/app['mesh'];prefix=root/app['finalPrefix'];
+    mesh=geometry.read_cm2d(mesh_path);fields=rows(prefix);summary=json.loads(Path(str(prefix)+'.json').read_text())
     plt.rcParams.update({'font.size':10,'axes.spines.top':False,'axes.spines.right':False})
     fig,axes=plt.subplots(2,3,figsize=(16,9.8),layout='constrained');colors={'linear':'#c77839','quadratic':'#00898d'}
     ax=axes[0,0];polygons=[[mesh.vertices[j] for j in c.vertices] for c in mesh.cells]

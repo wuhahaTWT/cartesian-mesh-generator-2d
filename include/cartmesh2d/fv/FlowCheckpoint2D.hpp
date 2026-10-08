@@ -128,6 +128,8 @@ inline void writeDouble(std::ostream& out, double value, const char* what) {
 
 inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
                                   const FlowControls2D& controls, const FlowState2D& state) {
+    if(controls.momentumInertia != 1)
+        flow_checkpoint_detail::fail("Stokes research controls do not support physical-time checkpoints");
     const bool explicitBoundary = controls.scenario == "custom";
     if(controls.scenario=="flatplate" || controls.flatPlateLeadingEdge!=0 ||
        controls.flatPlateTop!=FlatPlateTop2D::PressureFarfield)
@@ -224,6 +226,8 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
 
 inline FlowState2D readFlowCheckpoint2D(std::istream& in, const FvMesh2D& mesh,
                                         const FlowControls2D& controls) {
+    if(controls.momentumInertia != 1)
+        flow_checkpoint_detail::fail("Stokes research controls do not support physical-time checkpoints");
     validateFvMesh2D(mesh);
     if (controls.scenario == "custom" || !controls.boundaryConditions.empty())
         validateFlowBoundaryConditions2D(mesh, controls);

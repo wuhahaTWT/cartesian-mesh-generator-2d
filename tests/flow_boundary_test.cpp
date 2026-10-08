@@ -320,6 +320,46 @@ void symmetryBoundaries() {
     }
 }
 
+void prescribedStokesPorts() {
+    const auto mesh=rectangle(20,8,2);
+    auto c=conditions(mesh);
+    c.momentumInertia=0;
+    c.viscousStress=ViscousStress2D::Laplacian;
+    for(auto& b:c.boundaryConditions) {
+        const auto& f=mesh.faces[b.face];
+        if(std::abs(f.areaVector.x)>0) {
+            const double dy=std::abs(f.areaVector.x),y=f.centre.y-.5;
+            b.velocity={1-4*(y*y+dy*dy/12),0};
+            if(f.areaVector.x>0) b.kind=FlowBoundaryKind2D::VelocityOutlet;
+        }
+    }
+    const auto a=solveIncompressible2D(mesh,c);
+    require(a.converged,"prescribed Stokes ports did not converge");
+    for(const auto& f:a.faceMomentum)
+        require(f.advection.x==0 && f.advection.y==0,"Stokes exported nonzero advection");
+    auto scaled=c;scaled.speed*=.25;
+    for(auto& b:scaled.boundaryConditions){b.velocity.x*=.25;b.velocity.y*=.25;}
+    const auto b=solveIncompressible2D(mesh,scaled);
+    require(b.converged,"scaled Stokes ports did not converge");
+    // Same linear operator, 1/4 boundary forcing; use the established absolute
+    // field-equivalence scale of the boundary tests, not a physical error gate.
+    for(std::size_t i=0;i<a.u.size();++i)
+        require(std::abs(b.u[i]-.25*a.u[i])<2e-8 && std::abs(b.v[i]-.25*a.v[i])<2e-8 &&
+                std::abs(b.p[i]-.25*a.p[i])<2e-8,"Stokes amplitude scaling failed");
+    std::ostringstream saved;writeFlowBoundaryConditions2D(saved,mesh,c);
+    std::istringstream input(saved.str());auto copied=c;
+    copied.boundaryConditions=readFlowBoundaryConditions2D(input,mesh,c);
+    compare(a,solveIncompressible2D(mesh,copied));
+    auto bad=c;
+    for(auto& port:bad.boundaryConditions)if(port.kind==FlowBoundaryKind2D::VelocityOutlet){port.velocity.x*=.9;break;}
+    rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
+    bad=c;bad.momentumInertia=.5;rejects([&]{solveIncompressible2D(mesh,bad);});
+    FlowState2D state{0,a.u,a.v,a.p,a.flux};
+    rejects([&]{advanceIncompressible2D(mesh,c,state,.1);});
+    rejects([&]{std::ostringstream checkpoint;writeFlowCheckpoint2D(checkpoint,mesh,c,state);});
+    rejects([&]{std::istringstream checkpoint;readFlowCheckpoint2D(checkpoint,mesh,c);});
+}
+
 int main() {
 #ifdef __APPLE__
     setenv("VECLIB_MAXIMUM_THREADS", "1", 1);
@@ -329,6 +369,7 @@ int main() {
         steadyRelaxationIndependence();
         pressureOpenings();
         symmetryBoundaries();
+        prescribedStokesPorts();
         const auto mesh=rectangle();const auto control=conditions(mesh);
         const auto baseline=solveIncompressible2D(mesh,control);
         std::ostringstream boundaryFile;writeFlowBoundaryConditions2D(boundaryFile,mesh,control);

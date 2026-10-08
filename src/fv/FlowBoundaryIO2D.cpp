@@ -25,6 +25,7 @@ std::size_t boundaryCount(const FvMesh2D& mesh) {
 const char* flowBoundaryKindName2D(FlowBoundaryKind2D kind) {
     switch(kind) {
     case FlowBoundaryKind2D::VelocityInlet:return "velocity-inlet";
+    case FlowBoundaryKind2D::VelocityOutlet:return "velocity-outlet";
     case FlowBoundaryKind2D::PressureOutlet:return "pressure-outlet";
     case FlowBoundaryKind2D::PressureOpening:return "pressure-opening";
     case FlowBoundaryKind2D::Symmetry:return "symmetry";
@@ -35,7 +36,7 @@ const char* flowBoundaryKindName2D(FlowBoundaryKind2D kind) {
     throw std::runtime_error("Flow boundaries: unknown condition type");
 }
 FlowBoundaryKind2D flowBoundaryKindFromName2D(const std::string& name) {
-    for(auto kind:{FlowBoundaryKind2D::VelocityInlet,FlowBoundaryKind2D::PressureOutlet,FlowBoundaryKind2D::PressureOpening,FlowBoundaryKind2D::Symmetry,
+    for(auto kind:{FlowBoundaryKind2D::VelocityInlet,FlowBoundaryKind2D::VelocityOutlet,FlowBoundaryKind2D::PressureOutlet,FlowBoundaryKind2D::PressureOpening,FlowBoundaryKind2D::Symmetry,
                   FlowBoundaryKind2D::Wall,FlowBoundaryKind2D::MovingWall,FlowBoundaryKind2D::SmoothMovingWall})
         if(name==flowBoundaryKindName2D(kind))return kind;
     throw std::runtime_error("Flow boundaries: unknown condition type");

@@ -8,14 +8,14 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'tools/verification'))
-import verify_native_flow as native
+sys.path.insert(0,str(ROOT/'tools/flow'))
+import native_mesh as native
 
 def main(args):
     report=json.loads((args.study/'summary.json').read_text())
     if not report['valid']:raise ValueError('Study has unresolved acceptance issues')
-    mesh=native.read_cm2d(args.mesh);measured=native.measure(mesh,1e-11,1e-9)
-    cells=native.read_cells(Path(str(args.cutcell_prefix)+'.cells.csv'),mesh,measured,'custom')
+    mesh=native.read_cm2d(args.mesh);measured=native.measure(mesh)
+    cells=native.read_cells(Path(str(args.cutcell_prefix)+'.cells.csv'))
     audit=json.loads(Path(str(args.cutcell_prefix)+'-audit.json').read_text())
     if not audit['valid']:raise ValueError('Cut-cell field has not passed independent audit')
     fig,axes=plt.subplots(1,3,figsize=(15.8,5.3),layout='constrained')
@@ -23,8 +23,8 @@ def main(args):
     coll=PolyCollection(polygons,array=[math.hypot(c['u'],c['v']) for c in cells],cmap='viridis',edgecolors='#182830',linewidths=.18)
     axes[0].add_collection(coll);axes[0].autoscale();axes[0].set_aspect('equal');fig.colorbar(coll,ax=axes[0],label='Speed [m/s]',shrink=.77)
     axes[0].set(xlabel='x [m]',ylabel='y [m]',title=f'Actual Cut-cell solution: {len(cells):,} cells')
-    fine=report['cases'][-1];mf=native.read_cm2d(Path(fine['mesh']));measure=native.measure(mf,1e-11,1e-9)
-    cf=native.read_cells(Path(fine['prefix']+'.cells.csv'),mf,measure,'custom')
+    fine=report['cases'][-1];mf=native.read_cm2d(Path(fine['mesh']));measure=native.measure(mf)
+    cf=native.read_cells(Path(fine['prefix']+'.cells.csv'))
     radial={}
     for c in cf:
         r=math.hypot(c['x'],c['y']);key=round(r,10)

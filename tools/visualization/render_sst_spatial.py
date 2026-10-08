@@ -6,8 +6,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_native_flow as native
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import native_mesh as native
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--study',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
 a=p.parse_args();study=json.loads(a.study.read_text());r=study['cases']['shear'][-1]
 if not study['valid']:raise ValueError('audit required')

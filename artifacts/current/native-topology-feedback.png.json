@@ -1,0 +1,59 @@
+{
+  "source": "outputs/topology-feedback/double-pipe-004",
+  "baseline": "outputs/topology-feedback/double-pipe-no-feedback-001",
+  "acceptedFieldIds": [
+    0,
+    8,
+    15
+  ],
+  "files": [
+    {
+      "path": "outputs/topology-feedback/double-pipe-004/summary.json",
+      "sha256": "a129c9ce397fec49b3392ecf7538fa77deacf9fab1e48f30864e3c4c611fc028"
+    },
+    {
+      "path": "outputs/topology-feedback/double-pipe-004/evaluations.json",
+      "sha256": "ef05c71b879f1485050339e98f84f1f36865bf298147458d87dac008cc22ca20"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/native/component-0/level-5/mesh.solver.cm2d",
+      "sha256": "7dfb420b0fc9daeb3a40d782b877b1840c8fc4336b5c22ce63fb1ee40d9aea81"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/native/component-0/level-5/flow.cells.csv",
+      "sha256": "7727c64da701be03ab9fcbf07486c6cd980397db7fd2a6b9f391768c8ad18332"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/native/component-1/level-5/mesh.solver.cm2d",
+      "sha256": "4b405874297fc02e9be073fa39416debe2f5f35d4c06dac76fbfcf7bbedfdcb0"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/native/component-1/level-5/flow.cells.csv",
+      "sha256": "7457946b8993dd87dfdbb1f08fb4504b5777407e26aecddba1b4cdcdc797beb4"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/008-feedback-gradient/native/level-5/mesh.solver.cm2d",
+      "sha256": "fc1e1a7653e78fa0ed6f8d622b7ee076cb618672d02a3db953dcd33f776a55dc"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/008-feedback-gradient/native/level-5/flow.cells.csv",
+      "sha256": "faed1196e351616469b258e25b1a7f65ea4594b24d46a23f0b4f216757517489"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/015-porous-gradient-half-1/native/level-5/mesh.solver.cm2d",
+      "sha256": "2012ed8d81037cf5b6ee472fca6050bafb2ca8e4fe726b6a3ae5fde875df2e58"
+    },
+    {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/015-porous-gradient-half-1/native/level-5/flow.cells.csv",
+      "sha256": "2fb6695b1131b79e38827274f1abb3e9dee33f3eae4321140a9d451f8e08fc48"
+    },
+    {
+      "path": "outputs/topology-feedback/double-pipe-no-feedback-001/summary.json",
+      "sha256": "e17f5c21ea256fc1399a3a0c6b2628e3e10fc6aeaeb0655186d84e47dab141e3"
+    },
+    {
+      "path": "outputs/topology-feedback/double-pipe-no-feedback-001/evaluations.json",
+      "sha256": "35e5c1c6db6f1100da7d9db7d42c526ed128c1b793c7fc17d07f40d0fc8e19e3"
+    }
+  ]
+}

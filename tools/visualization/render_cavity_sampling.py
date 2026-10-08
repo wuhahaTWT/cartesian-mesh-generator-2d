@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "verification"))
-from verify_native_flow import affine_sample, idw, read_cm2d
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "flow"))
+from native_mesh import affine_sample, idw, read_cm2d
 
 
 def main():

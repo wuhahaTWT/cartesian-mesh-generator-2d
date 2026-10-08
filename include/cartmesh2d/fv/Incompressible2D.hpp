@@ -18,7 +18,7 @@ enum class FlowConvergence2D { Strict, Engineering };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
-enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall, PressureOpening, Symmetry };
+enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall, PressureOpening, Symmetry, VelocityOutlet };
 
 // Explicit conditions refer to boundary face IDs in the final FvMesh2D only.
 // Velocity and kinematic pressure are physical values, not multiples of speed.
@@ -65,6 +65,9 @@ struct FlowControls2D {
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
+    // Explicit research opt-in: 0 is steady custom Stokes, 1 is unchanged NS.
+    // No intermediate values, transient/material coupling or checkpoints at 0.
+    double momentumInertia = 1;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
     // Opt-in pressure outlet: reverse flow has zero tangential velocity and
     // zero normal velocity gradient. The conservative flux is never clipped.

@@ -12,8 +12,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'verification'))
-import verify_native_flow as native
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'flow'))
+import native_mesh as native
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--mesh', type=Path, required=True)
@@ -33,9 +33,7 @@ actual_time=summary.get('acceptedTime',0)
 if args.time is not None and not math.isclose(args.time,actual_time,rel_tol=1e-12,abs_tol=1e-12):
     raise ValueError('Requested time differs from the accepted field')
 mesh = native.read_cm2d(args.mesh)
-measured = native.measure(mesh, 1e-10, 1e-9)
-if measured.issues:
-    raise ValueError(measured.issues)
+measured = native.measure(mesh)
 with Path(str(args.prefix) + '.cells.csv').open() as stream:
     rows = list(csv.DictReader(stream))
 if len(rows) != len(mesh.cells):

@@ -48,7 +48,20 @@
   ],
   "cloud_verified": true,
   "cloud_verification_method": "Downloaded each complete package from the existing private Seafile library over HTTPS and matched SHA256 and byte count; streamed without retaining another local copy.",
-  "source_data_deleted": false,
+  "source_data_deleted": true,
   "archive_folder_name": "cartmesh2d-2e13c5e-selected",
-  "cloud_verified_at_utc": "2026-09-20T12:41:59Z"
+  "cloud_verified_at_utc": "2026-09-20T12:41:59Z",
+  "cleanup": {
+    "deleted_files": 1896,
+    "deleted_logical_bytes": 2311569717,
+    "free_bytes_before": 376627200,
+    "free_bytes_after": 3800174592,
+    "skipped_changed_or_missing": [],
+    "kept": "All unselected outputs, metadata/logs/configuration, tracked files, source and Seafile archives",
+    "scope": "Only archived raw outputs; originals verified immediately before deletion; all cloud archive packages freshly downloaded and hashed first",
+    "cloud_verified_at": 1789910261.5419421,
+    "deletion_ledger": "outputs/archive-selection/cleanup-deleted.jsonl",
+    "deletion_ledger_sha256": "82f9790f9f7d3061ed292dc2523555c07907d2f9267967114a7571e0786fbbda",
+    "unselected_files_verified_present": 10029
+  }
 }

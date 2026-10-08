@@ -16,6 +16,7 @@ import math
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import splu
+from topology_cases import ports_for
 
 
 @dataclass(frozen=True)
@@ -32,20 +33,28 @@ class Problem:
     case: str = "double-pipe"
     # Algebraic residual / rhs infinity norm, not a physical accuracy claim.
     linear_residual_limit: float = 1e-8
+    # Re = U_mean * inlet aperture width / nu. Zero denotes the Stokes limit.
+    reynolds: float = 0.0
+    newton_residual_limit: float = 1e-11
+    newton_iterations: int = 60
 
     def __post_init__(self):
         if (not isinstance(self.nx, int) or not isinstance(self.ny, int) or
                 not 8 <= self.nx <= 160 or not 8 <= self.ny <= 160):
             raise ValueError("nx and ny must be integers in [8,160]")
         for name in ("width", "height", "viscosity", "filter_radius", "port_width",
-                     "linear_residual_limit"):
+                     "linear_residual_limit", "newton_residual_limit"):
             if not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be positive and finite")
         if not math.isfinite(self.alpha_max) or self.alpha_max < 0:
             raise ValueError("alpha_max must be nonnegative and finite")
+        if not math.isfinite(self.reynolds) or self.reynolds < 0:
+            raise ValueError("Reynolds number must be nonnegative and finite")
+        if not isinstance(self.newton_iterations, int) or self.newton_iterations < 1:
+            raise ValueError("Newton iteration budget must be a positive integer")
         if not 0 < self.volume_fraction <= 1:
             raise ValueError("volume_fraction must be in (0,1]")
-        if self.case not in ("double-pipe", "bend", "channel"):
+        if self.case not in ("double-pipe", "bend", "channel", "diffuser", "elbow", "four-terminal"):
             raise ValueError("unknown flow topology case")
         if self.case != "channel" and not 2*self.height/self.ny <= self.port_width < self.height/2:
             raise ValueError("ports need at least two cells and must be narrower than half-height")
@@ -69,6 +78,7 @@ class Evaluation:
     pressure_power: float
     grayness: float
     solid_speed_fraction: float
+    total_pressure_power: float = 0.
 
 
 def port_average(y0, y1, centre, width):
@@ -82,6 +92,8 @@ def port_average(y0, y1, centre, width):
 
 class StokesBrinkman:
     def __init__(self, problem=Problem()):
+        if type(self) is StokesBrinkman and problem.reynolds != 0:
+            raise ValueError("positive Re requires NavierStokesBrinkman")
         self.problem = problem
         p = problem
         self.nx, self.ny = p.nx, p.ny
@@ -100,6 +112,13 @@ class StokesBrinkman:
         self.design = np.isnan(self.fixed_design)
         self._assemble()
         self.filter = self._density_filter()
+        if p.case in ("diffuser", "elbow", "four-terminal"):
+            self.pressure_weights = -np.asarray(self.divergence@self.fixed_velocity).ravel()
+            self.inflow = float(np.sum(np.maximum(self.pressure_weights,0)))
+            outflow = float(-np.sum(np.minimum(self.pressure_weights,0)))
+            if self.inflow <= 0 or abs(self.inflow-outflow) > 1e-12*self.inflow:
+                raise ValueError("prescribed port fluxes must balance")
+            return
         self.pressure_weights = np.zeros(self.cells)
         for j in range(p.ny):
             self.pressure_weights[self.c(0, j)] += self.fixed_velocity[self.u(0, j)]*self.dy
@@ -120,6 +139,10 @@ class StokesBrinkman:
 
     def _boundary_data(self):
         p = self.problem
+        self.ports = ports_for(p)
+        if p.case in ("diffuser", "elbow", "four-terminal"):
+            self._benchmark_boundary_data()
+            return
         left = [p.height/4, 3*p.height/4] if p.case == "double-pipe" else [p.height/4]
         right = left if p.case == "double-pipe" else [3*p.height/4]
         width = p.port_width
@@ -148,6 +171,36 @@ class StokesBrinkman:
                 if i < 2 or i >= self.nx-2:
                     side = 0 if i < 2 else self.nx
                     self.fixed_design[k] = float(self.fixed_velocity[self.u(side, j)] > 0)
+
+    def _benchmark_boundary_data(self):
+        """Four-sided prescribed ports with exact integrated parabolic fluxes."""
+        self.aperture_width = self.problem.port_width
+        self.left_ports = [p.centre for p in self.ports if p.side == "left"]
+        self.right_ports = [p.centre for p in self.ports if p.side == "right"]
+        for j in range(self.ny):
+            self.is_dirichlet[self.u(0,j)] = self.is_dirichlet[self.u(self.nx,j)] = True
+        for i in range(self.nx):
+            self.is_dirichlet[self.v(i,0)] = self.is_dirichlet[self.v(i,self.ny)] = True
+        for j in range(self.ny):
+            for i in range(self.nx):
+                if i < 2 or i >= self.nx-2 or j < 2 or j >= self.ny-2:
+                    self.fixed_design[self.c(i,j)] = 0.
+        for port in self.ports:
+            vertical = port.side in ("left","right")
+            spacing, count = (self.dy,self.ny) if vertical else (self.dx,self.nx)
+            inward = 1 if port.side in ("left","bottom") else -1
+            sign = inward*(1 if port.role == "inlet" else -1)
+            for index in range(count):
+                profile = port.peak*port_average(index*spacing,(index+1)*spacing,port.centre,port.width)
+                if vertical:
+                    face = self.u(0 if port.side == "left" else self.nx,index)
+                    cells = [self.c(i,index) for i in ((0,1) if port.side == "left" else (self.nx-2,self.nx-1))]
+                else:
+                    face = self.v(index,0 if port.side == "bottom" else self.ny)
+                    cells = [self.c(index,j) for j in ((0,1) if port.side == "bottom" else (self.ny-2,self.ny-1))]
+                self.fixed_velocity[face] += sign*profile
+                if profile > 0:
+                    self.fixed_design[cells] = 1.
 
     def _assemble(self):
         row, col, val = [], [], []
@@ -268,21 +321,54 @@ class StokesBrinkman:
     def uniform_design(self, beta=0):
         return self.feasible_design(np.full(self.cells, self.problem.volume_fraction), beta)
 
+    def _solve(self, stiffness):
+        """Legacy linear path, also used verbatim at Re=0 by the NS subclass."""
+        kii = stiffness[self.free, :][:, self.free]
+        matrix = sparse.bmat([[kii, -self.dfree.T], [-self.dfree, None]], format="csc")
+        factor = splu(matrix)
+        state = factor.solve(self.rhs)
+        residual = float(np.max(np.abs(matrix@state-self.rhs))/max(np.max(np.abs(self.rhs)), 1e-30))
+        return state, matrix, factor, residual
+
+    def total_pressure_functional(self):
+        """Linear extrapolated boundary pressure work + exact prescribed KE flux.
+
+        Pressure at each port is 1.5*p_first-0.5*p_second. This defines a
+        boundary functional, unlike the retained legacy adjacent-cell metric.
+        The kinetic integral is analytic: integral(profile**3) = 16*w*peak**3/35.
+        With fixed profiles it is design-independent. No equality with discrete
+        volume dissipation is assumed on a finite grid.
+        """
+        weights=np.zeros(self.cells)
+        kinetic=0.
+        gamma=self.problem.reynolds*self.problem.viscosity/((2/3)*self.aperture_width)
+        for port in self.ports:
+            sign=1 if port.role=="inlet" else -1
+            kinetic+=sign*gamma*8*port.width*port.peak**3/35
+            vertical=port.side in ("left","right")
+            spacing,count=(self.dy,self.ny) if vertical else (self.dx,self.nx)
+            for index in range(count):
+                flux=sign*spacing*port.peak*port_average(index*spacing,(index+1)*spacing,port.centre,port.width)
+                if vertical:
+                    a,b=(0,1) if port.side=="left" else (self.nx-1,self.nx-2)
+                    first,second=self.c(a,index),self.c(b,index)
+                else:
+                    a,b=(0,1) if port.side=="bottom" else (self.ny-1,self.ny-2)
+                    first,second=self.c(index,a),self.c(index,b)
+                weights[first]+=1.5*flux; weights[second]-=.5*flux
+        return weights,kinetic
+
     def evaluate(self, x, q=0.1, beta=0.0, objective="dissipation"):
         if not math.isfinite(q) or q <= 0:
             raise ValueError("Brinkman interpolation q must be positive")
-        if objective not in ("dissipation", "pressure-power"):
+        if objective not in ("dissipation", "pressure-power", "total-pressure-power"):
             raise ValueError("unknown objective")
         rho, projection_derivative = self.physical(x, beta)
         alpha = self.problem.alpha_max*q*(1-rho)/(q+rho)
         dalpha = -self.problem.alpha_max*q*(1+q)/(q+rho)**2
         resistance = self.drag_weights@alpha
         stiffness = self.viscous+sparse.diags(resistance, format="csc")
-        kii = stiffness[self.free, :][:, self.free]
-        matrix = sparse.bmat([[kii, -self.dfree.T], [-self.dfree, None]], format="csc")
-        factor = splu(matrix)
-        state = factor.solve(self.rhs)
-        linear = float(np.max(np.abs(matrix@state-self.rhs))/max(np.max(np.abs(self.rhs)), 1e-30))
+        state, matrix, factor, linear = self._solve(stiffness)
         velocity = self.fixed_velocity.copy()
         velocity[self.free] = state[:len(self.free)]
         pressure = np.r_[state[len(self.free):], 0.0]
@@ -292,18 +378,29 @@ class StokesBrinkman:
             raise ArithmeticError(f"Stokes solve failed: linear={linear:g}, continuity={continuity:g}")
         dissipation = float(velocity@(stiffness@velocity))
         pressure_power = float(self.pressure_weights@pressure)
+        total_weights,kinetic=self.total_pressure_functional()
+        total_power=float(total_weights@pressure+kinetic)
         rhs_adjoint = np.zeros_like(state)
         if objective == "dissipation":
             value = dissipation
             rhs_adjoint[:len(self.free)] = 2*(stiffness@velocity)[self.free]
             direct = np.asarray(self.drag_weights.T@(velocity**2)).ravel()
         else:
-            value = pressure_power
-            rhs_adjoint[len(self.free):] = self.pressure_weights[:-1]
+            value = total_power if objective=="total-pressure-power" else pressure_power
+            rhs_adjoint[len(self.free):] = (total_weights if objective=="total-pressure-power" else self.pressure_weights)[:-1]
             direct = np.zeros(self.cells)
         adjoint = factor.solve(rhs_adjoint, trans="T")
         adjoint_error = float(np.max(np.abs(matrix.T@adjoint-rhs_adjoint))/
                               max(np.max(np.abs(rhs_adjoint)), 1e-30))
+        # Large alpha with a pressure-work functional exposes LU cancellation
+        # in this saddle system. Correct the measured residual, preserving the
+        # original acceptance gate and the exact old path when already valid.
+        for _ in range(5):
+            if adjoint_error <= self.problem.linear_residual_limit:
+                break
+            adjoint += factor.solve(rhs_adjoint-matrix.T@adjoint,trans="T")
+            adjoint_error = float(np.max(np.abs(matrix.T@adjoint-rhs_adjoint))/
+                                  max(np.max(np.abs(rhs_adjoint)),1e-30))
         if not np.isfinite(adjoint).all() or adjoint_error > self.problem.linear_residual_limit:
             raise ArithmeticError(f"discrete adjoint failed: residual={adjoint_error:g}")
         implicit = np.asarray(self.free_weights.T@(adjoint[:len(self.free)]*velocity[self.free])).ravel()
@@ -315,7 +412,7 @@ class StokesBrinkman:
         leakage = float(np.max(speed[solid])/max(np.max(speed), 1e-30)) if np.any(solid) else 0.0
         return Evaluation(value, gradient, float(np.mean(rho)), volume_gradient, rho,
                           velocity, pressure, linear, continuity, adjoint_error,
-                          dissipation, pressure_power, float(np.mean(4*rho*(1-rho))), leakage)
+                          dissipation, pressure_power, float(np.mean(4*rho*(1-rho))), leakage,total_power)
 
     def cell_velocity(self, velocity):
         u = velocity[:self.nu_faces].reshape(self.ny, self.nx+1)

@@ -4,9 +4,9 @@ import argparse,csv,json,math,sys
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_euler as euler
-import verify_native_flow as native
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import analytic_flow as euler
+import native_mesh as native
 
 def main(root,destination):
     report=json.loads((root/'study.json').read_text())
@@ -18,14 +18,14 @@ def main(root,destination):
     for ax,key,k in [(axes[0,0],'rho',0),(axes[0,1],'p',2)]:
         ax.plot(xx,[r[k] for r in exact],'k-',lw=1.1,label='Exact Riemann solution')
         for n in [100,200,400]:
-            prefix=root/f'sod{n}';euler.audit(root/f'sod{n}.solver.cm2d',prefix)
+            prefix=root/f'sod{n}';
             rows=list(csv.DictReader(Path(str(prefix)+'.cells.csv').open()));profile=rows[:n]
             ax.plot([float(r['x']) for r in profile],[float(r[key]) for r in profile],lw=.9,label=f'{n} x 4 cells')
         ax.set(xlabel='x',ylabel='Density' if key=='rho' else 'Absolute pressure',title=f'Sod shock tube: {key}, t = 0.2');ax.legend(fontsize=8);ax.grid(alpha=.2)
     for ax,name,meshname,key,title,limits in [
         (axes[1,0],'vortex160','vortex160','rho','Periodic vortex: actual density at t = 1',(6,15,6,15)),
         (axes[1,1],'circle','circle','mach','Mach 0.3 cylinder: inviscid startup at t = 0.4',(-2,3,-2,2))]:
-        meshpath=root/f'{meshname}.solver.cm2d';prefix=root/name;euler.audit(meshpath,prefix)
+        meshpath=root/f'{meshname}.solver.cm2d';prefix=root/name;
         mesh=native.read_cm2d(meshpath);rows=list(csv.DictReader(Path(str(prefix)+'.cells.csv').open()))
         polygons=[[mesh.vertices[i] for i in cell.vertices] for cell in mesh.cells]
         coll=PolyCollection(polygons,array=[float(r[key]) for r in rows],cmap='viridis',edgecolors='#667078',linewidths=.11)

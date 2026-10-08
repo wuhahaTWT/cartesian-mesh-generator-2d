@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
 REPO=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(REPO/'tools/verification'))
-import verify_native_flow as native
+sys.path.insert(0,str(REPO/'tools/flow'))
+import native_mesh as native
 
 
 def path(value):

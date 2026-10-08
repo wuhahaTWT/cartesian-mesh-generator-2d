@@ -25,8 +25,8 @@ from matplotlib.colors import Normalize, TwoSlopeNorm  # noqa: E402
 from matplotlib.path import Path as MplPath  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "verification"))
-from openfoam_nozzle_flow import (  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "flow"))
+from openfoam_data import (  # noqa: E402
     boundary_type,
     boundary_values,
     face_area,

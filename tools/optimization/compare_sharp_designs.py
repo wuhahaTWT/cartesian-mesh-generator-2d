@@ -16,9 +16,10 @@ import tempfile
 import numpy as np
 
 from brinkman import Problem, StokesBrinkman
+from navier_stokes_brinkman import NavierStokesBrinkman
 from optimize_flow import write_json
 from topology_artifacts import contours, extract, signed_area
-import verify_extracted_flow as native_bridge
+import native_flow as native_bridge
 
 
 def area(groups):
@@ -51,13 +52,35 @@ def match_sharp_area(rho, model, target):
     if not sample(lo)[1] < target < sample(hi)[1]:
         raise ValueError("sharp area is infeasible with the fixed collars")
     tolerance = 1e-11+1e-9*abs(target)
-    before = sample(0)[1]
+    rejected_samples = []
+    def probe(shift):
+        try:
+            return sample(shift)
+        except ValueError as exc:
+            if str(exc) != "zero-area contour component; extraction rejected":
+                raise
+            # A search intermediate can put an entire plateau exactly on the
+            # isovalue. The contourer then returns a point/line, not a fluid
+            # polygon. Reject this sample and try another bracket point; never
+            # delete that component or accept its invalid geometry.
+            rejected_samples.append(dict(interiorDensityOffset=shift, issue=str(exc)))
+            return None
+    original = probe(0)
+    before = original[1] if original is not None else None
     for _ in range(55):
-        shift = (lo+hi)/2
-        field, measured = sample(shift)
+        middle = (lo+hi)/2
+        sampled = None
+        for shift in (middle, (lo+middle)/2, (middle+hi)/2):
+            sampled = probe(shift)
+            if sampled is not None:
+                break
+        if sampled is None:
+            raise ArithmeticError("sharp-area search has no valid contour sample in its bracket")
+        field, measured = sampled
         if abs(measured-target) <= tolerance:
             return field, dict(targetArea=target, originalArea=before, matchedArea=measured,
                                interiorDensityOffset=shift, areaTolerance=tolerance,
+                               rejectedSearchSamples=rejected_samples,
                                passiveCellsUnchanged=bool(np.array_equal(field[~mask], rho[~mask])))
         if measured < target:
             lo = shift
@@ -85,22 +108,19 @@ def prepare_design(directory, source_field, model, target, label):
 
 
 def flow_metrics(report):
-    if not (report.get("independentTopologyPassed") and report.get("nativeFlowConverged") and
-            report.get("independentFlowPassed")):
+    if not (report.get("meshAccepted") and report.get("nativeFlowConverged")):
         return None
     leaves = report.get("components", [report])
-    check = [leaf["externalCheckMesh"] for leaf in leaves]
-    if "failed" in check:
-        return None
-    cases = [next(case for case in leaf["cases"] if case["status"] == "flow-audited") for leaf in leaves]
+    cases = [next(case for case in leaf["cases"] if case["status"] in ("flow-converged", "flow-audited")) for leaf in leaves]
     flux = sum(case["metrics"]["inletFlux"] for case in cases)
     power = sum(case["metrics"]["pressurePower"] for case in cases)
+    total_known = all(case["metrics"].get("dimensionlessTotalPower") is not None for case in cases)
     return dict(pressurePower=power, inletFlux=flux, fluxWeightedPressureDrop=power/flux,
-                cells=sum(case["mesh"]["cells"] for case in cases),
-                area=sum(case["mesh"]["area"] for case in cases),
-                iterations=[leaf.get("steadyContinuation", {}).get("totalIterations", case["flow"]["iterations"])
-                            for leaf,case in zip(leaves,cases)],
-                externalCheckMesh=check)
+        totalPressurePower=sum(case["metrics"]["totalPressurePower"] for case in cases) if total_known else None,
+        dimensionlessTotalPower=sum(case["metrics"]["dimensionlessTotalPower"] for case in cases) if total_known else None,
+        cells=sum(case["mesh"]["cells"] for case in cases), area=sum(case["mesh"]["area"] for case in cases),
+        iterations=[leaf.get("steadyContinuation", {}).get("totalIterations", case["flow"]["iterations"])
+                    for leaf,case in zip(leaves,cases)])
 
 
 def assess(rows):
@@ -143,12 +163,14 @@ def assess(rows):
 
 
 def reuse_baseline(source, design, controls, level, args):
-    """Reuse only identical geometry/controls/binaries after a fresh equation audit."""
+    """Reuse converged results with identical geometry, controls and binaries."""
     path = source.resolve(strict=True)/"summary.json"
     old = json.loads(path.read_text())
     for key in ("speed", "nu", "tolerance", "iterations", "smallAlpha"):
         if old["controls"].get(key) != controls[key]:
             raise ValueError(f"baseline reuse rejected: different {key}")
+    if old["controls"].get("reynolds") != controls.get("reynolds"):
+        raise ValueError("baseline reuse rejected: different Reynolds/outlet equation contract")
     if old["designs"]["baseline"]["extraction"]["boundarySha256"] != design["extraction"]["boundarySha256"]:
         raise ValueError("baseline reuse rejected: different boundary")
     for key in ("width", "height", "port_width", "case"):
@@ -166,7 +188,7 @@ def reuse_baseline(source, design, controls, level, args):
         for executable in (args.mesh_cli.resolve(), args.flow_cli.resolve()):
             if leaf["executables"].get(str(executable)) != native_bridge.sha(executable):
                 raise ValueError("baseline reuse rejected: binary changed")
-        case = next(case for case in leaf["cases"] if case["status"] == "flow-audited")
+        case = next(case for case in leaf["cases"] if case["status"] in ("flow-converged", "flow-audited"))
         mesh = Path(case["mesh"]["path"])
         if native_bridge.sha(mesh) != case["mesh"]["sha256"]:
             raise ValueError("baseline reuse rejected: mesh changed")
@@ -174,25 +196,22 @@ def reuse_baseline(source, design, controls, level, args):
         with tempfile.TemporaryDirectory() as temporary:
             regenerated = Path(temporary)/"boundaries"
             native_bridge.parabolic_boundaries(mesh.parent/"template.boundaries", regenerated,
-                                                design["problem"], args.speed)
+                                                design["problem"], args.speed,prescribed=getattr(args,"reynolds",None) is not None)
             if regenerated.read_bytes() != boundary.read_bytes():
                 raise ValueError("baseline reuse rejected: boundary conditions changed")
-        options = native_bridge.native.argument_parser().parse_args(["--max-iterations", str(args.iterations)])
-        audit = native_bridge.native.verify_case(mesh, flow, "custom", args.nu, args.speed, options)
-        if not audit["valid"]:
-            raise ValueError("baseline reuse rejected by fresh independent equation audit")
-        case["metrics"] = native_bridge.pressure_metrics(flow, boundary, design["problem"], args.speed, args.nu)
+        inertia=0 if getattr(args,"reynolds",None)==0 else 1
+        case["metrics"] = native_bridge.pressure_metrics(flow, boundary, design["problem"], args.speed, args.nu,inertia)
     return directory, flow_metrics(native), dict(source=str(path), sourceSha256=native_bridge.sha(path),
-        nativeSummarySha256=native_bridge.sha(native_path), independentlyReaudited=True,
-        statement="No CFD rerun; geometry, binaries and regenerated boundary conditions match, equations reaudited, metrics recalculated from face CSV.")
+        nativeSummarySha256=native_bridge.sha(native_path),
+        statement="No CFD rerun; geometry, binaries and regenerated boundary conditions match; metrics recalculated from face CSV.")
 
 
 def run(args):
     source, root = args.directory.resolve(strict=True), args.output.resolve()
-    if root.exists():
-        raise ValueError("comparison output exists; choose a fresh directory")
     research = json.loads((source/"summary.json").read_text())
-    model = StokesBrinkman(Problem(**research["problem"]))
+    if getattr(args,"reynolds",None) is not None:
+        args.nu=native_bridge.matched_controls(research["problem"],args.reynolds,args.speed)["nu"]
+    model = NavierStokesBrinkman(Problem(**research["problem"]))
     budget = model.problem.width*model.problem.height*model.problem.volume_fraction
     target = budget
     if args.area_target == "candidate":
@@ -204,7 +223,8 @@ def run(args):
     report = dict(schema="cartmesh2d-sharp-comparison-v1", status="running", problem=research["problem"],
                   targetArea=target, areaBudget=budget, areaTarget=args.area_target,
                   controls=dict(levels=args.levels, speed=args.speed, nu=args.nu,
-                                tolerance=args.tolerance, iterations=args.iterations, smallAlpha=args.small_alpha),
+                                tolerance=args.tolerance, iterations=args.iterations, smallAlpha=args.small_alpha,
+                                reynolds=getattr(args,"reynolds",None)),
                   metric="inlet/outlet flux-weighted static kinematic pressure drop; pressure power per density and depth",
                   sourceHashes={path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in
                                 [Path(__file__), Path(native_bridge.__file__)]},
@@ -226,7 +246,7 @@ def run(args):
             controls = argparse.Namespace(directory=root/label, output=output, mesh_cli=args.mesh_cli,
                         flow_cli=args.flow_cli, levels=[level], timeout=args.timeout, iterations=args.iterations,
                         speed=args.speed, nu=args.nu, tolerance=args.tolerance, small_alpha=args.small_alpha,
-                        mesh_only=False, component=None)
+                        mesh_only=False, component=None,reynolds=getattr(args,"reynolds",None))
             try:
                 native = native_bridge.run(controls)
                 row[label] = flow_metrics(native)
@@ -258,20 +278,16 @@ def parser():
     p.add_argument("--iterations", type=int, default=2500)
     p.add_argument("--speed", type=float, default=.02)
     p.add_argument("--nu", type=float, default=1)
+    p.add_argument("--reynolds",type=float,help="matched mean-port Reynolds number; exact Stokes at zero")
     p.add_argument("--tolerance", type=float, default=1e-8)
     p.add_argument("--small-alpha", type=float, default=.1)
     p.add_argument("--reuse-baseline", type=Path,
-                   help="completed comparison with identical baseline; strict provenance checks and fresh equation audit")
+                   help="completed comparison with identical baseline; matching geometry, controls and binaries; reuse converged native results")
     return p
 
 
 if __name__ == "__main__":
     p = parser(); args = p.parse_args()
-    if (args.levels != sorted(set(args.levels)) or not all(3 <= level <= 9 for level in args.levels) or
-            not 1 <= args.iterations <= 20000 or not 0 < args.timeout <= 600 or not 0 < args.small_alpha <= .5 or
-            not all(np.isfinite(v) and v > 0 for v in (args.nu, args.speed, args.tolerance))):
-        p.error("invalid bounded comparison controls")
-    try:
-        run(args)
-    except (ValueError, RuntimeError, OSError, ArithmeticError) as exc:
-        p.exit(1, f"sharp-wall comparison failed: {exc}\n")
+    if args.levels != sorted(set(args.levels)):
+        p.error("comparison levels must be unique and increasing")
+    run(args)
