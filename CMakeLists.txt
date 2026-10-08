@@ -327,6 +327,16 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_flow_boundary_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_boundary COMMAND cartmesh2d_flow_boundary_tests)
     set_tests_properties(cartmesh2d_flow_boundary PROPERTIES TIMEOUT 60)
+    add_executable(cartmesh2d_flow_stability_tests tests/flow_stability_test.cpp)
+    target_link_libraries(cartmesh2d_flow_stability_tests PRIVATE cartmesh2d_fv)
+    set(laminar_fixture_dir "${CMAKE_CURRENT_BINARY_DIR}/laminar-fixtures")
+    file(MAKE_DIRECTORY "${laminar_fixture_dir}")
+    add_test(NAME cartmesh2d_laminar_fixtures COMMAND ${CMAKE_COMMAND} -E tar xzf
+        "${CMAKE_CURRENT_SOURCE_DIR}/artifacts/current/laminar-foundation/failure-inputs.tar.gz")
+    set_tests_properties(cartmesh2d_laminar_fixtures PROPERTIES
+        WORKING_DIRECTORY "${laminar_fixture_dir}" FIXTURES_SETUP laminar_inputs)
+    add_test(NAME cartmesh2d_flow_stability COMMAND cartmesh2d_flow_stability_tests "${laminar_fixture_dir}")
+    set_tests_properties(cartmesh2d_flow_stability PROPERTIES FIXTURES_REQUIRED laminar_inputs TIMEOUT 180)
     add_test(NAME cartmesh2d_transient_flow_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)

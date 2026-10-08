@@ -513,6 +513,8 @@ static FlowResult2D solveFlow(
     ensure(c.steadyAcceleration==SteadyAcceleration2D::None ||
            (c.steadyAcceleration==SteadyAcceleration2D::Anderson && !previous && !material),
            "Anderson acceleration requires steady laminar flow");
+    ensure(c.andersonHistory>=1 && c.andersonHistory<=32 && c.andersonStart>=1,
+           "Invalid Anderson history/start controls");
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
                c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ||
                c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ||
@@ -847,7 +849,7 @@ static FlowResult2D solveFlow(
         return values;
     };
     const bool accelerated=c.steadyAcceleration==SteadyAcceleration2D::Anderson;
-    detail::Anderson2D accelerator;
+    detail::Anderson2D accelerator(c.andersonHistory);
     Vec stateScale;
     if(accelerated) {
         double area=0,length=0;
@@ -999,7 +1001,7 @@ static FlowResult2D solveFlow(
         bool acceleratedCandidate=false;
         const bool baseConverged=it>=10 && mr<c.tolerance && du<c.tolerance && dp<c.tolerance &&
             continuity<1e-8 && r.globalRelativeImbalance<1e-8 && materialConverged;
-        if(accelerated && it>=10 && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
+        if(accelerated && it>=c.andersonStart && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
             const auto candidate=accelerator.propose(previousScaled,packState());
             if(candidate) {
                 ++r.performance.accelerationCandidates;

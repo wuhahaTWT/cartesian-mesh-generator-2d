@@ -53,6 +53,10 @@ struct FlowControls2D {
     double pressureRelaxation = .25;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
+    // Explicit study controls; retain the original four-vector, step-10 default.
+    // Earlier history can capture unstable modes before SIMPLE amplifies them.
+    std::size_t andersonHistory = 4;
+    std::size_t andersonStart = 10;
     // Explicit opt-ins preserve existing API/checkpoint and verification cases.
     // Engineering stopping is steady laminar only; it also requires a 50-step
     // window of field/physical-monitor stability and a strict final linear step.

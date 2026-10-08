@@ -49,6 +49,8 @@ build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/annulus-l7.solver.cm2d -
 build/cartmesh2d_flow_cli --mesh outputs/laminar-inputs/dfg20-l7.solver.cm2d --case custom --boundary outputs/laminar-inputs/dfg20-l7.boundaries --output outputs/dfg-default --nu .001 --speed .3 --convection limited-linear --pressure-preconditioner ic0 --max-iterations 16000 --tolerance 1e-8 --profile
 ```
 
+云端的早期历史实验在以上命令追加 `--steady-acceleration anderson --anderson-history 16 --anderson-start 1`。两个选项显式记录到结果 JSON；默认仍是历史 4、从第 10 步开始，未加速仍为产品默认。历史容量 1–32 是内存/QR 工作量控制，不是物理验收门。原始 DFG 输入同时用于原生 `cartmesh2d_flow_stability` 回归，仍要求完整 strict 停止条件和普通 SIMPLE 最终确认步。该网格虽收敛，Cd/Cl/压降尚不合格；结果及原始场见 `artifacts/current/laminar-foundation/early-anderson*`。
+
 `tools/benchmarks/openfoam.py` 将已有 OpenFOAM 导出网格的边界重新分组，保留点、内部面、owner/neighbour 和单元编号，准备稳态层流对照。准备后在有 OpenFOAM 的环境执行 `checkMesh -case CASE`、`simpleFoam -case CASE > CASE/solve.log 2>&1`，再 `python3 tools/benchmarks/openfoam.py --output CASE --collect`。例如：
 
 ```sh

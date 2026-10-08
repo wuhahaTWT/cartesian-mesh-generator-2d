@@ -14,12 +14,16 @@ class Anderson2D {
     using Vector = std::vector<double>;
     Vector previousF_, previousG_;
     std::vector<Vector> differencesF_, differencesG_;
+    std::size_t capacity_;
     static double product(const Vector& a,const Vector& b) {
         double value=0;
         for(std::size_t i=0;i<a.size();++i)value+=a[i]*b[i];
         return value;
     }
 public:
+    explicit Anderson2D(std::size_t capacity=4):capacity_(capacity) {
+        if(capacity<1 || capacity>32)throw std::invalid_argument("Anderson history must be in [1,32]");
+    }
     void clear() { previousF_.clear();previousG_.clear();differencesF_.clear();differencesG_.clear(); }
     std::optional<Vector> propose(const Vector& x,const Vector& g) {
         if(x.empty() || x.size()!=g.size() || (!previousF_.empty() && previousF_.size()!=g.size()))
@@ -30,7 +34,7 @@ public:
             Vector df(f.size()),dg(f.size());
             for(std::size_t i=0;i<f.size();++i) {df[i]=f[i]-previousF_[i];dg[i]=g[i]-previousG_[i];}
             differencesF_.push_back(std::move(df));differencesG_.push_back(std::move(dg));
-            if(differencesF_.size()>4) {differencesF_.erase(differencesF_.begin());differencesG_.erase(differencesG_.begin());}
+            if(differencesF_.size()>capacity_) {differencesF_.erase(differencesF_.begin());differencesG_.erase(differencesG_.begin());}
         }
         previousF_=f;previousG_=g;
         if(differencesF_.empty())return {};

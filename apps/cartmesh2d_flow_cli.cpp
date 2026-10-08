@@ -183,6 +183,7 @@ int main(int argc, char** argv) {
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
+            "--anderson-history 4 --anderson-start 10: history capacity (1..32) and first history step (>=1).\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
@@ -254,6 +255,13 @@ int main(int argc, char** argv) {
                 if(v=="none")controls.steadyAcceleration=fv::SteadyAcceleration2D::None;
                 else if(v=="anderson")controls.steadyAcceleration=fv::SteadyAcceleration2D::Anderson;
                 else throw std::invalid_argument("steady-acceleration must be none or anderson");
+            } else if (a == "--anderson-history" || a == "--anderson-start") {
+                const double value=number(v);
+                if(value<1 || value!=std::floor(value) || value>1000000 ||
+                   (a=="--anderson-history" && value>32))
+                    throw std::invalid_argument("invalid Anderson history/start value");
+                if(a=="--anderson-history")controls.andersonHistory=static_cast<std::size_t>(value);
+                else controls.andersonStart=static_cast<std::size_t>(value);
             } else if (a == "--time-step") {
                 timeStep=number(v);
                 if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
@@ -603,6 +611,8 @@ int main(int argc, char** argv) {
                                 << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
                                 << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
+                                << "\"andersonHistory\":" << controls.andersonHistory << ",\n"
+                                << "\"andersonStart\":" << controls.andersonStart << ",\n"
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
                                 << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
                                 << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
