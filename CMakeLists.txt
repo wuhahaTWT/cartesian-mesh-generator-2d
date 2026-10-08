@@ -120,6 +120,12 @@ if(MSVC)
 endif()
 cartmesh2d_enable_warnings(cartmesh2d_flow_cli)
 
+# Explicit research executable, not an acceptance test or a product solver.
+add_executable(cartmesh2d_flow_coupling_probe EXCLUDE_FROM_ALL tools/benchmarks/coupling_probe.cpp)
+target_include_directories(cartmesh2d_flow_coupling_probe PRIVATE src/fv)
+target_link_libraries(cartmesh2d_flow_coupling_probe PRIVATE cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_flow_coupling_probe)
+
 add_executable(cartmesh2d_transport_cli apps/cartmesh2d_transport_cli.cpp)
 target_link_libraries(cartmesh2d_transport_cli PRIVATE cartmesh2d_fv)
 if(MSVC)

@@ -74,6 +74,22 @@ python3 tools/benchmarks/openfoam.py --output outputs/foam-cavity --source outpu
 
 `--coupling simplec --pressure-relaxation 1` 显式试验稳态层流 SIMPLEC。校正响应采用松弛动量行的 `area/(diag+sum(offDiagonal))`，预测 Rhie–Chow 仍保留原系数以共享固定点方程；非正对角明确失败，非定常及物性耦合不支持。SIMPLE、压力松弛 0.25 和 strict 仍为默认。旧 DFG 已发现非物理解分支，旧圆环该组控制失败，故当前不推荐自动切换。`tools/benchmarks/laminar.py` 在输出目录保存按哈希命名的求解器快照，排队运行不会混入后续重新构建的版本。
 
+### 压力速度失稳的原生诊断
+
+`tools/benchmarks/coupling_probe.cpp` 是显式构建的研究程序，直接调用生产求解器和原生动量/梯度/线性算子，不是另建方程验证链。固定旧圆环的 `nu=.1`、`Uref=.5`、速度松弛 `.6`、压力松弛 `.25`、无对流；只接受闭合且速度全规定的壁面域。macOS 用系统 Cholesky，其他平台 IC(0)。`outer` 对真实一步求解作 `T(x)=F(x)-F(0)` 幂迭代，u/v/p 用单元面积加权内积，面通量同时传播并单列特征残差；`pressure` 探测冻结扩散 rAU 下的非正交延迟修正映射。输出是观测模式，不是完整谱界；`diffusion` 的场变化阈值只判断隔离子问题衰减，不代替完整 CFD 验收。
+
+```sh
+cmake --build build --target cartmesh2d_flow_coupling_probe --parallel 4
+build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm2d outputs/laminar-inputs/annulus-l7.boundaries outer symmetric 240 1
+build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm2d outputs/laminar-inputs/annulus-l7.boundaries outer symmetric 400 .5
+build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm2d outputs/laminar-inputs/annulus-l7.boundaries pressure symmetric 240 1
+build/cartmesh2d_flow_coupling_probe outputs/laminar-inputs/annulus-l7.solver.cm2d outputs/laminar-inputs/annulus-l7.boundaries diffusion symmetric 2500
+```
+
+输入由上面的 `failure-inputs.tar.gz` 解包；替换 l5/l6 可复现粗档。参数依次为模式、应力形式、步数、映射权重、压力校正次数（默认 4）。权重 `.5` 仅探测 `(I+T)/2`，不修改产品求解器。细网格原映射约 `−2.67314`；半步映射约 `1.04892`，对应原映射近实增长模式约 `1.09785`（单元/面通量特征残差约 `1e-5`），因此标量整体松弛不能消除已观测到的全部失稳。只做一次压力校正仍有约 `−2.25654` 模式，压力内部延迟修正不是唯一问题。
+
+`coupling-diagnosis.json` 保存源码/二进制/输入哈希、真实命令及失败记录；配套小体积归档保存原生 CSV/日志和基于 `ab4aba3` 的未奏效补丁。原始场、试改二进制和继续研究材料保留于本机 `outputs/laminar-diagnosis/`；云端消费者用现有输入归档和本程序重建，不依赖本机绝对路径。尚未把这些试改作为修复合入，也未改变默认控制。原生 `FlowMomentum2D.cpp` 按同一共享面向 owner/neighbour 组装相反动量贡献；`FlowFlux2D.cpp`、`FlowPressure2D.hpp` 和 `Incompressible2D.cpp` 分别承担面通量、压力修正和耦合更新，是后续算法修复入口。
+
 ### 与网格产品一致的求解规模
 
 云端继续修复原生二维不可压层流基础；上述 level 5/6/7 矩阵是问题定位入口，最终交付须覆盖产品实际密度。数量依据是 `desktop/src/core/cell-budget.js` 的 50 万目标上限、`capabilities.js` 的 Cut-cell 壁面 level 11 / 共形边界层 level 8 历史边界，以及已有 102,017 格曲壁收敛记录。这些是规模目标的来源，不是新的误差容差或已取得的普适资格。

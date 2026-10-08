@@ -1,0 +1,2619 @@
+{
+  "format": "cartmesh2d-laminar-coupling-diagnosis-v1",
+  "scope": "Observed fixed-point instability on archived annulus inputs. No physical accuracy qualification; no product solver or default control changed.",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "inputArchive": "failure-inputs.tar.gz",
+  "inputs": [
+    {
+      "name": "annulus-l5",
+      "cells": 484,
+      "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+      "boundarySha256": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da",
+      "archiveMesh": "annulus-l5.solver.cm2d",
+      "archiveBoundary": "annulus-l5.boundaries"
+    },
+    {
+      "name": "annulus-l6",
+      "cells": 1672,
+      "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+      "boundarySha256": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273",
+      "archiveMesh": "annulus-l6.solver.cm2d",
+      "archiveBoundary": "annulus-l6.boundaries"
+    },
+    {
+      "name": "annulus-l7",
+      "cells": 6208,
+      "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+      "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+      "archiveMesh": "annulus-l7.solver.cm2d",
+      "archiveBoundary": "annulus-l7.boundaries"
+    },
+    {
+      "name": "dfg20-l7",
+      "cells": 3063,
+      "meshSha256": "4f0aed9584bb05c58b20fd9ee6b00ef04ca11933d896926296b6f15fa38e4e5b",
+      "boundarySha256": "a01447afd937c4422e2b0137788e039bc7a4ef6436f802d58a2adcba21574b60",
+      "archiveMesh": "dfg20-l7.solver.cm2d",
+      "archiveBoundary": "dfg20-l7.boundaries"
+    }
+  ],
+  "productionBaseline": "ab4aba3",
+  "integratedCloudCommit": "c7dd8198e7d06962a0b2d38cce08444cdbd36ac4",
+  "controls": {
+    "scenario": "custom",
+    "nu": 0.1,
+    "speed": 0.5,
+    "velocityRelaxation": 0.6,
+    "pressureRelaxation": 0.25,
+    "pressureCorrectionPasses": 4,
+    "steadyAcceleration": "none",
+    "pressurePreconditioner": "cholesky",
+    "viscousStress": "symmetric",
+    "tolerance": 1e-08
+  },
+  "findings": {
+    "defaultAnnulusIterations": {
+      "484": 180,
+      "1672": 586,
+      "6208": "diverged"
+    },
+    "diffusionOnly6208ChangeThresholdIterations": 2016,
+    "outerObservedModes": [
+      {
+        "name": "outer-l5",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 0.9136941266639328,
+          "rayleigh": 0.9136941266639318,
+          "cellEigenResidual": 4.1504044167685396e-14,
+          "fluxEigenResidual": 2.3907624334121974e-14,
+          "worstCell": 303.0,
+          "x": -0.528125,
+          "y": 0.528125
+        }
+      },
+      {
+        "name": "outer-l6",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 0.975637483129601,
+          "rayleigh": 0.9756374831295807,
+          "cellEigenResidual": 2.116205764034526e-07,
+          "fluxEigenResidual": 2.871197744529782e-07,
+          "worstCell": 265.0,
+          "x": -0.4265625,
+          "y": -0.5890625
+        }
+      },
+      {
+        "name": "outer-l7",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 2.6731413494191867,
+          "rayleigh": -2.673141349419194,
+          "cellEigenResidual": 1.4803275856163951e-10,
+          "fluxEigenResidual": 2.775962011050891e-11,
+          "worstCell": 3710.0,
+          "x": -0.4580120900015699,
+          "y": 0.22004507185656785
+        }
+      },
+      {
+        "name": "outer-l7-shift-half",
+        "final": {
+          "iteration": 400.0,
+          "normRatio": 1.048924823798899,
+          "rayleigh": 1.048924823748244,
+          "cellEigenResidual": 9.82795852732537e-06,
+          "fluxEigenResidual": 1.3601445339371607e-05,
+          "worstCell": 8.0,
+          "x": -0.7738873865557245,
+          "y": -0.6312560947212151
+        }
+      }
+    ],
+    "pressureObservedModes": [
+      {
+        "name": "pressure-l5",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 0.5541001143436456,
+          "rayleigh": -0.5541001094411141,
+          "eigenResidual": 0.00013302433007182226,
+          "worstCell": 315.0,
+          "x": -0.17211390539418162,
+          "y": 0.47389975452464367
+        }
+      },
+      {
+        "name": "pressure-l6",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 0.3418685624668568,
+          "rayleigh": 0.34186854871535893,
+          "eigenResidual": 0.0002836353859253272,
+          "worstCell": 362.0,
+          "x": -0.16448164223203665,
+          "y": -0.47700266789499957
+        }
+      },
+      {
+        "name": "pressure-l7",
+        "final": {
+          "iteration": 240.0,
+          "normRatio": 1.0439398416685484,
+          "rayleigh": -1.0439398415519687,
+          "eigenResidual": 1.4944994802620171e-05,
+          "worstCell": 4201.0,
+          "x": -0.6312560947212151,
+          "y": 0.7738873865557245
+        }
+      },
+      {
+        "name": "pressure-l7-shift-half",
+        "final": {
+          "iteration": 400.0,
+          "normRatio": 0.8418303663171371,
+          "rayleigh": 0.8418303663171411,
+          "eigenResidual": 4.822864233279364e-15,
+          "worstCell": 3720.0,
+          "x": -0.44481592759064503,
+          "y": 0.23475134441343412
+        }
+      }
+    ],
+    "halfStepOriginalRayleighApprox": 1.097849647496488,
+    "limitations": [
+      "Power iteration is not a complete spectrum or a general spectral bound.",
+      "Diffusion-only change threshold does not certify coupled momentum/continuity or physical accuracy.",
+      "Fine Stokes fails without inertia; convection is not necessary for this failure.",
+      "Pressure inner nonorthogonal map is noncontractive, but stabilizing it alone did not repair the full outer map.",
+      "The shifted full map retains a near-real growing mode; scalar whole-state damping did not fix the observed instability.",
+      "Mesh/reconstruction geometry is not exonerated; the exact responsible coefficient pattern and general accuracy-preserving repair are still unresolved."
+    ]
+  },
+  "experiments": [
+    {
+      "name": "default-ablation",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "daa800b5a9421b567ad3b8cee8641b086910bc16e3eb00efba5f18bc8d3ef55d",
+      "patch": null,
+      "patchSha256": null,
+      "records": [
+        {
+          "name": "annulus-l5-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l5-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 1.4815068750176579,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 180,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.387361947530874,
+              "continuity": 6.571931475199812e-16,
+              "velocityChange": 0.5972733292775945,
+              "pressureChange": 2.9716178724815077
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.04236428373014283,
+              "continuity": 4.82534373473342e-16,
+              "velocityChange": 0.028103669904124134,
+              "pressureChange": 0.4013686431187967
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.216978199997985e-09,
+              "continuity": 5.283965005185778e-16,
+              "velocityChange": 9.606936106447086e-09,
+              "pressureChange": 8.912683470040473e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.216978199997985e-09,
+              "continuity": 5.283965005185778e-16,
+              "velocityChange": 9.606936106447086e-09,
+              "pressureChange": 8.912683470040473e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":180,\"momentumResidual\":3.216978199997985e-09,\"continuity\":5.2839650051857784e-16,\"velocityChange\":9.6069361064470861e-09,\"pressureChange\":8.9126834700404729e-09}",
+          "log": "default-ablation/annulus-l5-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l6-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l6.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l6.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l6-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 2.68655729200691,
+          "status": "converged",
+          "converged": true,
+          "cells": 1672,
+          "iterations": 586,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.3173430444772439,
+              "continuity": 4.603803884048859e-16,
+              "velocityChange": 0.5206329014656874,
+              "pressureChange": 8.721994387648802
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.03788592997956691,
+              "continuity": 3.9183564114629957e-16,
+              "velocityChange": 0.07955874821812066,
+              "pressureChange": 0.8422888236703068
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 580,
+              "momentumResidual": 3.851478431212721e-09,
+              "continuity": 6.730369885963742e-16,
+              "velocityChange": 1.1548255323568846e-08,
+              "pressureChange": 6.636861540141516e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 586,
+              "momentumResidual": 3.3341376679181688e-09,
+              "continuity": 4.453177067404581e-16,
+              "velocityChange": 9.997062933358287e-09,
+              "pressureChange": 5.7453330476969255e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":586,\"momentumResidual\":3.3341376679181688e-09,\"continuity\":4.4531770674045812e-16,\"velocityChange\":9.9970629333582869e-09,\"pressureChange\":5.7453330476969255e-09}",
+          "log": "default-ablation/annulus-l6-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l7-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 1.1498005000175908,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.3535828319266567,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.011793847243968,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 1587.3406197506167,
+              "continuity": 7.99872718468695e-12,
+              "velocityChange": 5389.258967828306,
+              "pressureChange": 744582.8399670355
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 1587.3406197506167,
+              "continuity": 7.99872718468695e-12,
+              "velocityChange": 5389.258967828306,
+              "pressureChange": 744582.8399670355
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 20,
+              "momentumResidual": 252446.00394407636,
+              "continuity": 2.239135426124391e-09,
+              "velocityChange": 838176.2202422253,
+              "pressureChange": 12044880493.343287
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.08721e-07, target=0.0289902, diagonal-scaled residual=2.21555e-10, diagonal-scaled target=3e-11, rhs=2.89902e+09",
+          "log": "default-ablation/annulus-l7-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-laplacian",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l7-laplacian/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "laplacian",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 4.931827749998774,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.31426020991481396,
+              "continuity": 2.9176804534773115e-15,
+              "velocityChange": 0.950480276189136,
+              "pressureChange": 19.955643699092697
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.10111026705725486,
+              "continuity": 1.2909151111999667e-15,
+              "velocityChange": 0.7194160195502212,
+              "pressureChange": 39.15365449405934
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 320,
+              "momentumResidual": 165962.31321555446,
+              "continuity": 1.1066436781530545e-09,
+              "velocityChange": 389106.8590811493,
+              "pressureChange": 9728805593.117506
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 330,
+              "momentumResidual": 221436.2460849339,
+              "continuity": 2.306290937661842e-09,
+              "velocityChange": 457875.6049517504,
+              "pressureChange": 1993318398.1160827
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=4.46964e-08, target=0.00495249, diagonal-scaled residual=6.66545e-11, diagonal-scaled target=3e-11, rhs=4.95249e+08",
+          "log": "default-ablation/annulus-l7-laplacian/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l7-stokes-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.7846129999961704,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.35456497489477,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.011793847243968,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 4800.120852869045,
+              "continuity": 1.5033303156953995e-11,
+              "velocityChange": 10200.841224693768,
+              "pressureChange": 553723.3893307477
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.35456497489477,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.011793847243968,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 4800.120852869045,
+              "continuity": 1.5033303156953995e-11,
+              "velocityChange": 10200.841224693768,
+              "pressureChange": 553723.3893307477
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=8.80413e-11, target=1.43214e-05, diagonal-scaled residual=3.05493e-11, diagonal-scaled target=3e-11, rhs=1.43214e+06",
+          "log": "default-ablation/annulus-l7-stokes-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-laplacian",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/annulus-l7-stokes-laplacian/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "laplacian",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 1.7213382089976221,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.3139877456877417,
+              "continuity": 2.9176804534773115e-15,
+              "velocityChange": 0.950480276189136,
+              "pressureChange": 19.955643699092697
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.10228017027541553,
+              "continuity": 4.148708287670332e-16,
+              "velocityChange": 0.7262874531384605,
+              "pressureChange": 39.246315452852876
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 100,
+              "momentumResidual": 99837.55801863957,
+              "continuity": 1.0677556281363747e-09,
+              "velocityChange": 715403.1445225878,
+              "pressureChange": 38035660.43742327
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 110,
+              "momentumResidual": 461941.4943602176,
+              "continuity": 6.014004856882841e-09,
+              "velocityChange": 3310121.0029323637,
+              "pressureChange": 175988377.2644685
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=9.31001e-11, target=1.0684e-05, diagonal-scaled residual=5.95762e-11, diagonal-scaled target=3e-11, rhs=1.0684e+06",
+          "log": "default-ablation/annulus-l7-stokes-laplacian/solve.log"
+        },
+        {
+          "name": "dfg-laplacian",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/dfg-laplacian/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "laplacian",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.39877045899629593,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.4820262294077653,
+              "continuity": 7.308447271837307e-15,
+              "velocityChange": 7.417913034336249,
+              "pressureChange": 14.414053308489432
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.4820262294077653,
+              "continuity": 7.308447271837307e-15,
+              "velocityChange": 7.417913034336249,
+              "pressureChange": 14.414053308489432
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.83048e-07, target=0.0199054, diagonal-scaled residual=1.33918e-10, diagonal-scaled target=1.8e-11, rhs=1.99054e+09",
+          "log": "default-ablation/dfg-laplacian/solve.log"
+        },
+        {
+          "name": "dfg-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/default-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/default-ablation/dfg-stokes-symmetric/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.3521637500380166,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 4.2611168430776765,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 8.557795162942558,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 800101.4200361372,
+              "continuity": 8.452112999416346e-10,
+              "velocityChange": 2402703.4144963254,
+              "pressureChange": 2289429.232917634
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 4.2611168430776765,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 8.557795162942558,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 800101.4200361372,
+              "continuity": 8.452112999416346e-10,
+              "velocityChange": 2402703.4144963254,
+              "pressureChange": 2289429.232917634
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=8.34324e-12, target=8.9022e-07, diagonal-scaled residual=1.08552e-10, diagonal-scaled target=1.8e-11, rhs=89022",
+          "log": "default-ablation/dfg-stokes-symmetric/solve.log"
+        }
+      ]
+    },
+    {
+      "name": "pressure-inner-damping",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "7e1502338291fd35dac9a3616fcfcc243a779c6b5e2ffbc1483efaaa0710af9c",
+      "patch": "pressure-inner-damping.patch",
+      "patchSha256": "c0516d96c04656f85a52a0a7a1c365d78a785af5089290bf59bbbe743b2e27c9",
+      "records": [
+        {
+          "name": "annulus-l5-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-inner-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-inner-damping/annulus-l5-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 0.7945296250400133,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 180,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.40566366515211016,
+              "continuity": 4.844027740245087e-16,
+              "velocityChange": 0.6238774462917661,
+              "pressureChange": 3.135778169191203
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.04257784598906705,
+              "continuity": 4.825343734733478e-16,
+              "velocityChange": 0.028218746622043767,
+              "pressureChange": 0.41588915503858376
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.206909528444605e-09,
+              "continuity": 5.585905862624966e-16,
+              "velocityChange": 9.576953946296055e-09,
+              "pressureChange": 8.82586279943814e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.206909528444605e-09,
+              "continuity": 5.585905862624966e-16,
+              "velocityChange": 9.576953946296055e-09,
+              "pressureChange": 8.82586279943814e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":180,\"momentumResidual\":3.206909528444605e-09,\"continuity\":5.5859058626249661e-16,\"velocityChange\":9.5769539462960553e-09,\"pressureChange\":8.8258627994381392e-09}",
+          "log": "pressure-inner-damping/annulus-l5-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-inner-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-inner-damping/annulus-l7-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 2.833868457993958,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.5057392786158041,
+              "continuity": 5.937767215341957e-15,
+              "velocityChange": 2.609062156349986,
+              "pressureChange": 106.4151371286367
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 368.3871024906904,
+              "continuity": 5.908150761416497e-13,
+              "velocityChange": 1020.9143114237341,
+              "pressureChange": 69374.67196122417
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 60,
+              "momentumResidual": 131878.31413531874,
+              "continuity": 4.653804907454225e-11,
+              "velocityChange": 96826.72801860774,
+              "pressureChange": 1577920060.5750828
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 70,
+              "momentumResidual": 595646.409035974,
+              "continuity": 9.705292604159532e-11,
+              "velocityChange": 1129767.6269473478,
+              "pressureChange": 33230791723.89632
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.29434e-07, target=0.0108634, diagonal-scaled residual=5.0846e-11, diagonal-scaled target=3e-11, rhs=1.08634e+09",
+          "log": "pressure-inner-damping/annulus-l7-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-inner-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-inner-damping/annulus-l7-stokes-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.8852665419690311,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.5064917030004863,
+              "continuity": 5.937767215341957e-15,
+              "velocityChange": 2.609062156349986,
+              "pressureChange": 106.4151371286367
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 464.35940241045677,
+              "continuity": 9.232521083132416e-13,
+              "velocityChange": 1093.4385220883091,
+              "pressureChange": 64128.637665772054
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 464.35940241045677,
+              "continuity": 9.232521083132416e-13,
+              "velocityChange": 1093.4385220883091,
+              "pressureChange": 64128.637665772054
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 20,
+              "momentumResidual": 2009968.3994500076,
+              "continuity": 4.788293096349159e-09,
+              "velocityChange": 4465603.330154996,
+              "pressureChange": 283250156.2875826
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.16478e-10, target=3.21707e-05, diagonal-scaled residual=4.95711e-11, diagonal-scaled target=3e-11, rhs=3.21707e+06",
+          "log": "pressure-inner-damping/annulus-l7-stokes-symmetric/solve.log"
+        },
+        {
+          "name": "dfg-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-inner-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-inner-damping/dfg-stokes-symmetric/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "1200",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.4298372910125181,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.4188887240013255,
+              "continuity": 6.469831145834245e-15,
+              "velocityChange": 7.118291883747234,
+              "pressureChange": 10.864899339904696
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 157515.70117489377,
+              "continuity": 2.869544536838883e-10,
+              "velocityChange": 484259.68870035314,
+              "pressureChange": 475266.5764214156
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.4188887240013255,
+              "continuity": 6.469831145834245e-15,
+              "velocityChange": 7.118291883747234,
+              "pressureChange": 10.864899339904696
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 157515.70117489377,
+              "continuity": 2.869544536838883e-10,
+              "velocityChange": 484259.68870035314,
+              "pressureChange": 475266.5764214156
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=4.44739e-12, target=6.12472e-07, diagonal-scaled residual=5.4884e-11, diagonal-scaled target=1.8e-11, rhs=61247.2",
+          "log": "pressure-inner-damping/dfg-stokes-symmetric/solve.log"
+        }
+      ]
+    },
+    {
+      "name": "wall-pressure-ablation",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "05c69a77abc2a9e9817ab300f5aee1f3fda0e72b2b644aeb8602f6fe4b59b06a",
+      "patch": "wall-pressure-ablation.patch",
+      "patchSha256": "092a077b3f2b24f9ee35c74c2576d31c2a1059cc36212a81bb9e7f5411e1ddd3",
+      "records": [
+        {
+          "name": "annulus-l5-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/wall-pressure-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/wall-pressure-ablation/annulus-l5-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 0.8248166659614071,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 180,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.38697740947952247,
+              "continuity": 6.571931475199812e-16,
+              "velocityChange": 0.598289867758097,
+              "pressureChange": 2.9716178724815077
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.039608457176914275,
+              "continuity": 4.825343734733478e-16,
+              "velocityChange": 0.027906051374330384,
+              "pressureChange": 0.37605894149333813
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.1269472439475676e-09,
+              "continuity": 4.825343734733461e-16,
+              "velocityChange": 9.339886874294522e-09,
+              "pressureChange": 8.591981185867115e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.1269472439475676e-09,
+              "continuity": 4.825343734733461e-16,
+              "velocityChange": 9.339886874294522e-09,
+              "pressureChange": 8.591981185867115e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":180,\"momentumResidual\":3.1269472439475676e-09,\"continuity\":4.8253437347334606e-16,\"velocityChange\":9.339886874294522e-09,\"pressureChange\":8.5919811858671154e-09}",
+          "log": "wall-pressure-ablation/annulus-l5-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/wall-pressure-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/wall-pressure-ablation/annulus-l7-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 1.6924124590004794,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.310250691098384,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.130648252605696,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 10297.634422917807,
+              "continuity": 2.812301301457194e-11,
+              "velocityChange": 22977.591618187224,
+              "pressureChange": 6002079.923341917
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 10297.634422917807,
+              "continuity": 2.812301301457194e-11,
+              "velocityChange": 22977.591618187224,
+              "pressureChange": 6002079.923341917
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 20,
+              "momentumResidual": 83823.29505234268,
+              "continuity": 3.8564176175356257e-10,
+              "velocityChange": 156134.37742094672,
+              "pressureChange": 645673684.924388
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=7.68622e-08, target=0.0124574, diagonal-scaled residual=4.25699e-11, diagonal-scaled target=3e-11, rhs=1.24574e+09",
+          "log": "wall-pressure-ablation/annulus-l7-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/wall-pressure-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/wall-pressure-ablation/annulus-l7-stokes-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.7738672500126995,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.3109578581012697,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.130648252605696,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 83501.58613081212,
+              "continuity": 2.747516871085042e-10,
+              "velocityChange": 177648.56931219372,
+              "pressureChange": 10030566.015685778
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.3109578581012697,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 4.130648252605696,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 83501.58613081212,
+              "continuity": 2.747516871085042e-10,
+              "velocityChange": 177648.56931219372,
+              "pressureChange": 10030566.015685778
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=9.06715e-11, target=2.04555e-05, diagonal-scaled residual=4.78642e-11, diagonal-scaled target=3e-11, rhs=2.04555e+06",
+          "log": "wall-pressure-ablation/annulus-l7-stokes-symmetric/solve.log"
+        },
+        {
+          "name": "dfg-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/wall-pressure-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/wall-pressure-ablation/dfg-stokes-symmetric/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.3828045839909464,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.94065561766512,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 8.183562017396653,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 3092170.034968389,
+              "continuity": 2.708057207874876e-09,
+              "velocityChange": 8573346.393983208,
+              "pressureChange": 8913574.329164946
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.94065561766512,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 8.183562017396653,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 3092170.034968389,
+              "continuity": 2.708057207874876e-09,
+              "velocityChange": 8573346.393983208,
+              "pressureChange": 8913574.329164946
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=7.29465e-12, target=6.9742e-07, diagonal-scaled residual=1.34223e-10, diagonal-scaled target=1.8e-11, rhs=69742",
+          "log": "wall-pressure-ablation/dfg-stokes-symmetric/solve.log"
+        }
+      ]
+    },
+    {
+      "name": "flux-skew-ablation",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "ac544bb4b2c62d991d07c665ecd2256aae0d80bc761c5f8f35d6b10773cc2c04",
+      "patch": "flux-skew-ablation.patch",
+      "patchSha256": "68dbcba09737be1bf001024969d8f9ecd4880985e5bd5b620fc6933316896a4d",
+      "records": [
+        {
+          "name": "annulus-l5-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/flux-skew-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/flux-skew-ablation/annulus-l5-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 0.7555194169981405,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 175,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.30011757946255546,
+              "continuity": 2.4126718673667303e-16,
+              "velocityChange": 0.5994523621657374,
+              "pressureChange": 2.2572714735140558
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.02724488508867006,
+              "continuity": 4.825343734733478e-16,
+              "velocityChange": 0.02783607004384054,
+              "pressureChange": 0.27637414984856123
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 170,
+              "momentumResidual": 5.051967583492432e-09,
+              "continuity": 7.850462293418871e-16,
+              "velocityChange": 1.5162422631671256e-08,
+              "pressureChange": 1.4853881861883037e-08
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 175,
+              "momentumResidual": 3.2447022067636388e-09,
+              "continuity": 5.283965005185778e-16,
+              "velocityChange": 9.738068062014506e-09,
+              "pressureChange": 9.546258745617531e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":175,\"momentumResidual\":3.2447022067636388e-09,\"continuity\":5.2839650051857784e-16,\"velocityChange\":9.7380680620145058e-09,\"pressureChange\":9.5462587456175314e-09}",
+          "log": "flux-skew-ablation/annulus-l5-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/flux-skew-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/flux-skew-ablation/annulus-l7-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 8.498473625048064,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.2170879740245883,
+              "continuity": 5.160210534612329e-15,
+              "velocityChange": 2.141949527734472,
+              "pressureChange": 67.81626263436151
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 39.09850322643518,
+              "continuity": 1.3292592411817949e-14,
+              "velocityChange": 101.7875009346289,
+              "pressureChange": 1844.7965407887057
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 410,
+              "momentumResidual": 332281.9454667337,
+              "continuity": 1.084382182615778e-09,
+              "velocityChange": 294578.8510580706,
+              "pressureChange": 26297117715.598446
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 420,
+              "momentumResidual": 413696.3812627687,
+              "continuity": 3.7834648415353425e-09,
+              "velocityChange": 371639.0227656674,
+              "pressureChange": 40908729297.09356
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.79322e-07, target=0.0164877, diagonal-scaled residual=5.47457e-11, diagonal-scaled target=3e-11, rhs=1.64877e+09",
+          "log": "flux-skew-ablation/annulus-l7-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/flux-skew-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/flux-skew-ablation/annulus-l7-stokes-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.9715975410072133,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.2172226684951668,
+              "continuity": 5.160210534612329e-15,
+              "velocityChange": 2.141949527734472,
+              "pressureChange": 67.81626263436151
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 40.56779304808889,
+              "continuity": 2.267752757839459e-14,
+              "velocityChange": 103.13217406321012,
+              "pressureChange": 1798.602301842917
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 20,
+              "momentumResidual": 8623.167166352208,
+              "continuity": 9.097236481956789e-12,
+              "velocityChange": 21934.922542207074,
+              "pressureChange": 382512.6836198718
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 30,
+              "momentumResidual": 1834356.0478003328,
+              "continuity": 2.6777178069525395e-10,
+              "velocityChange": 4666092.45148508,
+              "pressureChange": 81370215.07355034
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.94435e-10, target=5.11717e-05, diagonal-scaled residual=5.3153e-11, diagonal-scaled target=3e-11, rhs=5.11717e+06",
+          "log": "flux-skew-ablation/annulus-l7-stokes-symmetric/solve.log"
+        },
+        {
+          "name": "dfg-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/flux-skew-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/flux-skew-ablation/dfg-stokes-symmetric/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.4272422500071116,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.3218933920026936,
+              "continuity": 6.469831145834245e-15,
+              "velocityChange": 6.782095504609022,
+              "pressureChange": 9.730406369354608
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 627.308085650515,
+              "continuity": 7.631835373457643e-13,
+              "velocityChange": 2012.6829459466646,
+              "pressureChange": 1973.6855218924977
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 3.3218933920026936,
+              "continuity": 6.469831145834245e-15,
+              "velocityChange": 6.782095504609022,
+              "pressureChange": 9.730406369354608
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 627.308085650515,
+              "continuity": 7.631835373457643e-13,
+              "velocityChange": 2012.6829459466646,
+              "pressureChange": 1973.6855218924977
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.62256e-12, target=3.33052e-07, diagonal-scaled residual=4.03544e-11, diagonal-scaled target=1.8e-11, rhs=33305.2",
+          "log": "flux-skew-ablation/dfg-stokes-symmetric/solve.log"
+        }
+      ]
+    },
+    {
+      "name": "coupled-damping",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "d49d335e77971a50f93d657c11cd60a39f737fbbed8bffc39a305b4d41f7d6c5",
+      "patch": "coupled-damping.patch",
+      "patchSha256": "a7bde1af586a5e3a3443aa934a3ecfeee27a56559be5b664e5d415830652151a",
+      "records": [
+        {
+          "name": "annulus-l5-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/coupled-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/coupled-damping/annulus-l5-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "8000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 0.8408563330303878,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 350,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.2506840899881548,
+              "continuity": 3.285965737599906e-16,
+              "velocityChange": 0.29863666463879723,
+              "pressureChange": 1.4858089362407538
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.058355551353865824,
+              "continuity": 6.783545718933939e-16,
+              "velocityChange": 0.043564572179908084,
+              "pressureChange": 0.1411038703271136
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 350,
+              "momentumResidual": 6.861758158093084e-09,
+              "continuity": 4.82534373473342e-16,
+              "velocityChange": 9.804161031527956e-09,
+              "pressureChange": 9.031672732927699e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 350,
+              "momentumResidual": 6.861758158093084e-09,
+              "continuity": 4.82534373473342e-16,
+              "velocityChange": 9.804161031527956e-09,
+              "pressureChange": 9.031672732927699e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":350,\"momentumResidual\":6.8617581580930842e-09,\"continuity\":4.8253437347334202e-16,\"velocityChange\":9.8041610315279556e-09,\"pressureChange\":9.0316727329276987e-09}",
+          "log": "coupled-damping/annulus-l5-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/coupled-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/coupled-damping/annulus-l7-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "8000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 9.695676958013792,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.1687587694413142,
+              "continuity": 4.658123285075206e-15,
+              "velocityChange": 2.005896923621984,
+              "pressureChange": 80.14429024368557
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.16359524627013985,
+              "continuity": 3.132915898731369e-16,
+              "velocityChange": 0.13652237898556346,
+              "pressureChange": 9.652193920269967
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 660,
+              "momentumResidual": 311450.5917940386,
+              "continuity": 5.034066190829452e-09,
+              "velocityChange": 160232.67925191994,
+              "pressureChange": 17604538892.90169
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 670,
+              "momentumResidual": 358256.4456216348,
+              "continuity": 4.151521567751647e-09,
+              "velocityChange": 179070.25322234438,
+              "pressureChange": 32738272124.293377
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.40531e-07, target=0.032466, diagonal-scaled residual=4.73191e-11, diagonal-scaled target=3e-11, rhs=3.2466e+09",
+          "log": "coupled-damping/annulus-l7-symmetric/solve.log"
+        },
+        {
+          "name": "annulus-l7-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/coupled-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/coupled-damping/annulus-l7-stokes-symmetric/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "8000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 6.008198875002563,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.169008107641548,
+              "continuity": 4.658123285075206e-15,
+              "velocityChange": 2.005896923621984,
+              "pressureChange": 80.14429024368557
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.16489376602182523,
+              "continuity": 1.7136323116148302e-15,
+              "velocityChange": 0.13769781806144266,
+              "pressureChange": 9.689742724829397
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 530,
+              "momentumResidual": 26589.151890400597,
+              "continuity": 1.0359015923345981e-09,
+              "velocityChange": 35111.334012643885,
+              "pressureChange": 7210517.093615071
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 540,
+              "momentumResidual": 42877.39620554537,
+              "continuity": 1.9303190130322836e-09,
+              "velocityChange": 56620.18045895706,
+              "pressureChange": 11627608.141526064
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=5.65475e-11, target=1.27994e-05, diagonal-scaled residual=3.5066e-11, diagonal-scaled target=3e-11, rhs=1.27994e+06",
+          "log": "coupled-damping/annulus-l7-stokes-symmetric/solve.log"
+        },
+        {
+          "name": "dfg-stokes-symmetric",
+          "command": [
+            "outputs/laminar-diagnosis/coupled-damping/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/coupled-damping/dfg-stokes-symmetric/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "8000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.4349289160454646,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 2.070402058032083,
+              "continuity": 0.7380468632083899,
+              "velocityChange": 4.278897581471279,
+              "pressureChange": 6.001501311428174
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 93.00522484387952,
+              "continuity": 0.0014414977797038914,
+              "velocityChange": 340.73113733065225,
+              "pressureChange": 324.76236004102145
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 93.00522484387952,
+              "continuity": 0.0014414977797038914,
+              "velocityChange": 340.73113733065225,
+              "pressureChange": 324.76236004102145
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 20,
+              "momentumResidual": 144863.4587448332,
+              "continuity": 1.4077126753186062e-06,
+              "velocityChange": 538125.172680228,
+              "pressureChange": 512827.3760946231
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.1136e-12, target=2.83087e-07, diagonal-scaled residual=3.29404e-11, diagonal-scaled target=1.8e-11, rhs=28308.7",
+          "log": "coupled-damping/dfg-stokes-symmetric/solve.log"
+        }
+      ]
+    },
+    {
+      "name": "pressure-interpolation-ablation",
+      "sourceCommit": "ab4aba3",
+      "binarySha256": "deb3163fbc3af51c91ecc4ec5bb99f05f3bb86934c6a5006815a792d031abbe1",
+      "patch": "pressure-interpolation-ablation/rejected.patch",
+      "patchSha256": "5705c114ceff1a8619506c240218560c452e942022446113eab8c0acf7d561c7",
+      "records": [
+        {
+          "name": "annulus-l5",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l5.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/annulus-l5/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 0,
+          "seconds": 0.6479536250117235,
+          "status": "converged",
+          "converged": true,
+          "cells": 484,
+          "iterations": 180,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 0.34927643032925426,
+              "continuity": 6.571931475199812e-16,
+              "velocityChange": 0.5921808782345116,
+              "pressureChange": 2.9716178724815077
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 0.03808318982176881,
+              "continuity": 5.416064130315423e-16,
+              "velocityChange": 0.027869284568376954,
+              "pressureChange": 0.38576861431417775
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.1409512947006844e-09,
+              "continuity": 6.642698863662122e-16,
+              "velocityChange": 9.381397289102292e-09,
+              "pressureChange": 8.930916350523666e-09
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 180,
+              "momentumResidual": 3.1409512947006844e-09,
+              "continuity": 6.642698863662122e-16,
+              "velocityChange": 9.381397289102292e-09,
+              "pressureChange": 8.930916350523666e-09
+            }
+          ],
+          "lastLogLine": "{\"type\":\"flow-progress\",\"iteration\":180,\"momentumResidual\":3.1409512947006844e-09,\"continuity\":6.6426988636621219e-16,\"velocityChange\":9.3813972891022915e-09,\"pressureChange\":8.9309163505236662e-09}",
+          "log": "pressure-interpolation-ablation/annulus-l5/run.log"
+        },
+        {
+          "name": "annulus-l7",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/annulus-l7/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "1",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 1.4299821670283563,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.6257648295744738,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 2.8142508923255014,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 25742.963856195365,
+              "continuity": 8.144158588044893e-11,
+              "velocityChange": 62233.37478010262,
+              "pressureChange": 46237967.77051798
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.6257648295744738,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 2.8142508923255014,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 25742.963856195365,
+              "continuity": 8.144158588044893e-11,
+              "velocityChange": 62233.37478010262,
+              "pressureChange": 46237967.77051798
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.08878e-07, target=0.0213087, diagonal-scaled residual=7.18639e-11, diagonal-scaled target=3e-11, rhs=2.13087e+09",
+          "log": "pressure-interpolation-ablation/annulus-l7/run.log"
+        },
+        {
+          "name": "annulus-l7-stokes",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-performance/annulus-current/l7.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/annulus-l7-stokes/flow",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "face-limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.7735245410003699,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.6264427616907238,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 2.8142508923255014,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 237457.46216586145,
+              "continuity": 1.1604809407978916e-09,
+              "velocityChange": 476364.9597573969,
+              "pressureChange": 38600103.53929267
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 1.6264427616907238,
+              "continuity": 9.316246570150413e-15,
+              "velocityChange": 2.8142508923255014,
+              "pressureChange": 160.28858048737115
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 237457.46216586145,
+              "continuity": 1.1604809407978916e-09,
+              "velocityChange": 476364.9597573969,
+              "pressureChange": 38600103.53929267
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.37727e-10, target=1.74822e-05, diagonal-scaled residual=5.18375e-11, diagonal-scaled target=3e-11, rhs=1.74822e+06",
+          "log": "pressure-interpolation-ablation/annulus-l7-stokes/run.log"
+        },
+        {
+          "name": "dfg-stokes",
+          "command": [
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/laminar-foundation/dfg-square-l7.solver.cm2d",
+            "--boundary",
+            "outputs/laminar-foundation/dfg-native-square/flow.boundaries",
+            "--case",
+            "custom",
+            "--output",
+            "outputs/laminar-diagnosis/pressure-interpolation-ablation/dfg-stokes/flow",
+            "--nu",
+            ".001",
+            "--speed",
+            ".3",
+            "--convection",
+            "limited-linear",
+            "--momentum-inertia",
+            "0",
+            "--pressure-preconditioner",
+            "cholesky",
+            "--max-iterations",
+            "4000",
+            "--tolerance",
+            "1e-8",
+            "--profile"
+          ],
+          "returnCode": 1,
+          "seconds": 0.38527525000972673,
+          "status": "failed",
+          "converged": false,
+          "cells": null,
+          "iterations": null,
+          "initialProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 6.599594974636263,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 11.827999339291198,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 37220.010552206535,
+              "continuity": 3.622851272271853e-11,
+              "velocityChange": 71129.40205890205,
+              "pressureChange": 99382.30730591241
+            }
+          ],
+          "lastProgress": [
+            {
+              "type": "flow-progress",
+              "iteration": 1,
+              "momentumResidual": 6.599594974636263,
+              "continuity": 5.822848031250816e-15,
+              "velocityChange": 11.827999339291198,
+              "pressureChange": 12.003002622856348
+            },
+            {
+              "type": "flow-progress",
+              "iteration": 10,
+              "momentumResidual": 37220.010552206535,
+              "continuity": 3.622851272271853e-11,
+              "velocityChange": 71129.40205890205,
+              "pressureChange": 99382.30730591241
+            }
+          ],
+          "lastLogLine": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.2913e-12, target=1.34123e-07, diagonal-scaled residual=2.27339e-11, diagonal-scaled target=1.8e-11, rhs=13412.3",
+          "log": "pressure-interpolation-ablation/dfg-stokes/run.log"
+        }
+      ]
+    }
+  ],
+  "nativeProbe": {
+    "sourceCommit": "ab4aba387a6a66c7ac0d7653e8e2d12b33402158",
+    "binarySha256": "ee21994efbf6da3ee6b8d5d752d8bb5560e3983fe241044b996cf05d187d8fa4",
+    "probeSourceSha256": "2d3bf4639b33c3650817e366f6a8808e1b439b80d3576e84e83ce46f8af22eca",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "records": [
+      {
+        "name": "outer-l5",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l5.boundaries",
+          "outer",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+        "boundarySha256": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da",
+        "returnCode": 0,
+        "seconds": 0.9382612080080435,
+        "lastLines": [
+          "238,0.91369412666393313,0.91369412666393379,5.071357680868472e-14,3.2421272128818127e-14,303,-0.52812499999999996,0.52812499999999996",
+          "239,0.91369412666393257,0.91369412666393246,4.9152938854882964e-14,3.1131558877106363e-14,303,-0.52812499999999996,0.52812499999999996",
+          "240,0.91369412666393279,0.91369412666393179,4.1504044167685396e-14,2.3907624334121974e-14,303,-0.52812499999999996,0.52812499999999996"
+        ],
+        "error": ""
+      },
+      {
+        "name": "outer-l6",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l6.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l6.boundaries",
+          "outer",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+        "boundarySha256": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273",
+        "returnCode": 0,
+        "seconds": 2.123229667020496,
+        "lastLines": [
+          "238,0.97563748319639232,0.97563748319636279,2.3951097857777754e-07,3.239545349857775e-07,265,-0.42656250000000001,-0.58906250000000004",
+          "239,0.97563748316187859,0.97563748316185284,2.2513302603389074e-07,3.0498107785653174e-07,265,-0.42656250000000001,-0.58906250000000004",
+          "240,0.97563748312960097,0.97563748312958065,2.116205764034526e-07,2.8711977445297821e-07,265,-0.42656250000000001,-0.58906250000000004"
+        ],
+        "error": ""
+      },
+      {
+        "name": "outer-l7",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "outer",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+        "returnCode": 0,
+        "seconds": 5.000347458990291,
+        "lastLines": [
+          "238,2.6731413494191627,-2.673141349419168,1.4794602545194653e-10,2.7750803463048152e-11,3710,-0.45801209000156989,0.22004507185656785",
+          "239,2.6731413492687555,-2.673141349268751,1.4794352350137483e-10,2.7744560220599232e-11,3710,-0.45801209000156989,0.22004507185656785",
+          "240,2.6731413494191867,-2.6731413494191938,1.4803275856163951e-10,2.775962011050891e-11,3710,-0.45801209000156989,0.22004507185656785"
+        ],
+        "error": ""
+      },
+      {
+        "name": "pressure-l5",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l5.boundaries",
+          "pressure",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+        "boundarySha256": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da",
+        "returnCode": 0,
+        "seconds": 0.04129241604823619,
+        "lastLines": [
+          "238,0.55410007512632209,-0.55410007022462116,0.00013301305650136969,315,-0.17211390539418162,0.47389975452464367",
+          "239,0.55410009473415267,-0.55410008983203707,0.00013301869748550668,315,-0.17211390539418162,0.47389975452464367",
+          "240,0.55410011434364559,-0.5541001094411141,0.00013302433007182226,315,-0.17211390539418162,0.47389975452464367"
+        ],
+        "error": ""
+      },
+      {
+        "name": "pressure-l6",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l6.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l6.boundaries",
+          "pressure",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+        "boundarySha256": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273",
+        "returnCode": 0,
+        "seconds": 0.07391687500057742,
+        "lastLines": [
+          "238,0.34186839764148952,0.34186838364154859,0.00028618615814257528,362,-0.16448164223203665,-0.47700266789499957",
+          "239,0.34186848036208611,0.34186846648692698,0.00028490787297107378,362,-0.16448164223203665,-0.47700266789499957",
+          "240,0.34186856246685682,0.34186854871535893,0.00028363538592532719,362,-0.16448164223203665,-0.47700266789499957"
+        ],
+        "error": ""
+      },
+      {
+        "name": "pressure-l7",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "pressure",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+        "returnCode": 0,
+        "seconds": 0.23704720800742507,
+        "lastLines": [
+          "238,1.0439398407353284,-1.0439398406187499,1.4944696676636514e-05,4201,-0.63125609472121513,0.77388738655572453",
+          "239,1.0439398412019352,-1.0439398410853544,1.4944845742680466e-05,4201,-0.63125609472121513,0.77388738655572453",
+          "240,1.0439398416685484,-1.0439398415519687,1.4944994802620171e-05,4201,-0.63125609472121513,0.77388738655572453"
+        ],
+        "error": ""
+      },
+      {
+        "name": "outer-l7-shift-half",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "outer",
+          "symmetric",
+          "400",
+          "0.5"
+        ],
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+        "returnCode": 0,
+        "seconds": 7.637773833004758,
+        "lastLines": [
+          "398,1.048924823407664,1.0489248233570079,9.8278772282583166e-06,1.3601431625955686e-05,8,-0.77388738655572453,-0.63125609472121513",
+          "399,1.0489248236032152,1.0489248235525592,9.8279179065127877e-06,1.36014384960016e-05,8,-0.77388738655572453,-0.63125609472121513",
+          "400,1.0489248237988991,1.048924823748244,9.8279585273253705e-06,1.3601445339371607e-05,8,-0.77388738655572453,-0.63125609472121513"
+        ],
+        "error": ""
+      },
+      {
+        "name": "pressure-l7-shift-half",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "pressure",
+          "symmetric",
+          "400",
+          "0.5"
+        ],
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+        "returnCode": 0,
+        "seconds": 0.34675604198127985,
+        "lastLines": [
+          "398,0.84183036631713692,0.84183036631714092,4.6860492453782878e-15,3720,-0.44481592759064503,0.23475134441343412",
+          "399,0.84183036631713681,0.84183036631714081,4.9242122861291092e-15,3720,-0.44481592759064503,0.23475134441343412",
+          "400,0.84183036631713715,0.84183036631714114,4.8228642332793639e-15,3720,-0.44481592759064503,0.23475134441343412"
+        ],
+        "error": ""
+      },
+      {
+        "name": "diffusion-l7",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "diffusion",
+          "symmetric",
+          "2500",
+          "1"
+        ],
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+        "returnCode": 0,
+        "seconds": 5.079772791999858,
+        "lastLines": [
+          "2010,1.032582786361308e-08,4460,-0.13203124999999999,0.72109375000000009,0.00041259765625000102",
+          "2016,9.9431887424240313e-09,4460,-0.13203124999999999,0.72109375000000009,0.00041259765625000102",
+          "diffusion_change_threshold 2016"
+        ],
+        "error": ""
+      }
+    ],
+    "onePressurePass": {
+      "command": [
+        "build/cartmesh2d_flow_coupling_probe",
+        "outputs/laminar-inputs/annulus-l7.solver.cm2d",
+        "outputs/laminar-inputs/annulus-l7.boundaries",
+        "outer",
+        "symmetric",
+        "120",
+        "1",
+        "1"
+      ],
+      "sourceCommit": "ab4aba3",
+      "returnCode": 0,
+      "lastLine": "120,2.2565419746881759,-2.2565417823647915,0.0004128662053676669,0.0003475829004849366,2504,0.47051216941791546,-0.19635402914744318"
+    }
+  },
+  "cloudCommitRecheck": {
+    "sourceCommit": "c7dd8198e7d06962a0b2d38cce08444cdbd36ac4",
+    "binarySha256": "10d0494e910d715366407249dbcfa9ab302c40bb39149215efc190574d76c549",
+    "records": [
+      {
+        "name": "outer-l5",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l5.boundaries",
+          "outer",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "returnCode": 0,
+        "seconds": 1.3977052090340294,
+        "lastLines": [
+          "238,0.91369412666393313,0.91369412666393379,5.071357680868472e-14,3.2421272128818127e-14,303,-0.52812499999999996,0.52812499999999996",
+          "239,0.91369412666393257,0.91369412666393246,4.9152938854882964e-14,3.1131558877106363e-14,303,-0.52812499999999996,0.52812499999999996",
+          "240,0.91369412666393279,0.91369412666393179,4.1504044167685396e-14,2.3907624334121974e-14,303,-0.52812499999999996,0.52812499999999996"
+        ],
+        "error": "",
+        "sameCsvAsAb4aba3": true
+      },
+      {
+        "name": "outer-l7",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "outer",
+          "symmetric",
+          "240",
+          "1"
+        ],
+        "returnCode": 0,
+        "seconds": 6.217968582990579,
+        "lastLines": [
+          "238,2.6731413494191627,-2.673141349419168,1.4794602545194653e-10,2.7750803463048152e-11,3710,-0.45801209000156989,0.22004507185656785",
+          "239,2.6731413492687555,-2.673141349268751,1.4794352350137483e-10,2.7744560220599232e-11,3710,-0.45801209000156989,0.22004507185656785",
+          "240,2.6731413494191867,-2.6731413494191938,1.4803275856163951e-10,2.775962011050891e-11,3710,-0.45801209000156989,0.22004507185656785"
+        ],
+        "error": "",
+        "sameCsvAsAb4aba3": true
+      },
+      {
+        "name": "outer-l7-shift-half",
+        "command": [
+          "build/cartmesh2d_flow_coupling_probe",
+          "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+          "outputs/laminar-performance/annulus-current/l7.boundaries",
+          "outer",
+          "symmetric",
+          "400",
+          "0.5"
+        ],
+        "returnCode": 0,
+        "seconds": 8.585481291054748,
+        "lastLines": [
+          "398,1.048924823407664,1.0489248233570079,9.8278772282583166e-06,1.3601431625955686e-05,8,-0.77388738655572453,-0.63125609472121513",
+          "399,1.0489248236032152,1.0489248235525592,9.8279179065127877e-06,1.36014384960016e-05,8,-0.77388738655572453,-0.63125609472121513",
+          "400,1.0489248237988991,1.048924823748244,9.8279585273253705e-06,1.3601445339371607e-05,8,-0.77388738655572453,-0.63125609472121513"
+        ],
+        "error": "",
+        "sameCsvAsAb4aba3": true
+      }
+    ]
+  },
+  "validation": {
+    "sourceCommit": "c7dd8198e7d06962a0b2d38cce08444cdbd36ac4",
+    "sameCsvAsBaseline": {
+      "outer-l5": true,
+      "outer-l7": true,
+      "outer-l7-shift-half": true
+    },
+    "tests": {
+      "command": "ctest --test-dir build -R 'cartmesh2d_flow_(face|stability|efficiency)$' --output-on-failure",
+      "passed": 4,
+      "failed": 0,
+      "seconds": 45.94,
+      "note": "Includes laminar input fixture setup; no full CTest/frontend/CI run in this local diagnostic."
+    },
+    "build": "macOS system Clang Release; native probe, flow CLI, face/stability/efficiency targets built",
+    "testLog": "Test project /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build\n    Start  9: cartmesh2d_flow_efficiency\n1/4 Test  #9: cartmesh2d_flow_efficiency .......   Passed    4.09 sec\n    Start 17: cartmesh2d_flow_face\n2/4 Test #17: cartmesh2d_flow_face .............   Passed    0.09 sec\n    Start 20: cartmesh2d_laminar_fixtures\n3/4 Test #20: cartmesh2d_laminar_fixtures ......   Passed    0.04 sec\n    Start 21: cartmesh2d_flow_stability\n4/4 Test #21: cartmesh2d_flow_stability ........   Passed   41.70 sec\n\n100% tests passed out of 4\n\nTotal Test time (real) =  45.94 sec\n"
+  },
+  "retention": {
+    "consumer": "Cloud/local algorithm debugging from existing archived inputs and native probe; failed patches prevent repeated dead ends.",
+    "local": "outputs/laminar-diagnosis contains original fields, binary snapshots and failed trials. Build targets are rebuildable.",
+    "archive": "coupling-diagnosis-traces.tar.gz contains native logs/CSV and rejected patches, no executables or duplicate meshes."
+  }
+}
