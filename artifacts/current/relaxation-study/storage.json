@@ -1,0 +1,6 @@
+{
+  "removedFiles": 996,
+  "removedBytes": 150255751,
+  "localPruningManifest": "outputs/relaxation-study/pruned-exports.json",
+  "evidenceIndex": "evidence-index.json"
+}

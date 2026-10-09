@@ -40,6 +40,41 @@ python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5
 
 `--geometry-segments N` 可固定各圆的原始多边形段数，再单独细化计算网格；默认仍是 `4*2**level`。记录保存几何哈希、实际流体面积、相对解析圆的最大弓高和面积差，输出目录拒绝混用不同段数。固定多边形系列的离散收敛与同时加密几何的圆形参考误差须分开解释；更少段数并不授予曲壁精度资格。Re400 的 Ghia `v(.9063,.5)=-.23827` 原表可疑点明确标记，但继续参与全部原表误差统计。
 
+### 速度与压力松弛因子研究
+
+`tools/benchmarks/relaxation_study.py` 编排原生 CLI、比较原生 CSV 并绘图，不另建 PDE 求解或方程验收。`relaxation_schedule.py` 是保留同网格 u/v/p/owner 方向面通量的分段反馈实验，使用既有 `extract_steady_iterate.py`。当前结果、失败和限制见[当前状态](CURRENT_STATE_CN.md)及 `artifacts/current/relaxation-study/`。Linux 研究环境依赖 Python、NumPy、Matplotlib、`taskset` 和原生 Release CLI；测量子进程通过 `wait4` 单独记录 CPU 时间和 RSS，避免并发子进程串账。
+
+研究变量为 `(alphaU, alphaP)`，目标是**在同一离散解、同一原生严格验收下，降低完整进程耗时**。SIMPLE 与 `simple-consistent` 分别选参；`coupled` 不使用这两个控制，只作固定对照。旧默认 `.6/.25` 不是寻优结果。所有算例为二维稳态、不可压、恒黏度层流，对称应力、inertia=1、IC(0)、无 Anderson，SIMPLE 压力校正 4 次；中间线性精度 adaptive，最终严格认证。普通容差 `1e-8`，同方程 coupled 参考解 `1e-10`。每次参数试验从相同原生冷初值开始。
+
+训练集为原 484 格圆环（nu=.1、Uref=.5、upwind）和原生生成的 900 格 Poiseuille 通道（nu=.1、峰值入口 1、upwind）。参数粗网格为 `alphaU=[.2,.4,.6,.8,1]`、`alphaP=[.05,.1,.25,.5,1]`，两方法共 100 点；每点最多 3000 步/60 秒。局部加密各 9 对参数，仍在两训练算例上运行。前三名和默认各串行重复 3 次，最接近的两个候选各追加 7 次；按两算例**耗时中位数的几何平均**选参，候选须在所有训练重复中通过。其排名等价于除以各算例 coupled 固定成本后的几何平均排名。单次并行粗扫时间用于筛选，不能冒充稳定的性能差距。
+
+留出集在这轮选参中不参与排名：原 1672/6208 格圆环、900 格 Re100 方腔、3063 格 DFG Re20。圆环、方腔为 upwind，DFG 为 limited-linear，沿用原显式入口/出口/壁面；不同格式不互相计算提速。圆环网格同时改变原多边形细分，不是固定几何的网格收敛研究。历史上已看过部分留出算例，故这是**未参与本轮选参的迁移验证**，不是盲测或独立外部数据集。选参锁定后才开始这些参数运行；后续针对失败例的诊断必须另列，不能反过来改锁定排名。
+
+同解检查只比较原生输出：速度用面积加权向量 RMS/Uref；压力用面积加权 RMS/(Uref²+nu·Uref/H)，只对闭合域差值减去面积均值，压力出口域保留绝对基准；面通量用 RMS/(Uref·sqrt(平均单元面积))。H 为物理域高度，圆环 2、通道/方腔 1、DFG .41。三项均须不大于 `1e-4`，即该归一化下的 0.01%；此研究门用于排除提前停下或不同离散解，不改变原生验收，也不证明压力/受力的空间精度。固定网格、格式、边界的参考偏差与物理参考误差分开。
+
+原生 strict 最早在第 10 轮通过；多个结果同为 10 轮时，仍须比较实际块/压力工作量和完整耗时。CSV 显式区分冷启动试验、参考和分段续算，`objectiveSeconds` 只为成功冷启动试验填写；不能将最后一个续算段的短耗时当作从零收敛成本，也不能将计划中的 50 步段末停止统计为固定参数扫描的失败。coupled 的两个松弛列留空，因为它不使用这些参数。
+
+参考方案有一项显式修订：6208 格圆环在 `1e-10` 下，冷 adaptive、冷 strict、从已收敛 `1e-8` 场续算均耗尽 FGMRES 预算；整体线性范数已达标，最大行残差仍约 `2.9e-12`～`4.0e-12`，高于该容差对应的 `1e-12` 行门。三个失败均保留，不称通过。此算例单独用 `--reference-tolerance 1e-9`，其余五例仍 `1e-10`；候选 `1e-8` 与同解门不变，内核及原生验收未修改。`bootstrap-reference --case annulus-l7` 可复现失败的普通收敛场→紧容差认证路径；初始化场不算紧容差参考。这项限制不能隐藏在总成功率中。
+
+记录区分原生严格收敛且同解、不同解、迭代上限、时间上限、线性失败、原生异常与联立失败；超预算不等于已证明必然发散，失败的短耗时不进入最优排名。批次顺序按固定种子打乱，粗扫最多两个独立 CPU 核各一个进程，库线程数固定为 1；候选确认和留出成本对照串行。完整墙钟时间包含进程启动、网格读取、求解及所有原生导出，不把嵌套压力时间重复相加。共享云主机仍有时钟噪声，记录重复范围、迭代数和 CPU 时间，不从小的计时差距宣称唯一最优。
+
+首次运行示例（已有研究目录请复用其 `run`，不要重新 `init`）：
+
+```sh
+python3 tools/benchmarks/relaxation_study.py init
+python3 tools/benchmarks/relaxation_study.py run --batch references-training-v1 --methods coupled --reference --iterations 1000 --seconds 180 --workers 1
+python3 tools/benchmarks/relaxation_study.py run --batch grid --iterations 3000 --seconds 60 --workers 2
+python3 tools/benchmarks/relaxation_study.py select --batches grid --output outputs/relaxation-study/grid-selection.json
+python3 tools/benchmarks/relaxation_study.py report
+python3 tools/benchmarks/test_relaxation_study.py
+```
+
+`--pairs .8,.15 .8,.25` 指定局部候选，`--repeats` 重复测量，`--cases holdout` 切换留出集；实际所有批次控制、选参锁定与原生命令随结果封存。`--root` 可指定另一研究目录。目录内 manifest 固定二进制、输入、物理控制及训练划分；批次/spec 不允许原地改动，已完成记录可恢复。中断的未完成运行保留证据，换批次继续，不覆盖日志或伪造累计成本。启动失败与实际 CFD 失败分开计数。
+
+`artifacts/current/relaxation-study/native-evidence.tar.xz` 供后续原生复算、机制研究和同网格续算使用：含所有实际运行的命令/日志/残差/记录、原输入及新增原生网格、固定参考、全部留出对照和代表失败/最终场、反馈初值、冻结排名及历史编排脚本哈希快照；逐文件 SHA 见 `evidence-index.json`。完整原生 CSV 留在 `outputs/relaxation-study/runs/`，可重建的 VTK、fields.json 与字节相同边界副本清理记录在 `pruned-exports.json`。编译二进制不入仓库，按源提交/工具链重建；归档中的脚本快照用于追溯，执行入口仍为仓库 `tools/benchmarks/`。上述整理不删除旧研究、用户原数据或失败记录。
+
+反馈实验每 50 步才决策一次：用原生动量、连续性、全局不平衡及完整响应路径的面通量缺陷，分别除以原验收门后取最大值。完成段若相对上次接受值增长超过 2 倍或原生失败，则退回上次 u/v/p/flux 并将两个因子减半，最低 .05；接受段比值小于 .8 时两因子乘 1.25，最大 1。起点 `.6/.25`，这些是预先固定的启发式控制常数，不是优化出的最佳策略。固定参数分段对照不使用反馈拒绝规则。预算计入拒绝段，原生异常缺少最终步数时按整段保守收费并标记步数未知；总耗时还计入提取/重启/反馈开销。最后仍须原生完整严格认证及同解检查。该实验不能冒充内核自适应实现；只有与同样分段重启的固定参数和不间断固定参数比较，才能判断反馈收益。
+
 上述完整矩阵保留已知失败。`--mesh-layout square` 用等尺寸笛卡尔背景，适于 DFG 的长矩形外域；须使用新输出目录，不能把不同网格策略冒充同一细化序列。`--prepare-only` 只准备输入。当前细曲壁网格仍可能质量失败，求解器亦可能发散，均需继续修复。
 
 仓库保存了约 574 KiB 的原始失败输入，云端无需读取本机 `outputs/` 即可重现细圆环与 DFG：
