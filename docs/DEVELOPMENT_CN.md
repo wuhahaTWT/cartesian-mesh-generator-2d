@@ -40,6 +40,33 @@ python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5
 
 `--geometry-segments N` 可固定各圆的原始多边形段数，再单独细化计算网格；默认仍是 `4*2**level`。记录保存几何哈希、实际流体面积、相对解析圆的最大弓高和面积差，输出目录拒绝混用不同段数。固定多边形系列的离散收敛与同时加密几何的圆形参考误差须分开解释；更少段数并不授予曲壁精度资格。Re400 的 Ghia `v(.9063,.5)=-.23827` 原表可疑点明确标记，但继续参与全部原表误差统计。
 
+### SIMPLE 源码对照
+
+`tools/benchmarks/simple_source_compare.py` 用于定位现有 SIMPLE 与成熟实现的具体差异：读取当前原生源码，在 `outputs/` 生成少量试验编译单元并链接现有二维库，运行真实 CLI；Python 只编排编译/运行/读取摘要，不重建方程。产品源码、默认控制和验收门不变。先构建当前 `cartmesh2d_flow_cli`，再运行；macOS 固定 `/usr/bin/clang++`，其他平台本次未验。
+
+对照的原始源码入口如下，不把教程中的可配置离散选择说成 SIMPLE 算法的唯一规定：
+
+| 检查点 | 外部原始源码 | 当前原生实现及结论 |
+| --- | --- | --- |
+| 压力松弛和速度更新顺序 | [Foundation 10 pEqn.H](https://github.com/OpenFOAM/OpenFOAM-10/blob/master/applications/solvers/incompressible/simpleFoam/pEqn.H#L44-L49)；[MOOSE correctVelocity](https://mooseframework.inl.gov/docs/doxygen/modules/LinearAssemblySegregatedSolve_8C_source.html#l00604) 先计算面通量，再松弛压力、刷新梯度和单元速度 | 原生用完整 `pc` 修速度、用 `alphaP*pc` 更新压力；是不同的分离迭代选择，单独对齐速度更新仍失败，不能凭差异宣布唯一 bug。 |
+| 动量松弛 | [Foundation fvMatrix.C](https://github.com/OpenFOAM/OpenFOAM-10/blob/master/src/finiteVolume/fvMatrices/fvMatrix/fvMatrix.C) 与本机 OpenCFD 2606 `fvMatrix.C:1210–1214` 先保证对角占优，再松弛并补 RHS | 原生直接除速度松弛；单独加入占优处理，以及有界对流/占优/速度松弛组合，原 DFG 仍失败。 |
+| 压力梯度、面值和壁面闭合 | 本机 OpenCFD 2606 的 `gaussGrad.C`、`correctedSnGrad.C`，以及 `tutorials/incompressible/simpleFoam/pitzDaily/system/fvSchemes` / `0/p` 中配置的 Gauss linear 和 zeroGradient | 原生非正交项用扩展 LS 梯度，压力力用含偏斜面值与边界外推的 Gauss 梯度。研究组合将压力面值设为内面线性插值/未知边界 owner 值，动量压力力和非正交项共用该 Gauss 梯度。它改变空间离散，必须另验受力和曲壁精度。 |
+| HbyA、通量与非正交项 | Foundation `pEqn.H`、`constrainHbyA.C`；[boundedConvectionScheme.C](https://github.com/OpenFOAM/OpenFOAM-10/blob/master/src/finiteVolume/finiteVolume/convectionSchemes/boundedConvectionScheme/boundedConvectionScheme.C) | 成熟实现也使用滞后非正交校正；单步重构缺陷不是独立的代码错误证明。完整对照后恢复原生速度梯度、黏性转置项或面通量分别仍能让 DFG 收敛；恢复原压力组合则再次失败。 |
+
+本机只读源码为 `/Users/Zhuanz/Desktop/mesh-reference-sources/OpenFOAM-v2606-source`，`META-INFO/api-info` 为 api=2606、patch=0；用到的文件 SHA 和外部链接保存在 `artifacts/current/simple-source-comparison.json`。Foundation/MOOSE 网页为访问时版本，未虚构固定提交。此次没有运行 OpenFOAM/MOOSE 程序；Docker CLI 存在但本机 daemon 未启动。原生对照只是独立实现选定的离散机制，没有复制或链接外部三维核心。
+
+最小对照为两因素四组：`baseline`、只用松弛压力修速度 `velocity`、只改压力 Gauss 组合 `pressure`、同时改两项 `both`。其余保持原速度 LS 重构、对称应力、面通量松弛缺陷、对流、物性、边界、`.6/.25` 松弛、4次非正交校正及 strict 门。每次启动记录源码/库/二进制/输入 SHA、命令、实际退出码；失败日志保留，达到预算不记收敛。
+
+```sh
+cmake --build build --target cartmesh2d_flow_cli --parallel 4
+mkdir -p outputs/simple-extensions/inputs
+tar -xzf artifacts/current/laminar-foundation/failure-inputs.tar.gz -C outputs/simple-extensions/inputs
+python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensions/inputs/dfg20-l7.solver.cm2d --boundary outputs/simple-extensions/inputs/dfg20-l7.boundaries --nu .001 --speed .3 --output outputs/simple-source-comparison-reproduce
+# 单独试两项组合，使用原 DFG 的 limited-linear：追加 --convection limited-linear --variants both，并换输出目录。
+```
+
+每次输出目录须新建，默认每个实际求解最多1500轮/45秒；这是研究成本预算，不是物理阈值。生成的研究 CLI 对 Gauss 压力摘要明确标为 `research-gauss-linear-owner-trace`，不沿用产品压力重构标签。当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。配套 `simple-source-comparison-fields.tar.gz` 保存四组原生日志、代表成功场及细圆环失败、复现清单与探索补丁，供后续压力离散修复；原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机 `outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
+
 ### SIMPLER 与 PIMPLE
 
 `FlowCoupling2D::Simpler` / `::Pimple` 在 `src/fv/Incompressible2D.cpp` 复用原动量装配、Rhie–Chow、压力边界及严格停止条件，CLI 用 `--coupling simpler|pimple`。桌面开放 SIMPLE、既有 SIMPLEC 和这两种扩展，默认仍 SIMPLE；当前资格和失败见[当前状态](CURRENT_STATE_CN.md#simple-系列扩展)。成熟算法的本地实现不自动继承外部软件的精度资格。
