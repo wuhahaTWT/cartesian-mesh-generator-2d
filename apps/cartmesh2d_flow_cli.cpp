@@ -171,7 +171,9 @@ int main(int argc, char** argv) {
                     << "Native 2D incompressible laminar flow (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
             "--case-file FILE.json: native flow case v1; relative paths use its directory, explicit CLI options override.\n"
-            "--coupling simple|simplec|simple-consistent|coupled: steady laminar pressure/velocity solve (default simple).\n"
+            "--coupling simple|simplec|simpler|pimple|simple-consistent|coupled (default simple).\n"
+            "  simpler predicts pressure before momentum (steady only); pimple adds neighbour momentum correctors (steady/transient).\n"
+            "--momentum-correctors 1..8 (PIMPLE only, default 2); independent of non-orthogonal pressure passes.\n"
             "  coupled uses FGMRES and line search; strict convergence, constant viscosity and fixed boundary roles only.\n"
             "  SIMPLE relaxation and pressure-correction-pass controls do not apply to coupled.\n"
             "  simple-consistent uses the full momentum response and both SIMPLE relaxations; pressure passes do not apply.\n"
@@ -244,8 +246,13 @@ int main(int argc, char** argv) {
                 if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
             } else if (a == "--coupling") {
-                if(v!="simple" && v!="simplec" && v!="coupled" && v!="simple-consistent")throw std::invalid_argument("coupling must be simple, simplec, simple-consistent or coupled");
-                controls.coupling=v=="coupled"?fv::FlowCoupling2D::Coupled:v=="simple-consistent"?fv::FlowCoupling2D::SimpleConsistent:v=="simplec"?fv::FlowCoupling2D::SimpleC:fv::FlowCoupling2D::Simple;
+                if(v!="simple" && v!="simplec" && v!="simpler" && v!="pimple" && v!="coupled" && v!="simple-consistent")throw std::invalid_argument("coupling must be simple, simplec, simpler, pimple, simple-consistent or coupled");
+                controls.coupling=v=="coupled"?fv::FlowCoupling2D::Coupled:v=="simple-consistent"?fv::FlowCoupling2D::SimpleConsistent:v=="simplec"?fv::FlowCoupling2D::SimpleC:v=="simpler"?fv::FlowCoupling2D::Simpler:v=="pimple"?fv::FlowCoupling2D::Pimple:fv::FlowCoupling2D::Simple;
+            } else if (a == "--momentum-correctors") {
+                const double count=number(v);
+                if(count<1 || count>8 || std::floor(count)!=count)
+                    throw std::invalid_argument("momentum-correctors must be an integer in [1,8]");
+                controls.momentumCorrectors=static_cast<std::size_t>(count);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
             } else if (a == "--initial-guess") {
@@ -366,6 +373,8 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("Engineering convergence requires steady laminar flow");
         if((controls.coupling==fv::FlowCoupling2D::Coupled || controls.coupling==fv::FlowCoupling2D::SimpleConsistent) && timeStep>0)
             throw std::invalid_argument("Coupled solving requires steady constant-property laminar flow");
+        if((controls.coupling==fv::FlowCoupling2D::SimpleC || controls.coupling==fv::FlowCoupling2D::Simpler) && timeStep>0)
+            throw std::invalid_argument("Selected coupling requires steady flow; only SIMPLE/PIMPLE support time stepping");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {
@@ -630,9 +639,11 @@ int main(int argc, char** argv) {
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const bool counterflowCase=controls.scenario == "counterflow";
-        const char* coupling=consistent?"simple-consistent":coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":"simple";
+        const char* coupling=consistent?"simple-consistent":coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":controls.coupling==fv::FlowCoupling2D::Simpler?"simpler":controls.coupling==fv::FlowCoupling2D::Pimple?"pimple":"simple";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        summary << "\"momentumCorrectors\":" << (controls.coupling==fv::FlowCoupling2D::Pimple?std::to_string(controls.momentumCorrectors):"null") << ",\n";
+        if(timeStep>0)summary << "\"coupling\":" << std::quoted(coupling) << ",\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
         if (timeStep==0) {
             summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
@@ -753,6 +764,7 @@ int main(int argc, char** argv) {
             else summary << ",\n\"requestedSteps\":" << requestedSteps;
             summary << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
                 << ",\n\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses
+                << ",\n\"pressureRelaxation\":" << controls.pressureRelaxation
                 << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         }
         if (manufactured && controls.manufacturedViscositySlope==0) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
@@ -814,7 +826,7 @@ int main(int argc, char** argv) {
                              : "explicit pressure outlet faces, prescribed kinematic pressure")
                                  : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
-                << "\"method\":\"cell-centred FVM; " << (consistent?"SIMPLE full momentum response with consistent-field line search":coupled?"coupled FGMRES with consistent-field line search":"SIMPLE") << "; Rhie-Chow; shared-face pressure; "
+                << "\"method\":\"cell-centred FVM; " << (consistent?"SIMPLE full momentum response with consistent-field line search":coupled?"coupled FGMRES with consistent-field line search":controls.coupling==fv::FlowCoupling2D::Simpler?"SIMPLER":controls.coupling==fv::FlowCoupling2D::Pimple?"PIMPLE":controls.coupling==fv::FlowCoupling2D::SimpleC?"SIMPLEC":"SIMPLE") << "; Rhie-Chow; shared-face pressure; "
                 << convection << " momentum convection; corrected diffusion\",\n"
                 << "\"scope\":\"" << (timeStep>0 ? "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
                                                   : "steady constant-property laminar flow; no turbulence or accuracy certification") << "\"\n}\n";

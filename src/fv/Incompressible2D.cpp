@@ -46,10 +46,14 @@ static FlowResult2D solveFlow(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
-    ensure(c.coupling==FlowCoupling2D::Simple ||
+    ensure(c.coupling==FlowCoupling2D::Simple || (c.coupling==FlowCoupling2D::Pimple && !material) ||
            ((c.coupling==FlowCoupling2D::SimpleC || c.coupling==FlowCoupling2D::Coupled ||
-             c.coupling==FlowCoupling2D::SimpleConsistent) && !previous && !material),
-           "SIMPLEC and coupled solving require steady constant-property laminar flow");
+             c.coupling==FlowCoupling2D::SimpleConsistent || c.coupling==FlowCoupling2D::Simpler) && !previous && !material),
+           "Selected coupling requires constant-property laminar flow; only SIMPLE/PIMPLE support time stepping");
+    ensure(c.momentumCorrectors>=1 && c.momentumCorrectors<=8,
+           "Momentum correctors must be in [1,8]");
+    ensure(c.coupling==FlowCoupling2D::Pimple || c.momentumCorrectors==2,
+           "Momentum correctors apply only to PIMPLE");
     ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
            "Pressure corrections must be in [1,4]");
     ensure(!material || c.pressureCorrectionPasses==4,
@@ -85,6 +89,15 @@ static FlowResult2D solveFlow(
            "Invalid outlet backflow model");
     validateViscosity(m,c);
     auto b = boundaries(m, c);
+    const bool simpler=c.coupling==FlowCoupling2D::Simpler;
+    const bool pimple=c.coupling==FlowCoupling2D::Pimple;
+    if(simpler || pimple) {
+        ensure(c.outletBackflow==OutletBackflow2D::Reject,
+               "SIMPLER/PIMPLE require outlet backflow rejection");
+        ensure(std::none_of(b.role.begin(),b.role.end(),[](Role role) {
+            return role==Role::Opening || role==Role::Farfield;
+        }),"SIMPLER/PIMPLE require fixed boundary roles (no opening/farfield)");
+    }
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
     if(guess) {
@@ -370,6 +383,7 @@ static FlowResult2D solveFlow(
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
+        const Vec outerFlux=(simpler || pimple)?r.flux:Vec{};
         const Vec previousScaled=accelerated ? packState() : Vec{};
         takeRelaxed(au,checkU,r.u);
         takeRelaxed(av,checkV,r.v);
@@ -383,9 +397,46 @@ static FlowResult2D solveFlow(
             au.diag[i] = av.diag[i] = common;
         }
         predictorResidual=0;predictorWorstCell=0;pressureLinearResidual=0;
-        linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
+        // Frozen H/a uses the current neighbouring velocities, including the
+        // signed off-diagonal entries. It is not an extra momentum solve or
+        // another non-orthogonal pressure pass. Explicit stress/convection
+        // terms remain frozen until the next nonlinear outer iteration.
+        const auto frozenForce=(simpler || pimple)?forceGradient:std::vector<Vector2D>{};
+        const auto diagonalPredictor=[&](const std::vector<Vector2D>& currentForce) {
+            au.apply(r.u,mu);av.apply(r.v,mv);
+            for(std::size_t i=0;i<n;++i) {
+                r.u[i]=finite(r.u[i]+(au.rhs[i]-mu[i])/au.diag[i]-ra[i]*(currentForce[i].x-frozenForce[i].x));
+                r.v[i]=finite(r.v[i]+(av.rhs[i]-mv[i])/av.diag[i]-ra[i]*(currentForce[i].y-frozenForce[i].y));
+            }
+        };
+        const auto predictFlux=[&](const std::vector<Vector2D>& currentGp,
+                                   const std::vector<Vector2D>& currentForce) {
+            const auto currentGu=equation.velocityGradient(r.u,b,false);
+            const auto currentGv=equation.velocityGradient(r.v,b,true);
+            // Every inner corrector uses the SAME outer relaxation defect.
+            // Reusing the last corrected flux here changes the face equation.
+            r.flux=outerFlux;
+            return rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,currentGu,currentGv,
+                currentGp,currentForce,oldFluxDefect,previous!=nullptr,timeStep,df);
+        };
+        if(simpler) {
+            diagonalPredictor(frozenForce);
+            const auto pseudoFlux=predictFlux(gp,forceGradient);
+            // Written in incremental form about oldP, this is SIMPLER's
+            // pressure equation from pseudo velocities, before momentum.
+            solvePressureCorrection(m,c,b,r,ap,pc,ra,df,pseudoFlux,pressureGradientStencil,zeros,linearSolve);
+            for(std::size_t i=0;i<n;++i)r.p[i]=finite(oldP[i]+c.pressureRelaxation*pc[i]);
+            gp=pressureGradientStencil.apply(r.p,pressureBoundary);
+            forceGradient=equation.pressureForce(r.p,pressureBoundary,b.fixedP);
+            for(std::size_t i=0;i<n;++i) {
+                au.rhs[i]-=m.cells[i].area*(forceGradient[i].x-frozenForce[i].x);
+                av.rhs[i]-=m.cells[i].area*(forceGradient[i].y-frozenForce[i].y);
+            }
+            r.u=oldU;r.v=oldV;r.flux=outerFlux;
+        }
+        linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         const auto gup=equation.velocityGradient(r.u,b,false),gvp=equation.velocityGradient(r.v,b,true);
         const auto predicted=rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,gup,gvp,gp,forceGradient,
             oldFluxDefect,previous!=nullptr,timeStep,df);
@@ -409,15 +460,36 @@ static FlowResult2D solveFlow(
         // four non-orthogonal corrections. Assemble and pin once; only the
         // explicit correction/RHS changes. The next SIMPLE iteration resets
         // the matrix and invalidates its IC(0) factorization.
-        const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,pressureResponse,df,predicted,pressureGradientStencil,zeros,linearSolve);
-        const auto gc=equation.pressureForce(pc,zeros,b.fixedP);
+        const auto correct=[&](const Vec& predictedFlux) {
+            const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,pressureResponse,df,predictedFlux,pressureGradientStencil,zeros,linearSolve);
+            const auto gc=equation.pressureForce(pc,zeros,b.fixedP);
+            for(std::size_t i=0;i<n;++i) {
+                r.u[i]=finite(r.u[i]-pressureResponse[i]*gc[i].x);
+                r.v[i]=finite(r.v[i]-pressureResponse[i]*gc[i].y);
+                if(!simpler)r.p[i]=finite(r.p[i]+c.pressureRelaxation*pc[i]);
+            }
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& f=m.faces[id];double flux=predictedFlux[id];
+                if(f.neighbour||b.fixedP[id])flux+=df[id]*(pc[f.owner]-(f.neighbour?pc[*f.neighbour]:0))+correction[id];
+                r.flux[id]=finite(flux);
+            }
+        };
+        correct(predicted);
+        if(pimple)for(std::size_t inner=1;inner<c.momentumCorrectors;++inner) {
+            const auto currentGp=pressureGradientStencil.apply(r.p,pressureBoundary);
+            const auto currentForce=equation.pressureForce(r.p,pressureBoundary,b.fixedP);
+            diagonalPredictor(currentForce);
+            correct(predictFlux(currentGp,currentForce));
+        }
         double du=0,dp=0;
-        for(std::size_t i=0;i<n;++i){r.u[i]-=pressureResponse[i]*gc[i].x;r.v[i]-=pressureResponse[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
-            finite(r.u[i]);finite(r.v[i]);finite(r.p[i]);du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);}
+        for(std::size_t i=0;i<n;++i) {
+            du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
+            dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+        }
         Vec div(n);r.globalImbalance=0;
-        for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];double flux=predicted[id];
-            if(f.neighbour||b.fixedP[id])flux+=df[id]*(pc[f.owner]-(f.neighbour?pc[*f.neighbour]:0))+correction[id];
-            r.flux[id]=finite(flux);div[f.owner]+=flux;if(f.neighbour)div[*f.neighbour]-=flux;else r.globalImbalance+=flux;
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& f=m.faces[id];const double flux=r.flux[id];
+            div[f.owner]+=flux;if(f.neighbour)div[*f.neighbour]-=flux;else r.globalImbalance+=flux;
         }
         double continuity=0;for(std::size_t i=0;i<n;++i)continuity=std::max(continuity,std::abs(div[i])/(c.speed*std::sqrt(m.cells[i].area)));
         double inflow=0;for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)inflow+=std::max(0.,-r.flux[id]);

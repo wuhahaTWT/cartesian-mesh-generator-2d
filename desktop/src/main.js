@@ -936,6 +936,10 @@ async function runSmoke() {
       document.getElementById('flowLinearPolicy').value = ${JSON.stringify(argument('flow-linear-policy') || 'strict')};
       document.getElementById('flowVelocityRelaxation').value = ${JSON.stringify(argument('flow-velocity-relaxation') || '.6')};
       document.getElementById('flowPressureCorrections').value = ${JSON.stringify(argument('flow-pressure-corrections') || '4')};
+      document.getElementById('flowCoupling').value = ${JSON.stringify(argument('flow-coupling') || 'simple')};
+      document.getElementById('flowPressureRelaxation').value = ${JSON.stringify(argument('flow-pressure-relaxation') || '.25')};
+      document.getElementById('flowMomentumCorrectors').value = ${JSON.stringify(argument('flow-momentum-correctors') || '2')};
+      document.getElementById('flowCoupling').dispatchEvent(new Event('change'));
       document.getElementById('flowSteadyAcceleration').dispatchEvent(new Event('change'));
       if (${JSON.stringify(argument('flow') === 'custom')}) {
         await smoke.prepareFlowBoundaries(${JSON.stringify(argument('flow-boundary-preset') || 'duct')});
@@ -985,6 +989,9 @@ async function runSmoke() {
         document.getElementById('flowLinearPolicy').value='strict';
         document.getElementById('flowVelocityRelaxation').value='.4';
         document.getElementById('flowPressureCorrections').value='2';
+        document.getElementById('flowCoupling').value='simple';
+        document.getElementById('flowPressureRelaxation').value='.25';
+        document.getElementById('flowMomentumCorrectors').value='2';
         document.getElementById('flowInitialVortex').checked=false;
         document.getElementById('flowVortexSpeed').value='7';
         smoke.state.flowBoundaryDefinition=null;
@@ -1419,6 +1426,20 @@ async function runSmoke() {
         return {policy,relaxation,pressureCorrections,strictLinearFinal:summary.strictLinearFinal,strictAcceptedSteps:summary.strictAcceptedSteps};
       })()`);
     }
+    if (argument('flow-coupling')) {
+      report.flow.couplingControls=await mainWindow.webContents.executeJavaScript(`(() => {
+        const summary=window.__smoke.state.flow?.summary;
+        const coupling=document.getElementById('flowCoupling').value;
+        const pressureRelaxation=Number(document.getElementById('flowPressureRelaxation').value);
+        const momentumCorrectors=Number(document.getElementById('flowMomentumCorrectors').value);
+        if(!summary || summary.coupling!==coupling || summary.pressureRelaxation!==pressureRelaxation ||
+            (coupling==='pimple' && summary.momentumCorrectors!==momentumCorrectors))
+          throw new Error('Coupling controls do not match actual native result');
+        if(!document.getElementById('flowResult').innerText.includes(coupling.toUpperCase()))
+          throw new Error('Coupling algorithm is absent from actual App result');
+        return {coupling,pressureRelaxation,momentumCorrectors:summary.momentumCorrectors};
+      })()`);
+    }
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (Math.abs(report.layout.geometry.bodyHeight - report.layout.geometry.innerHeight) > 1 ||
@@ -1480,6 +1501,10 @@ async function runSmoke() {
         mainWindow.setSize(1320,900);
         await new Promise(resolve=>setTimeout(resolve,200));
         await mainWindow.webContents.executeJavaScript("document.getElementById('flowLinearPolicy').scrollIntoView({block:'center'}); document.getElementById('flowResult').scrollIntoView({block:'start'});");
+      }
+      if (argument('flow-coupling-shot')) {
+        mainWindow.setSize(1320,900);
+        await mainWindow.webContents.executeJavaScript("document.getElementById('flowCoupling').scrollIntoView({block:'start'}); document.getElementById('flowResult').scrollIntoView({block:'start'});");
       }
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());

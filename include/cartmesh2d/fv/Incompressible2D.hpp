@@ -15,7 +15,7 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
 enum class FlowConvergence2D { Strict, Engineering };
-enum class FlowCoupling2D { Simple, SimpleC, Coupled, SimpleConsistent };
+enum class FlowCoupling2D { Simple, SimpleC, Coupled, SimpleConsistent, Simpler, Pimple };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -59,6 +59,11 @@ struct FlowControls2D {
     // frozen momentum/pressure response together, including symmetric stress
     // and the matching face relaxation defect. Pressure passes do not apply.
     FlowCoupling2D coupling = FlowCoupling2D::Simple;
+    // PIMPLE momentum/pressure correctors per outer iteration. Distinct from
+    // the non-orthogonal pressure passes above; 1 recovers ordinary SIMPLE.
+    // SIMPLER predicts pressure before the momentum solve, and uses its final
+    // pressure correction only for velocity/flux. Constant-property only.
+    std::size_t momentumCorrectors = 2;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
     // Explicit study controls; retain the original four-vector, step-10 default.

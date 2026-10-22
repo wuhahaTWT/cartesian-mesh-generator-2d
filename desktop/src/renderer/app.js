@@ -919,8 +919,11 @@ function renderFlowResult(summary) {
     ...(summary.timeStepControl==='adaptive-cfl-retry' ? [['时间步控制','自动 CFL / 重试'],['拒绝的试算次数',String(summary.rejectedSteps)],['CFL 上限',summary.targetCourant]] : []),
     ['对流格式', convectionText],
     ['压力求解', pressurePreconditionerText],
+    ['压力—速度耦合',(summary.coupling ?? 'simple').toUpperCase()],
     ['线性迭代精度',summary.linearPolicy==='adaptive'?(summary.converged?'自适应 · 严格复核通过':'自适应 · 尚未收敛'):'固定精度'],
     ['速度松弛系数',summary.velocityRelaxation ?? .6],
+    ['压力松弛系数',summary.pressureRelaxation ?? .25],
+    ...(summary.coupling==='pimple'?[['动量校正次数',summary.momentumCorrectors]]:[]),
     ['压力校正次数',summary.pressureCorrectionPasses ?? 4],
     ['稳态加速', summary.steadyAcceleration==='anderson'
       ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
@@ -975,7 +978,12 @@ function updateFlowMode() {
   $('flowDtLabel').textContent=adaptive?'最大时间步长':transient?'时间步长':'温度联算步长';
   for (const id of ['flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).disabled=state.busy||!adaptive;
   $('flowRestartSettings').hidden = !transient;
-  $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
+  $('flowIterationLabel').textContent = transient ? '每个时间步的外迭代上限' : '最大外迭代';
+  const pimple=$('flowCoupling').value==='pimple';
+  $('flowMomentumCorrectorsField').hidden=!pimple;
+  $('flowMomentumCorrectors').disabled=state.busy||!pimple;
+  $('flowCoupling').disabled=state.busy;
+  $('flowPressureRelaxation').disabled=state.busy;
   const restart = state.flowRestart;
   if (!restart) $('flowResume').checked = false;
   $('flowResume').disabled = state.busy || !restart || !transient;
@@ -1152,8 +1160,8 @@ function thermalRequest() {
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
 }
 function validThermalInputs() {
-  if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
-    status('温度联算的迭代设置需要调整','请恢复固定线性精度、0.6速度松弛和4次压力校正。');return false;
+  if($('flowCoupling').value!=='simple' || Number($('flowPressureRelaxation').value)!==.25 || $('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
+    status('温度联算的迭代设置需要调整','请恢复 SIMPLE、0.25压力松弛、固定线性精度、0.6速度松弛和4次压力校正。');return false;
   }
   if($('flowPressurePreconditioner').value==='cholesky') {
     status('温度联算的压力求解设置需要调整','系统稀疏 Cholesky 暂仅用于独立层流；请选择 IC0 或多重网格。');return false;
@@ -1237,6 +1245,8 @@ function flowRequest() {
     pressurePreconditioner:$('flowPressurePreconditioner').value,
     steadyAcceleration:transient?'none':$('flowSteadyAcceleration').value,
     linearPolicy:$('flowLinearPolicy').value,velocityRelaxation:Number($('flowVelocityRelaxation').value),pressureCorrectionPasses:Number($('flowPressureCorrections').value),
+    coupling:$('flowCoupling').value,pressureRelaxation:Number($('flowPressureRelaxation').value),
+    momentumCorrectors:$('flowCoupling').value==='pimple'?Number($('flowMomentumCorrectors').value):2,
     outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),
     endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
@@ -1254,6 +1264,7 @@ function applyFlowCase(request) {
   state.flowBoundaryDefinition = request.boundaryDefinition ? structuredClone(request.boundaryDefinition) : null;
   applySharedFlowControls(request);
   const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',steadyAcceleration:'flowSteadyAcceleration',linearPolicy:'flowLinearPolicy',velocityRelaxation:'flowVelocityRelaxation',pressureCorrectionPasses:'flowPressureCorrections',
+    coupling:'flowCoupling',pressureRelaxation:'flowPressureRelaxation',momentumCorrectors:'flowMomentumCorrectors',
     dt:'flowDt',steps:'flowSteps',endTime:'flowEndTime',minDt:'flowMinDt',maxCourant:'flowMaxCourant',
     maxRetries:'flowMaxRetries',maxSteps:'flowMaxSteps'};
   for (const [key,id] of Object.entries(fields)) if (request[key] !== undefined) $(id).value=request[key];
@@ -1404,7 +1415,7 @@ async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
   const request=flowRequest(),transient=request.mode!=='steady';
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
-  status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
+  status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':`${request.coupling.toUpperCase()} 速度—压力耦合；可随时取消。`);
   try {
     const payload=await window.cartmesh.runFlow(request);
     bindFlow(payload);
@@ -1513,6 +1524,9 @@ $('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) c
 $('flowLinearPolicy').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('flowVelocityRelaxation').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowPressureCorrections').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
+$('flowCoupling').addEventListener('change', () => { if (state.flow) clearFlowBinding(); updateFlowMode(); });
+for(const id of ['flowPressureRelaxation','flowMomentumCorrectors'])
+  $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 

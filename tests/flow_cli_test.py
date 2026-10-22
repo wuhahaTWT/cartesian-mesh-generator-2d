@@ -192,6 +192,27 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert result.returncode == 0, result.stderr
             for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
                 assert (root / ('consistent-case' + suffix)).read_bytes() == (root / ('consistent' + suffix)).read_bytes()
+            for method in ('simpler', 'pimple'):
+                extension, extension_field = run(method, mesh,
+                    extra=('--coupling', method, '--pressure-relaxation', '.6', '--profile'))
+                assert extension['coupling'] == method and extension['strictLinearFinal']
+                assert extension['pressureRelaxation'] == .6
+                assert extension['momentumCorrectors'] == (2 if method == 'pimple' else None)
+                for first, second in zip(field, extension_field):
+                    assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+                options = dict(mesh=mesh.name, output=method+'-case', case='channel', nu=.01, speed=1,
+                               coupling=method, profile=True, **{'max-iterations': 700, 'pressure-relaxation': .6})
+                if method == 'pimple':
+                    options['momentum-correctors'] = 2
+                case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=options)))
+                result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+                assert result.returncode == 0, result.stderr
+                for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv', '.json'):
+                    assert (root / (method+'-case'+suffix)).read_bytes() == (root / (method+suffix)).read_bytes()
+            run('simpler-transient', mesh, extra=('--coupling', 'simpler', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='only SIMPLE/PIMPLE support time stepping')
+            run('invalid-momentum-correctors', mesh, extra=('--coupling', 'pimple', '--momentum-correctors', '1.5'),
+                code=1, error_contains='integer in [1,8]')
             run('consistent-transient', mesh, extra=('--coupling', 'simple-consistent', '--time-step', '.1', '--steps', '1'),
                 code=1, error_contains='requires steady')
             run('coupled-engineering', mesh, extra=('--coupling', 'coupled', '--convergence', 'engineering'),

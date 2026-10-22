@@ -38,11 +38,12 @@ test('case rejects a different mesh even with equal counts and checks boundary g
 });
 test('case never silently accepts restart, unknown or inactive solver settings, or invalid values',()=>{
   const saved=createFlowCaseDocument({...common,...temporal,mode:'adaptive'},mesh);
-  const mutations=[d=>d.format='cartmesh2d-flow-case-v6',d=>d.request.resume=true,
+  const mutations=[d=>d.format='cartmesh2d-flow-case-v7',d=>d.request.resume=true,
     d=>d.request.steadyAcceleration='anderson',d=>delete d.request.steadyAcceleration,
     d=>delete d.request.tolerance,d=>d.request.tolerance=1e-4,
     d=>delete d.request.linearPolicy,d=>delete d.request.velocityRelaxation,d=>d.request.linearPolicy='unknown',d=>d.request.velocityRelaxation=0,d=>d.request.velocityRelaxation='0.6',
     d=>delete d.request.pressureCorrectionPasses,d=>d.request.pressureCorrectionPasses=0,d=>d.request.pressureCorrectionPasses=5,d=>d.request.pressureCorrectionPasses=1.5,d=>d.request.pressureCorrectionPasses='1',
+    d=>delete d.request.coupling,d=>delete d.request.pressureRelaxation,d=>delete d.request.momentumCorrectors,
     d=>delete d.request.nu,d=>d.request.nu='0.1',d=>d.request.nu=-1,d=>d.request.dt=0,
     d=>d.request.turbulence='sst',d=>d.request.steps=10,d=>d.request.command='/bin/sh',
     d=>d.request.boundaryDefinition.records[0].path='/tmp/other',
@@ -54,21 +55,25 @@ test('case never silently accepts restart, unknown or inactive solver settings, 
 });
 
 test('legacy case files retain the exact old default while v2 preserves tighter stopping controls',()=>{
-  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v5');
-  const legacy=structuredClone(saved);legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;delete legacy.request.steadyAcceleration;delete legacy.request.pressureCorrectionPasses;delete legacy.request.linearPolicy;delete legacy.request.velocityRelaxation;
+  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v6');
+  const preExtensions=()=>{const d=structuredClone(saved);for(const k of ['coupling','pressureRelaxation','momentumCorrectors'])delete d.request[k];return d;};
+  const legacy=preExtensions();legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;delete legacy.request.steadyAcceleration;delete legacy.request.pressureCorrectionPasses;delete legacy.request.linearPolicy;delete legacy.request.velocityRelaxation;
   const restored=parseFlowCaseDocument(serializeFlowCase(legacy),mesh);
   assert.equal(restored.request.tolerance,1e-6);assert.equal(restored.format,saved.format);
   assert.equal(restored.request.steadyAcceleration,'none');
-  const v2=structuredClone(saved);v2.format='cartmesh2d-flow-case-v2';delete v2.request.steadyAcceleration;delete v2.request.pressureCorrectionPasses;delete v2.request.linearPolicy;delete v2.request.velocityRelaxation;
+  const v2=preExtensions();v2.format='cartmesh2d-flow-case-v2';delete v2.request.steadyAcceleration;delete v2.request.pressureCorrectionPasses;delete v2.request.linearPolicy;delete v2.request.velocityRelaxation;
   assert.equal(parseFlowCaseDocument(serializeFlowCase(v2),mesh).request.steadyAcceleration,'none');
   v2.request.steadyAcceleration='anderson';assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(v2),mesh),/旧版工况/);
   assert.equal(parseFlowCaseDocument(serializeFlowCase(saved),mesh).request.tolerance,1e-9);
-  const v3=structuredClone(saved);v3.format='cartmesh2d-flow-case-v3';delete v3.request.pressureCorrectionPasses;delete v3.request.linearPolicy;delete v3.request.velocityRelaxation;v3.request.steadyAcceleration='anderson';
+  const v3=preExtensions();v3.format='cartmesh2d-flow-case-v3';delete v3.request.pressureCorrectionPasses;delete v3.request.linearPolicy;delete v3.request.velocityRelaxation;v3.request.steadyAcceleration='anderson';
   const old=parseFlowCaseDocument(serializeFlowCase(v3),mesh).request;assert.equal(old.linearPolicy,'strict');assert.equal(old.velocityRelaxation,.6);assert.equal(old.steadyAcceleration,'anderson');
   for(const key of ['linearPolicy','velocityRelaxation']){const bad=structuredClone(v3);bad.request[key]=saved.request[key];assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(bad),mesh),/旧版工况/);}
-  const v4=structuredClone(saved);v4.format='cartmesh2d-flow-case-v4';delete v4.request.pressureCorrectionPasses;v4.request.linearPolicy='adaptive';v4.request.velocityRelaxation=.8;
+  const v4=preExtensions();v4.format='cartmesh2d-flow-case-v4';delete v4.request.pressureCorrectionPasses;v4.request.linearPolicy='adaptive';v4.request.velocityRelaxation=.8;
   const migrated=parseFlowCaseDocument(serializeFlowCase(v4),mesh).request;assert.equal(migrated.pressureCorrectionPasses,4);assert.equal(migrated.linearPolicy,'adaptive');assert.equal(migrated.velocityRelaxation,.8);
   v4.request.pressureCorrectionPasses=1;assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(v4),mesh),/旧版工况/);
+  const v5=preExtensions();v5.format='cartmesh2d-flow-case-v5';
+  assert.equal(parseFlowCaseDocument(serializeFlowCase(v5),mesh).request.coupling,'simple');
+  v5.request.coupling='pimple';assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(v5),mesh),/旧版工况/);
   legacy.request.tolerance=1e-9;
   assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(legacy),mesh),/旧版工况/);
 });
@@ -78,4 +83,12 @@ test('saved system Cholesky cases retain their backend or fail explicitly on uns
     const saved=createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh);
     assert.deepEqual(parseFlowCaseDocument(serializeFlowCase(saved),mesh),saved);
   } else assert.throws(()=>createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh),/macOS/);
+});
+
+test('extended coupling cases preserve pressure prediction and neighbour corrector controls',()=>{
+  for(const coupling of ['simplec','simpler','pimple']) {
+    const input={...common,coupling,pressureRelaxation:.6,momentumCorrectors:coupling==='pimple'?3:2};
+    const saved=createFlowCaseDocument(input,mesh);
+    assert.deepEqual(parseFlowCaseDocument(serializeFlowCase(saved),mesh),saved);
+  }
 });

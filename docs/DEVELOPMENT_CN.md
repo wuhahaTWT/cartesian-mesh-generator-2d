@@ -40,6 +40,28 @@ python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5
 
 `--geometry-segments N` 可固定各圆的原始多边形段数，再单独细化计算网格；默认仍是 `4*2**level`。记录保存几何哈希、实际流体面积、相对解析圆的最大弓高和面积差，输出目录拒绝混用不同段数。固定多边形系列的离散收敛与同时加密几何的圆形参考误差须分开解释；更少段数并不授予曲壁精度资格。Re400 的 Ghia `v(.9063,.5)=-.23827` 原表可疑点明确标记，但继续参与全部原表误差统计。
 
+### SIMPLER 与 PIMPLE
+
+`FlowCoupling2D::Simpler` / `::Pimple` 在 `src/fv/Incompressible2D.cpp` 复用原动量装配、Rhie–Chow、压力边界及严格停止条件，CLI 用 `--coupling simpler|pimple`。桌面开放 SIMPLE、既有 SIMPLEC 和这两种扩展，默认仍 SIMPLE；当前资格和失败见[当前状态](CURRENT_STATE_CN.md#simple-系列扩展)。成熟算法的本地实现不自动继承外部软件的精度资格。
+
+冻结动量行的共同松弛对角为 `aP`，面积为 `V`，代码 RHS 已含原压力力项 `-V*GpOld`。`U+(rhs-AU)/aP` 使用当前邻点贡献，等于 `H/aP-(V/aP)*GpOld`，并非再次完整解动量。SIMPLER 先由该伪速度经原 Rhie–Chow 与压力方程求增量，取 `p=oldP+alphaP*deltaP`，再按压力梯度的真实变化更新冻结动量 RHS、求解两分量动量；最终压力校正**只修速度和守恒面通量**。该路径仅支持稳态。
+
+PIMPLE 每次外迭代完整解动量后做压力—速度校正，后续内校正重算当前邻点的 `H/aP` 并扣除当前压力与冻结原压力的梯度差；所有内校正共享冻结行、rAU 和原外迭代速度/梯度/面通量松弛缺陷，保留非定常旧物理步的通量缺陷。显式应力、非正交动量和对流重构在下一外迭代刷新。外迭代继续到原严格门，有限次内校正不等于时间步已收敛。
+
+`--momentum-correctors 1..8` 仅用于 PIMPLE，默认 2，1 次逐位恢复普通 SIMPLE 一步；上限控制每轮压力工作量，**不是精度阈值**。每次动量校正内仍有 `--pressure-corrections 1..4` 次非正交压力校正，两种循环分别控制。profile 的 `pressureSolves`、迭代数和跳过的零更新 pass 包含前置预测及全部内校正；历史字段 `simpleIterations` 计分离式外迭代。两者要求固定边界角色、普通出口回流拒绝、无材料反馈；opening/farfield 明确拒绝。PIMPLE 支持现有 backward Euler 固定/自适应步长与检查点；同控制分段/连续续算由现有 CLI 测试检查逐位一致。
+
+```sh
+mkdir -p outputs/simple-extensions/inputs
+tar -xzf artifacts/current/laminar-foundation/failure-inputs.tar.gz -C outputs/simple-extensions/inputs
+build/cartmesh2d_flow_cli --mesh outputs/simple-extensions/inputs/annulus-l5.solver.cm2d --boundary outputs/simple-extensions/inputs/annulus-l5.boundaries --case custom --nu .1 --speed .5 --convection face-limited-linear --coupling simpler --tolerance 1e-8 --profile --output outputs/simpler
+# 上条命令改为 --coupling pimple --momentum-correctors 2 即运行 PIMPLE。
+ctest --test-dir build -R 'cartmesh2d_(flow_simple_extensions|flow_cli_validation|transient_flow_cli)$' --output-on-failure
+```
+
+`flow_simple_extensions_test.cpp` 覆盖非均匀格、制造压力斜率、非零压力出口、滑移不等对角、时间步、取消和拒绝组合。沿用 `flow_coupled_test.cpp` 的绝对 `2e-6` 迭代误差预算比较 u/v/运动学 p/面通量/积分壁力，求解容差 `1e-9`；目的是排除固定点变化，不是空间精度门。实际旧网格的同解差和失败见 `artifacts/current/simple-extensions.json`，配套归档保留代表原生场、原始失败日志和 App 工况/截图，供后续耦合修复与复算；本机 `outputs/simple-extensions/` 的重复导出及编译产物可重建，不进入 Git。
+
+机制参考：[Loci-Stream 开发者理论说明](https://streamline-numerics-inc-loci-stream.readthedocs-hosted.com/en/latest/theory/chapter_pressure_velocity_algorithms/chapter_pressure_velocity_algorithms.html)、[OpenFOAM 开发者的校正循环控制说明](https://doc.cfd.direct/openfoam/user-guide-v13/fvsolution)。未引入外部求解内核。
+
 ### 速度与压力松弛因子研究
 
 `tools/benchmarks/relaxation_study.py` 编排原生 CLI、比较原生 CSV 并绘图，不另建 PDE 求解或方程验收。`relaxation_schedule.py` 是保留同网格 u/v/p/owner 方向面通量的分段反馈实验，使用既有 `extract_steady_iterate.py`。当前结果、失败和限制见[当前状态](CURRENT_STATE_CN.md)及 `artifacts/current/relaxation-study/`。Linux 研究环境依赖 Python、NumPy、Matplotlib、`taskset` 和原生 Release CLI；测量子进程通过 `wait4` 单独记录 CPU 时间和 RSS，避免并发子进程串账。

@@ -254,6 +254,29 @@ test('linear efficiency controls bind requests and enforce strict final certific
     assert.throws(()=>validateFlowRequest({...request,...patch}));
 });
 
+test('segregated coupling controls reach native CLI and bind returned metadata',()=>{
+  const request={case:'external',nu:.01,speed:1,maxIterations:30,coupling:'pimple',momentumCorrectors:3,pressureRelaxation:.6};
+  const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request);
+  for(const [flag,value] of [['--coupling','pimple'],['--momentum-correctors','3'],['--pressure-relaxation','0.6']])
+    assert.equal(invocation.args[invocation.args.indexOf(flag)+1],value);
+  const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
+    forceDefinition:'shared-face-newtonian-traction',forceX:2,forceY:-3,pressureForceX:1,pressureForceY:-1,
+    discreteForceX:2,discreteForceY:-3,wallForceX:2,wallForceY:-3,wallViscousForceX:1,wallViscousForceY:-2,
+    coupling:'pimple',momentumCorrectors:3,pressureRelaxation:.6};
+  assert.equal(validateFlowOutput(current,fields,2,request).summary.coupling,'pimple');
+  for(const patch of [{coupling:'simple'},{coupling:undefined},{momentumCorrectors:2},{momentumCorrectors:undefined},
+      {pressureRelaxation:.25},{pressureRelaxation:undefined}])
+    assert.throws(()=>validateFlowOutput({...current,...patch},fields,2,request));
+  assert.match(exportGuide({result:{counts:{cells:2}},flow:{summary:current}}),/PIMPLE.*0.6.*3/);
+  for(const coupling of ['simplec','simpler']) {
+    assert.equal(validateFlowRequest({...request,coupling,momentumCorrectors:2}).coupling,coupling);
+    assert.throws(()=>validateFlowRequest({...request,coupling,momentumCorrectors:2,mode:'transient',dt:.1,steps:1}),/稳态/);
+  }
+  for(const patch of [{coupling:'piso'},{momentumCorrectors:0},{momentumCorrectors:9},{momentumCorrectors:1.5},
+    {coupling:'simple',momentumCorrectors:3},{pressureRelaxation:0},{pressureRelaxation:1.1},{outletBackflow:'normal-inlet'}])
+    assert.throws(()=>validateFlowRequest({...request,...patch}));
+});
+
 test('system Cholesky is explicit, platform-bound for new solves, and retained in exported results',()=>{
   const request={case:'external',nu:.01,speed:1,maxIterations:30,pressurePreconditioner:'cholesky'};
   if(process.platform==='darwin') {
