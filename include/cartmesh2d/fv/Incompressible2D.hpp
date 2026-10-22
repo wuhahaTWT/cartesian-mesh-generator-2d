@@ -126,6 +126,7 @@ struct FlowPerformance2D {
     std::size_t lineSearchTrials = 0, lineSearchRejected = 0;
     double coupledLinearSolveSeconds = 0;
     std::size_t accelerationCandidates = 0, accelerationAccepted = 0, accelerationRejected = 0;
+    std::size_t accelerationBacktracks = 0, accelerationDampedAccepted = 0;
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
     std::size_t maxMomentumIterations = 0;

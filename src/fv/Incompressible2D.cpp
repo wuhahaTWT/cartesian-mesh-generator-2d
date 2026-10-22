@@ -512,50 +512,70 @@ static FlowResult2D solveFlow(
             if(candidate) {
                 ++r.performance.accelerationCandidates;
                 const Vec baseU=r.u,baseV=r.v,baseP=r.p,baseFlux=r.flux;
-                try {
-                    unpackState(*candidate);
-                    Vec candidateDivergence(n);double imbalance=0,incoming=0,candidateContinuity=0;
-                    bool allowed=true;
-                    for(std::size_t id=0;id<nf;++id) {
-                        const auto& face=m.faces[id];const double flux=r.flux[id];
-                        allowed=allowed && std::isfinite(flux);
-                        candidateDivergence[face.owner]+=flux;
-                        if(face.neighbour)candidateDivergence[*face.neighbour]-=flux;
-                        else {
-                            imbalance+=flux;incoming+=std::max(0.,-flux);
-                            if(b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::Reject && flux<0)allowed=false;
+                // Globalize the history direction with at most two halvings.
+                // Every trial uses the same conservative base state and must
+                // pass the original equation/boundary gates; this is a work
+                // budget, not a weaker convergence or acceptance tolerance.
+                for(unsigned backtrack=0;backtrack<3;++backtrack) {
+                    if(backtrack)++r.performance.accelerationBacktracks;
+                    try {
+                        unpackState(*candidate);
+                        if(backtrack) {
+                            const double weight=std::ldexp(1.,-static_cast<int>(backtrack));
+                            const auto blend=[&](Vec& field,const Vec& base) {
+                                for(std::size_t i=0;i<field.size();++i)
+                                    field[i]=base[i]+weight*(field[i]-base[i]);
+                            };
+                            blend(r.u,baseU);blend(r.v,baseV);blend(r.p,baseP);blend(r.flux,baseFlux);
                         }
-                    }
-                    for(std::size_t i=0;i<n;++i)candidateContinuity=std::max(candidateContinuity,
-                        std::abs(candidateDivergence[i])/(c.speed*std::sqrt(m.cells[i].area)));
-                    const double reference=b.closed?c.speed*h:incoming;
-                    const double relative=reference>0 ? std::abs(imbalance)/reference : (imbalance==0?0:1);
-                    allowed=allowed && std::isfinite(candidateContinuity) && candidateContinuity<1e-8 && relative<1e-8;
-                    if(allowed) {
-                        refreshMomentum();checkU.apply(r.u,mu);checkV.apply(r.v,mv);
-                        double candidateResidual=0,candidateX=0,candidateY=0;std::size_t candidateWorst=0;
-                        for(std::size_t i=0;i<n;++i) {
-                            const double scale=(checkU.diag[i]+checkV.diag[i])*c.speed;
-                            const double x=(mu[i]-checkU.rhs[i])/scale,y=(mv[i]-checkV.rhs[i])/scale;
-                            const double residual=std::hypot(x,y);
-                            allowed=allowed && std::isfinite(residual);
-                            if(residual>candidateResidual){candidateResidual=residual;candidateWorst=i;candidateX=x;candidateY=y;}
-                        }
-                        if(allowed && candidateResidual<mr) {
-                            acceleratedCandidate=true;
-                            mr=candidateResidual;worstCell=candidateWorst;worstX=candidateX;worstY=candidateY;
-                            continuity=candidateContinuity;r.globalImbalance=imbalance;r.globalRelativeImbalance=relative;
-                            du=dp=0;
-                            for(std::size_t i=0;i<n;++i) {
-                                du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
-                                dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+                        Vec candidateDivergence(n);double imbalance=0,incoming=0,candidateContinuity=0;
+                        bool allowed=true;
+                        for(std::size_t id=0;id<nf;++id) {
+                            const auto& face=m.faces[id];const double flux=r.flux[id];
+                            allowed=allowed && std::isfinite(flux);
+                            candidateDivergence[face.owner]+=flux;
+                            if(face.neighbour)candidateDivergence[*face.neighbour]-=flux;
+                            else {
+                                imbalance+=flux;incoming+=std::max(0.,-flux);
+                                if(b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::Reject && flux<0)allowed=false;
                             }
                         }
+                        for(std::size_t i=0;i<n;++i)candidateContinuity=std::max(candidateContinuity,
+                            std::abs(candidateDivergence[i])/(c.speed*std::sqrt(m.cells[i].area)));
+                        const double reference=b.closed?c.speed*h:incoming;
+                        const double relative=reference>0 ? std::abs(imbalance)/reference : (imbalance==0?0:1);
+                        allowed=allowed && std::isfinite(candidateContinuity) && candidateContinuity<1e-8 && relative<1e-8;
+                        if(allowed) {
+                            refreshMomentum();checkU.apply(r.u,mu);checkV.apply(r.v,mv);
+                            double candidateResidual=0,candidateX=0,candidateY=0;std::size_t candidateWorst=0;
+                            for(std::size_t i=0;i<n;++i) {
+                                const double scale=(checkU.diag[i]+checkV.diag[i])*c.speed;
+                                const double x=(mu[i]-checkU.rhs[i])/scale,y=(mv[i]-checkV.rhs[i])/scale;
+                                const double residual=std::hypot(x,y);
+                                allowed=allowed && std::isfinite(residual);
+                                if(residual>candidateResidual){candidateResidual=residual;candidateWorst=i;candidateX=x;candidateY=y;}
+                            }
+                            if(allowed && candidateResidual<mr) {
+                                acceleratedCandidate=true;
+                                mr=candidateResidual;worstCell=candidateWorst;worstX=candidateX;worstY=candidateY;
+                                continuity=candidateContinuity;r.globalImbalance=imbalance;r.globalRelativeImbalance=relative;
+                                du=dp=0;
+                                for(std::size_t i=0;i<n;++i) {
+                                    du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
+                                    dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+                                }
+                            }
+                        }
+                    } catch(const std::runtime_error&) {
+                        // A failed extrapolation is not a failed SIMPLE step.
+                        // Each trial restarts from the retained base. If none is
+                        // accepted, restore it and rebuild the original equations;
+                        // failures of that restore propagate.
                     }
-                } catch(const std::runtime_error&) {
-                    // A failed extrapolation is not a failed SIMPLE step.
-                    // Restore its exact fields, then rebuild and recheck the
-                    // original equations; failures of that restore propagate.
+                    if(acceleratedCandidate) {
+                        if(backtrack)++r.performance.accelerationDampedAccepted;
+                        break;
+                    }
                 }
                 if(acceleratedCandidate)++r.performance.accelerationAccepted;
                 else {
@@ -601,7 +621,7 @@ static FlowResult2D solveFlow(
             r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*absoluteFlux[i]/m.cells[i].area));
         }
     }
-    postprocessForces(m,c,b,r,pressureBoundary,gp,gu,gv,stressCorrection);
+    postprocessForces(m,c,b,r,pressureFaces,gu,gv,stressCorrection);
     if (c.profile) {
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }

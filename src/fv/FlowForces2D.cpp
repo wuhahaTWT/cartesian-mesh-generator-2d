@@ -4,10 +4,13 @@
 #include <limits>
 namespace cartmesh2d::fv::solver_detail {
 void postprocessForces(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,FlowResult2D& r,
-    const Vec& pressureBoundary,const std::vector<Vector2D>& gp,const std::vector<Vector2D>& gu,
+    const Vec& pf,const std::vector<Vector2D>& gu,
     const std::vector<Vector2D>& gv,const std::vector<Vector2D>& stressCorrection){
     const auto nf=m.faces.size();
-    const auto pf=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
+    // Use exactly the shared face pressures assembled in momentum. Rebuilding
+    // them here would let a reconstruction change alter the reported traction
+    // without changing the pressure force actually applied to the fluid.
+    ensure(pf.size()==nf,"Force pressure trace dimensions mismatch");
     const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
     const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind

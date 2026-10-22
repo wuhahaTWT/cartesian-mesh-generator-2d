@@ -58,7 +58,7 @@ void momentum(System& a,
                 double timeStep);
 
 void postprocessForces(const FvMesh2D&,const FlowControls2D&,const Boundary&,FlowResult2D&,
-    const Vec&,const std::vector<Vector2D>&,const std::vector<Vector2D>&,
+    const Vec&,const std::vector<Vector2D>&,
     const std::vector<Vector2D>&,const std::vector<Vector2D>&);
 Vec rhieChowFlux(const FvMesh2D& m,const FlowControls2D& c,const Boundary& b,const FlowResult2D& r,
     const Vec& ra,const Vec& oldU,const Vec& oldV,const std::vector<Vector2D>& gu,

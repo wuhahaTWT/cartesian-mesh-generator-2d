@@ -659,7 +659,9 @@ int main(int argc, char** argv) {
                                 << "\"andersonStart\":" << controls.andersonStart << ",\n"
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
                                 << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
-                                << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
+                                << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n"
+                                << "\"accelerationBacktracks\":" << r.performance.accelerationBacktracks << ",\n"
+                                << "\"accelerationDampedAccepted\":" << r.performance.accelerationDampedAccepted << ",\n";
         }
         if(timeStep==0) {
             summary << "\"convergenceMode\":" << std::quoted(controls.convergence==fv::FlowConvergence2D::Engineering?"engineering":"strict")

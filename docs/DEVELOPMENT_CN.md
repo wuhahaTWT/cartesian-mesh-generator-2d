@@ -42,7 +42,7 @@ python3 tools/benchmarks/laminar.py --output outputs/laminar-baseline --levels 5
 
 ### SIMPLE 源码对照
 
-`tools/benchmarks/simple_source_compare.py` 用于定位现有 SIMPLE 与成熟实现的具体差异：读取当前原生源码，在 `outputs/` 生成少量试验编译单元并链接现有二维库，运行真实 CLI；Python 只编排编译/运行/读取摘要，不重建方程。产品源码、默认控制和验收门不变。先构建当前 `cartmesh2d_flow_cli`，再运行；macOS 固定 `/usr/bin/clang++`，其他平台本次未验。
+`tools/benchmarks/simple_source_compare.py` 用于定位现有 SIMPLE 与成熟实现的具体差异：读取当前原生源码，在 `outputs/` 生成少量试验编译单元并链接现有二维库，运行真实 CLI；Python 只编排编译/运行/读取摘要，不重建方程。压力/速度改动仍限研究编译单元，产品默认离散、控制和验收门不变；产品已统一受力的共享面压力入口，并改进显式 Anderson 的回退。先构建当前 `cartmesh2d_flow_cli`，再运行；macOS 固定 `/usr/bin/clang++`，其他平台本次未验。
 
 对照的原始源码入口如下，不把教程中的可配置离散选择说成 SIMPLE 算法的唯一规定：
 
@@ -65,7 +65,11 @@ python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensio
 # 单独试两项组合，使用原 DFG 的 limited-linear：追加 --convection limited-linear --variants both，并换输出目录。
 ```
 
-每次输出目录须新建，默认每个实际求解最多1500轮/45秒；这是研究成本预算，不是物理阈值。生成的研究 CLI 对 Gauss 压力摘要明确标为 `research-gauss-linear-owner-trace`，不沿用产品压力重构标签。当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。配套 `simple-source-comparison-fields.tar.gz` 保存四组原生日志、代表成功场及细圆环失败、复现清单与探索补丁，供后续压力离散修复；原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机 `outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
+每次输出目录须新建，默认每个实际求解最多1500轮/45秒；这是研究成本预算，不是物理阈值。研究 CLI 对 Gauss 压力摘要使用`research-gauss-*`标签，不沿用产品压力重构标签。`--pressure-trace gauss-owner` 为原参考组合；`linear-extrapolated` 保留原LS内面/壁面trace但统一Gauss梯度，`skew-owner`只恢复内面偏斜，`linear-wall`只恢复未知壁面外推，后面三项在当前DFG均失败。`--coupling simplec`、`--steady-acceleration anderson --anderson-history 4`、`--linear-policy adaptive`可分别研究迭代控制；参数变化只通过原生控制入口。每个研究编译单元的压力面值同时进入动量、监测和受力导出，旧归档中独立后处理的Gauss受力已在当前状态及证据注明更正。
+
+复现带回退的262轮DFG：在上例追加`--convection limited-linear --variants both --steady-acceleration anderson`；另加`--linear-policy adaptive`为268轮控制，最后仍由普通strict步认证。`--anderson-backtracking off`仅在生成的研究源码中禁用两次回退，可复现原4阶历史302轮对照，不增加产品开关。圆环换为原`annulus-l7`网格/边界、`--nu .1 --speed .5 --convection upwind --variants both --steady-acceleration anderson`；原45秒预算接近实测成本，较慢机器可显式增加`--seconds`，超时不得记收敛。以上只在原网格上证明指定数值路径，物理误差仍未通过。
+
+当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。`simple-source-comparison-fields.tar.gz` 保存原四组及失败；`simple-source-followup-fields.tar.gz`保存更正受力、压力拆分失败、回退对照及细圆环代表场/原生日志/启动清单，供后续压力离散修复和同输入续算研究。原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机`outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
 
 ### SIMPLER 与 PIMPLE
 
@@ -142,7 +146,7 @@ build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/dfg20
 build/cartmesh2d_flow_cli --case-file artifacts/current/laminar-foundation/annulus.case.json
 ```
 
-云端的早期历史实验在以上命令追加 `--steady-acceleration anderson --anderson-history 16 --anderson-start 1`。两个选项显式记录到结果 JSON；默认仍是历史 4、从第 10 步开始，未加速仍为产品默认。历史容量 1–32 是内存/QR 工作量控制，不是物理验收门。原始 DFG 输入同时用于原生 `cartmesh2d_flow_stability` 回归，仍要求完整 strict 停止条件和普通 SIMPLE 最终确认步。该网格虽收敛，Cd/Cl/压降尚不合格；结果及原始场见 `artifacts/current/laminar-foundation/early-anderson*`。
+云端的早期历史实验在以上命令追加 `--steady-acceleration anderson --anderson-history 16 --anderson-start 1`。两个选项显式记录到结果 JSON；默认仍是历史4、从第10步开始，未加速仍为产品默认。历史容量1–32是内存/QR工作量控制，不是物理验收门。历史外推先试完整步，再最多试相对普通候选的1/2、1/4步长；每个候选重算真实残差并过原守恒/边界门，全部失败才恢复普通候选并清空历史，成功外推不能作为最终认证步。`accelerationBacktracks`计额外试探，`accelerationDampedAccepted`计缩短后接受的候选，耗时包含全部试探。原始DFG输入用于`cartmesh2d_flow_stability`回归，检查实际回退路径与原strict停止条件。该网格虽收敛，Cd/Cl/压降尚不合格；早期场见`artifacts/current/laminar-foundation/early-anderson*`，当前前后对照见源码对照证据。
 
 `tools/benchmarks/openfoam.py` 将已有 OpenFOAM 导出网格的边界重新分组，保留点、内部面、owner/neighbour 和单元编号，准备稳态层流对照。准备后在有 OpenFOAM 的环境执行 `checkMesh -case CASE`、`simpleFoam -case CASE > CASE/solve.log 2>&1`，再 `python3 tools/benchmarks/openfoam.py --output CASE --collect`。例如：
 

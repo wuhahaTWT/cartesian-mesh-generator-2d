@@ -20,7 +20,9 @@ namespace cartmesh2d::fv::solver_detail {
 // Native 2-D Gauss-linear pressure choice. Unknown pressure traces use the
 // owner value (zero-normal-gradient); prescribed pressure traces stay exact.
 inline Vec referencePressureFaces(const FvMesh2D& m,const Vec& p,const Vec& bc,
-                                 const std::vector<bool>& fixed) {
+                                 const std::vector<bool>& fixed,
+                                 const detail::FlowGradientStencil2D& stencil) {
+    (void)stencil;
     Vec values(m.faces.size());
     for(std::size_t id=0;id<values.size();++id) {
         const auto& f=m.faces[id];
@@ -29,8 +31,9 @@ inline Vec referencePressureFaces(const FvMesh2D& m,const Vec& p,const Vec& bc,
     return values;
 }
 inline std::vector<Vector2D> referencePressureGradient(const FvMesh2D& m,
-    const Vec& p,const Vec& bc,const std::vector<bool>& fixed) {
-    return detail::conservativePressureGradient(m,referencePressureFaces(m,p,bc,fixed));
+    const Vec& p,const Vec& bc,const std::vector<bool>& fixed,
+    const detail::FlowGradientStencil2D& stencil) {
+    return detail::conservativePressureGradient(m,referencePressureFaces(m,p,bc,fixed,stencil));
 }
 }
 '''
@@ -56,6 +59,16 @@ def main():
     parser.add_argument('--convection', default='upwind', choices=['upwind', 'limited-linear', 'face-limited-linear'])
     parser.add_argument('--iterations', default=1500, type=int)
     parser.add_argument('--seconds', default=45, type=float)
+    parser.add_argument('--coupling', default='simple', choices=['simple', 'simplec'])
+    parser.add_argument('--steady-acceleration', default='none', choices=['none', 'anderson'])
+    parser.add_argument('--anderson-history', default=4, type=int)
+    parser.add_argument('--anderson-backtracking', default='on', choices=['on', 'off'],
+                        help='research-only source ablation of the two fallback halvings')
+    parser.add_argument('--linear-policy', default='strict', choices=['strict', 'adaptive'])
+    parser.add_argument('--pressure-trace', default='gauss-owner',
+                        choices=['gauss-owner', 'linear-extrapolated', 'skew-owner', 'linear-wall'],
+                        help='Gauss gradient with unskewed/owner, original LS face traces, '
+                             'LS internal skew only, or LS wall extrapolation only')
     parser.add_argument('--variants', nargs='+', choices=['baseline', 'velocity', 'pressure', 'both'],
                         default=['baseline', 'velocity', 'pressure', 'both'])
     args = parser.parse_args()
@@ -70,7 +83,9 @@ def main():
         if not path.is_file():
             raise FileNotFoundError(path)
     sources = ['src/fv/Incompressible2D.cpp', 'src/fv/FlowEquation2D.cpp',
-               'src/fv/FlowPressure2D.hpp', 'src/fv/FlowFlux2D.cpp',
+               'src/fv/FlowPressure2D.hpp', 'src/fv/FlowFlux2D.cpp', 'src/fv/FlowForces2D.cpp',
+               'src/fv/FlowCoupled2D.cpp', 'src/fv/FlowSolverDetail2D.hpp',
+               'include/cartmesh2d/fv/Incompressible2D.hpp',
                'include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp',
                'apps/cartmesh2d_flow_cli.cpp', 'tools/benchmarks/simple_source_compare.py']
     manifest = {
@@ -86,6 +101,9 @@ def main():
                      'maxIterations': args.iterations, 'seconds': args.seconds,
                      'convection': args.convection, 'nu': args.nu, 'speed': args.speed},
         'buildCommands': [], 'runs': []}
+    manifest['controls'].update(coupling=args.coupling, steadyAcceleration=args.steady_acceleration,
+                               andersonHistory=args.anderson_history, linearPolicy=args.linear_policy,
+                               pressureTrace=args.pressure_trace, andersonBacktracking=args.anderson_backtracking)
     record = out / 'comparison.json'
 
     def save():
@@ -105,37 +123,55 @@ def main():
                        '-I' + str(out), '-c', path, '-o', obj])
         return obj
 
-    (out / 'reference-pressure-choice.hpp').write_text(GAUSS)
+    pressure_choice = GAUSS
+    if args.pressure_trace != 'gauss-owner':
+        start = pressure_choice.index('    (void)stencil;')
+        end = pressure_choice.index('\n    return values;', start) + len('\n    return values;')
+        trace = '    auto values=detail::pressureFaceValues(m,p,stencil.apply(p,bc),bc,fixed);\n'
+        if args.pressure_trace == 'skew-owner':
+            trace += ('    for(std::size_t id=0;id<values.size();++id)\n'
+                      '        if(!m.faces[id].neighbour && !fixed[id])values[id]=p[m.faces[id].owner];\n')
+        elif args.pressure_trace == 'linear-wall':
+            trace += ('    for(std::size_t id=0;id<values.size();++id)\n'
+                      '        if(m.faces[id].neighbour)values[id]=interpolate(m.faces[id],p);\n')
+        pressure_choice = (pressure_choice[:start] +
+            trace + '    return values;' + pressure_choice[end:])
+        pressure_choice = pressure_choice.replace('// Native 2-D Gauss-linear pressure choice. Unknown pressure traces use the\n'
+            '// owner value (zero-normal-gradient); prescribed pressure traces stay exact.',
+            '// Research Gauss gradient with ' + args.pressure_trace + ' pressure traces.')
+    (out / 'reference-pressure-choice.hpp').write_text(pressure_choice)
     equation = (ROOT / 'src/fv/FlowEquation2D.cpp').read_text()
     equation = replace_once(equation, '#include "FlowEquation2D.hpp"', '#include "reference-pressure-choice.hpp"')
     equation = replace_once(equation,
         '    const auto gradient = pressure_.apply(pressure, boundaryPressure);\n'
         '    return detail::conservativePressureGradient(mesh_,\n'
         '        detail::pressureFaceValues(mesh_, pressure, gradient, boundaryPressure, fixedPressure));',
-        '    return referencePressureGradient(mesh_,pressure,boundaryPressure,fixedPressure);')
+        '    return referencePressureGradient(mesh_,pressure,boundaryPressure,fixedPressure,pressure_);')
     equation = replace_once(equation, 'result.gp = pressure_.apply(field.p, boundaryPressure);',
-                            'result.gp = referencePressureGradient(mesh_,field.p,boundaryPressure,boundary.fixedP);')
+                            'result.gp = referencePressureGradient(mesh_,field.p,boundaryPressure,boundary.fixedP,pressure_);')
     equation = replace_once(equation,
         'result.pressureFaces = detail::pressureFaceValues(mesh_, field.p, result.gp,\n'
         '        boundaryPressure, boundary.fixedP);',
-        'result.pressureFaces = referencePressureFaces(mesh_,field.p,boundaryPressure,boundary.fixedP);')
+        'result.pressureFaces = referencePressureFaces(mesh_,field.p,boundaryPressure,boundary.fixedP,pressure_);')
     equation_path = out / 'gauss-pressure-equation.cpp'
     equation_path.write_text(equation)
     pressure = (ROOT / 'src/fv/FlowPressure2D.hpp').read_text()
     pressure = replace_once(pressure, '#include "FlowEquation2D.hpp"', '#include "reference-pressure-choice.hpp"')
     pressure = replace_once(pressure, 'pressureGradientStencil.apply(pc,zeros)',
-                            'referencePressureGradient(m,pc,zeros,b.fixedP)')
+                            'referencePressureGradient(m,pc,zeros,b.fixedP,pressureGradientStencil)')
     (out / 'gauss-pressure-correction.hpp').write_text(pressure)
     # Avoid inheriting the product's one-sided pressure-reconstruction label.
     app_path = out / 'research-flow-cli.cpp'
     app_path.write_text(replace_once((ROOT / 'apps/cartmesh2d_flow_cli.cpp').read_text(),
-        'one-sided-linear-adaptive', 'research-gauss-linear-owner-trace'))
+        'one-sided-linear-adaptive', 'research-gauss-' + args.pressure_trace))
     pressure_objects = None
     for variant in args.variants:
         binary = build / 'cartmesh2d_flow_cli'
-        if variant != 'baseline':
+        if variant != 'baseline' or args.anderson_backtracking == 'off':
             gauss = variant in ['pressure', 'both']
             source = (ROOT / 'src/fv/Incompressible2D.cpp').read_text()
+            if args.anderson_backtracking == 'off':
+                source = replace_once(source, 'backtrack<3;', 'backtrack<1;')
             if variant in ['velocity', 'both']:
                 for component in ['u', 'v']:
                     source = replace_once(source,
@@ -157,8 +193,9 @@ def main():
         prefix = out / variant
         command = [str(binary), '--mesh', str(mesh), '--boundary', str(boundary), '--case', 'custom',
                    '--nu', str(args.nu), '--speed', str(args.speed), '--convection', args.convection,
-                   '--coupling', 'simple', '--velocity-relaxation', '.6', '--pressure-relaxation', '.25',
-                   '--pressure-corrections', '4', '--linear-policy', 'strict', '--tolerance', '1e-8',
+                   '--coupling', args.coupling, '--velocity-relaxation', '.6', '--pressure-relaxation', '.25',
+                   '--pressure-corrections', '4', '--linear-policy', args.linear_policy, '--tolerance', '1e-8',
+                   '--steady-acceleration', args.steady_acceleration, '--anderson-history', str(args.anderson_history),
                    '--max-iterations', str(args.iterations), '--profile', '--output', str(prefix)]
         run = {'variant': variant, 'command': command, 'binarySha256AtLaunch': digest(binary),
                'changesSpatialDiscretization': variant in ['pressure', 'both']}

@@ -317,8 +317,8 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
         if(!converged(finalStep) || final.reverseOutletFaces!=0){result.converged=false;result.failureReason="Coupled final residual/flux consistency certification failed";}
     }
     const auto reconstructed=equation.reconstruct(result,controls,boundary,pressureBoundary,result.flux);
-    postprocessForces(mesh,controls,boundary,result,pressureBoundary,
-        reconstructed.gp,reconstructed.gu,reconstructed.gv,reconstructed.stress);
+    postprocessForces(mesh,controls,boundary,result,reconstructed.pressureFaces,
+        reconstructed.gu,reconstructed.gv,reconstructed.stress);
     if(controls.profile)result.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-start).count();
     return result;
 }

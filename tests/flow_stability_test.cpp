@@ -35,8 +35,14 @@ int main(int argc, char** argv) {
              last.pressureChange<c.tolerance && last.continuity<1e-8 && r.globalRelativeImbalance<1e-8))
             throw std::runtime_error("DFG bypassed a convergence gate");
         if(!r.performance.accelerationAccepted)throw std::runtime_error("history was not used");
+        if(!r.performance.accelerationBacktracks || !r.performance.accelerationDampedAccepted ||
+           r.performance.accelerationDampedAccepted>r.performance.accelerationAccepted ||
+           r.performance.accelerationBacktracks>2*r.performance.accelerationCandidates)
+            throw std::runtime_error("history backtracking path was not exercised or exceeded its budget");
         std::cout<<"DFG cells="<<mesh.cells.size()<<" iterations="<<r.history.size()
-                 <<" momentum="<<last.momentumResidual<<" continuity="<<last.continuity<<'\n';
+                 <<" momentum="<<last.momentumResidual<<" continuity="<<last.continuity
+                 <<" backtracks="<<r.performance.accelerationBacktracks
+                 <<" dampedAccepted="<<r.performance.accelerationDampedAccepted<<'\n';
         return 0;
     } catch(const std::exception& e) {
         std::cerr<<e.what()<<'\n';return 1;

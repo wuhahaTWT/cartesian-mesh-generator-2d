@@ -97,6 +97,48 @@ int main() {
                 "pressure block changed zero-gradient or fixed-pressure boundary");
         }
         require(maximumAffineError<4096*std::numeric_limits<double>::epsilon(), "frozen equation is not affine");
+        // An alternative pressure trace must produce the SAME total traction
+        // in momentum, monitors and exported named loads. In particular the
+        // postprocessor must not silently extrapolate owner pressures again.
+        {
+            auto field=zero;
+            field.p=x.p;
+            auto walls=boundary;
+            std::fill(walls.u.begin(),walls.u.end(),0);
+            std::fill(walls.v.begin(),walls.v.end(),0);
+            auto forceControls=controls;
+            Vec facePressure(nf);
+            Vector2D openForce{};
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& face=mesh.faces[id];
+                facePressure[id]=face.neighbour?interpolate(face,field.p)
+                    :walls.fixedP[id]?walls.p[id]:field.p[face.owner];
+                if(face.neighbour)continue;
+                if(walls.role[id]==Role::Wall)
+                    forceControls.boundaryConditions.push_back({id,FlowBoundaryKind2D::Wall,{},0,"wall"});
+                else {
+                    openForce.x+=face.areaVector.x*facePressure[id];
+                    openForce.y+=face.areaVector.y*facePressure[id];
+                }
+            }
+            const std::vector<Vector2D> noGradient(n);
+            postprocessForces(mesh,forceControls,walls,field,facePressure,noGradient,noGradient,{});
+            const auto pressureGradient=detail::conservativePressureGradient(mesh,facePressure);
+            Vector2D totalForce{};
+            for(std::size_t i=0;i<n;++i) {
+                totalForce.x+=pressureGradient[i].x*mesh.cells[i].area;
+                totalForce.y+=pressureGradient[i].y*mesh.cells[i].area;
+            }
+            const auto& load=field.namedWallLoads.at(0);
+            const double roundoff=4096*std::numeric_limits<double>::epsilon();
+            require(std::hypot(totalForce.x-openForce.x-load.pressure.x,
+                               totalForce.y-openForce.y-load.pressure.y)<roundoff,
+                "named wall traction differs from assembled pressure force");
+            require(field.wallForceX==load.pressure.x && field.wallForceY==load.pressure.y,
+                "wall traction differs from named load");
+            for(std::size_t id=0;id<nf;++id)require(field.faceMomentum[id].pressure==facePressure[id],
+                "exported pressure differs from assembled face trace");
+        }
         // Changing boundary roles rebuilds only geometry masks; restoring a
         // role and changing a live trace cannot reuse a rejected trial's values.
         const auto original=equation.velocityGradient(x.u, boundary, false);
