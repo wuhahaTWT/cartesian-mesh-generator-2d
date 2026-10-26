@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
     }
 #endif
     std::string prefix;
+    std::string pressureSnapshot;
     double acceptedTime=0;
     bool transientOutputStarted=false;
     try {
@@ -201,6 +202,8 @@ int main(int argc, char** argv) {
             "Fixed-step mode reports CFL. Adaptive mode retries unaccepted steps without advancing the saved state.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi|aggregation|cholesky (default ic0); cholesky requires macOS; same true-residual tolerance.\n"
+            "--pressure-backend cpu|torch-cuda (default cpu): optional Windows module, steady laminar Jacobi/IC0 only.\n"
+            "--pressure-snapshot FILE: capture the first nonzero assembled pressure system for native/GPU replay.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
             "--momentum-inertia 0|1 (default 1); 0 opts into steady custom Stokes research.\n"
@@ -333,6 +336,11 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument("outlet-backflow must be reject or normal-inlet");
                 controls.outletBackflow = v == "normal-inlet"
                     ? fv::OutletBackflow2D::NormalInlet : fv::OutletBackflow2D::Reject;
+            } else if (a == "--pressure-backend") {
+                if(v!="cpu" && v!="torch-cuda")throw std::invalid_argument("pressure-backend must be cpu or torch-cuda");
+                controls.pressureBackend=v=="cpu"?fv::PressureBackend2D::Cpu:fv::PressureBackend2D::TorchCuda;
+            } else if (a == "--pressure-snapshot") {
+                pressureSnapshot=v;
             } else if (a == "--pressure-preconditioner") {
                 if (v != "ic0" && v != "jacobi" && v != "aggregation" && v != "cholesky") {
                     throw std::invalid_argument("pressure preconditioner must be ic0, jacobi, aggregation or cholesky");
@@ -358,6 +366,11 @@ int main(int argc, char** argv) {
         if (!path.ends_with(".solver.cm2d") || path.ends_with(".failed.solver.cm2d")) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
+        if(controls.pressureBackend!=fv::PressureBackend2D::Cpu &&
+           (timeStep>0 || (controls.pressurePreconditioner!=fv::PressurePreconditioner2D::Jacobi &&
+                          controls.pressurePreconditioner!=fv::PressurePreconditioner2D::IncompleteCholesky0)))
+            throw std::invalid_argument("torch-cuda requires steady laminar Jacobi/IC0 pressure solving");
+        if(!pressureSnapshot.empty())fv::detail::setPressureCapturePath2D(pressureSnapshot);
 
         if (adaptive) {
             if (timeStep<=0 || requestedSteps) throw std::invalid_argument("--end-time requires --time-step and cannot be combined with --steps");
@@ -642,6 +655,7 @@ int main(int argc, char** argv) {
         const char* coupling=consistent?"simple-consistent":coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":controls.coupling==fv::FlowCoupling2D::Simpler?"simpler":controls.coupling==fv::FlowCoupling2D::Pimple?"pimple":"simple";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        summary << "\"pressureBackend\":" << std::quoted(controls.pressureBackend==fv::PressureBackend2D::Cpu?"cpu":"torch-cuda") << ",\n";
         summary << "\"momentumCorrectors\":" << (controls.coupling==fv::FlowCoupling2D::Pimple?std::to_string(controls.momentumCorrectors):"null") << ",\n";
         if(timeStep>0)summary << "\"coupling\":" << std::quoted(coupling) << ",\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
@@ -862,6 +876,14 @@ int main(int argc, char** argv) {
             const auto& p = r.performance;
             auto performance = out(prefix, ".performance.json");
             performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
+                        << "\"pressureBackend\":" << std::quoted(controls.pressureBackend==fv::PressureBackend2D::Cpu?"cpu":"torch-cuda")
+                        << ",\n\"gpuPressureSolves\":" << p.pressureGpu.solves
+                        << ",\n\"gpuPressureIterations\":" << p.pressureGpu.iterations
+                        << ",\n\"gpuMatrixUploads\":" << p.pressureGpu.matrixUploads
+                        << ",\n\"gpuStartupSeconds\":" << p.pressureGpu.startupSeconds
+                        << ",\n\"gpuUploadSeconds\":" << p.pressureGpu.uploadSeconds
+                        << ",\n\"gpuIterationSeconds\":" << p.pressureGpu.iterationSeconds
+                        << ",\n\"gpuDownloadSeconds\":" << p.pressureGpu.downloadSeconds << ",\n"
                         << "\"cells\":" << mesh.cells.size()
                         << ",\n\"faces\":" << mesh.faces.size()
                         << ",\n\"simpleIterations\":" << (coupled?0:timeStep>0?totalInnerIterations:last.iteration)

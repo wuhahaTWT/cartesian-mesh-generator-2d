@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cartmesh2d/fv/FvMesh2D.hpp"
+#include "cartmesh2d/fv/detail/FlowGpuPressure2D.hpp"
 
 #include <functional>
 #include <string>
@@ -10,6 +11,7 @@ namespace cartmesh2d::fv {
 enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind, FaceLimitedLinearUpwind };
 
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation, SystemCholesky };
+enum class PressureBackend2D { Cpu, TorchCuda };
 enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
@@ -86,6 +88,8 @@ struct FlowControls2D {
     // No intermediate values, transient/material coupling or checkpoints at 0.
     double momentumInertia = 1;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
+    // Experimental Windows optional module; explicit steady laminar opt-in.
+    PressureBackend2D pressureBackend = PressureBackend2D::Cpu;
     // Opt-in pressure outlet: reverse flow has zero tangential velocity and
     // zero normal velocity gradient. The conservative flux is never clipped.
     OutletBackflow2D outletBackflow = OutletBackflow2D::Reject;
@@ -120,6 +124,7 @@ struct FlowState2D {
 };
 
 struct FlowPerformance2D {
+    detail::GpuPressureStats2D pressureGpu;
     // Coupled work includes rejected trial solves. Counts are always recorded;
     // elapsed times are collected only when profile is enabled.
     std::size_t coupledSolves = 0, coupledIterations = 0, maxCoupledIterations = 0;

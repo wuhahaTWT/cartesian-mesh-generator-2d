@@ -76,6 +76,13 @@ static FlowResult2D solveFlow(
            "System sparse Cholesky is available only on macOS");
     ensure(c.pressurePreconditioner!=PressurePreconditioner2D::SystemCholesky || !material,
            "System sparse Cholesky currently supports constant-property laminar flow only");
+    ensure(c.pressureBackend==PressureBackend2D::Cpu ||
+           (c.pressureBackend==PressureBackend2D::TorchCuda && !previous && !material),
+           "torch-cuda pressure currently requires steady constant-property laminar flow");
+    ensure(c.pressureBackend==PressureBackend2D::Cpu ||
+           c.pressurePreconditioner==PressurePreconditioner2D::Jacobi ||
+           c.pressurePreconditioner==PressurePreconditioner2D::IncompleteCholesky0,
+           "torch-cuda pressure supports Jacobi or IC0 only");
     ensure(c.convection == ConvectionScheme2D::Upwind ||
                c.convection == ConvectionScheme2D::LimitedLinearUpwind ||
                c.convection == ConvectionScheme2D::FaceLimitedLinearUpwind,
@@ -178,11 +185,13 @@ static FlowResult2D solveFlow(
         const auto oldHierarchies=system.hierarchyBuilds(), oldHierarchyReuses=system.hierarchyReuses();
         const auto oldHierarchyRefreshes=system.hierarchyRefreshes();
         const auto oldCholeskyBuilds=system.choleskyBuilds(),oldCholeskyRefactors=system.choleskyRefactors(),oldCholeskyReuses=system.choleskyReuses();
+        const auto oldGpu=system.gpuStats();
         const auto iterations = pressure ? system.solvePressure(field, workspace,
             c.pressurePreconditioner == PressurePreconditioner2D::SystemCholesky ? detail::LinearPressureMethod2D::SystemCholesky :
             c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
-            (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi),linearRelativeTolerance)
+            (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi),linearRelativeTolerance,c.pressureBackend==PressureBackend2D::TorchCuda)
             : system.solve(field, workspace, momentumRowStop,std::numeric_limits<double>::infinity(),detail::LinearSolveMethod2D::Jacobi,linearRelativeTolerance);
+        r.performance.pressureGpu+=system.gpuStats()-oldGpu;
         if(c.profile && pressure) {
             for(std::size_t i=0;i<n;++i)workspace.ax[i]=system.compensatedResidualRow(i,field);
             pressureLinearResidual=std::max(pressureLinearResidual,

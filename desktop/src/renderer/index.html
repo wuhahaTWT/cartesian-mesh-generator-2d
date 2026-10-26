@@ -341,7 +341,7 @@
       <label class="field">流动停止容差
         <input id="flowTolerance" type="number" min="0.000000000001" max="0.000001" step="any" value="0.000001">
       </label>
-      <p class="note">可从默认 1e-6 加严到 1e-12，越严格通常越慢，过严可能触发迭代上限。控制动量残差和速度/压力变化；连续性门保持 1e-8。温度联算的流动容差取此值与 1e-8 中较严者；收敛不等于物理精度合格。</p>
+      <p class="note">默认 1e-6（参考尺度的 0.0001%），控制归一化动量残差和速度/压力变化，不是流场误差百分比。可加严到 1e-12；越严通常越慢。连续性门保持 1e-8。温度联算取此值与 1e-8 中较严者；收敛不等于物理精度合格。</p>
       <button id="runFlow" class="wide" disabled>启动层流求解</button>
     </section>
 

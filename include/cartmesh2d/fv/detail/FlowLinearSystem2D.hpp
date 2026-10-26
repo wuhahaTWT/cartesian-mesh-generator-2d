@@ -13,6 +13,7 @@
 
 #include "cartmesh2d/fv/detail/FlowAggregation2D.hpp"
 #include "cartmesh2d/fv/detail/FlowCholesky2D.hpp"
+#include "cartmesh2d/fv/detail/FlowGpuPressure2D.hpp"
 
 namespace cartmesh2d::fv::detail {
 
@@ -147,6 +148,7 @@ struct SparseSystem2D {
         : pattern(graph), diag(graph.rows.size() - 1), rhs(diag.size()), off(graph.columns.size()) {}
 
     std::size_t ic0Builds() const { return factorBuilds_; }
+    const GpuPressureStats2D& gpuStats() const {return gpuStats_;}
     std::size_t ic0Reuses() const { return factorReuses_; }
     std::size_t choleskyBuilds() const { return choleskyBuilds_; }
     std::size_t choleskyRefactors() const { return choleskyRefactors_; }
@@ -335,12 +337,14 @@ struct SparseSystem2D {
     std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, bool ic0 = true) const {
         return solvePressure(x,w,ic0?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi);
     }
-    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11) const {
+    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11, bool gpu=false) const {
         linearEnsure(std::isfinite(relativeTolerance) && relativeTolerance>0 && relativeTolerance<=1e-2,"Invalid pressure linear relative tolerance");
         linearEnsure(method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0 ||
                      method==LinearPressureMethod2D::Aggregation || method==LinearPressureMethod2D::SystemCholesky, "Flow pressure preconditioner invalid");
         linearEnsure(method!=LinearPressureMethod2D::SystemCholesky || systemCholeskyAvailable2D(),
                      "System sparse Cholesky is available only on macOS");
+        linearEnsure(!gpu || method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0,
+                     "torch-cuda currently supports Jacobi and IC0 pressure preconditioners only");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
         for (double d : diag)
             linearEnsure(d > 0 && std::isfinite(d), "Flow pressure matrix diagonal invalid");
@@ -352,6 +356,20 @@ struct SparseSystem2D {
         for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
         const double stop = linearFinite(1e-13 + relativeTolerance * linearNorm(rhs));
         if (linearNorm(residual) <= stop) return 0;
+        capturePressureSystem2D(pattern.rows,pattern.columns,diag,off,rhs,x,relativeTolerance);
+        if(gpu) {
+            if(method==LinearPressureMethod2D::IC0)factorIC0();
+            if(!gpuPressure_)gpuPressure_=std::make_shared<GpuPressure2D>();
+            auto candidate=x;
+            const auto iterations=gpuPressure_->solve(pattern.rows,pattern.columns,diag,off,rhs,candidate,
+                factorDiagonal_,factorLower_,method==LinearPressureMethod2D::IC0,stop,3000,gpuStats_);
+            // Certify the retained double field with the original native matrix,
+            // original true-residual target and finite-range checks. No fallback.
+            apply(candidate,ax);
+            for(std::size_t i=0;i<x.size();++i)residual[i]=rhs[i]-ax[i];
+            linearEnsure(linearNorm(residual)<=stop,"GPU pressure candidate failed original native true-residual gate");
+            x=std::move(candidate);return iterations;
+        }
         if (method == LinearPressureMethod2D::IC0) factorIC0();
         else if (method == LinearPressureMethod2D::SystemCholesky) {
             try {
@@ -601,6 +619,8 @@ private:
     // Owned by this matrix, so another system using the same Krylov workspace
     // cannot overwrite its factors. Storage is allocated lazily for pressure.
     mutable LinearVector2D iluDiagonal_,iluOff_,iluMatrixDiagonal_,iluMatrixOff_;
+    mutable std::shared_ptr<GpuPressure2D> gpuPressure_;
+    mutable GpuPressureStats2D gpuStats_;
     mutable bool iluReady_=false;
     mutable std::size_t iluBuilds_=0,iluReuses_=0;
     mutable LinearVector2D factorDiagonal_, factorLower_;

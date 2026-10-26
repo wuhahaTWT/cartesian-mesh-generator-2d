@@ -345,6 +345,95 @@ npm --prefix desktop run pack:mac
 
 三平台 CI 保留构建、原生测试、前端测试和打包；额外的打包 App 审计脚本已移除。真实 App 交互按交付目标手动检查。
 
+### Windows PC 开发与 CUDA 接入
+
+PC 开发从 `codex/cfd-development` 继续，不能只依据 main 的 0.4.41 首页判断研究进度。当前核心任务是不可压层流的压力—速度耦合、曲壁压力与受力误差；燃烧、可压、SST 和浸入边界扩展保持冻结。默认 SIMPLE、SIMPLER/PIMPLE、完整响应及 Anderson 的实际资格见当前状态。GPU 后端应复用这些离散方程和失败判定。
+
+Git 拉取的是源码、版本化样例及 artifacts 中的证据；不会恢复旧 Mac/Linux 的 `outputs/`、Python 环境、已编译 CLI、Electron 依赖或安装包。旧文档中的绝对路径和“本机”性能指原实验机器。需要重跑原失败例时，可从 `artifacts/current/laminar-foundation/failure-inputs.tar.gz` 按需解包；Windows 多配置构建的 CLI 在 `build/Release/*.exe`，研究脚本须显式传入实际二进制路径，不能照搬 POSIX 默认路径。
+
+本次 PC 检查找到 VS Community 2026、MSVC 14.51.36231、Windows SDK 10.0.26100.0，以及 VS 自带 CMake 4.3.1 和 Node 24.12.0。CMake/Node 未在普通 PATH 中；项目与 CI 的 Node 基线仍为 22。以下只在当前 PowerShell 会话补入已安装工具，不修改系统 PATH；其他机器优先使用已安装的 Node 22：
+
+```powershell
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+$vsRoot = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+if (-not $vsRoot) { throw '未找到 Visual Studio C++ 工具链' }
+$cmakeBin = Join-Path $vsRoot 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin'
+$env:PATH = "$cmakeBin;$env:PATH"
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    $nodeBin = Join-Path $vsRoot 'MSBuild\Microsoft\VisualStudio\NodeJs'
+    $env:PATH = "$nodeBin;$env:PATH"
+}
+cmake --version
+node --version
+npm.cmd ci --prefix desktop
+npm.cmd --prefix desktop run build:native
+npm.cmd --prefix desktop start
+```
+
+`build:native` 实际编译本机 C++ 并准备 `desktop/runtime/`；桌面通过 IPC/子进程调用这些 CLI，提交网格或流动任务时才进行对应本地计算。原生开发可单独使用 `cmake -S . -B build -A x64 -DCARTMESH2D_BUILD_CHEMISTRY=OFF`，再 `cmake --build build --config Release --target cartmesh2d_cli cartmesh2d_flow_cli --parallel 2`。同一个 build 目录保持同一生成器；Windows 原生工具不支持 macOS Accelerate Cholesky，使用现有 IC(0)/Jacobi/aggregation，不能直接重用 `--pressure-preconditioner cholesky`。
+
+**当前已实现显式可选的 Windows 原生 Torch-CUDA 压力模块。** GPU 为 RTX 4060 Laptop、8188 MiB、计算能力 8.9，驱动 572.70；`nvidia-smi` 的 CUDA 12.8 表示驱动报告的兼容能力。直接复用 `D:\gas-turbine-envs\windows-runtime\Lib\site-packages\torch` 的 PyTorch 2.12.1+cu126 C++ 头文件、导入库及已有 DLL，不复制依赖，也不启动 Python 工作进程。现有 VS 2026 已实际编译运行；这条路径调用预编译 GPU 算子，无需 nvcc。CPU 保持默认且不加载 Torch，GPU 模块不进入当前常规安装包。
+
+所查 Windows 环境/常见 Toolkit 路径未找到 nvcc；WSL 的 `/home/lenovo/combustor-envs/linux-runtime` 是 cu126，另一环境 `qwen3-cuda` 是 cu129，Linux 库不能直接当 Windows DLL 使用。[PyTorch 官方说明](https://docs.pytorch.org/docs/stable/cpp_extension.html)中的自定义 CUDA 扩展编译工具要求，适用于后续编写新 `.cu` 内核；不能因此判断既有预编译 GPU 库无法复用。[CUDA 12.8 Windows 安装指南](https://docs.nvidia.com/cuda/archive/12.8.0/cuda-installation-guide-microsoft-windows/index.html)的 VS 2022/MSVC 193x 支持表也不否定本次已实测的普通 C++/ATen 路径。后续需要 nvcc 时再匹配版本。
+
+构建与运行使用同一套现有 Torch 安装；仅在当前 PowerShell 会话设置路径：
+
+```powershell
+$env:CARTMESH2D_TORCH_ROOT = 'D:\gas-turbine-envs\windows-runtime\Lib\site-packages\torch'
+cmake -S . -B build -DCARTMESH2D_BUILD_TORCH_PRESSURE=ON "-DCARTMESH2D_TORCH_ROOT=$env:CARTMESH2D_TORCH_ROOT"
+cmake --build build --config Release --target cartmesh2d_torch_pressure cartmesh2d_flow_cli cartmesh2d_pressure_replay cartmesh2d_flow_gpu_pressure_tests --parallel 2
+ctest --test-dir build -C Release -R '^cartmesh2d_flow_gpu_pressure$' --output-on-failure
+# 先按下方小例生成 rectangle.solver.cm2d，再显式选择 GPU：
+build/Release/cartmesh2d_flow_cli.exe --mesh outputs/pc-smoke/rectangle.solver.cm2d --output outputs/pc-smoke/channel-gpu --case channel --nu .1 --speed .1 --tolerance 1e-6 --profile --pressure-backend torch-cuda --pressure-preconditioner ic0 --pressure-snapshot outputs/pc-smoke/channel.pressure.bin
+```
+
+`CARTMESH2D_BUILD_TORCH_PRESSURE` 默认 OFF，不影响纯 CPU 构建。模块默认从 CLI 同目录加载，可用 `CARTMESH2D_PRESSURE_PLUGIN` 显式给出其他 DLL 路径。模块隔离为 `/MD` C ABI，主程序继续静态 CRT；只验证 Windows x64 Release。GPU 仅支持稳态恒物性层流的 Jacobi/IC(0)，不支持 GPU aggregation、瞬态或材料反馈，缺少模块或不支持组合明确失败，不自动转 CPU。IC(0) 因子仍由原生 CPU 生成；向量、稀疏乘法和两次三角求解在 GPU 执行。返回的双精度场须通过原生 `b-Ax` 与原门槛 `1e-13+relativeTolerance*||b||₂`，不是另设较宽门。
+
+| 代码入口 | 当前责任与后续边界 |
+| --- | --- |
+| `include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp` | 优先评估压力 PCG、稀疏乘法和向量运算。当前是固定排序的非对角 CSR 加独立 diag；对接完整 CSR 时须显式插入对角并检查索引范围。 |
+| `src/fv/FlowPressure2D.hpp`、`Incompressible2D.cpp` | 保留非正交压力循环、压力参考格、真实残差和原生停止门；计算后端与预条件器分开选择。 |
+| `src/fv/FlowCoupled2D.cpp`、`FlowKrylov2D.hpp` | 完整响应使用矩阵自由块 FGMRES、ILU(0) 动量和嵌套压力解。仅把压力乘法搬到 GPU 不等于整个耦合求解已经 GPU 化。 |
+| `FlowEquation2D.cpp`、`FlowMomentum2D.cpp`、`FlowFlux2D.cpp` | 根据同机 profile 再评估组装、梯度和面通量；保持共享压力力、守恒与接受步恢复。 |
+| `FlowGpuPressure2D.cpp`、`FlowGpuPressureAbi2D.hpp`、`TorchPressureModule2D.cpp` | 动态加载、C ABI、矩阵/因子缓存及 GPU PCG；失败不返回候选，缓存不能在失败后被当作有效新矩阵。 |
+
+`--profile` 增加 GPU 实际调用/迭代、矩阵上传、初始化、上传、迭代及下载计时。它们是原压力计时的组成部分；coupled 的压力时间又嵌套在线性时间内，不能重复相加。GPU 归约顺序不同，不承诺逐位一致；同控制最终原生门和场差分别核对。当前小格完整 CFD 更慢；大格同算法 Jacobi 可提速，但仍未胜过该组 CPU 多重网格，不能自动改默认。实际结论、失败与未验范围只看当前状态及[实测证据](../artifacts/current/simple-gpu-pc.json)。
+
+`--pressure-snapshot FILE` 只捕获第一次非零原生压力系统（`CM2DPRS1`，保存 CSR、独立 diag、rhs、初值及实际线性控制）；不是物理检查点。`cartmesh2d_pressure_replay` 调用生产原生/GPU 求解器，比较 CPU IC(0)/Jacobi/aggregation、GPU IC(0)/Jacobi，同原门槛检查真残差，报告一次冷解与三次矩阵缓存后重复。`--channel` 先经原 Solver 质量门生成规则流体格，再跑一步真实流动装配捕获压力系统；一步未收敛不能当作完整大 CFD 资格。
+
+```powershell
+build/Release/cartmesh2d_pressure_replay.exe --snapshot outputs/pc-smoke/channel.pressure.bin --gpu --repeats 3 --output outputs/pc-smoke/pressure-replay.json
+build/Release/cartmesh2d_pressure_replay.exe --channel --nx 320 --ny 320 --gpu --repeats 3 --output outputs/pc-smoke/pressure-102400.json
+```
+
+SIMPLE 停止量和 coupled 成本的研究入口为 `tools/benchmarks/simple_convergence_study.py`；它只编排原生 CLI、读取接受场/残差/profile 并计算场差，不重建方程或恢复独立 Python 审计链。先解包 `failure-inputs.tar.gz` 到 `outputs/laminar-inputs/`。`simple_source_compare.py --build-only` 支持 Windows x64 开发者终端中的 `cl.exe`，保留 `/MT`、UTF-8 manifest 和原数值源码选择；每次输出目录须新建。Gauss 研究变体不覆盖产品默认。
+
+```powershell
+# 下行在 VS x64 开发者终端运行，cl.exe 必须可见：
+& D:\gas-turbine-envs\windows-runtime\python.exe -B tools/benchmarks/simple_source_compare.py --mesh outputs/laminar-inputs/dfg20-l7.solver.cm2d --boundary outputs/laminar-inputs/dfg20-l7.boundaries --nu .001 --speed .3 --output outputs/simple-pc-variants --build-only
+& D:\gas-turbine-envs\windows-runtime\python.exe -B tools/benchmarks/simple_convergence_study.py --suite simple --output outputs/simple-pc-study
+& D:\gas-turbine-envs\windows-runtime\python.exe -B tools/benchmarks/simple_convergence_study.py --suite gpu --output outputs/gpu-cfd-study
+& D:\gas-turbine-envs\windows-runtime\python.exe -B tools/visualization/render_solver_gpu_study.py
+```
+
+本机原生接受场、严格停止参照、失败及 frozen matrix 在上述 outputs 目录，消费者是下一轮同离散停止/线性后端比较；curated JSON/两图/HTML 在 `artifacts/current/simple-gpu-pc*`。大矩阵只验线性子问题，不恢复已暂停的大规模曲壁精度链；更高密度不外推资格。`tests/flow_gpu_pressure_test.cpp` 覆盖原真残差门、RHS/系数缓存更新、未知预条件拒绝与预算失败后恢复。
+
+可参考 [PETSc GPU 矩阵/向量与求解器后端](https://petsc.org/release/overview/gpu_roadmap/)及 [Firedrake OffloadPC](https://www.firedrakeproject.org/_modules/firedrake/preconditioners/offload.html)的分层方式：离散方程、线性后端与预条件器分开，GPU 内部运算和 CPU/GPU 传输都计成本。Fluent 2026 R1 有[原生 GPU 求解器](https://ansyshelp.ansys.com/public/Views/Secured/corp/v261/en/flu_ug/flu_ug_sec_gpu_solver_supported_features.html)，该文档限定三维几何；不能把既有二维 Fluent CPU 连接检查当成 GPU 实算。规则笛卡尔内区有利于规则邻点运算，但本项目的 Quadtree/Cut-cell/聚合与共形边界层还含非规则连接；完整背景格仍为几何产品。GPU 降低单轮成本，预条件/多重网格减少迭代次数，曲壁离散及压力—速度耦合仍须分别修复。
+
+本机环境基本检查的小例命令如下；原生测试须先构建同名 `_tests` 目标，所有命令均在仓库根目录运行：
+
+```powershell
+node --test desktop/tests/process.test.js desktop/tests/flow-case.test.js
+cmake --build build --config Release --target cartmesh2d_flow_linear_tests cartmesh2d_flow_equation_tests --parallel 2
+ctest --test-dir build -C Release -R '^cartmesh2d_flow_(linear|equation)$' --output-on-failure
+New-Item -ItemType Directory -Path outputs/pc-smoke -Force | Out-Null
+build/Release/cartmesh2d_cli.exe examples/acceptance/rectangle.xy outputs/pc-smoke/rectangle 4 0.25 0.10 interior outputs/pc-smoke/rectangle-foam 4
+build/Release/cartmesh2d_flow_cli.exe --mesh outputs/pc-smoke/rectangle.solver.cm2d --output outputs/pc-smoke/channel --case channel --nu .1 --speed .1 --max-iterations 2000 --tolerance 1e-6 --profile
+desktop/node_modules/electron/dist/electron.exe desktop --smoke=circle --out=outputs/pc-smoke/app --shot=outputs/pc-smoke/app.png
+```
+
+Solver 输入必须由正式质量/导出流程生成 `.solver.cm2d`，不能直接将 construction `.cm2d` 改名后送入 CFD。实际检查范围见当前状态；`outputs/pc-smoke/` 是可重建的环境小例，不替代已有研究输入或物理精度证据。
+
 单例桌面调试（先准备 runtime）：
 
 ```sh

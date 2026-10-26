@@ -226,7 +226,10 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
                 const auto builds=pressure.ic0Builds(),reuses=pressure.ic0Reuses();
                 const auto cb=pressure.choleskyBuilds(),cr=pressure.choleskyRefactors(),cu=pressure.choleskyReuses();
                 const auto hb=pressure.hierarchyBuilds(),hr=pressure.hierarchyReuses(),hf=pressure.hierarchyRefreshes();
-                const auto iterations=pressure.solvePressure(preP,pressureWorkspace,pressureMethod(controls.pressurePreconditioner),1e-3);
+                const auto oldGpu=pressure.gpuStats();
+                const auto iterations=pressure.solvePressure(preP,pressureWorkspace,pressureMethod(controls.pressurePreconditioner),1e-3,
+                    controls.pressureBackend==PressureBackend2D::TorchCuda);
+                result.performance.pressureGpu+=pressure.gpuStats()-oldGpu;
                 auto& performance=result.performance;++performance.pressureSolves;performance.pressureIterations+=iterations;
                 performance.maxPressureIterations=std::max(performance.maxPressureIterations,iterations);
                 performance.pressureFactorizations+=pressure.ic0Builds()-builds;performance.pressureFactorReuses+=pressure.ic0Reuses()-reuses;

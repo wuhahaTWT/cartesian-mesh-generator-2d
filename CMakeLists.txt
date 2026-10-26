@@ -96,7 +96,33 @@ endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
 add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowCase2D.cpp src/fv/FlowMomentum2D.cpp src/fv/FlowFlux2D.cpp src/fv/FlowForces2D.cpp src/fv/FlowConvergence2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
-target_sources(cartmesh2d_fv PRIVATE src/fv/FlowCoupled2D.cpp src/fv/FlowEquation2D.cpp)
+target_sources(cartmesh2d_fv PRIVATE src/fv/FlowCoupled2D.cpp src/fv/FlowEquation2D.cpp src/fv/FlowGpuPressure2D.cpp)
+
+# Explicit reuse of an existing Python wheel's C++ API and precompiled CUDA
+# operators. CPU targets keep static CRT; the module has an isolated /MD C ABI.
+option(CARTMESH2D_BUILD_TORCH_PRESSURE "Build experimental Windows Torch CUDA pressure module" OFF)
+set(CARTMESH2D_TORCH_ROOT "$ENV{CARTMESH2D_TORCH_ROOT}" CACHE PATH "Existing torch package, not the Python environment root")
+if(CARTMESH2D_BUILD_TORCH_PRESSURE)
+    if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(FATAL_ERROR "Experimental Torch pressure module currently supports Windows x64 only")
+    endif()
+    foreach(required include/ATen/ATen.h lib/torch_cpu.lib lib/c10.lib lib/torch_cuda.dll)
+        if(NOT EXISTS "${CARTMESH2D_TORCH_ROOT}/${required}")
+            message(FATAL_ERROR "Existing Torch installation is incomplete: ${required}")
+        endif()
+    endforeach()
+    add_library(cartmesh2d_torch_pressure MODULE src/fv/TorchPressureModule2D.cpp)
+    target_include_directories(cartmesh2d_torch_pressure SYSTEM PRIVATE "${CARTMESH2D_TORCH_ROOT}/include")
+    target_compile_features(cartmesh2d_torch_pressure PRIVATE cxx_std_20)
+    set_property(TARGET cartmesh2d_torch_pressure PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    target_link_libraries(cartmesh2d_torch_pressure PRIVATE
+        "${CARTMESH2D_TORCH_ROOT}/lib/torch_cpu.lib" "${CARTMESH2D_TORCH_ROOT}/lib/c10.lib")
+    set_target_properties(cartmesh2d_torch_pressure PROPERTIES PREFIX "")
+endif()
+
+add_executable(cartmesh2d_pressure_replay EXCLUDE_FROM_ALL tools/benchmarks/pressure_replay.cpp)
+target_link_libraries(cartmesh2d_pressure_replay PRIVATE cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_pressure_replay)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 if(APPLE)
     target_link_libraries(cartmesh2d_fv PUBLIC "-framework Accelerate")
@@ -191,6 +217,14 @@ endif()
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    if(CARTMESH2D_BUILD_TORCH_PRESSURE)
+        add_executable(cartmesh2d_flow_gpu_pressure_tests tests/flow_gpu_pressure_test.cpp)
+        target_link_libraries(cartmesh2d_flow_gpu_pressure_tests PRIVATE cartmesh2d_fv)
+        add_dependencies(cartmesh2d_flow_gpu_pressure_tests cartmesh2d_torch_pressure)
+        add_test(NAME cartmesh2d_flow_gpu_pressure COMMAND cartmesh2d_flow_gpu_pressure_tests)
+        set_tests_properties(cartmesh2d_flow_gpu_pressure PROPERTIES TIMEOUT 180 LABELS gpu
+            ENVIRONMENT "CARTMESH2D_TORCH_ROOT=${CARTMESH2D_TORCH_ROOT};CARTMESH2D_PRESSURE_PLUGIN=$<TARGET_FILE:cartmesh2d_torch_pressure>")
+    endif()
     if(CARTMESH2D_BUILD_CHEMISTRY)
         find_file(CARTMESH2D_HYDROGEN_MECHANISM h2o2.yaml
             HINTS "${CARTMESH2D_CANTERA_ROOT}/share/cantera/data" REQUIRED)

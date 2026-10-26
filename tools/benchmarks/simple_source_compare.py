@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -59,6 +60,9 @@ def main():
     parser.add_argument('--convection', default='upwind', choices=['upwind', 'limited-linear', 'face-limited-linear'])
     parser.add_argument('--iterations', default=1500, type=int)
     parser.add_argument('--seconds', default=45, type=float)
+    parser.add_argument('--tolerance', default=1e-8, type=float,
+                        help='explicit research stopping tolerance; product defaults are unchanged')
+    parser.add_argument('--build-only', action='store_true', help='compile variants without running CFD')
     parser.add_argument('--coupling', default='simple', choices=['simple', 'simplec'])
     parser.add_argument('--steady-acceleration', default='none', choices=['none', 'anderson'])
     parser.add_argument('--anderson-history', default=4, type=int)
@@ -76,10 +80,14 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     mesh, boundary = args.mesh.resolve(), args.boundary.resolve()
     build = ROOT / 'build'
-    compiler = '/usr/bin/clang++' if sys.platform == 'darwin' else '/usr/bin/c++'
-    app_object = build / 'CMakeFiles/cartmesh2d_flow_cli.dir/apps/cartmesh2d_flow_cli.cpp.o'
-    libraries = [build / 'libcartmesh2d_fv.a', build / 'libcartmesh2d.a']
-    for path in [mesh, boundary, app_object, *libraries, build / 'cartmesh2d_flow_cli']:
+    windows = sys.platform == 'win32'
+    compiler = shutil.which('cl') if windows else '/usr/bin/clang++' if sys.platform == 'darwin' else '/usr/bin/c++'
+    if not compiler:
+        raise RuntimeError('Run from a Visual Studio x64 developer command prompt (cl.exe is required)')
+    app_object = build / 'cartmesh2d_flow_cli.dir/Release/cartmesh2d_flow_cli.obj' if windows else build / 'CMakeFiles/cartmesh2d_flow_cli.dir/apps/cartmesh2d_flow_cli.cpp.o'
+    libraries = [build / 'Release/cartmesh2d_fv.lib', build / 'Release/cartmesh2d.lib'] if windows else [build / 'libcartmesh2d_fv.a', build / 'libcartmesh2d.a']
+    product_binary = build / 'Release/cartmesh2d_flow_cli.exe' if windows else build / 'cartmesh2d_flow_cli'
+    for path in [mesh, boundary, app_object, *libraries, product_binary]:
         if not path.is_file():
             raise FileNotFoundError(path)
     sources = ['src/fv/Incompressible2D.cpp', 'src/fv/FlowEquation2D.cpp',
@@ -94,10 +102,11 @@ def main():
         'sourceSha256': {p: digest(ROOT / p) for p in sources},
         'linkedLibrarySha256': {p.name: digest(p) for p in libraries},
         'inputSha256': {str(p): digest(p) for p in [mesh, boundary]},
-        'compiler': subprocess.check_output([compiler, '--version'], text=True).splitlines()[0],
+        'compiler': (subprocess.run([compiler], capture_output=True, text=True).stderr.splitlines()[0]
+                     if windows else subprocess.check_output([compiler, '--version'], text=True).splitlines()[0]),
         'scope': 'native 2-D SIMPLE ablations; external OpenFOAM/MOOSE solvers are NOT executed',
         'controls': {'velocityRelaxation': .6, 'pressureRelaxation': .25,
-                     'pressureCorrectionPasses': 4, 'tolerance': 1e-8,
+                     'pressureCorrectionPasses': 4, 'tolerance': args.tolerance,
                      'maxIterations': args.iterations, 'seconds': args.seconds,
                      'convection': args.convection, 'nu': args.nu, 'speed': args.speed},
         'buildCommands': [], 'runs': []}
@@ -117,10 +126,16 @@ def main():
             subprocess.run(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
 
     def compile_source(path):
-        obj = path.with_suffix('.o')
-        build_command([compiler, '-std=c++20', '-O3', '-DNDEBUG', '-I' + str(ROOT / 'include'),
-                       '-I' + str(ROOT / 'src/fv'), '-I' + str(ROOT / 'apps'),
-                       '-I' + str(out), '-c', path, '-o', obj])
+        obj = path.with_suffix('.obj' if windows else '.o')
+        if windows:
+            build_command([compiler, '/nologo', '/std:c++20', '/O2', '/DNDEBUG', '/MT', '/EHsc',
+                           '/utf-8', '/DNOMINMAX', '/DWIN32_LEAN_AND_MEAN',
+                           '/I' + str(ROOT / 'include'), '/I' + str(ROOT / 'src/fv'),
+                           '/I' + str(ROOT / 'apps'), '/I' + str(out), '/c', path, '/Fo' + str(obj)])
+        else:
+            build_command([compiler, '-std=c++20', '-O3', '-DNDEBUG', '-I' + str(ROOT / 'include'),
+                           '-I' + str(ROOT / 'src/fv'), '-I' + str(ROOT / 'apps'),
+                           '-I' + str(out), '-c', path, '-o', obj])
         return obj
 
     pressure_choice = GAUSS
@@ -166,7 +181,7 @@ def main():
         'one-sided-linear-adaptive', 'research-gauss-' + args.pressure_trace))
     pressure_objects = None
     for variant in args.variants:
-        binary = build / 'cartmesh2d_flow_cli'
+        binary = product_binary
         if variant != 'baseline' or args.anderson_backtracking == 'off':
             gauss = variant in ['pressure', 'both']
             source = (ROOT / 'src/fv/Incompressible2D.cpp').read_text()
@@ -187,14 +202,24 @@ def main():
             selected_app = pressure_objects[1] if gauss else app_object
             if gauss:
                 objects.append(pressure_objects[0])
-            binary = out / ('flow-' + variant)
-            build_command([compiler, selected_app, *objects, *libraries,
-                           *(['-framework', 'Accelerate'] if sys.platform == 'darwin' else []), '-o', binary])
+            binary = out / ('flow-' + variant + ('.exe' if windows else ''))
+            if windows:
+                build_command([compiler, '/nologo', selected_app, *objects, *libraries, '/Fe' + str(binary),
+                               '/link', '/MANIFEST:EMBED', '/MANIFESTINPUT:' + str(ROOT / 'apps/cartmesh2d.exe.manifest')])
+            else:
+                build_command([compiler, selected_app, *objects, *libraries,
+                               *(['-framework', 'Accelerate'] if sys.platform == 'darwin' else []), '-o', binary])
+        if args.build_only:
+            manifest.setdefault('builtVariants', {})[variant] = {
+                'binary': str(binary), 'sha256': digest(binary)}
+            save()
+            print('built', variant, flush=True)
+            continue
         prefix = out / variant
         command = [str(binary), '--mesh', str(mesh), '--boundary', str(boundary), '--case', 'custom',
                    '--nu', str(args.nu), '--speed', str(args.speed), '--convection', args.convection,
                    '--coupling', args.coupling, '--velocity-relaxation', '.6', '--pressure-relaxation', '.25',
-                   '--pressure-corrections', '4', '--linear-policy', args.linear_policy, '--tolerance', '1e-8',
+                   '--pressure-corrections', '4', '--linear-policy', args.linear_policy, '--tolerance', str(args.tolerance),
                    '--steady-acceleration', args.steady_acceleration, '--anderson-history', str(args.anderson_history),
                    '--max-iterations', str(args.iterations), '--profile', '--output', str(prefix)]
         run = {'variant': variant, 'command': command, 'binarySha256AtLaunch': digest(binary),

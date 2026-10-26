@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>SIMPLE 与 GPU 压力求解实测</title>
+<style>body{font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif;margin:0;background:#f3f5f4;color:#172e36}main{max-width:1150px;margin:auto;padding:32px}h1{font-size:30px}h2{margin-top:38px}section,.lead{background:white;padding:24px;border-radius:12px;margin:20px 0}.lead{border-left:5px solid #28758c}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;text-align:left;border-bottom:1px solid #d9e1e2}th{background:#edf3f3}img{width:100%;height:auto}code{background:#edf3f3;padding:2px 5px}.note{color:#526771}.warn{color:#94481e}.scroll{overflow-x:auto}a{color:#11657a}</style>
+<main><h1>SIMPLE 为什么慢，GPU 到底加速了什么</h1><p class="note">Windows PC · RTX 4060 Laptop · 复用现有 CUDA 12.6 / PyTorch · 真实原生方程与输出</p>
+<div class="lead"><b>结论：</b>1%/5% 单步停止量不能保证解已经接近收敛场；coupled 每轮内部做大量线性工作；GPU Jacobi 在大压力矩阵上有效，但当前 CPU 多重网格更快，小网格完整 CFD 用 GPU 明显更慢。CPU 默认、原生质量门和停止门均保留。</div>
+<section><h2>1. 当前软件如何停止</h2><p>界面默认 <code>1e-6</code>，研究常用 <code>1e-8</code>。strict 要求至少 10 轮，最大归一化动量残差、速度变化和压力变化都小于该容差，局部连续性和全局流量不平衡小于 <code>1e-8</code>，最后还有严格线性求解检查。coupled 另检查面通量一致性。</p>
+<p>速度变化是最大单元速度增量除以 Uref；压力变化除以 <code>Uref² + ν·Uref/H</code>；动量残差按动量对角系数和 Uref 缩放。这不是“最终物理误差百分比”，也不等于其他软件同名 residual。</p>
+<p class="warn">下表将本项目归一化门槛直接设为 0.05/0.01；如果老师指“残差相对初值”或“监测量相对变化”，定义另有不同。连续性门未放宽。严格解仍有已知曲壁物理误差，只用作同网格迭代参照。</p>
+<div class="scroll"><table><tr><th>停止容差</th><th>外迭代</th><th>速度分量最大差/Uref</th><th>圆柱 Cd</th><th>圆柱 Cl</th></tr><tr><td>0.05</td><td>28</td><td>23.561%</td><td>5.838699</td><td>0.213763</td></tr><tr><td>0.01</td><td>36</td><td>17.612%</td><td>5.713729</td><td>0.083846</td></tr><tr><td>0.001</td><td>93</td><td>2.055%</td><td>5.551336</td><td>0.178662</td></tr><tr><td>1e-06</td><td>348</td><td>0.002812%</td><td>5.545451</td><td>0.228540</td></tr><tr><td>1e-08</td><td>481</td><td>0%</td><td>5.545450</td><td>0.228543</td></tr></table></div>
+<img src="simple-gpu-pc-stopping.png"><p>原默认 SIMPLE、只改速度修正、只改压力组合均失败；两项研究组合后，upwind 为 453 轮，limited-linear 为 481 轮。研究压力组合改变空间离散，尚未替换默认。1e-6 相对 1e-8 迭代场已很接近，但这不修复原有压力与升力误差。</p></section>
+<section><h2>2. coupled 的“10 轮”里包含什么</h2><p>SIMPLE 先解速度，再用近似的局部速度响应修正压力，通常还以 0.6/0.25 松弛逐步更新。这里的 coupled 联立速度两分量和压力，在一轮内用块 FGMRES 反复求解完整冻结响应，并嵌套压力预条件求解；它不使用 SIMPLE 的这两个松弛因子，而用线搜索控制更新。</p>
+<p>至少 10 轮是共用停止函数中的下限。小圆环的 10 轮实际有 141 次块 Krylov 和 4,498 次压力迭代；细圆环为 263 / 31,058。外轮数不能直接代表总工作量或耗时。研究 DFG 的 coupled 24 轮耗时约 11.17 秒，SIMPLE 481 轮约 6.61 秒；后者加 Anderson/adaptive 为 270 轮、约 3.92 秒。它们达到接近的同离散场，但每轮工作和内部线性策略不同。</p>
+<div class="scroll"><table><tr><th>实际运行（product / research 分开）</th><th>外轮数</th><th>块 Krylov</th><th>压力迭代</th><th>完整秒数</th></tr><tr><td>annulus-small-product-simple</td><td>180</td><td>0</td><td>24,136</td><td>0.491</td></tr><tr><td>annulus-small-product-coupled</td><td>10</td><td>141</td><td>4,498</td><td>0.417</td></tr><tr><td>annulus-fine-product-coupled</td><td>10</td><td>263</td><td>31,058</td><td>4.587</td></tr><tr><td>dfg-research-tol-1e-08</td><td>481</td><td>0</td><td>118,577</td><td>6.609</td></tr><tr><td>dfg-research-anderson-adaptive</td><td>270</td><td>0</td><td>60,903</td><td>3.918</td></tr><tr><td>dfg-research-coupled</td><td>24</td><td>1,968</td><td>149,478</td><td>11.166</td></tr></table></div><p class="note">压力耗时包含在 coupled 线性耗时内，不重复相加。此处是本机串行单次完整成本，不能外推通用性能倍数。</p></section>
+<section><h2>3. GPU 正确性与性能</h2><p>可选原生 C++ 模块直接复用已安装 Torch 的 CUDA 运算，Jacobi/IC(0) 用双精度，返回后仍用原生矩阵检查原来的真实残差；不静默转回 CPU。IC(0) 因子在 CPU 构造，三角求解在 GPU。GPU 多重网格尚未实现，表中的 aggregation 是现有 CPU 对照。</p>
+<img src="simple-gpu-pc-gpu.png"><p>完整 484 格圆环：CPU IC(0) 约 0.39 秒，GPU IC(0) 约 19.13 秒，均为 127 轮；速度分量差约 8.9e-16 Uref。profile 表明主要额外成本在细碎迭代运算/同步，不只是上传。262,144 未知量压力子问题，GPU Jacobi 相对 CPU Jacobi 约 5.70 倍，但 CPU 多重网格仍略快。不能据此声称大规模完整 CFD 已提速。</p>
+<div class="scroll"><table><tr><th>未知量</th><th>后端</th><th>预条件</th><th>迭代</th><th>缓存后中位秒数</th><th>原生真实残差 / 原门槛</th></tr><tr><td>96</td><td>cpu</td><td>ic0</td><td>21</td><td>8.36e-05</td><td>2.37e-14 / 1.12e-13</td></tr><tr><td>96</td><td>cpu</td><td>jacobi</td><td>40</td><td>0.0001001</td><td>1.05e-13 / 1.12e-13</td></tr><tr><td>96</td><td>cpu</td><td>aggregation</td><td>11</td><td>7.66e-05</td><td>6.85e-14 / 1.12e-13</td></tr><tr><td>96</td><td>torch-cuda</td><td>ic0</td><td>21</td><td>0.016247</td><td>2.37e-14 / 1.12e-13</td></tr><tr><td>96</td><td>torch-cuda</td><td>jacobi</td><td>40</td><td>0.0124477</td><td>1.05e-13 / 1.12e-13</td></tr><tr><td>484</td><td>cpu</td><td>ic0</td><td>49</td><td>0.0002871</td><td>4.01e-13 / 5.14e-13</td></tr><tr><td>484</td><td>cpu</td><td>jacobi</td><td>38</td><td>0.0001429</td><td>4.44e-13 / 5.14e-13</td></tr><tr><td>484</td><td>cpu</td><td>aggregation</td><td>23</td><td>0.0002634</td><td>2.45e-13 / 5.14e-13</td></tr><tr><td>484</td><td>torch-cuda</td><td>ic0</td><td>49</td><td>0.0568901</td><td>4.01e-13 / 5.14e-13</td></tr><tr><td>484</td><td>torch-cuda</td><td>jacobi</td><td>38</td><td>0.011043</td><td>4.44e-13 / 5.14e-13</td></tr><tr><td>3,063</td><td>cpu</td><td>ic0</td><td>125</td><td>0.0049697</td><td>1.3e-13 / 1.73e-13</td></tr><tr><td>3,063</td><td>cpu</td><td>jacobi</td><td>392</td><td>0.0092071</td><td>1.54e-13 / 1.73e-13</td></tr><tr><td>3,063</td><td>cpu</td><td>aggregation</td><td>39</td><td>0.0029377</td><td>1.2e-13 / 1.73e-13</td></tr><tr><td>3,063</td><td>torch-cuda</td><td>ic0</td><td>125</td><td>0.212669</td><td>1.21e-13 / 1.73e-13</td></tr><tr><td>3,063</td><td>torch-cuda</td><td>jacobi</td><td>392</td><td>0.108159</td><td>1.54e-13 / 1.73e-13</td></tr><tr><td>6,208</td><td>cpu</td><td>ic0</td><td>170</td><td>0.0139589</td><td>3.22e-13 / 3.43e-13</td></tr><tr><td>6,208</td><td>cpu</td><td>jacobi</td><td>532</td><td>0.0253092</td><td>3.31e-13 / 3.43e-13</td></tr><tr><td>6,208</td><td>cpu</td><td>aggregation</td><td>43</td><td>0.0091339</td><td>2.49e-13 / 3.43e-13</td></tr><tr><td>6,208</td><td>torch-cuda</td><td>ic0</td><td>170</td><td>0.294368</td><td>3.27e-13 / 3.43e-13</td></tr><tr><td>6,208</td><td>torch-cuda</td><td>jacobi</td><td>532</td><td>0.151173</td><td>3.31e-13 / 3.43e-13</td></tr><tr><td>102,400</td><td>cpu</td><td>ic0</td><td>441</td><td>0.698699</td><td>9.68e-14 / 1e-13</td></tr><tr><td>102,400</td><td>cpu</td><td>jacobi</td><td>1283</td><td>1.05135</td><td>1e-13 / 1e-13</td></tr><tr><td>102,400</td><td>cpu</td><td>aggregation</td><td>52</td><td>0.220269</td><td>7.87e-14 / 1e-13</td></tr><tr><td>102,400</td><td>torch-cuda</td><td>ic0</td><td>441</td><td>3.39205</td><td>9.76e-14 / 1e-13</td></tr><tr><td>102,400</td><td>torch-cuda</td><td>jacobi</td><td>1283</td><td>0.542501</td><td>1e-13 / 1e-13</td></tr><tr><td>262,144</td><td>cpu</td><td>ic0</td><td>637</td><td>3.07746</td><td>9.99e-14 / 1e-13</td></tr><tr><td>262,144</td><td>cpu</td><td>jacobi</td><td>1907</td><td>4.76209</td><td>9.8e-14 / 1e-13</td></tr><tr><td>262,144</td><td>cpu</td><td>aggregation</td><td>56</td><td>0.663314</td><td>9.08e-14 / 1e-13</td></tr><tr><td>262,144</td><td>torch-cuda</td><td>ic0</td><td>638</td><td>8.7191</td><td>9.01e-14 / 1e-13</td></tr><tr><td>262,144</td><td>torch-cuda</td><td>jacobi</td><td>1907</td><td>0.835226</td><td>9.8e-14 / 1e-13</td></tr></table></div>
+<p class="note">每个冻结矩阵/方法含一次冷解与三次缓存后重复，表列后者中位数；完整 CFD 单独含进程和 GPU 初始化。大规则通道只运行一个外迭代生成真实压力矩阵，并未收敛，也未取得高密度物理精度资格。</p></section>
+<section><h2>4. 后续采用范围</h2><p>保留 CPU 默认与 GPU 实验入口。优先继续修复默认 SIMPLE 的压力离散/曲壁一致性，并减少外迭代；大规模线性求解继续研究多重网格及 GPU 上的预条件实现。当前数据不支持把现有 GPU 原型设为通用默认。</p>
+<p>完整数字、输入/二进制哈希、命令与实际范围：<a href="simple-gpu-pc.json">机器可读证据</a>。接受场、原始失败与日志保存在本机 outputs。原有历史研究文件未删除。</p><details><summary>本次软件检查范围</summary><pre>{
+  &quot;native&quot;: {
+    &quot;selected&quot;: 16,
+    &quot;passedAfterSerialRerun&quot;: 16,
+    &quot;firstParallelPassed&quot;: 15,
+    &quot;firstParallelTimeout&quot;: &quot;cartmesh2d_flow_boundary&quot;,
+    &quot;serialRerunPassed&quot;: true,
+    &quot;originalAssertionsAndTimeBudgetUnchanged&quot;: true,
+    &quot;logs&quot;: [
+      &quot;outputs/solver-gpu-regression/first-parallel.log&quot;,
+      &quot;outputs/solver-gpu-regression/boundary-serial.log&quot;
+    ]
+  },
+  &quot;frontend&quot;: {
+    &quot;passed&quot;: 193,
+    &quot;total&quot;: 193,
+    &quot;node&quot;: &quot;24.12.0&quot;,
+    &quot;command&quot;: &quot;npm test --prefix desktop&quot;
+  },
+  &quot;realDesktop&quot;: {
+    &quot;status&quot;: &quot;层流求解已收敛&quot;,
+    &quot;cells&quot;: 5216,
+    &quot;iterations&quot;: 293,
+    &quot;converged&quot;: true,
+    &quot;backend&quot;: &quot;cpu&quot;,
+    &quot;tolerance&quot;: 1e-06,
+    &quot;settingsRoundTrip&quot;: true,
+    &quot;repeatedCalculationIdentical&quot;: true,
+    &quot;screenshot&quot;: &quot;outputs/solver-gpu-regression/app.png&quot;
+  },
+  &quot;notRun&quot;: [
+    &quot;full native CTest&quot;,
+    &quot;cross-platform CI&quot;,
+    &quot;new installation packages&quot;,
+    &quot;large complete CFD convergence or spatial accuracy&quot;
+  ]
+}</pre></details></section></main></html>
