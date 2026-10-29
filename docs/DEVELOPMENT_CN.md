@@ -71,6 +71,66 @@ python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensio
 
 当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。`simple-source-comparison-fields.tar.gz` 保存原四组及失败；`simple-source-followup-fields.tar.gz`保存更正受力、压力拆分失败、回退对照及细圆环代表场/原生日志/启动清单，供后续压力离散修复和同输入续算研究。原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机`outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
 
+### 同一圆环交叉实验与解析参照
+
+结果、数值资格和待办只看[当前状态](CURRENT_STATE_CN.md#cut-cell-网格与-simple-的交叉诊断)。`artifacts/current/annulus-cross.json` 记录五张实际网格、四个求解路径、另列的解析 trace 族、场偏差、逐次命令/退出码、源码/二进制和输入哈希。`annulus-cross-fields.tar.gz` 保存代表输入、接受场、原生日志/续算场、外部字典和成熟网格原始交换格式；归档内使用仓库相对路径，先解到独立 `outputs/annulus-replay/` 再选择输入，避免覆盖原始实验。原困难输入亦见既有 `laminar-foundation/failure-inputs.tar.gz`，直壁/旧圆环包仍保留。
+
+原模型必须从冻结输入提取物面：**每圆256条真实直边**，984个导出面中的共线辅助点只在构造舍入预算内归并；不调用默认level7的512段圆重新生成。归档含 `original-walls.xy`、`original-physical-walls.xy`、`inner-wall.xy`。严格同壁面组使用后者，面积约2.35595793819958m²。GEOS构造端点只对齐同一笛卡尔格角身份，预算64 ulp，实际最大位移1.84e-16m；这是构造舍入，不是删除可解析短边或放宽Solver质量门。
+
+`geos_annulus.py` 仅做成熟 GEOS 二维交运算，不组装流动方程；通过隔离venv运行（本次Shapely2.2.0、GEOS3.14.1）。`annulus_mesh_cross.cpp` 将多边形交给既有原生拓扑、合并和质量流程，明确保留共用阶段。示例使用新输出前缀：
+
+```sh
+mkdir -p outputs/annulus-replay
+/usr/bin/clang++ -std=c++20 -O2 -Iinclude tools/benchmarks/annulus_mesh_cross.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/annulus-replay/adapter
+# 输入 XY 从上述归档解出，下面路径按实际解包位置调整。
+outputs/annulus-cross/geometry-env/bin/python tools/benchmarks/geos_annulus.py --geometry outputs/annulus-cross/original-physical-walls.xy --output outputs/annulus-replay/geos96.polygons --n 96
+outputs/annulus-replay/adapter geos outputs/annulus-cross/original-physical-walls.xy outputs/annulus-replay/geos96 96 outputs/annulus-replay/geos96.polygons
+# --n 128 对应另一档；不是通过移动物面制造面积分数。
+```
+
+混合研究输入使用真实产品单内圆外流网格，再裁外域，保留原有近壁/过渡接口；不是绕过产品嵌套闭环拒绝后宣称H4通过。下面 `protect-radius .522` 是已知3层构造包络（最外约.521842m），仅选择并核对768个源近壁格；源ID及多边形一直保留，未按近邻猜物面。裁切结果的未切割原网格和层格进入已有 preserve/immutable 约束，质量修复不重划它们；几何核对显示768格全部保留。
+
+```sh
+build/cartmesh2d_hybrid_cli outputs/annulus-cross/inner-wall.xy outputs/annulus-replay/inner 7 7 7 3 .006 1.2 .8 outputs/annulus-replay/inner.foam .1
+outputs/annulus-cross/geometry-env/bin/python tools/benchmarks/geos_annulus.py --geometry outputs/annulus-cross/original-physical-walls.xy --output outputs/annulus-replay/hybrid.polygons --base-mesh outputs/annulus-replay/inner.hybrid.solver.cm2d --protect-radius .522
+outputs/annulus-replay/adapter crop outputs/annulus-cross/original-physical-walls.xy outputs/annulus-replay/hybrid 128 outputs/annulus-replay/hybrid.polygons
+build/cartmesh2d_flow_cli --mesh outputs/annulus-replay/hybrid.solver.cm2d --case custom --boundary outputs/annulus-replay/hybrid.boundaries --nu .1 --speed .5 --convection upwind --viscous-stress symmetric --coupling coupled --linear-policy strict --max-iterations 1500 --tolerance 1e-8 --profile --output outputs/annulus-replay/hybrid-coupled
+```
+
+SIMPLE将上例 `--coupling` 换为 `simple`，原默认松弛.6/.25不改。1500步未收敛时不算通过；用既有 `tools/flow/extract_steady_iterate.py` 提取真实接受迭代场和面通量再续算，完整命令已随两个 `run.json` 保存。精确续算不是用解析初值帮助收敛。`native` 模式为同壁面原生均匀切割辅助控制；`hybrid` 模式保留早期双壁条带原型（失败日志保留）；`ready` 导入成熟cfMesh成品多边形，不做原生合并或质量修复，边界由真实外部patch身份给出。
+
+cfMesh完整参考采用foam-extend内 `cartesian2DMesh`，输入是原高精度XY挤出的**仅侧壁 ribbon**，不带front/back盖面。归档 `cfmesh-precise/annulus.fms` 及 `system/meshDict` 可重跑，`maxCellSize .025`、`nLayers 0`。`surfaceFeatureEdges` 默认六位输出会改变源点，已通过唯一六位序列化键恢复原STL点身份后再生成网格，连接及特征不变；不按最近点拟合或修改最终网格。**cfMesh本身仍会贴体变形**，其原生导入和各求解器共享同一实际成品，但与原圆环的壁面误差另列在 `cfmesh-model-difference.json`，不叫严格同物面Cut-cell。
+
+外部求解由 `annulus_cross.py` 编排；`cases()` 指向本机冻结输入，`--directory` 指定新的外部运行目录。每个case目录包含 `comparison.json`、`0/`、`constant/`、`system/`、原始 `checkMesh` 两档及 `solve.log`。标准/扩展检查分开记录，不用原生质量替代。固定运行镜像（独立可执行参考，产品不链接其三维核心）：
+
+- SIMPLE：`opencfd/openfoam-run@sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb`，OpenCFD2606 arm64。
+- coupled：`pmariappan/foam-extend-4.0@sha256:63ab10ff5d5886d0428c76e56a50181d4e078a024ce4482c712e5b6e63893143`，实报4.0-268bb07d15d8，amd64模拟运行。
+
+```sh
+python3 tools/benchmarks/annulus_cross.py --phase prepare --solver coupled --names original --directory outputs/annulus-replay/original-external-coupled
+python3 tools/benchmarks/annulus_cross.py --phase run --solver coupled --names original --directory outputs/annulus-replay/original-external-coupled --budget 180
+python3 tools/benchmarks/annulus_cross.py --phase collect --solver coupled --names original --directory outputs/annulus-replay/original-external-coupled
+# 其他冻结输入名称：geos96 geos128 hybrid cfmesh；SIMPLE换 --solver simple。
+# 混合网格成熟SIMPLE冷启动需要更长研究预算，本次用420秒并在3012步结束。
+python3 tools/benchmarks/test_openfoam_interchange.py
+```
+
+成熟coupled的源码入口是[主循环](https://github.com/Unofficial-Extend-Project-Mirror/foam-extend-foam-extend-4.0/blob/master/applications/solvers/coupled/pUCoupledFoam/pUCoupledFoam.C)、`UEqn.H`、`pEqn.H`、[couplingTerms.H](https://github.com/Unofficial-Extend-Project-Mirror/foam-extend-foam-extend-4.0/blob/master/applications/solvers/coupled/pUCoupledFoam/couplingTerms.H)。它把动量、压力以及隐式 `grad(p)` / `UDiv(U)` 插入 `fvBlockMatrix<vector4>`，联立求U/p，再从该解重建守恒通量。这里关闭湍流，Up用BiCGStab/Cholesky、线性容差1e-11、块停止1e-8；U/p松弛.999/1，极宽fieldBounds用于避免人为裁剪，收集器拒绝实际Bounding记录。旧版黏度语法需 `nu nu [0 2 -1 0 0 0 0] .1;`。自研coupled则用完整冻结动量响应、块FGMRES及嵌套压力预条件和线搜索。外轮数不是线性工作量，空间离散/压力边界闭合也未完全对齐，不能凭收敛轮数断言提速或精度优劣。
+
+本轮真实交换问题的最小回归在 `test_openfoam_interchange.py`：旧foam-extend可能写全nFaces的neighbour数组并以-1标记边界；读取须保留负号，再按实际patch起始面归一成内面数组。此前丢失物理patch的零流动结果全部排除。二维empty身份来自源patch声明，不用浮点z面积是否非零猜测，并明确拒绝圆环丢失rotor/housing。三个测试只约束文件交换，不重建独立PDE审计链。
+
+真圆参照由二维轴对称稳态方程得到：`ur=0`，切向方程给 `uθ=Ar+B/r`，两壁条件给 `A=-1/3,B=1/3`；径向动量给 `d(pi)/dr=uθ²/r`，积分得 `pi=(r²-r^-2)/18-(2/9)ln(r)`，取外壁pi=0。它表示同心圆流线、内壁速率.5到外壁0、压力由内向外上升，**不需要把实际场投影成轴对称后再算误差**。所有单元都按实际中心和面积比较，压力先去最优面积加权常数。速度RMS/Uref和压力RMS/解析压力跨度分别报告，另外报告局部最大偏差，避免小面积尖峰被全局RMS掩盖。
+
+原逐边切向运动不是上述真圆的精确边界。另设 `annulus_exact_trace.py` 解析Dirichlet验证族：16点Gauss逐面积分已知速度，法向通量用流函数 `psi=r²/6-ln(r)/3` 端点差；128机器精度的流函数/速度×边长尺度只处理通量抵消舍入，非求解验收阈值。原生与外部映射同一逐面值，外部面键的12位舍入仅作唯一匹配、不修改几何。生成器记录面数、净通量和积分舍入调整，原生仍过原边界/守恒门。这一族显式改变边界模型，不能拿其结果替换原壁面运动误差。
+
+```sh
+python3 tools/benchmarks/annulus_exact_trace.py --mesh build/laminar-fixtures/annulus-l7.solver.cm2d --output outputs/annulus-replay/original-exact.boundaries
+# 追加 --external-case 已准备的新case，可将相同逐面平均值写入其0/U；不得修改已运行的原对照目录。
+MPLCONFIGDIR=/tmp/cm2d-annulus-mpl python3 tools/benchmarks/plot_annulus_cross.py --output outputs/annulus-replay/figures
+```
+
+科学图直接读取真实网格/接受场；本机中文字体为 `/Library/Fonts/Arial Unicode.ttf`，其他系统须换可用中文字体。展示索引：[理想解析流场](../artifacts/current/annulus-cross-analytic.png)、[实际网格与局部](../artifacts/current/annulus-cross-meshes.png)、[实际收敛场与解析曲线](../artifacts/current/annulus-cross-fields.png)。压力图用对称对数轴同时保留主体和尖峰；不裁掉坏单元、离群压力或未收敛记录。未做空间收敛或产品精度资格扩展。
+
 ### Cut-cell 交叉实验
 
 `tools/benchmarks/amrex_cutcell/` 是显式构建的原生二维几何参考工具；`cutcell_cross.py` 只编排真实程序、读取几何/场并计算解析误差，不另建有限体积方程。当前仅支持单位方域中 `y>.5x+b` 的单条平面切割，**不是通用 AMReX 网格导入器**。AMReX 输出实际二维 EB 面开口比例及形心，适配器按共享笛卡尔面身份连接开口端点，再经原生全局拓扑装配。自研路径调用现有原生二维切割器，双方可选同一个原有 `.1` 小单元合并器；因此交叉比较独立切割几何及独立外部求解，没有声称独立比较了整套拓扑装配/合并策略。

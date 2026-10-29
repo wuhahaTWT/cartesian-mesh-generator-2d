@@ -9,7 +9,9 @@ def payload(path: Path) -> str:
     end = text.find("}", at)
     if at < 0 or end < 0:
         raise ValueError(f"{path}: missing FoamFile header")
-    return text[end + 1:]
+    # foam-extend writes decorative full-line comments after the counted list.
+    # Ignore those comment lines without changing quoted names or field values.
+    return re.sub(r"(?m)^\s*//[^\n]*(?:\n|$)", "", text[end + 1:])
 
 
 def counted(path: Path) -> tuple[int, str]:
@@ -42,7 +44,8 @@ def read_faces(path: Path):
 
 def read_labels(path: Path):
     count, body = counted(path)
-    values = [int(value) for value in re.findall(r"\b-?\d+\b", body)]
+    # A word boundary before '-' loses the sign of legacy boundary sentinel -1.
+    values = [int(value) for value in re.findall(r"-?\d+", body)]
     if len(values) != count:
         raise ValueError(f"{path}: label count mismatch")
     return values

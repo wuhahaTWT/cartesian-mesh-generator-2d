@@ -34,21 +34,39 @@ def prepare(case, source, mesh_file, root, scheme, iterations, stabilized=False)
     faces=foam.read_faces(source/'faces')
     owners=foam.read_labels(source/'owner')
     neighbours=foam.read_labels(source/'neighbour')
+    # Preserve the actual external empty-patch identity. A vertical side face
+    # can have a roundoff-sized z area component. Patch declarations provide
+    # the empty/physical identity without a geometric area[2] != 0 heuristic.
+    source_patches=foam.read_boundary(source/'boundary')
+    internal_count=min(patch['startFace'] for patch in source_patches)
+    full_neighbour=len(neighbours)==len(faces) and len(neighbours)!=internal_count
+    if full_neighbour:
+        if any(v!=-1 for v in neighbours[internal_count:]):raise ValueError('invalid legacy boundary neighbour sentinel')
+        neighbours=neighbours[:internal_count]
+    if len(neighbours)!=internal_count or any(v<0 for v in neighbours):raise ValueError('internal face/neighbour count mismatch')
+    empty_faces={i for patch in source_patches if patch['type']=='empty'
+                 for i in range(patch['startFace'],patch['startFace']+patch['nFaces'])}
+    if not empty_faces:raise ValueError('2D reference source has no declared empty patches')
     groups={}
     for i in range(len(neighbours),len(faces)):
         face=faces[i];area=foam.face_area(face,points)
         x,y=[sum(points[j][axis] for j in face)/len(face) for axis in (0,1)]
-        if abs(area[2])>0:
+        if i in empty_faces:
             kind,name,u,v,p='empty','frontAndBack',0.,0.,0.
         else:
             kind,name,u,v,p=laminar.boundary_values(case,x,y,*area[:2])
         group=groups.setdefault(name,dict(kind=kind,faces=[],velocities=[]))
         if group['kind']!=kind:raise ValueError('mixed boundary kind in '+name)
         group['faces'].append(i);group['velocities'].append((u,v,0))
+    if case=='annulus' and not all(name in groups and groups[name]['faces'] for name in ('rotor','housing')):
+        raise ValueError('annulus interchange lost a physical wall patch')
     order=list(range(len(neighbours)))+[i for g in groups.values() for i in g['faces']]
     if sorted(order)!=list(range(len(faces))):raise ValueError('face permutation is not bijective')
     shutil.copyfile(source/'points',target/'points')
-    shutil.copyfile(source/'neighbour',target/'neighbour')
+    if full_neighbour:
+        (target/'neighbour').write_text(foam.header('labelList','constant/polyMesh','neighbour')+
+            f'{len(neighbours)}\n(\n'+''.join(f'{v}\n' for v in neighbours)+')\n')
+    else:shutil.copyfile(source/'neighbour',target/'neighbour')
     (target/'faces').write_text(foam.header('faceList','constant/polyMesh','faces')+
         f'{len(faces)}\n(\n'+''.join(str(len(faces[i]))+'('+' '.join(map(str,faces[i]))+')\n' for i in order)+')\n')
     (target/'owner').write_text(foam.header('labelList','constant/polyMesh','owner')+
@@ -101,6 +119,8 @@ timeFormat general; timePrecision 10; runTimeModifiable false;
         meshSha256=laminar.meshio.sha256_file(mesh_file),source=str(source.resolve()),
         pointsUnchanged=True,internalFacesUnchanged=True,cellNumberingUnchanged=True,
         boundaryPermutation=order[len(neighbours):],convection=convection,
+        sourceEmptyFaces=len(empty_faces),
+        normalizedLegacyFullNeighbour=full_neighbour,
         gradient=gradient,nonOrthogonalCorrection=correction,
         note='OpenFOAM linearUpwind and native limited-linear are distinct discretizations.'))
 
