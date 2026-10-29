@@ -71,6 +71,70 @@ python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensio
 
 当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。`simple-source-comparison-fields.tar.gz` 保存原四组及失败；`simple-source-followup-fields.tar.gz`保存更正受力、压力拆分失败、回退对照及细圆环代表场/原生日志/启动清单，供后续压力离散修复和同输入续算研究。原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机`outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
 
+### Cut-cell 小单元与尖锐单元处理文献
+
+本节为用户要求的小单元/尖锐单元处理调研，检索截至2026-10-29；20篇原始研究中19篇为已发表论文，1篇2026预印本单列。只用原论文、作者/机构稿和成熟项目源码作技术依据，不把二手综述、搜索摘要或方法名当作已复现资格。表中“全文关键段”表示读取可获取原文的相关段落，不表示逐页精读或已实现；“摘要/预览”表示核对原出版方或作者机构摘要，不把付费全文说成已读。方法选择是本项目的工程判断，成功率、工作日和物理精度尚未验证。
+
+**本仓库具体问题。** `SmallCell2D.cpp` 根据输入切割面积分数（默认0.10）选小单元，优先与非小邻居、较长共享边及较大面积的邻居合并；这一选择不直接优化最终重构矩阵或整片网格的形状。`SolverTopology2D.cpp:34` 的严格凸判定、`:606` 的普通源多边形划分，以及后续质量重划分，又可产生独立小单元。凸固体外侧的流体多边形具有物理反角，保留多条物面边的单元可能天然非凸，不能把“每个普通物理单元严格凸”无条件等同于有限体积的必要条件。当前几何/算子是否支持保留这些单元仍需检查，**不能简单删除凸划分后强行开算**。
+
+现有同圆环的原生报告显示，GEOS6008格原始切割到共用后处理后的6208格，最小内角4.92°→1.94°、最大非正交34.54°→69.13°、最大长宽比24.36→60.78，当前质量失败160→0；同时最小邻接面积比.000942→.011698、最小插值权重.015527→.054366。它表明当前目标是在不同指标间换取过门，未证明整体适合CFD。原始格存在质量失败且未作为求解输入，整链快照也不能单独分配合并/凸分解/重划各自的责任。历史入口：`10fa0f7`（导出质量门）、`5c46daa`（严格凸分解）、`4b0af3f`（为外部共线/凹性检查加强划分）；后续确有防碎片修复，未闭合困难圆环稳定性/精度验收。[报告](../artifacts/current/cutcell-treatment-review.json)和[实际前后图](../artifacts/current/cutcell-postprocess-comparison.png)是后续网格修改的诊断输入，不是新验收门。
+
+**需要分开的三个问题。** 一是显式通量更新中的 `dt/Vi` 导致时间步随小体积收紧；二是稳态压力/黏性算子的几何病态，包括中心距离、非正交、梯度模板与压力—速度响应；三是壁面剪切、压力和局部重构精度。给显式Euler/advection证明CFL稳定，不能证明现有稳态黏性SIMPLE稳定或压力精准。Johansen–Colella等结果也说明，小体积并非必然不可求：专门构造的边界通量和算子能降低对切割位置的敏感性。对本项目应先修已有网格处理缺陷，再匹配离散，不继续用coupled收敛代替网格验收。
+
+| 路线 | 实际做法 | 本项目适用性、代价与限制 |
+| --- | --- | --- |
+| 几何合并 / agglomeration / reshaping | 小格与邻格组成较大的控制体，内部共享通量抵消，保留真实物面与流体面积。 | **首选，改造成本中等。** 已有拓扑/事务与合并基础；须从单邻居贪心升级为整片质量驱动选择，避免合并后又分回碎片。每个新格须过现有守恒/质量/几何门。 |
+| cell-linking / 聚合自由度 | 积分几何保留小格，在方程层面将其未知量关联到宿主/聚合体，合并或约束残差。 | **备选，成本中高。** 将几何复杂度与独立未知量分开；不能只对速度做平均而保留原压力方程，动量、压力、通量、重构和映射需一致。 |
+| 专用EB压力/扩散离散 | 使用物面法向、面形心及连通模板构建通量；配套多重网格、插值和离散边界处理。 | **与前两条并行设计，成本高。** Johansen–Colella针对特定椭圆问题；LS-STAG针对特定交错框架。结果不能直接移植为当前同位变量SIMPLE保证。 |
+| Flux redistribution / 通量稳定化 | 先得到稳定更新，再把非守恒差额按权重守恒回分，或构造特殊面通量抵消。 | **后续时间推进研究，成本中高。** 主要文献处理双曲/显式更新；局部阶数、边界误差和稳态固定点须另查，不是纯网格修复。 |
+| SRD / WSRD | 构造可重叠邻域，在邻域上加权平均与重构，再保守回分到原格。 | **保留研究选项，成本高。** WSRD已有不可压/低马赫及扩散应用，不能误说只适用Euler；但不自动修复当前压力矩阵，需同时处理散度约束、压力梯度和稳态保持。 |
+| 局部隐式 / explicit–implicit | 小格及邻近过渡格隐式，远处显式，接口复用通量保持守恒。 | **暂不优先。** 能解除特定显式CFL约束；当前稳态求解本就含隐式子问题，仍需处理空间离散病态。混合接口还会引入精度问题。 |
+| 近壁贴体层 + 笛卡尔余域 + 优质过渡区 | 近壁先生成法向层，困难接口移到层外，通过受约束局部网格连接。 | **黏性流重要路线，成本中高。** 本项目已有基础，但圆环目前仍需研究适配器；过渡区本身也必须控制形状、面积跃变及模板，不因近壁层好看即算通过。 |
+| Ghost penalty / aggregated FEM | 在未拟合有限元空间中增加一致稳定项或约束小支撑自由度，控制切割引起的条件数恶化。 | **原理参考，成本很高。** 属于FEM/CutFEM或DG体系，不能把惩罚项、理论条件数结论直接搬进现有FVM，也不作为当前重写求解器的理由。 |
+
+下面的文献按上述用途分组，保留英文全名和可核验的原始链接，方便继续阅读。
+
+| 编号、论文 | 已查范围及可借鉴点 | 不能外推的范围 |
+| --- | --- | --- |
+| L01 Ye, Mittal, Udaykumar & Shyy (1999), [An Accurate Cartesian Grid Method for Viscous Incompressible Flows with Complex Immersed Boundaries](https://engineering.jhu.edu/fsag/wp-content/uploads/2014/06/CGM_JCP-99.pdf), JCP156:209–240, DOI10.1006/jcph.1999.6356 | **全文关键段**，尤其§2、Fig.2：截断格中的流体片段吸收到邻格，构造重新成形的控制体，配合专门插值/面通量。与二维同位变量黏性流直接相关。 | 吸收流体片段不等于按中心丢弃相交格；其投影与空间离散也不能当作本项目SIMPLE已经验证。 |
+| L02 Kirkpatrick, Armfield & Kent (2003), [A representation of curved boundaries for the solution of the Navier–Stokes equations on a staggered three-dimensional Cartesian grid](https://www.sciencedirect.com/science/article/abs/pii/S002199910200013X), JCP184:1–36, DOI10.1016/S0021-9991(02)00013-X | **原出版方摘要/方法预览**：cell-linking，保留边界格几何并关联主从单元，配套压力力、剪切及面形心修正。 | 原文是三维交错网格；不能直接照搬主从映射到现有二维同位变量所有方程。 |
+| L03 M.-H. Chung (2006), [Cartesian cut cell approach for simulating incompressible flows with rigid bodies of arbitrary shape](https://www.sciencedirect.com/science/article/abs/pii/S0045793005000721), Computers & Fluids35:607–623, DOI10.1016/j.compfluid.2005.04.005 | **原出版方摘要**：二维同位有限体积、cell-merging，维持全局质量/动量守恒，有静止及运动刚体例。 | 摘要不足以决定合并模板细节或给出可直接使用的阈值。 |
+| L04 Johansen & Colella (1998), [A Cartesian Grid Embedded Boundary Method for Poisson’s Equation on Irregular Domains](https://www.sciencedirect.com/science/article/pii/S0021999198959654), JCP147:60–85, DOI10.1006/jcph.1998.5965；[作者机构稿](https://escholarship.org/uc/item/08z7t0bm) | **原出版方摘要、作者稿摘要**：特殊保守边界通量，使小体积不显著恶化其离散椭圆矩阵，配套多重网格。 | 原论文的变量位置、Dirichlet椭圆问题与本项目压力修正/壁面处理不同；不是一般任意多边形FVM定理。 |
+| L05 Schwartz, Barad, Colella & Ligocki (2006), [A Cartesian grid embedded boundary method for the heat equation and Poisson’s equation in three dimensions](https://www.sciencedirect.com/science/article/abs/pii/S002199910500286X), JCP211:531–550, DOI10.1016/j.jcp.2005.06.010 | **原出版方摘要/成熟源码引用**：三维热方程、Poisson的EB面/壁通量构造，Basilisk也给出实现关联。 | 不单独授予不可压NS或SIMPLE稳定性。 |
+| L06 (2019), [Accurate discretization of diffusion in the LS-STAG cut-cell method using diamond cell techniques](https://www.sciencedirect.com/science/article/abs/pii/S004579301930146X), Computers & Fluids189:34–45, DOI10.1016/j.compfluid.2019.05.005 | **原出版方摘要/方法预览**：非正交cut格的二点扩散近似存在精度问题；diamond-cell面法向梯度可处理单元/面数据和Dirichlet/Neumann条件。含Taylor–Couette等验证。 | 不是只把网格角度改好，也不是当前FVM全部黏性项的即插即用实现。 |
+| L07 Colella, Graves, Keen & Modiano (2006), [A Cartesian grid embedded boundary method for hyperbolic conservation laws](https://crd.lbl.gov/assets/pubs_presos/AMCS/ANAG/A162.pdf), JCP211:347–366, DOI10.1016/j.jcp.2005.05.026 | **作者机构原文摘要及方法预览**：混合保守/稳定非保守更新，再把守恒差额重分配至邻域。 | 全局L1精度不等于边界逐点精度；不直接解决压力椭圆子问题。 |
+| L08 Berger & Giuliani (2021), [A state redistribution algorithm for finite volume schemes on cut cell meshes](https://www.sciencedirect.com/science/article/abs/pii/S0021999120305945), JCP428:109820, DOI10.1016/j.jcp.2020.109820 | **原出版方摘要/方法概述**：SRD，用临时重叠邻域避免永久几何合并，保持守恒及线性再现。 | 论文主要建立显式双曲更新的办法，不能据此保证稳态黏性SIMPLE。 |
+| L09 Giuliani et al. (2022), [A Weighted State Redistribution Algorithm for Embedded Boundary Grids](https://arxiv.org/html/2112.12360v2), JCP464:111305, DOI10.1016/j.jcp.2022.111305 | **全文关键段§2–5**：连续加权降低邻域敏感性与耗散，讨论梯度模板、对流/扩散及低马赫/不可压应用，给出AMReX-Hydro实现。 | 不能把邻域平均放在现有SIMPLE之后当滤波；散度约束及压力梯度的一致性必须重新设计。 |
+| L10 Berger & Giuliani (2024), [A New Provably Stable Weighted State Redistribution Algorithm](https://arxiv.org/html/2308.16332v2), SISC46(5), DOI10.1137/23M1597484 | **全文关键段**：单调、TVD及GKS稳定分析有明确线性模型、模板和CFL前提；分析预合并益处。 | “provably stable”不是任意不可压黏性方程、任意模板的通用保证。 |
+| L11 Barrio Sanchez et al. (2024), [A new re-redistribution scheme for weighted state redistribution with adaptive mesh refinement](https://www.sciencedirect.com/science/article/pii/S0021999124001281), JCP504:112879, DOI10.1016/j.jcp.2024.112879；[机构接受稿](https://www.osti.gov/servlets/purl/2328105) | **原出版方摘要/机构稿摘要**：cut格跨AMR粗细接口时，还要有re-redistribution才能保持守恒/稳定。 | 将单层WSRD直接搬到四叉树粗细交界是不完整实现。 |
+| L12 Klein, Bates & Nikiforakis (2009), [Well-balanced compressible cut-cell simulation of atmospheric flow](https://doi.org/10.1098/rsta.2009.0174), Phil.Trans.A367:4559–4575 | **原论文摘要**：方向分裂的保守通量稳定化，可按规则格步长推进任意小cut格。 | 大气可压、重力平衡与当前稳态黏性压力耦合是不同任务。 |
+| L13 Berger & Helzel (2012), [A Simplified h-box Method for Embedded Boundary Grids](https://epubs.siam.org/doi/10.1137/110829398), SISC34:A861–A888 | **原出版方摘要/预览**：扩大通量构造区域，利用抵消性质获得稳定、守恒的显式有限体积更新。 | 几何/通量模板复杂，不能仅以大控制体概念套用到黏性压力力。 |
+| L14 May & Berger (2017), [An Explicit Implicit Scheme for Cut Cells in Embedded Boundary Meshes](https://link.springer.com/article/10.1007/s10915-016-0326-2), J.Sci.Comput.71:919–943；[2015作者报告](https://www.sam.math.ethz.ch/sam_reports/reports_final/reports2015/2015-44.pdf) | **期刊摘要及作者报告关键段**：局部隐式、远场显式，用flux bounding处理接口守恒。 | 作者报告与最终稿有版本差别，不能引用报告的所有定理当成最终稿；也不证明现有稳态系统条件良好。 |
+| L15 May & Laakmann (2024), [Accuracy Analysis for Explicit-Implicit Finite Volume Schemes on Cut Cell Meshes](https://link.springer.com/article/10.1007/s42967-023-00345-y), CAMC6:2239–2264 | **开放全文关键段§1–2**：分析显式/隐式切换的精度损失，一维结论不自动扩展到二维。 | 解除稳定性限制仍可能付出局部精度代价。 |
+| L16 Park, Jeong, Lee & Shin (2013), [Hybrid grid generation for viscous flow analysis](https://pure.johnshopkins.edu/en/publications/hybrid-grid-generation-for-viscous-flow-analysis/), IJNMF71:891–909, DOI10.1002/fld.3691 | **作者机构摘要**：近壁四边形/棱柱层、Cartesian余域、尺寸控制和优化的过渡区。 | 原文包含曲面拟合和三角/四面体过渡；本项目不得因此平滑原XY物面或照搬3D核心。它是路线依据，非当前产品资格。 |
+| L17 Burman (2010), [Ghost penalty](https://comptes-rendus.academie-sciences.fr/mathematique/item/10.1016/j.crma.2010.10.006.pdf), C.R.Math.348:1217–1220 | **原文首页/摘要**：用一致惩罚控制切割位置造成的矩阵条件数敏感性。 | 理论建立在有限元空间和特定假设上，不能直接添加到当前FVM矩阵。 |
+| L18 Badia, Verdugo & Martín (2018), [The aggregated unfitted finite element method for elliptic problems](https://www.sciencedirect.com/science/article/pii/S0045782518301476), CMAME336:533–553, DOI10.1016/j.cma.2018.03.022；[作者机构记录](https://research.vu.nl/en/publications/the-aggregated-unfitted-finite-element-method-for-elliptic-proble/) | **原摘要/机构记录**：通过聚合和空间约束避免小切割对条件数的破坏。 | 与FVM的几何合并、投影压力并非同一数学构造。 |
+| L19 Seo & Mittal (2011), [A sharp-interface immersed boundary method with improved mass conservation and reduced spurious pressure oscillations](https://engineering.jhu.edu/fsag/wp-content/uploads/2014/06/JCP_Seo_Mittal_2011_2.pdf), JCP230:7347–7363, DOI10.1016/j.jcp.2011.06.003 | **作者原文摘要/引言**：在压力Poisson及速度修正中用虚拟cut格合并，处理运动边界几何守恒与压力振荡。 | 当前困难例是静态几何；不能把运动边界fresh/dead-cell原因当成本例已定位根因。 |
+| L20 Karell (2026预印本), [Update-Magnitude State Redistribution (UM-SRD): A Shut-off Extension of Weighted SRD for Cut-Cell Methods](https://arxiv.org/html/2605.04863v2), arXiv2605.04863v2 | **预印本关键段**：提出更新趋零时关闭重分配，关注稳态保持；目前给出标量输运模型分析/数值例。 | 本次未见同行评审状态和黏性不可压NS资格，**不作为成熟默认方案**；作者提出的通用性主张也不替代独立核验。 |
+
+成熟实现入口也分清用途：
+
+- [AMReX-Hydro Redistribution](https://github.com/AMReX-Fluids/AMReX-Hydro/tree/development/Redistribution)：L09对应的通量/状态重分配实现；[IAMR](https://github.com/AMReX-Fluids/IAMR)提供不可压NS应用背景。二者与前轮“只取AMReX几何”的实验不是同一完整方法。现有本机AMReX快照并未自动获得这些流动/重分配能力。
+- [Basilisk embed.h](https://basilisk.fr/src/embed.h)：分别处理EB面插值、连通模板、壁面法向梯度和显式小格通量溢出重分配，不能只摘最后一段。其源码还明确指出某些高阶边界梯度与近似投影组合会产生压力—速度反馈，说明“保留小格”需配套离散。
+- [Basilisk couette.c](https://basilisk.fr/src/test/couette.c)：已有旋转圆筒EB收敛测试，但原测试设置 `stokes=true`、半径.25/.5且黏度1，**不是本项目含惯性、半径.5/1、nu=.1工况的既有验证结果**。可供下一轮基准设计参考，本次未运行。
+
+实施优先级明确为：先让物理短壁面不再必然对应独立细小未知量，再做适配离散。短期比较“质量驱动多格聚合/局部重构”和“保留积分格、聚合方程未知量”两种设计；已有近壁混合网格作为黏性对照持续保留。候选目标需同时观察面积比例、角度、紧致度、非正交、有向法向中心距、梯度模板几何和邻接跃变；修改选择策略须保留物面、面积、共享面及事务确定性。不要只合面积不足.1的原格，也不要仅提高某个角度阈值后增加无解样本。
+
+后续最小验收闭环固定原几何和物理边界，保存原最小失败例，记录切割/合并/划分各阶段来源；用原默认控制的自研SIMPLE和成熟SIMPLE回查，再以coupled定位同离散固定点，分别报告动量/连续性/线性残差、整体与局部压力/速度偏差。斜直壁和同一曲壁均需覆盖，网格分辨率与物面离散度分开控制。新阈值和测试规模必须先说明单位/归一化、依据、必要性与成本，不在本次文献调研中自动扩大CFD扫描或全量回归。本次没有变更生产数值代码、策略阈值、默认控制，也没有新求解收敛资格。
+
+图和统计可由既有研究快照重建（原始质量报告来自现有原生实现，不添加独立Python方程审计）：
+
+```sh
+MPLCONFIGDIR=/tmp/cm2d-annulus-mpl python3 tools/benchmarks/plot_cutcell_treatment.py
+```
+
+输入为`outputs/annulus-cross/geos-canonical128.{raw,solver}.cm2d`及其原生质量/阶段报告；缺少本地快照时，用前节冻结几何/GEOS多边形和已有适配器重建。产物为`artifacts/current/cutcell-treatment-review.json`和`cutcell-postprocess-comparison.png`，消费者是后续网格修复、文献选型与同阶段对照。原始失败/场仍保留原归档与`outputs/`，不复制第三方代码/PDF或新增交接文档。
+
 ### 同一圆环交叉实验与解析参照
 
 结果、数值资格和待办只看[当前状态](CURRENT_STATE_CN.md#cut-cell-网格与-simple-的交叉诊断)。`artifacts/current/annulus-cross.json` 记录五张实际网格、四个求解路径、另列的解析 trace 族、场偏差、逐次命令/退出码、源码/二进制和输入哈希。`annulus-cross-fields.tar.gz` 保存代表输入、接受场、原生日志/续算场、外部字典和成熟网格原始交换格式；归档内使用仓库相对路径，先解到独立 `outputs/annulus-replay/` 再选择输入，避免覆盖原始实验。原困难输入亦见既有 `laminar-foundation/failure-inputs.tar.gz`，直壁/旧圆环包仍保留。

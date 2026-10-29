@@ -1,0 +1,1397 @@
+{
+  "format": "cutcell-treatment-review-evidence-v1",
+  "baseCommit": "6223f2a",
+  "stages": [
+    {
+      "stage": "raw",
+      "mesh": "outputs/annulus-cross/geos-canonical128.raw.cm2d",
+      "meshSha256": "0c0b8ce3d6d8926bba1a8545dfc9b5097faa084c2a076e7ea436137857864f07",
+      "quality": "outputs/annulus-cross/geos-canonical128.raw-quality.json",
+      "qualitySha256": "e84b5825210dee624c242573c31619c55c9b7f02f9f95c7c8bbfd71fa4514e4d",
+      "nativeQualityReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": false,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 34.54400863084113,
+          "max_internal_skewness": 0.3061231557868119,
+          "max_boundary_skewness": 12.47786542330681,
+          "max_concavity_deg": 1.406250000003297,
+          "max_cell_aspect": 24.357591503291967,
+          "min_interior_angle_deg": 4.921874999999711,
+          "min_face_length": 0.00026947954656870825,
+          "min_face_weight": 0.01552685922537711,
+          "min_volume_ratio": 0.0009420917829705734,
+          "min_compactness": 0.12389160276447964
+        },
+        "issue_count": 160,
+        "issues": [
+          {
+            "code": 9,
+            "cell_id": 2744,
+            "edge_id": 25,
+            "measured": 0.04128956910901726,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 3212,
+            "edge_id": 43,
+            "measured": 0.041289569109017266,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2426,
+            "edge_id": 80,
+            "measured": 7.237160304066916,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3528,
+            "edge_id": 81,
+            "measured": 7.237160304068037,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2260,
+            "edge_id": 137,
+            "measured": 5.8232471268799495,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3692,
+            "edge_id": 139,
+            "measured": 5.823247126879346,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1896,
+            "edge_id": 311,
+            "measured": 11.131178190112673,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4048,
+            "edge_id": 312,
+            "measured": 11.131178190114213,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1762,
+            "edge_id": 398,
+            "measured": 6.543962959743361,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4178,
+            "edge_id": 400,
+            "measured": 6.543962959742522,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1688,
+            "edge_id": 405,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1688,
+            "edge_id": 405,
+            "measured": 0.005736206170984972,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4178,
+            "edge_id": 406,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4178,
+            "edge_id": 406,
+            "measured": 0.005736206170985329,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1688,
+            "edge_id": 408,
+            "measured": 0.021851186359788933,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1688,
+            "edge_id": 408,
+            "measured": 0.002080424234526118,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4246,
+            "edge_id": 498,
+            "measured": 0.021851186359788936,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4246,
+            "edge_id": 498,
+            "measured": 0.0020804242345262383,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4820,
+            "edge_id": 977,
+            "measured": 0.01989964458619775,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4820,
+            "edge_id": 977,
+            "measured": 0.0014736413901190138,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1028,
+            "edge_id": 980,
+            "measured": 0.019899644586197748,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1028,
+            "edge_id": 980,
+            "measured": 0.0014736413901185565,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1028,
+            "edge_id": 981,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1028,
+            "edge_id": 981,
+            "measured": 0.0009420917829705791,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4900,
+            "edge_id": 1103,
+            "measured": 0.015526859225377242,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4900,
+            "edge_id": 1103,
+            "measured": 0.0009420917829708771,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 800,
+            "edge_id": 1382,
+            "measured": 6.11142927029253,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5134,
+            "edge_id": 1384,
+            "measured": 6.111429270293633,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 590,
+            "edge_id": 1829,
+            "measured": 6.111429270292846,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5350,
+            "edge_id": 1830,
+            "measured": 6.111429270292414,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5485,
+            "edge_id": 2304,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5485,
+            "edge_id": 2304,
+            "measured": 0.0009420917829708639,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 398,
+            "edge_id": 2307,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 398,
+            "edge_id": 2307,
+            "measured": 0.0009420917829705794,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 398,
+            "edge_id": 2308,
+            "measured": 0.019899644586197585,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 398,
+            "edge_id": 2308,
+            "measured": 0.001473641390118551,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5548,
+            "edge_id": 2466,
+            "measured": 0.01989964458619775,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5548,
+            "edge_id": 2466,
+            "measured": 0.0014736413901190082,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2925,
+            "edge_id": 3336,
+            "measured": 4.350414835720774,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3081,
+            "edge_id": 3337,
+            "measured": 4.3504148357209695,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2717,
+            "edge_id": 3518,
+            "measured": 12.477865423298597,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3289,
+            "edge_id": 3519,
+            "measured": 12.4778654233044,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2506,
+            "edge_id": 3688,
+            "measured": 8.111574455496992,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3500,
+            "edge_id": 3689,
+            "measured": 8.111574455497411,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5777,
+            "edge_id": 3696,
+            "measured": 0.02185118635978874,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5777,
+            "edge_id": 3696,
+            "measured": 0.0020804242345261567,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 138,
+            "edge_id": 3699,
+            "measured": 0.021851186359788933,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 138,
+            "edge_id": 3699,
+            "measured": 0.002080424234525629,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 138,
+            "edge_id": 3702,
+            "measured": 0.04061234671300546,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 138,
+            "edge_id": 3702,
+            "measured": 0.005736206170983668,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2398,
+            "edge_id": 3770,
+            "measured": 12.20706846176945,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3608,
+            "edge_id": 3772,
+            "measured": 12.207068461769138,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5824,
+            "edge_id": 3837,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5824,
+            "edge_id": 3837,
+            "measured": 0.005736206170985149,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 139,
+            "edge_id": 3850,
+            "measured": 6.543962959741755,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5825,
+            "edge_id": 3851,
+            "measured": 6.543962959743026,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2287,
+            "edge_id": 3986,
+            "measured": 5.2104629337614865,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3719,
+            "edge_id": 3987,
+            "measured": 5.210462933761349,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 98,
+            "edge_id": 4122,
+            "measured": 11.13117819011355,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5870,
+            "edge_id": 4124,
+            "measured": 11.13117819011344,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2113,
+            "edge_id": 4392,
+            "measured": 6.679578908378482,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3893,
+            "edge_id": 4393,
+            "measured": 6.679578908381573,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2052,
+            "edge_id": 4464,
+            "measured": 6.679578908380195,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3954,
+            "edge_id": 4466,
+            "measured": 6.6795789083788115,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1861,
+            "edge_id": 4904,
+            "measured": 5.210462933761193,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4143,
+            "edge_id": 4905,
+            "measured": 5.210462933761494,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 33,
+            "edge_id": 4906,
+            "measured": 5.823247126879208,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5947,
+            "edge_id": 4907,
+            "measured": 5.823247126879807,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1795,
+            "edge_id": 5142,
+            "measured": 12.207068461768541,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4211,
+            "edge_id": 5143,
+            "measured": 12.20706846176954,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5976,
+            "edge_id": 5252,
+            "measured": 7.237160304064522,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 10,
+            "edge_id": 5254,
+            "measured": 7.23716030406802,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1723,
+            "edge_id": 5314,
+            "measured": 8.111574455497236,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4281,
+            "edge_id": 5316,
+            "measured": 8.111574455498111,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1648,
+            "edge_id": 5768,
+            "measured": 12.477865423305659,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4358,
+            "edge_id": 5770,
+            "measured": 12.47786542330006,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5982,
+            "edge_id": 5934,
+            "measured": 0.04128956910901683,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 0,
+            "edge_id": 5937,
+            "measured": 0.041289569109017266,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1565,
+            "edge_id": 6214,
+            "measured": 4.3504148357206995,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4439,
+            "edge_id": 6216,
+            "measured": 4.350414835720672,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1568,
+            "edge_id": 6600,
+            "measured": 4.3504148357204295,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4442,
+            "edge_id": 6601,
+            "measured": 4.350414835720766,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 9,
+            "edge_id": 6827,
+            "measured": 0.04128956910901726,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5991,
+            "edge_id": 6928,
+            "measured": 0.04128956910901683,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1649,
+            "edge_id": 7046,
+            "measured": 12.477865423306188,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4359,
+            "edge_id": 7047,
+            "measured": 12.477865423302362,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4284,
+            "edge_id": 7500,
+            "measured": 8.111574455496747,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1726,
+            "edge_id": 7501,
+            "measured": 8.111574455498667,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 31,
+            "edge_id": 7614,
+            "measured": 7.2371603040668795,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5997,
+            "edge_id": 7615,
+            "measured": 7.23716030406456,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1796,
+            "edge_id": 7724,
+            "measured": 12.207068461769483,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4212,
+            "edge_id": 7726,
+            "measured": 12.207068461769506,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 60,
+            "edge_id": 7853,
+            "measured": 5.823247126879401,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1864,
+            "edge_id": 7908,
+            "measured": 5.2104629337614865,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4146,
+            "edge_id": 7910,
+            "measured": 5.21046293376123,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5974,
+            "edge_id": 7965,
+            "measured": 5.823247126879524,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2053,
+            "edge_id": 8350,
+            "measured": 6.6795789083799875,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3955,
+            "edge_id": 8351,
+            "measured": 6.6795789083804,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2114,
+            "edge_id": 8480,
+            "measured": 6.679578908380708,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3894,
+            "edge_id": 8482,
+            "measured": 6.6795789083801935,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5909,
+            "edge_id": 8754,
+            "measured": 11.131178190113348,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 137,
+            "edge_id": 8755,
+            "measured": 11.13117819011248,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2288,
+            "edge_id": 8892,
+            "measured": 5.210462933761232,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3720,
+            "edge_id": 8893,
+            "measured": 5.210462933761384,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 182,
+            "edge_id": 8899,
+            "measured": 6.543962959741688,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5868,
+            "edge_id": 9031,
+            "measured": 6.543962959743008,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2399,
+            "edge_id": 9044,
+            "measured": 12.20706846176933,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3609,
+            "edge_id": 9045,
+            "measured": 12.20706846176944,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 182,
+            "edge_id": 9046,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 182,
+            "edge_id": 9046,
+            "measured": 0.005736206170985111,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 183,
+            "edge_id": 9049,
+            "measured": 0.021851186359788936,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 183,
+            "edge_id": 9049,
+            "measured": 0.0020804242345261706,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5868,
+            "edge_id": 9181,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5868,
+            "edge_id": 9181,
+            "measured": 0.005736206170985095,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5822,
+            "edge_id": 9182,
+            "measured": 0.02185118635978874,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5822,
+            "edge_id": 9182,
+            "measured": 0.0020804242345261416,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2507,
+            "edge_id": 9194,
+            "measured": 8.111574455497482,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3501,
+            "edge_id": 9196,
+            "measured": 8.111574455496745,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2718,
+            "edge_id": 9372,
+            "measured": 12.47786542330681,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3290,
+            "edge_id": 9374,
+            "measured": 12.477865423299852,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2926,
+            "edge_id": 9560,
+            "measured": 4.3504148357207075,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3082,
+            "edge_id": 9562,
+            "measured": 4.3504148357207315,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 458,
+            "edge_id": 10428,
+            "measured": 0.01989964458619775,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 458,
+            "edge_id": 10428,
+            "measured": 0.0014736413901190112,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 459,
+            "edge_id": 10431,
+            "measured": 0.015526859225377242,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 459,
+            "edge_id": 10431,
+            "measured": 0.0009420917829708781,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5608,
+            "edge_id": 10586,
+            "measured": 0.019899644586197748,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5608,
+            "edge_id": 10586,
+            "measured": 0.0014736413901185485,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 5546,
+            "edge_id": 10587,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 5546,
+            "edge_id": 10587,
+            "measured": 0.0009420917829705735,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 657,
+            "edge_id": 10912,
+            "measured": 6.1114292702935336,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5417,
+            "edge_id": 11059,
+            "measured": 6.111429270293433,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 873,
+            "edge_id": 11497,
+            "measured": 6.111429270292845,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5207,
+            "edge_id": 11498,
+            "measured": 6.111429270293202,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1106,
+            "edge_id": 11773,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1106,
+            "edge_id": 11773,
+            "measured": 0.0009420917829708643,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1107,
+            "edge_id": 11776,
+            "measured": 0.01989964458619775,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1107,
+            "edge_id": 11776,
+            "measured": 0.0014736413901190056,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4978,
+            "edge_id": 11895,
+            "measured": 0.01552685922537711,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4978,
+            "edge_id": 11895,
+            "measured": 0.0009420917829705734,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4899,
+            "edge_id": 11896,
+            "measured": 0.019899644586197748,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4899,
+            "edge_id": 11896,
+            "measured": 0.0014736413901185461,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1760,
+            "edge_id": 12362,
+            "measured": 0.021851186359788735,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1760,
+            "edge_id": 12362,
+            "measured": 0.002080424234525674,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1761,
+            "edge_id": 12365,
+            "measured": 0.04061234671300546,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1761,
+            "edge_id": 12365,
+            "measured": 0.005736206170983844,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4318,
+            "edge_id": 12452,
+            "measured": 0.02185118635978874,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4318,
+            "edge_id": 12452,
+            "measured": 0.0020804242345260735,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4245,
+            "edge_id": 12453,
+            "measured": 0.04061234671300954,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4245,
+            "edge_id": 12453,
+            "measured": 0.0057362061709849334,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1829,
+            "edge_id": 12457,
+            "measured": 6.543962959743235,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4245,
+            "edge_id": 12458,
+            "measured": 6.543962959742104,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1959,
+            "edge_id": 12464,
+            "measured": 11.131178190114365,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4111,
+            "edge_id": 12543,
+            "measured": 11.131178190113348,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2315,
+            "edge_id": 12702,
+            "measured": 5.8232471268791555,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3747,
+            "edge_id": 12703,
+            "measured": 5.823247126879607,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2479,
+            "edge_id": 12713,
+            "measured": 7.237160304065837,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3581,
+            "edge_id": 12756,
+            "measured": 7.237160304064696,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 2794,
+            "edge_id": 12781,
+            "measured": 0.04128956910901683,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 3262,
+            "edge_id": 12799,
+            "measured": 0.041289569109016835,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          }
+        ]
+      }
+    },
+    {
+      "stage": "solver",
+      "mesh": "outputs/annulus-cross/geos-canonical128.solver.cm2d",
+      "meshSha256": "d2380a529e3987cb5b43ffb7f67747284a7f025ade05bbc0f9fe10cb13fc3e21",
+      "quality": "outputs/annulus-cross/geos-canonical128.quality.json",
+      "qualitySha256": "73789e142afad2911a46f846a4f8e7c1cb4679693df779dc29fcacaf2bb0062a",
+      "nativeQualityReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.12914639228322,
+          "max_internal_skewness": 1.8503914348294397,
+          "max_boundary_skewness": 3.9568247543865063,
+          "max_concavity_deg": 1.406250000003297,
+          "max_cell_aspect": 60.782352490159134,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.00026947954656870825,
+          "min_face_weight": 0.05436585618021483,
+          "min_volume_ratio": 0.011698460263294371,
+          "min_compactness": 0.05114853189731027
+        },
+        "issue_count": 0,
+        "issues": []
+      }
+    }
+  ],
+  "processing": {
+    "mode": "geos",
+    "n": 128,
+    "rawCells": 6008,
+    "cells": 6208,
+    "area": 2.3559579381994724,
+    "expectedArea": 2.355957938199583,
+    "requestedLayerCells": 0,
+    "retainedLayerCells": 0,
+    "mergedSmallCells": 112,
+    "qualityRepartitions": 134,
+    "qualityIssues": 0
+  },
+  "notes": [
+    "Existing native metric reports only; this is not a new mesh/solver acceptance gate.",
+    "Raw input fails existing quality and is not presented as solver-ready.",
+    "Postprocessing includes small-cell agglomeration, convex partition and local repartition; this two-stage snapshot does not isolate the contribution of each operation.",
+    "Both stages retain original physical walls.",
+    "The original-versus-GEOS solver comparison shares native postprocessing and cannot exclude defects in that stage."
+  ],
+  "policyHistory": {
+    "minInteriorAngleDeg": 0.5,
+    "minNeighbourAreaRatio": 0.01,
+    "originalCutFractionMergeTrigger": 0.1,
+    "solverQualityPolicyIntroduced": "10fa0f7 (2026-08-24), export gate",
+    "areaRatioGateIntroduced": "f604042 (2026-08-24)",
+    "smallCellPolicyIntroduced": "1300ec2 (2026-08-19)"
+  },
+  "codeFindings": {
+    "strictConvexFilter": "src/quality/SolverTopology2D.cpp:34-52; original 5c46daa, strengthened 4b0af3f",
+    "partition": "src/quality/SolverTopology2D.cpp:606-643; non-preserved non-rectangle non-strictly-convex sources are partitioned",
+    "geometryImplication": "The fluid-side boundary around a convex polygonal solid has reflex corners. Preserving multiple physical facets in one integration polygon conflicts with the current strict-convex default filter.",
+    "smallCellSelection": "src/stabilization/SmallCell2D.cpp:94-166; original cut area fraction selects cells; neighbour ranking uses non-small/shared length/alpha/area, not full post-merge solver conditioning.",
+    "scope": "Current-source mechanism plus existing before/after snapshots; not a per-diagonal lineage proof or a new flow run."
+  },
+  "status": "Mesh treatment is now the first repair priority; no production algorithm or threshold changed by this literature review."
+}
