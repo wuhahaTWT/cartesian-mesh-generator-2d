@@ -71,6 +71,43 @@ python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensio
 
 当前成功、失败和精度限制只看[当前状态](CURRENT_STATE_CN.md#simple-源码对照诊断)。`simple-source-comparison-fields.tar.gz` 保存原四组及失败；`simple-source-followup-fields.tar.gz`保存更正受力、压力拆分失败、回退对照及细圆环代表场/原生日志/启动清单，供后续压力离散修复和同输入续算研究。原网格仍复用既有失败输入包。临时编译单元、对象和二进制保留在本机`outputs/`，可由脚本重建，不提交整份源码副本或新安装包。
 
+### Cut-cell 交叉实验
+
+`tools/benchmarks/amrex_cutcell/` 是显式构建的原生二维几何参考工具；`cutcell_cross.py` 只编排真实程序、读取几何/场并计算解析误差，不另建有限体积方程。当前仅支持单位方域中 `y>.5x+b` 的单条平面切割，**不是通用 AMReX 网格导入器**。AMReX 输出实际二维 EB 面开口比例及形心，适配器按共享笛卡尔面身份连接开口端点，再经原生全局拓扑装配。自研路径调用现有原生二维切割器，双方可选同一个原有 `.1` 小单元合并器；因此交叉比较独立切割几何及独立外部求解，没有声称独立比较了整套拓扑装配/合并策略。
+
+本机只读 AMReX 快照程序自报 **26.08**，没有可核验的本地 Git commit，准确来源范围及实际源文件树 SHA 由 `artifacts/current/cutcell-cross.json` 记录，不虚构上游提交。外部源码不修改、不复制入仓库，参考 [AMReX EB2 文档](https://amrex-codes.github.io/amrex/docs_html/EB.html)。CMake 强制 `AMReX_SPACEDIM=2`、CPU、无 MPI/Fortran；原生求解器不会因此新增运行依赖。参考 OpenFOAM 为本机已有 **OpenCFD 2606 arm64** 镜像，脚本按实际 digest 固定；单层挤出和 `empty` 仅用于外部二维问题交换，不把三维生成器压成二维。
+
+AMReX 几何研究显式设 `eb2.small_volfrac=0`，防止把极小流体部分删除后误称为“小单元求解成功”；不改上游默认或本产品门。适配器的面积分数与形心偏差分别按背景格面积/间距归一化，`1e-9` 仅为导入一致性拒绝预算：高于双精度构造舍入、低于最小样本面积分数，用于发现转换错误，检查成本与导入格数成正比；实际偏差在舍入范围。共享端点只在 `64 epsilon` 格坐标舍入范围认作网格角点，不用这个预算删除可解析短边。求解仍执行原 Solver 质量、守恒和线性/非线性停止门。
+
+先构建根目录现有库及 CLI，再单独构建参考工具；下面的新实验目录须不存在，重复研究换新目录，不覆盖已有接受场和失败记录：
+
+```sh
+cmake --build build --target cartmesh2d_flow_cli cartmesh2d_cli --parallel 4
+cmake -S tools/benchmarks/amrex_cutcell -B outputs/cutcell-cross-reproduce/amrex-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang -DAMREX_SOURCE=/Users/Zhuanz/Desktop/mesh-reference-sources/amrex-development -DCARTMESH_ROOT=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d
+cmake --build outputs/cutcell-cross-reproduce/amrex-build --target cutcell_reference --parallel 4
+python3 tools/benchmarks/cutcell_cross.py --phase generate --root outputs/cutcell-cross-reproduce/matrix --adapter outputs/cutcell-cross-reproduce/amrex-build/cutcell_reference
+python3 tools/benchmarks/cutcell_cross.py --phase native --root outputs/cutcell-cross-reproduce/matrix
+python3 tools/benchmarks/cutcell_cross.py --phase prepare-foam --root outputs/cutcell-cross-reproduce/matrix
+python3 tools/benchmarks/cutcell_cross.py --phase foam --root outputs/cutcell-cross-reproduce/matrix
+python3 tools/benchmarks/cutcell_cross.py --phase collect --root outputs/cutcell-cross-reproduce/matrix
+```
+
+Docker daemon 须可用；`foam` 阶段只启动固定镜像，逐例运行标准/扩展 `checkMesh` 与 `simpleFoam`，每例45秒研究预算。首次挂载权限/镜像入口错误单独保留，不当成数值失败。原生逐例60秒、1500轮预算；超过预算或上限不算收敛。两者均显式零速度/压力迭代初值，边界速度取同一解析面均值。原生 strict `1e-8` 的尺度/停止门与 OpenFOAM 自身 `residualControl` 分别记录；不从轮数推出提速，也不把两套有限体积离散视为同一个代数系统。解析 L2 只作诊断，单位为速度 `m/s`、去均值运动学压力 `m²/s²`，未新增精度通过阈值。`generate` 中的12位坐标签名仅用于匹配两份输出多边形，不进入几何或求解。
+
+`tools/benchmarks/annulus_merge_probe.cpp` 是原圆环的**固定物面合并干预**。选择量为“单元面积 / 最大相邻单元面积”，不是失去背景 lineage 后猜出的 Cut-cell alpha；`.02/.05/.1` 是本次研究干预档，保留既有 `.01` 相邻面积比质量底线，未改产品策略。默认档将被选择的小格与最长共享边的非小邻居合并，可能产生新的质量失败；`greedy` 档逐候选调用原合并器并保持全部原 Solver 质量门，仅接受通过的候选。它会反复全局重建/检查，成本和拒绝次数单列，**不是新的生产高效修复算法**，不能因输出了较少单元就宣布成功。
+
+```sh
+/usr/bin/clang++ -std=c++20 -O2 -Iinclude tools/benchmarks/annulus_merge_probe.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/cutcell-cross-reproduce/annulus_merge_probe
+outputs/cutcell-cross-reproduce/annulus_merge_probe build/laminar-fixtures/annulus-l7.solver.cm2d outputs/cutcell-cross-reproduce/annulus-noop .01
+outputs/cutcell-cross-reproduce/annulus_merge_probe build/laminar-fixtures/annulus-l7.solver.cm2d outputs/cutcell-cross-reproduce/annulus-direct02 .02
+outputs/cutcell-cross-reproduce/annulus_merge_probe build/laminar-fixtures/annulus-l7.solver.cm2d outputs/cutcell-cross-reproduce/annulus-guarded02 .02 greedy
+outputs/cutcell-cross-reproduce/annulus_merge_probe build/laminar-fixtures/annulus-l7.solver.cm2d outputs/cutcell-cross-reproduce/annulus-guarded05 .05 greedy
+```
+
+没有 `build/laminar-fixtures` 时，从既有 `artifacts/current/laminar-foundation/failure-inputs.tar.gz` 解包到忽略目录并替换输入路径。退出码3表示有效几何导出但 Solver 质量拒绝，不生成供原生求解的边界文件；退出码1是构建/候选失败。获准网格再用原生 CLI 的 `--case custom --boundary PREFIX.boundaries --nu .1 --speed .5 --convection upwind --coupling simple|coupled --linear-policy strict --tolerance 1e-8 --max-iterations 1500 --profile --output NEW_PREFIX` 运行。原6,208格输入、无合并重建及合并后场分别保存，合并可能去除共线分面，不能忽略重建控制。
+
+结论和未解决问题见[当前状态](CURRENT_STATE_CN.md#cut-cell-网格与-simple-的交叉诊断)。`cutcell-cross-fields.tar.gz` 保存直斜壁12份实际网格/质量、统一零初值后的接受场、外部控制/检查/场和原圆环失败/合并证据，供后续诊断与复算。第一次使用原生默认初值的直斜壁运行未进入最终对照；构建目录和第三方库仅留本机 `outputs/`，不提交源码快照或二进制依赖。
+
 ### SIMPLER 与 PIMPLE
 
 `FlowCoupling2D::Simpler` / `::Pimple` 在 `src/fv/Incompressible2D.cpp` 复用原动量装配、Rhie–Chow、压力边界及严格停止条件，CLI 用 `--coupling simpler|pimple`。桌面开放 SIMPLE、既有 SIMPLEC 和这两种扩展，默认仍 SIMPLE；当前资格和失败见[当前状态](CURRENT_STATE_CN.md#simple-系列扩展)。成熟算法的本地实现不自动继承外部软件的精度资格。
