@@ -1,0 +1,474 @@
+{
+  "format": "cartmesh2d-mesh-shape-limits-v1",
+  "scope": "Research-only native shape screens; no production policy change and no flow runs.",
+  "baseCommit": "d36345e",
+  "cases": [
+    {
+      "cells": 6208,
+      "currentNativeReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 1.8503914348294581,
+          "max_boundary_skewness": 3.896372973988778,
+          "max_concavity_deg": 1.406250000005116,
+          "max_cell_aspect": 60.782352490153954,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.054365856180213966,
+          "min_volume_ratio": 0.011698460263296226,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 0
+      },
+      "screens": [
+        {
+          "name": "shape-rejection-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 60,
+          "maxHydraulicAspect": 20,
+          "minInteriorAngleDeg": 10,
+          "passes": false,
+          "issueEvents": 70,
+          "issueCounts": {
+            "hydraulicAspect": 14,
+            "interiorAngle": 29,
+            "nonOrthogonality": 27
+          }
+        },
+        {
+          "name": "generation-target-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 45,
+          "maxHydraulicAspect": 10,
+          "minInteriorAngleDeg": 20,
+          "passes": false,
+          "issueEvents": 260,
+          "issueCounts": {
+            "hydraulicAspect": 78,
+            "interiorAngle": 103,
+            "nonOrthogonality": 79
+          }
+        }
+      ],
+      "nativeMetricCalibration": {
+        "squareHydraulicAspect": 2,
+        "rectangle10By1HydraulicAspect": 11
+      },
+      "scope": "Read-only shape screening; existing native kernels; no CFD run or convergence qualification. Issue events are not unique cell counts. Other policy values unchanged.",
+      "case": "original",
+      "mesh": "build/laminar-fixtures/annulus-l7.solver.cm2d",
+      "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+      "run": {
+        "command": [
+          "outputs/mesh-shape-limits/probe",
+          "build/laminar-fixtures/annulus-l7.solver.cm2d",
+          "outputs/mesh-shape-limits/original.json"
+        ],
+        "seconds": 1.7946317909954814,
+        "exitCode": 0
+      }
+    },
+    {
+      "cells": 3637,
+      "currentNativeReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 68.62529190154024,
+          "max_internal_skewness": 1.1470500516103317,
+          "max_boundary_skewness": 3.538734459980804,
+          "max_concavity_deg": 1.406250000014154,
+          "max_cell_aspect": 22.79843117759534,
+          "min_interior_angle_deg": 9.226060439958863,
+          "min_face_length": 8.420622373980096e-05,
+          "min_face_weight": 0.05581835963898579,
+          "min_volume_ratio": 0.011320623218215366,
+          "min_compactness": 0.13673004040196673
+        },
+        "issue_count": 0
+      },
+      "screens": [
+        {
+          "name": "shape-rejection-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 60,
+          "maxHydraulicAspect": 20,
+          "minInteriorAngleDeg": 10,
+          "passes": false,
+          "issueEvents": 40,
+          "issueCounts": {
+            "hydraulicAspect": 8,
+            "interiorAngle": 8,
+            "nonOrthogonality": 24
+          }
+        },
+        {
+          "name": "generation-target-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 45,
+          "maxHydraulicAspect": 10,
+          "minInteriorAngleDeg": 20,
+          "passes": false,
+          "issueEvents": 216,
+          "issueCounts": {
+            "hydraulicAspect": 72,
+            "interiorAngle": 96,
+            "nonOrthogonality": 48
+          }
+        }
+      ],
+      "nativeMetricCalibration": {
+        "squareHydraulicAspect": 2,
+        "rectangle10By1HydraulicAspect": 11
+      },
+      "scope": "Read-only shape screening; existing native kernels; no CFD run or convergence qualification. Issue events are not unique cell counts. Other policy values unchanged.",
+      "case": "geos96",
+      "mesh": "outputs/annulus-cross/geos96.solver.cm2d",
+      "meshSha256": "1e8183b30455850d6c9838c3ecf0c221a21a5cf7f0ebe3dbcc851158bf696854",
+      "run": {
+        "command": [
+          "outputs/mesh-shape-limits/probe",
+          "outputs/annulus-cross/geos96.solver.cm2d",
+          "outputs/mesh-shape-limits/geos96.json"
+        ],
+        "seconds": 0.02147220799815841,
+        "exitCode": 0
+      }
+    },
+    {
+      "cells": 6208,
+      "currentNativeReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.12914639228322,
+          "max_internal_skewness": 1.8503914348294397,
+          "max_boundary_skewness": 3.9568247543865063,
+          "max_concavity_deg": 1.406250000003297,
+          "max_cell_aspect": 60.782352490159134,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.00026947954656870825,
+          "min_face_weight": 0.05436585618021483,
+          "min_volume_ratio": 0.011698460263294371,
+          "min_compactness": 0.05114853189731027
+        },
+        "issue_count": 0
+      },
+      "screens": [
+        {
+          "name": "shape-rejection-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 60,
+          "maxHydraulicAspect": 20,
+          "minInteriorAngleDeg": 10,
+          "passes": false,
+          "issueEvents": 73,
+          "issueCounts": {
+            "hydraulicAspect": 13,
+            "interiorAngle": 28,
+            "nonOrthogonality": 32
+          }
+        },
+        {
+          "name": "generation-target-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 45,
+          "maxHydraulicAspect": 10,
+          "minInteriorAngleDeg": 20,
+          "passes": false,
+          "issueEvents": 285,
+          "issueCounts": {
+            "hydraulicAspect": 83,
+            "interiorAngle": 114,
+            "nonOrthogonality": 88
+          }
+        }
+      ],
+      "nativeMetricCalibration": {
+        "squareHydraulicAspect": 2,
+        "rectangle10By1HydraulicAspect": 11
+      },
+      "scope": "Read-only shape screening; existing native kernels; no CFD run or convergence qualification. Issue events are not unique cell counts. Other policy values unchanged.",
+      "case": "geos128",
+      "mesh": "outputs/annulus-cross/geos-canonical128.solver.cm2d",
+      "meshSha256": "d2380a529e3987cb5b43ffb7f67747284a7f025ade05bbc0f9fe10cb13fc3e21",
+      "run": {
+        "command": [
+          "outputs/mesh-shape-limits/probe",
+          "outputs/annulus-cross/geos-canonical128.solver.cm2d",
+          "outputs/mesh-shape-limits/geos128.json"
+        ],
+        "seconds": 0.028486915995017625,
+        "exitCode": 0
+      }
+    },
+    {
+      "cells": 6795,
+      "currentNativeReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 63.076329189094594,
+          "max_internal_skewness": 3.3193138985378368,
+          "max_boundary_skewness": 3.9576820499781062,
+          "max_concavity_deg": 44.999999999999915,
+          "max_cell_aspect": 38.06657112304436,
+          "min_interior_angle_deg": 3.2754000084939463,
+          "min_face_length": 0.00035361491507913517,
+          "min_face_weight": 0.05754955150154745,
+          "min_volume_ratio": 0.010627385516027571,
+          "min_compactness": 0.08176543437648438
+        },
+        "issue_count": 0
+      },
+      "screens": [
+        {
+          "name": "shape-rejection-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 60,
+          "maxHydraulicAspect": 20,
+          "minInteriorAngleDeg": 10,
+          "passes": false,
+          "issueEvents": 48,
+          "issueCounts": {
+            "hydraulicAspect": 13,
+            "interiorAngle": 23,
+            "nonOrthogonality": 12
+          }
+        },
+        {
+          "name": "generation-target-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 45,
+          "maxHydraulicAspect": 10,
+          "minInteriorAngleDeg": 20,
+          "passes": false,
+          "issueEvents": 205,
+          "issueCounts": {
+            "hydraulicAspect": 54,
+            "interiorAngle": 84,
+            "nonOrthogonality": 67
+          }
+        }
+      ],
+      "nativeMetricCalibration": {
+        "squareHydraulicAspect": 2,
+        "rectangle10By1HydraulicAspect": 11
+      },
+      "scope": "Read-only shape screening; existing native kernels; no CFD run or convergence qualification. Issue events are not unique cell counts. Other policy values unchanged.",
+      "case": "hybrid",
+      "mesh": "outputs/annulus-cross/preserved-hybrid.solver.cm2d",
+      "meshSha256": "1a5f01175e0b116bf60d5bb584ec1243e0f6958ff10ebac0bed6d326b602251b",
+      "run": {
+        "command": [
+          "outputs/mesh-shape-limits/probe",
+          "outputs/annulus-cross/preserved-hybrid.solver.cm2d",
+          "outputs/mesh-shape-limits/hybrid.json"
+        ],
+        "seconds": 0.028817625003284775,
+        "exitCode": 0
+      }
+    },
+    {
+      "cells": 4004,
+      "currentNativeReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 21.67678447778578,
+          "max_internal_skewness": 0.4563337343994037,
+          "max_boundary_skewness": 0.5169609066759576,
+          "max_concavity_deg": 0,
+          "max_cell_aspect": 3.2162047741481903,
+          "min_interior_angle_deg": 53.911315914769105,
+          "min_face_length": 0.009708871823436728,
+          "min_face_weight": 0.29083764201047196,
+          "min_volume_ratio": 0.3249273837641163,
+          "min_compactness": 0.6734822404048006
+        },
+        "issue_count": 0
+      },
+      "screens": [
+        {
+          "name": "shape-rejection-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 60,
+          "maxHydraulicAspect": 20,
+          "minInteriorAngleDeg": 10,
+          "passes": true,
+          "issueEvents": 0,
+          "issueCounts": {}
+        },
+        {
+          "name": "generation-target-candidate",
+          "installedAsDefault": false,
+          "maxNonOrthogonalityDeg": 45,
+          "maxHydraulicAspect": 10,
+          "minInteriorAngleDeg": 20,
+          "passes": true,
+          "issueEvents": 0,
+          "issueCounts": {}
+        }
+      ],
+      "nativeMetricCalibration": {
+        "squareHydraulicAspect": 2,
+        "rectangle10By1HydraulicAspect": 11
+      },
+      "scope": "Read-only shape screening; existing native kernels; no CFD run or convergence qualification. Issue events are not unique cell counts. Other policy values unchanged.",
+      "case": "cfmesh",
+      "mesh": "outputs/annulus-cross/cfmesh-native.solver.cm2d",
+      "meshSha256": "6d8600b34be1c75f2ec94350ae4cb80b1ccd527533aec6ac58184fd7f21578c1",
+      "run": {
+        "command": [
+          "outputs/mesh-shape-limits/probe",
+          "outputs/annulus-cross/cfmesh-native.solver.cm2d",
+          "outputs/mesh-shape-limits/cfmesh.json"
+        ],
+        "seconds": 0.019063415995333344,
+        "exitCode": 0
+      }
+    }
+  ],
+  "sourceSha256": "c2aef8b31c479db334b95e2ba02133d4c270da433c7db856570f7ac2748bdf84",
+  "binarySha256": "fb80de82c4a9dc09439c72cbc75cf270f2490d69ef872be643e66c74509995ba",
+  "metricDefinition": {
+    "hydraulicAspect": "max(edge length) * perimeter / (2*area); square=2; a>=b rectangle=a/b+1",
+    "nonOrthogonality": "angle between internal face normal and cell-centre connector in degrees",
+    "interiorAngle": "minimum actual polygon interior angle in degrees"
+  },
+  "candidateRationale": {
+    "shape-rejection-candidate": "60 degrees below the official 65-degree meshing example; hydraulic aspect20 and min angle10 are project screening hypotheses, not vendor standards or proven stability limits.",
+    "generation-target-candidate": "45 degrees / hydraulic aspect10 / min angle20 are aspirational engineering targets, not production requirements.",
+    "limits": "Same three measures are tightened only for read-only screening. All remaining legacy policy values unchanged. Deliberate anisotropic layers and physical acute corners require separate treatment before any production adoption."
+  },
+  "sourceEvidence": {
+    "OpenFOAM primitive checker": {
+      "path": "/Users/Zhuanz/Desktop/mesh-reference-sources/OpenFOAM-v2606-source/src/OpenFOAM/meshes/primitiveMesh/primitiveMeshCheck/primitiveMeshCheck.C",
+      "sha256": "a814f97f7083e02bea98c667b5ca7d8bbad66cbbbf30ba323d2aaea738fdc8ee"
+    },
+    "OpenFOAM meshing config": {
+      "path": "/Users/Zhuanz/Desktop/mesh-reference-sources/OpenFOAM-v2606-source/etc/caseDicts/mesh/generation/meshQualityDict.cfg",
+      "sha256": "29449ad8fd9bf73897d783170054625ab4e6a3ed530b26ec536c12ac404515aa"
+    },
+    "cfMesh checks snapshot": {
+      "path": "/Users/Zhuanz/Desktop/mesh-reference-sources/cfMesh-1.2.0/meshLibrary/utilities/meshes/polyMeshGenChecks/polyMeshGenChecksGeometry.C",
+      "sha256": "90040cfea572305593ee9dea0c9d22703836740c66c73941ad3ac92e5c6f00a4"
+    },
+    "cfMesh 2D workflow snapshot": {
+      "path": "/Users/Zhuanz/Desktop/mesh-reference-sources/cfMesh-1.2.0/meshLibrary/cartesian2DMesh/cartesian2DMeshGenerator/cartesian2DMeshGenerator.C",
+      "sha256": "0a25900ea127106162b18fd84526a98b762cfd6e2e555239f1c54865f66a036c"
+    },
+    "native shape definitions": {
+      "path": "src/quality/SolverQuality2D.cpp",
+      "sha256": "e99b0e1666d1af97e3f191788ca968afd743ee2793f05bc6252f62c031d2513b"
+    },
+    "native existing policy": {
+      "path": "include/cartmesh2d/quality/SolverQuality2D.hpp",
+      "sha256": "20f651d0e902fe9261dadb17c57080a1238a25f1322dcaf1249ab70a30de4bf4"
+    }
+  },
+  "referenceFacts": [
+    {
+      "source": "OpenFOAM primitive checker",
+      "kind": "default diagnostic thresholds, not generation targets or solver qualification",
+      "nonOrthogonalityDeg": 70,
+      "aspectThreshold": 1000,
+      "skewness": 4,
+      "metricCaution": "OpenFOAM aspect definition is different from native 2D hydraulic aspect."
+    },
+    {
+      "source": "OpenFOAM meshing config",
+      "kind": "configurable meshing controls",
+      "maxNonOrtho": 65,
+      "relaxedMaxNonOrtho": 75,
+      "maxInternalSkewness": 4,
+      "maxBoundarySkewness": 20,
+      "minFaceWeight": 0.05,
+      "minVolRatio": 0.01
+    },
+    {
+      "source": "cfMesh checks snapshot",
+      "kind": "findLowQualityFaces reference routine explicitly checks 65deg/2; not proof every workflow invokes this routine or every completed mesh meets those values",
+      "maxNonOrthogonality": 65,
+      "maxSkewness": 2,
+      "version": "local 1.2.0 reference snapshot; not asserted identical to previously executed foam-extend image"
+    },
+    {
+      "source": "Ansys Discovery 2025R1 fluid monitoring",
+      "url": "https://ansyshelp.ansys.com/public/Views/Secured/corp/v251/en/discovery/UDA/user_manual/solver/topics/c_simulation_mesh_quality.html",
+      "orthogonalQuality": 0.1,
+      "skewness": 0.95,
+      "aspectRatio": 20,
+      "activation": "Only orthogonal quality enabled by default; skewness/aspect monitoring off by default; definitions not interchangeable with native metrics."
+    },
+    {
+      "source": "Ansys Discovery 2025R2 best practices",
+      "url": "https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/discovery/UDA/user_manual/meshing/topics/r_meshquality_bestpractices.html",
+      "facts": "Fluid OQ>0.01 minimum with higher average; OQ<0.1 affects convergence; tetrahedral skewness<0.95; fluid stretching depends on direction and smoothness. The <5 aspect recommendation on this page belongs to STRUCTURAL metrics, not a universal fluid criterion."
+    }
+  ],
+  "scopeDecision": "Current stage is exclusively native 2D mesh generation and quality screening; existing solvers are frozen validation consumers. No redistribution, pressure stencil, unknown aggregation or solver changes.",
+  "independentImplementation": "Third-party definitions, numerical settings and public process descriptions are references only; no third-party implementation copied, linked or transplanted."
+}
