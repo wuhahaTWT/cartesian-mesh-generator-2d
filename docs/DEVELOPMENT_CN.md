@@ -128,6 +128,42 @@ outputs/mesh-shape-limits/probe build/laminar-fixtures/annulus-l7.solver.cm2d ou
 
 消费者是下一步网格生成改造：保持原物面，重新设计内部点与连接、质量驱动的多格聚合/重构；不要让短边数量强制决定独立单元数，不以严格凸划分的过门率代替整体形状改善。先交付真正满足较好形状的自研网格，再用当前不变求解器验证。仅调整质量数字而继续产生同样碎片不算修复。文献中涉及改变自由度或方程的办法保留为资料，不纳入当前工作。
 
+### PC 网格因素与成熟求解器实验
+
+能力、数值/物理资格和当前结论见[当前状态](CURRENT_STATE_CN.md#pc-网格因素与成熟求解器对照)，逐组数字及资源见[HTML](../artifacts/current/pc-mesh-study.html)和[JSON](../artifacts/current/pc-mesh-study.json)。工具只编排现有原生/成熟求解器、交换真实网格/场并绘图，不组装重复FV方程。普通桌面和产品默认不变。
+
+- 原生研究入口：`cartmesh2d_annulus_mesh_cross`，CMake目标为EXCLUDE_FROM_ALL；沿用单个源码，Windows产物位于`build/Release/`。旧`native`、`shape`、`geos`、`ready`等模式保留。新选项`--wall-refine 1`在离物面小于1.5h的原背景格内切成四个子格，再走同一真实Cut-cell/拓扑/形状聚合；只做一级局部加密。共享全局拓扑处理粗细接口，未将中心采样当切割。
+- `--distance-index 1`复用既有`BoundarySegmentIndex2D`；0保留全边界扫描供同输入成本对照。`--area-ratio 2`、`--phase X Y`分别测试有界聚合面积预算和以h归一的背景平移。原XY不移动；相位改变的是包围背景域。质量目标沿用既有45°/形状比10/内角20°，不改物理门。
+- `pc_meshing/gmsh_reference.py`使用成熟Gmsh的Transfinite贴壁映射或Frontal-Delaunay三角网格，全部原始物面顶点保留，沿原直段细分；映射参考是圆环专用。原生`ready`导入不做质量修复，随后由已有`--case annulus --export-boundaries`原生模板核对正规双环并导出边界，不能给任意外部网格猜边界。
+- Fluent直接读取真实二维面式ASCII网格并先执行mesh check；不调用repair。case/data是权威字段来源；完整节点/单元面连接建立身份，数据集minId/maxId和同次保存的case文件名核对，全场速度与ASCII导出交叉检查。ASCII行序号和保存后压力常数不能冒充跨格式单元身份/压力差。
+- Firedrake独立参考是在成熟组装/PETSc上编写的稳态混合有限元变分形式，复用原HydroGym镜像而非直接把原圆柱模型当作通用FV读入器；使用同一冻结多边形网格、CG2/CG1（三角P2/P1、四边形Q2/Q1）、PETSc/MUMPS。其解析trace边界显式单列，保存`accepted.h5`；不是原逐直边切向壁面问题的直接精度对照。原生解析trace复用已有生成器，达到预算或上限仍不计收敛。
+- 计时器区分Windows进程树采样、Linux自身/子进程CPU和RSS；Fluent的启动/逐壁面配置成本包含在完整时间。Docker客户端RSS不作求解器RSS。Bash超长时间小数格式故障保留原值，无法可靠解析的CPU量留空；后续用整数秒精度。新shell文件固定LF，避免Windows换行使路径带CR。
+
+复用本机`D:\gas-turbine-envs\windows-runtime\python.exe`中的PyFluent、NumPy、Matplotlib、h5py和psutil，不修改gas-turbine。原有HydroGym/Firedrake镜像加少量Gmsh系统库得到独立`cartmesh2d-meshing-study:local`；原镜像不变，镜像ID/逻辑体积在报告。准备/复现示例（源码根目录PowerShell，CMake用已安装VS路径或上节工具入口）：
+
+```powershell
+$python = 'D:\gas-turbine-envs\windows-runtime\python.exe'
+New-Item -ItemType Directory -Force outputs/shape-replay | Out-Null
+tar -xzf artifacts/current/annulus-cross-fields.tar.gz -C outputs/shape-replay outputs/annulus-cross/original-physical-walls.xy
+cmake --build build --config Release --target cartmesh2d_annulus_mesh_cross cartmesh2d_flow_cli
+docker build -t cartmesh2d-meshing-study:local tools/benchmarks/pc_meshing
+& $python tools/benchmarks/pc_meshing/study.py generate
+& $python tools/benchmarks/pc_meshing/study.py indexed
+& $python tools/benchmarks/pc_meshing/study.py native --names shape160 --coupling coupled --linear-policy adaptive --preconditioner aggregation --tolerance 1e-8 --iterations 100 --budget 600 --tag replay
+& $python tools/benchmarks/pc_meshing/external.py fluent --names gmsh65k --cores 2 --coupling coupled --tolerance 1e-8 --budget 900
+& $python tools/benchmarks/pc_meshing/external.py firedrake --names gmsh65k --budget 600
+& $python tools/benchmarks/pc_meshing/external.py openfoam --names graded128 --tolerance 1e-8 --budget 300 --tag replay
+& $python tools/benchmarks/pc_meshing/postprocess.py
+& $python tools/benchmarks/pc_meshing/report.py
+& $python tools/benchmarks/pc_meshing/plot_fields.py
+& $python tools/benchmarks/pc_meshing/test_interchange.py
+& $python tools/benchmarks/test_openfoam_interchange.py
+```
+
+每个run记录命令、退出码、预算和资源，已结束记录可复用；新参数用新tag/前缀，不覆盖接受场。研究求解可长达数分钟，启动/输入错误、质量拒绝、数值失败、迭代上限和墙钟预算分别记录。按需选择组运行，不以同一超时反复延长替代定位。强制超时若只保留日志前缀，不称作场或检查点。
+
+HTML可直接双击打开，PNG和JSON须与其放在同目录；绘图读取真实接受场，色标不删离群压力。浏览器连接可用时再做页面检查；本轮只完成生成图人工核对。大版本结束先看JSON的storage/roles及大文件清单：继续计算的网格/边界、接受场/面通量、case/data或HDF5和代表失败保留；可重建预览、缓存、成功中间阶段和实验镜像再按用途清理。未引入定时删除，也不删除原gas-turbine环境、参考包或原始失败材料。
+
 ### 曲壁形状驱动聚合入口
 
 `agglomerateSolverByShape2D` 位于 `quality/SolverTopology2D`；普通 CLI 显式加 `--shape-agglomeration` 使用该路径，跳过旧的面积分数邻格选择和普通源单元凸分解。它不是取消最终质量检查：原门全部保留，再以此前提出的45°内部非正交、原生形状比10和最小角20°作为生成目标。角度单位为度，形状比定义同上；这些目标是项目工程假设，仅在此模式使用。必要性是避免旧流程用更差形状换取面积比/权重过门；四档圆环原生生成完整单次实测约0.48～1.74秒，尚非一般性能资格。
@@ -593,7 +629,7 @@ npm --prefix desktop run pack:mac
 
 ### Windows PC 开发与 CUDA 接入
 
-PC 开发从 `codex/cfd-development` 继续，不能只依据 main 的 0.4.41 首页判断研究进度。当前核心任务是不可压层流的压力—速度耦合、曲壁压力与受力误差；燃烧、可压、SST 和浸入边界扩展保持冻结。默认 SIMPLE、SIMPLER/PIMPLE、完整响应及 Anderson 的实际资格见当前状态。GPU 后端应复用这些离散方程和失败判定。
+PC 开发从 `codex/cfd-development` 继续，不能只依据 main 的 0.4.41 首页判断研究进度。当前任务和资格以当前状态为准，PC网格研究见上节；历史压力—速度耦合、曲壁压力与受力误差继续保留；燃烧、可压、SST 和浸入边界扩展保持冻结。默认 SIMPLE、SIMPLER/PIMPLE、完整响应及 Anderson 的实际资格见当前状态。GPU 后端应复用这些离散方程和失败判定。
 
 Git 拉取的是源码、版本化样例及 artifacts 中的证据；不会恢复旧 Mac/Linux 的 `outputs/`、Python 环境、已编译 CLI、Electron 依赖或安装包。旧文档中的绝对路径和“本机”性能指原实验机器。需要重跑原失败例时，可从 `artifacts/current/laminar-foundation/failure-inputs.tar.gz` 按需解包；Windows 多配置构建的 CLI 在 `build/Release/*.exe`，研究脚本须显式传入实际二进制路径，不能照搬 POSIX 默认路径。
 

@@ -121,6 +121,11 @@ if(CARTMESH2D_BUILD_TORCH_PRESSURE)
 endif()
 
 add_executable(cartmesh2d_pressure_replay EXCLUDE_FROM_ALL tools/benchmarks/pressure_replay.cpp)
+
+# Research consumers share the actual native mesh/FV kernels on every platform.
+add_executable(cartmesh2d_annulus_mesh_cross EXCLUDE_FROM_ALL tools/benchmarks/annulus_mesh_cross.cpp)
+target_link_libraries(cartmesh2d_annulus_mesh_cross PRIVATE cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_annulus_mesh_cross)
 target_link_libraries(cartmesh2d_pressure_replay PRIVATE cartmesh2d_fv)
 cartmesh2d_enable_warnings(cartmesh2d_pressure_replay)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)

@@ -7,6 +7,7 @@
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 #include "cartmesh2d/stabilization/SmallCell2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
+#include "cartmesh2d/quadtree/Quadtree2D.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -16,6 +17,7 @@
 #include <map>
 #include <stdexcept>
 #include <chrono>
+#include <optional>
 
 using namespace cartmesh2d;
 void require(bool b,const std::string& s){if(!b)throw std::runtime_error(s);}
@@ -29,13 +31,29 @@ std::vector<BoundaryLoop> readLoops(const std::string& file) {
 }
 int main(int argc,char** argv) {
  try {
-  require(argc>=5 && argc<=7,"native|shape|geos|hybrid|crop|ready XY PREFIX N [POLYGONS|TOTAL_ROWS] [RETAINED_ROWS]");
+  require(argc>=5,"native|shape|shape-ready|geos|hybrid|crop|ready XY PREFIX N [POLYGONS|TOTAL_ROWS] [RETAINED_ROWS] [--wall-refine 0|1] [--area-ratio R] [--phase X Y] [--distance-index 0|1]");
   const std::string mode=argv[1],prefix=argv[3];const int n=std::stoi(argv[4]);
-  require(mode=="native" || mode=="shape" || mode=="geos" || mode=="hybrid" || mode=="crop" || mode=="ready","unknown mode");
+  const bool shapeMode=mode=="shape" || mode=="shape-ready";
+  require(mode=="native" || shapeMode || mode=="geos" || mode=="hybrid" || mode=="crop" || mode=="ready","unknown mode");
+  require(n>=8 && n<=2048,"background N out of research range");
+  int positional=5;while(positional<argc && std::string(argv[positional]).rfind("--",0)!=0)++positional;
+  int wallRefine=0,indexedDistance=0;double phaseX=0,phaseY=0;SolverShapeAgglomerationPolicy2D shapePolicy;
+  for(int i=positional;i<argc;) {
+    const std::string option=argv[i++];
+    require(i<argc,"missing research option value");
+    if(option=="--wall-refine")wallRefine=std::stoi(argv[i++]);
+    else if(option=="--distance-index")indexedDistance=std::stoi(argv[i++]);
+    else if(option=="--area-ratio")shapePolicy.maximumAreaRatio=std::stod(argv[i++]);
+    else if(option=="--phase") {phaseX=std::stod(argv[i++]);require(i<argc,"missing phase Y");phaseY=std::stod(argv[i++]);}
+    else throw std::runtime_error("unknown research option: "+option);
+  }
+  require(wallRefine>=0 && wallRefine<=1 && indexedDistance>=0 && indexedDistance<=1 && std::isfinite(phaseX) && std::isfinite(phaseY) &&
+      std::abs(phaseX)<=.5 && std::abs(phaseY)<=.5,"invalid refinement or phase");
   require(!std::filesystem::exists(prefix+".metrics.json"),"output exists");
   auto loops=readLoops(argv[2]);BoundaryRegion2D walls(loops);
   require(walls.normalizeAlternating(),"invalid physical boundary");
-  const Domain2D domain{{{-1.3,-1.3},{1.3,1.3}}};
+  const double h=2.6/n;
+  const Domain2D domain{{{-1.3+phaseX*h,-1.3+phaseY*h},{1.3+phaseX*h,1.3+phaseY*h}}};
   std::vector<CutCell2D> cells;std::size_t layerCount=0;std::set<std::size_t> protectedLayers,preservedSources;
   BoundaryRegion2D remainder=walls;
   if(mode=="hybrid") {
@@ -46,8 +64,8 @@ int main(int argc,char** argv) {
         depths[i]%2==0?WallFluidRegion2D::Interior:WallFluidRegion2D::Exterior);
       require(c.success(),c.message);chains.push_back(*c.chain);
     }
-    const auto retainedRows=argc==7?std::stoul(argv[6]):3;
-    LayerParameters2D parameters;parameters.nLayers=argc>=6?std::stoul(argv[5]):5;
+    const auto retainedRows=positional==7?std::stoul(argv[6]):3;
+    LayerParameters2D parameters;parameters.nLayers=positional>=6?std::stoul(argv[5]):5;
     require(retainedRows>=1 && parameters.nLayers>=retainedRows,"invalid retained layer count");
     parameters.thickness=.006;parameters.growthRatio=1.2;
     auto layers=buildBoundaryLayerStrips2D(chains,parameters);
@@ -71,8 +89,8 @@ int main(int argc,char** argv) {
     layerCount=cells.size();remainder=BoundaryRegion2D(fronts);
     require(remainder.normalizeAlternating(),"invalid layer remainder");
   }
-  if(mode=="geos" || mode=="crop" || mode=="ready") {
-    require(argc==6,"GEOS polygon file required");std::ifstream f(argv[5]);std::size_t count=0;
+  if(mode=="geos" || mode=="crop" || mode=="ready" || mode=="shape-ready") {
+    require(positional==6,"polygon file required");std::ifstream f(argv[5]);std::size_t count=0;
     require(bool(f>>count),"invalid GEOS file");
     for(std::size_t i=0;i<count;++i) {
       CutCell2D c;std::size_t nv=0;int kind=0;
@@ -91,11 +109,25 @@ int main(int argc,char** argv) {
   } else {
     UniformCartesianGrid2D grid(domain,n,n);const auto classification=classifyGrid(grid,remainder);(void)classification;
     const auto offset=layerCount;
+    std::optional<BoundarySegmentIndex2D> distanceIndex;
+    if(wallRefine && indexedDistance)distanceIndex.emplace(remainder);
     for(const auto& b:grid.cells()) {
-      auto parts=buildCutCells(b.bounds,b.classification,remainder,FluidRegion2D::Interior);
+      const bool refine=wallRefine && (distanceIndex?distanceIndex->distanceToAABB(b.bounds):
+          distanceAABBToBoundary(b.bounds,remainder))<1.5*h;
+      const int subdivisions=refine?2:1;
+      for(int y=0;y<subdivisions;++y)for(int x=0;x<subdivisions;++x) {
+      const auto lo=b.bounds.min,hi=b.bounds.max;
+      AABB2D box{{lo.x+(hi.x-lo.x)*x/subdivisions,lo.y+(hi.y-lo.y)*y/subdivisions},
+          {lo.x+(hi.x-lo.x)*(x+1)/subdivisions,lo.y+(hi.y-lo.y)*(y+1)/subdivisions}};
+      // Reclassify the child using the real boundary; no centre-only sampling.
+      CartesianCell2D child;child.bounds=box;
+      const auto kind=refine?classifyCartesianCell(child,remainder):b.classification;
+      auto parts=buildCutCells(box,kind,remainder,FluidRegion2D::Interior);
       for(auto& c:parts) {
         require(c.valid(),"native cut failed");if(c.kind==CutCellKind::Empty)continue;
-        c.sourceId=offset+b.id;c.sourceKey=c.sourceId;cells.push_back(std::move(c));
+        c.sourceId=offset+(wallRefine?b.id*4+static_cast<std::size_t>(y*2+x):b.id);
+        c.sourceKey=c.sourceId;cells.push_back(std::move(c));
+      }
       }
     }
   }
@@ -118,16 +150,16 @@ int main(int argc,char** argv) {
       constraints.preserveInputCells[i]=preservedSources.contains(source);
       if(constraints.immutableInputCells[i] || constraints.preserveInputCells[i])constraints.inputPolygonOverrides[i]=originals.at(source);
     }
-  } else if(mode!="ready" && mode!="shape") {
+  } else if(mode!="ready" && !shapeMode) {
     const auto analysis=analyzeSmallCells(cells,raw);require(analysis.valid(),"small cell analysis failed");
     const auto agglomerated=agglomerateSmallCells(cells,raw,analysis,domain,walls);
     require(agglomerated.valid(),"small cell agglomeration failed");
     topology=agglomerated.topology;merged=agglomerated.mergedSmallCellCount;
   }
   SolverTopologyResult2D solver;
-  if(mode=="shape") {
+  if(shapeMode) {
     const auto started=std::chrono::steady_clock::now();
-    const auto shape=agglomerateSolverByShape2D(topology,domain,walls);
+    const auto shape=agglomerateSolverByShape2D(topology,domain,walls,{},shapePolicy);
     require(shape.valid(),shape.issues.empty()?"shape build failed":shape.issues.front());
     std::ofstream(prefix+".shape-quality.json")<<solverQualityReportToJson(shape.after);
     std::ofstream(prefix+".shape-run.json")<<std::setprecision(17)
@@ -147,18 +179,32 @@ int main(int argc,char** argv) {
   require(solver.valid(),solver.issues.empty()?"solver build failed":solver.issues.front());
   topology=std::move(solver.topology);repartitions=solver.qualityRepartitionCount;
   const auto quality=evaluateSolverQuality2D(topology);
-  const bool shapeTargetMet=mode!="shape" || evaluateSolverQuality2D(
-      topology,SolverShapeAgglomerationPolicy2D{}.target).valid();
+  const bool shapeTargetMet=!shapeMode || evaluateSolverQuality2D(topology,shapePolicy.target).valid();
   require(writeCm2dTopology(topology,prefix+(shapeTargetMet?".solver.cm2d":".failed.solver.cm2d"),&error),error);
   std::ofstream(prefix+".quality.json")<<solverQualityReportToJson(quality);
   double area=0;for(const auto& c:topology.cells)area+=c.geometryArea;
+  std::vector<bool> touchesWall(topology.cells.size(),false);
+  for(const auto& e:topology.edges)if(!e.neighbour)touchesWall[e.owner]=true;
+  std::vector<double> wallAreas,interiorAreas;
+  for(std::size_t i=0;i<topology.cells.size();++i)
+      (touchesWall[i]?wallAreas:interiorAreas).push_back(topology.cells[i].geometryArea);
+  std::sort(wallAreas.begin(),wallAreas.end());std::sort(interiorAreas.begin(),interiorAreas.end());
+  const auto quantile=[](const std::vector<double>& v,double q){return v.empty()?0.:v[static_cast<std::size_t>(q*(v.size()-1))];};
+  const double interiorMedian=quantile(interiorAreas,.5);
   std::size_t retainedLayers=std::count(solver.immutableOutputCells.begin(),solver.immutableOutputCells.end(),true);
   std::ofstream(prefix+".metrics.json")<<std::setprecision(17)<<"{\"mode\":\""<<mode<<"\",\"n\":"<<n
     <<",\"rawCells\":"<<raw.cells.size()<<",\"cells\":"<<topology.cells.size()<<",\"area\":"<<area
     <<",\"expectedArea\":"<<walls.area()<<",\"requestedLayerCells\":"<<protectedLayers.size()
     <<",\"transitionBufferSourceCells\":"<<layerCount-protectedLayers.size()
     <<",\"retainedLayerCells\":"<<retainedLayers<<",\"mergedSmallCells\":"<<merged
-    <<",\"qualityRepartitions\":"<<repartitions<<",\"qualityIssues\":"<<quality.issues.size()<<"}\n";
+    <<",\"qualityRepartitions\":"<<repartitions<<",\"qualityIssues\":"<<quality.issues.size()
+    <<",\"wallRefinementLevels\":"<<wallRefine<<",\"maximumAreaRatio\":"<<shapePolicy.maximumAreaRatio
+    <<",\"indexedDistance\":"<<indexedDistance
+    <<",\"phaseXOverH\":"<<phaseX<<",\"phaseYOverH\":"<<phaseY
+    <<",\"boundaryCells\":"<<wallAreas.size()<<",\"interiorMedianArea\":"<<interiorMedian
+    <<",\"boundaryP50Area\":"<<quantile(wallAreas,.5)<<",\"boundaryP95Area\":"<<quantile(wallAreas,.95)
+    <<",\"boundaryMaxArea\":"<<quantile(wallAreas,1.)
+    <<",\"boundaryMaxOverInteriorMedian\":"<<(interiorMedian?quantile(wallAreas,1.)/interiorMedian:0.)<<"}\n";
   if(!quality.valid()){std::cerr<<"quality rejection "<<quality.issues.size()<<'\n';return 3;}
   if(!shapeTargetMet){std::cerr<<"shape target rejection\n";return 3;}
   require(writeExtrudedOpenFoam2D(topology,domain,walls,prefix+".foam",.1,&error).valid(),error);
