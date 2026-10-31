@@ -208,6 +208,7 @@ bool parseSizingOptions(int argc, char** argv, int first,
                         std::optional<SizeFieldPolicy2D>& sizeField,
                         bool& sizeFieldOnly,
                         std::string& backgroundMode,
+                        bool& shapeAgglomeration,
                         std::string& error) {
     // The size-field options describe intent (wall resolution, growth, far field)
     // and are compiled onto the primitives above.  They stay opt-in so every
@@ -219,6 +220,10 @@ bool parseSizingOptions(int argc, char** argv, int first,
     int index=first;
     while (index<argc) {
         const std::string option=argv[index++];
+        if (option=="--shape-agglomeration") {
+            shapeAgglomeration=true;
+            continue;
+        }
         if (option=="--background-grid") {
             if(index==argc || !backgroundMode.empty()) {
                 error="--background-grid requires one uniform|adaptive mode";
@@ -552,6 +557,9 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]...\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
+                 "--shape-agglomeration: opt-in shape-driven exact unions, no convex partition;\n"
+                 "  requires an OpenFOAM output path; targets 45 deg / aspect 10 / min angle 20 deg.\n"
+                 "  reports failure when bounded aggregation cannot meet these targets.\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n"
                  "--background-grid uniform|adaptive: retain all full cells, including solid interior;\n"
                  "  writes .background.json/.background.vtk, not a fluid solver mesh; no OpenFOAM.\n"
@@ -637,11 +645,16 @@ int main(int argc, char** argv) {
     std::string sizingError;
     std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
     bool sizeFieldOnly=false;
+    bool shapeAgglomeration=false;
     std::string backgroundMode;
     if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,
-                            sizeFieldPolicy,sizeFieldOnly,backgroundMode,sizingError)) {
+                            sizeFieldPolicy,sizeFieldOnly,backgroundMode,shapeAgglomeration,sizingError)) {
         std::cerr<<sizingError<<'\n';
         usage();
+        return EXIT_FAILURE;
+    }
+    if (shapeAgglomeration && (!openFoamCase || !backgroundMode.empty() || sizeFieldOnly)) {
+        std::cerr<<"--shape-agglomeration requires a fluid solver export, not background or size-field-only output\n";
         return EXIT_FAILURE;
     }
     if(!backgroundMode.empty() && (openFoamCase || fluidRegion!=FluidRegion2D::Exterior ||
@@ -1016,13 +1029,38 @@ int main(int argc, char** argv) {
     SmallCellPolicy2D smallPolicy;
     smallPolicy.areaFractionThreshold = smallAlpha;
     const SmallCellReport2D smallReport = analyzeSmallCells(cutCells, sourceTopology, smallPolicy);
-    if (!smallReport.valid()) {
+    const bool invalidSmallInput=std::any_of(smallReport.issues.begin(),smallReport.issues.end(),
+        [](const auto& issue) {return issue.code!=SmallCellIssueCode2D::NoNeighbourCandidate;});
+    if (!smallReport.valid() && (!shapeAgglomeration || invalidSmallInput)) {
         std::cerr << "small-cell analysis failed; unresolved=" << smallReport.unresolvedCount << '\n';
         return EXIT_FAILURE;
     }
 
-    const AgglomerationResult2D stabilized =
-        agglomerateSmallCells(cutCells, sourceTopology, smallReport, domain, boundary);
+    std::optional<SolverShapeAgglomerationResult2D> shapeResult;
+    AgglomerationResult2D stabilized;
+    if (shapeAgglomeration) {
+        shapeResult=agglomerateSolverByShape2D(sourceTopology,domain,boundary);
+        if (!shapeResult->valid()) {
+            std::cerr<<"shape agglomeration failed";
+            for (const auto& issue:shapeResult->issues) std::cerr<<": "<<issue;
+            std::cerr<<'\n';
+            return EXIT_FAILURE;
+        }
+        stabilized.topology=shapeResult->topology;
+        stabilized.inputCellCount=sourceTopology.cells.size();
+        stabilized.outputCellCount=stabilized.topology.cells.size();
+        stabilized.totalAreaBefore=sourceFluidArea;
+        for (const auto& cell:stabilized.topology.cells) stabilized.totalAreaAfter+=cell.geometryArea;
+        stabilized.areaError=stabilized.totalAreaAfter-stabilized.totalAreaBefore;
+        std::ofstream out(outputPrefix.string()+".shape-quality.json");
+        out<<solverQualityReportToJson(shapeResult->after);
+        if (!out.good()) {std::cerr<<"failed to write shape-quality report\n";return EXIT_FAILURE;}
+        std::cout<<"shape_stop="<<shapeResult->stopReason
+                 <<" shape_merged_cells="<<shapeResult->mergedCellCount
+                 <<" shape_passes="<<shapeResult->passes
+                 <<" shape_candidates="<<shapeResult->candidateCount
+                 <<" shape_remaining_issues="<<shapeResult->after.issues.size()<<'\n';
+    } else stabilized=agglomerateSmallCells(cutCells, sourceTopology, smallReport, domain, boundary);
     if (!stabilized.valid()) {
         std::cerr << "small-cell agglomeration failed with " << stabilized.issues.size()
                   << " issue(s)\n";
@@ -1053,7 +1091,7 @@ int main(int argc, char** argv) {
     };
 
     const MeshQualityReport2D quality =
-        evaluateMeshQuality(stabilized.topology, cutCells, &smallReport);
+        evaluateMeshQuality(stabilized.topology, cutCells, shapeAgglomeration?nullptr:&smallReport);
     if (!quality.valid()) {
         std::cerr << "final quality/topology report is invalid\n";
         const std::size_t issueLimit = std::min<std::size_t>(quality.issues.size(), 20);
@@ -1076,7 +1114,13 @@ int main(int argc, char** argv) {
     std::optional<SolverQualityReport2D> solverQuality;
     std::optional<SolverTopologyResult2D> solverTopology;
     if (openFoamCase) {
-        solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
+        if (shapeResult) {
+            solverTopology.emplace();
+            solverTopology->topology=shapeResult->topology;
+            solverTopology->inputCellCount=sourceTopology.cells.size();
+            solverTopology->outputCellCount=shapeResult->topology.cells.size();
+            solverTopology->qualityAgglomeratedSourceCellCount=shapeResult->mergedCellCount;
+        } else solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
         if (!solverTopology->valid()) {
             std::cerr<<"solver topology partition failed";
             for (const auto& issue:solverTopology->issues) std::cerr<<": "<<issue;
@@ -1084,7 +1128,7 @@ int main(int argc, char** argv) {
             printFailureTiming(elapsedSeconds(solverTopologyStart));
             return EXIT_FAILURE;
         }
-        solverQuality=evaluateSolverQuality2D(solverTopology->topology);
+        solverQuality=shapeResult?shapeResult->after:evaluateSolverQuality2D(solverTopology->topology);
         MeshResolutionTargets2D resolutionTargets;
         resolutionTargets.referenceLength=resolvedSizeField ? resolvedSizeField->referenceLength : span;
         if (resolvedSizeField) {

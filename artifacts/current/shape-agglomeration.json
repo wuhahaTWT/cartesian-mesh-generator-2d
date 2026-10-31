@@ -1,0 +1,903 @@
+{
+  "format": "native-shape-agglomeration-v1",
+  "date": "2026-10-31",
+  "baseCommit": "0c7e82f",
+  "branch": "codex/cfd-development",
+  "implementation": "opt-in --shape-agglomeration; native exact unions before convex partition",
+  "defaultsChanged": false,
+  "targets": {
+    "minInteriorAngleDeg": 20,
+    "maxNativeHydraulicAspect": 10,
+    "maxInternalNonOrthogonalityDeg": 45,
+    "maximumAreaRatio": 4,
+    "maximumPatchCells": 6,
+    "maximumPasses": 64
+  },
+  "geometry": {
+    "path": "outputs/annulus-cross/original-physical-walls.xy",
+    "sha256": "581366b67c933fb434acd45d0c449d0ef5be28a6fa13ce8d1c72821578e8b1ef"
+  },
+  "sourceFiles": [
+    {
+      "path": "src/quality/SolverTopology2D.cpp",
+      "sha256": "a8d1ecd80c5f3ac70fe95d7937e4755538cfc9b06be50802710cce47b24d21aa"
+    },
+    {
+      "path": "include/cartmesh2d/quality/SolverTopology2D.hpp",
+      "sha256": "6f47b387160c17e4ce4f1b2cbbc8487e83dc401110c07e479f28c3a70982d621"
+    },
+    {
+      "path": "apps/cartmesh2d_cli.cpp",
+      "sha256": "43244b8fe5a48607a9d2f46f4d34a088dbacbba1fb587544b09693d288e71fe3"
+    },
+    {
+      "path": "tools/benchmarks/annulus_mesh_cross.cpp",
+      "sha256": "1bd8eac793972c5067880792c2cdb1f14eb44eab52fba0eff5de430b4e29cacb"
+    }
+  ],
+  "consumerBinary": {
+    "path": "build/cartmesh2d_flow_cli",
+    "sha256": "18744820cd3762e9c21e09b34d0abc3e90747d99e7349effe3c3d1c1e633a462"
+  },
+  "identicalRaw160Meshes": true,
+  "solvedMeshMatchesFinalImplementation": true,
+  "generationCommands": [
+    {
+      "command": [
+        "outputs/shape-agglomeration/adapter-final",
+        "shape",
+        "outputs/annulus-cross/original-physical-walls.xy",
+        "outputs/shape-agglomeration/final128",
+        "128"
+      ],
+      "exitCode": 3,
+      "wallSeconds": 1.1023139169992646
+    },
+    {
+      "command": [
+        "outputs/shape-agglomeration/adapter-final",
+        "shape",
+        "outputs/annulus-cross/original-physical-walls.xy",
+        "outputs/shape-agglomeration/final160",
+        "160"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 0.4807084579952061
+    },
+    {
+      "command": [
+        "outputs/shape-agglomeration/adapter-final",
+        "shape",
+        "outputs/annulus-cross/original-physical-walls.xy",
+        "outputs/shape-agglomeration/final192",
+        "192"
+      ],
+      "exitCode": 3,
+      "wallSeconds": 0.7318584169988753
+    },
+    {
+      "command": [
+        "outputs/shape-agglomeration/adapter-final",
+        "shape",
+        "outputs/annulus-cross/original-physical-walls.xy",
+        "outputs/shape-agglomeration/final256",
+        "256"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 1.7434477080096258
+    }
+  ],
+  "generations": [
+    {
+      "n": 128,
+      "mesh": {
+        "path": "outputs/shape-agglomeration/final128.failed.solver.cm2d",
+        "sha256": "2537d8af853d029ecc3794fd5a55351b71c0796f675c1217106b6fb89829d27b"
+      },
+      "nativeTargetReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": false,
+        "policy": {
+          "max_non_orthogonality_deg": 45,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 10,
+          "min_interior_angle_deg": 20,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 43.71689112404897,
+          "max_internal_skewness": 3.0503628921522523,
+          "max_boundary_skewness": 6.679578908380501,
+          "max_concavity_deg": 1.406250000005116,
+          "max_cell_aspect": 7.077610474706402,
+          "min_interior_angle_deg": 20.3906249999997,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.08564876207985243,
+          "min_volume_ratio": 0.02502571840478032,
+          "min_compactness": 0.3820390704338097
+        },
+        "issue_count": 8,
+        "issues": [
+          {
+            "code": 5,
+            "cell_id": 2065,
+            "edge_id": 4314,
+            "measured": 6.679578908378585,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3797,
+            "edge_id": 4315,
+            "measured": 6.6795789083802966,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2004,
+            "edge_id": 4386,
+            "measured": 6.679578908380297,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3858,
+            "edge_id": 4388,
+            "measured": 6.679578908378709,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2005,
+            "edge_id": 8196,
+            "measured": 6.679578908378714,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3859,
+            "edge_id": 8197,
+            "measured": 6.679578908378709,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2066,
+            "edge_id": 8326,
+            "measured": 6.679578908380501,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3798,
+            "edge_id": 8328,
+            "measured": 6.679578908378712,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          }
+        ]
+      },
+      "metrics": {
+        "mode": "shape",
+        "n": 128,
+        "rawCells": 6008,
+        "cells": 5864,
+        "area": 2.3559579381994786,
+        "expectedArea": 2.355957938199583,
+        "requestedLayerCells": 0,
+        "transitionBufferSourceCells": 0,
+        "retainedLayerCells": 0,
+        "mergedSmallCells": 144,
+        "qualityRepartitions": 0,
+        "qualityIssues": 8
+      },
+      "nativeRun": {
+        "stopReason": "no-improving-union",
+        "mergedCells": 144,
+        "passes": 3,
+        "candidateCount": 928,
+        "maximumUnionCellCount": 2,
+        "remainingIssues": 8,
+        "shapeSeconds": 0.176511834
+      }
+    },
+    {
+      "n": 160,
+      "mesh": {
+        "path": "outputs/shape-agglomeration/final160.solver.cm2d",
+        "sha256": "2b90ec473e689ed496b76cb4e1fe1766457c3179907e0bf3f6aaab22201f49cd"
+      },
+      "nativeTargetReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 45,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 10,
+          "min_interior_angle_deg": 20,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 44.567150710232895,
+          "max_internal_skewness": 2.5053788922076423,
+          "max_boundary_skewness": 3.707879686872059,
+          "max_concavity_deg": 1.4062500000304965,
+          "max_cell_aspect": 7.28564608346971,
+          "min_interior_angle_deg": 24.60937499999968,
+          "min_face_length": 4.5937092856737894e-05,
+          "min_face_weight": 0.06379458985733699,
+          "min_volume_ratio": 0.010424020931233544,
+          "min_compactness": 0.365145917205886
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "metrics": {
+        "mode": "shape",
+        "n": 160,
+        "rawCells": 9300,
+        "cells": 9076,
+        "area": 2.3559579381997966,
+        "expectedArea": 2.355957938199583,
+        "requestedLayerCells": 0,
+        "transitionBufferSourceCells": 0,
+        "retainedLayerCells": 0,
+        "mergedSmallCells": 224,
+        "qualityRepartitions": 0,
+        "qualityIssues": 0
+      },
+      "nativeRun": {
+        "stopReason": "target-met",
+        "mergedCells": 224,
+        "passes": 4,
+        "candidateCount": 1012,
+        "maximumUnionCellCount": 3,
+        "remainingIssues": 0,
+        "shapeSeconds": 0.287573458
+      }
+    },
+    {
+      "n": 192,
+      "mesh": {
+        "path": "outputs/shape-agglomeration/final192.failed.solver.cm2d",
+        "sha256": "feb63dd462e104d415f3b46c2264b241e449b83abeff5178872e52aa018efa7a"
+      },
+      "nativeTargetReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": false,
+        "policy": {
+          "max_non_orthogonality_deg": 45,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 10,
+          "min_interior_angle_deg": 20,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 40.24890311645081,
+          "max_internal_skewness": 2.5132184614800432,
+          "max_boundary_skewness": 4.475572512472889,
+          "max_concavity_deg": 1.4062500000040643,
+          "max_cell_aspect": 7.095011827448333,
+          "min_interior_angle_deg": 20.390624999999467,
+          "min_face_length": 0.0001684124474796903,
+          "min_face_weight": 0.06462698273557815,
+          "min_volume_ratio": 0.014687902343668768,
+          "min_compactness": 0.3789751221321219
+        },
+        "issue_count": 16,
+        "issues": [
+          {
+            "code": 5,
+            "cell_id": 2520,
+            "edge_id": 1923,
+            "measured": 4.0410142529265265,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 10388,
+            "edge_id": 1924,
+            "measured": 4.041014252928769,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 754,
+            "edge_id": 5151,
+            "measured": 4.041014252925268,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 12101,
+            "edge_id": 5390,
+            "measured": 4.04101425292765,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5095,
+            "edge_id": 8282,
+            "measured": 4.475572512471827,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 7931,
+            "edge_id": 8283,
+            "measured": 4.475572512472191,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3876,
+            "edge_id": 10537,
+            "measured": 4.475572512472191,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 9052,
+            "edge_id": 10539,
+            "measured": 4.475572512472848,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 3879,
+            "edge_id": 16524,
+            "measured": 4.475572512471828,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 9053,
+            "edge_id": 16525,
+            "measured": 4.475572512472889,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 7932,
+            "edge_id": 18876,
+            "measured": 4.475572512472847,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5096,
+            "edge_id": 18878,
+            "measured": 4.475572512471619,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 839,
+            "edge_id": 21792,
+            "measured": 4.041014252927626,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 12188,
+            "edge_id": 21793,
+            "measured": 4.041014252928769,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 2639,
+            "edge_id": 25226,
+            "measured": 4.041014252926402,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 10507,
+            "edge_id": 25227,
+            "measured": 4.04101425292765,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          }
+        ]
+      },
+      "metrics": {
+        "mode": "shape",
+        "n": 192,
+        "rawCells": 13300,
+        "cells": 13028,
+        "area": 2.3559579381989857,
+        "expectedArea": 2.355957938199583,
+        "requestedLayerCells": 0,
+        "transitionBufferSourceCells": 0,
+        "retainedLayerCells": 0,
+        "mergedSmallCells": 272,
+        "qualityRepartitions": 0,
+        "qualityIssues": 16
+      },
+      "nativeRun": {
+        "stopReason": "no-improving-union",
+        "mergedCells": 272,
+        "passes": 5,
+        "candidateCount": 1924,
+        "maximumUnionCellCount": 3,
+        "remainingIssues": 16,
+        "shapeSeconds": 0.539694583
+      }
+    },
+    {
+      "n": 256,
+      "mesh": {
+        "path": "outputs/shape-agglomeration/final256.solver.cm2d",
+        "sha256": "c1856fe132cae807497d0044726aafb542a2ff607c6e7882f6d31d37c06e091a"
+      },
+      "nativeTargetReport": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 45,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 10,
+          "min_interior_angle_deg": 20,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 44.49566199686455,
+          "max_internal_skewness": 3.0512683129972276,
+          "max_boundary_skewness": 3.9742489362150843,
+          "max_concavity_deg": 1.4062500000030127,
+          "max_cell_aspect": 7.815813809403395,
+          "min_interior_angle_deg": 20.39062499999934,
+          "min_face_length": 0.00015737822906408683,
+          "min_face_weight": 0.0650574086385006,
+          "min_volume_ratio": 0.01605260895026123,
+          "min_compactness": 0.19249848988155768
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "metrics": {
+        "mode": "shape",
+        "n": 256,
+        "rawCells": 23440,
+        "cells": 23136,
+        "area": 2.355957938199399,
+        "expectedArea": 2.355957938199583,
+        "requestedLayerCells": 0,
+        "transitionBufferSourceCells": 0,
+        "retainedLayerCells": 0,
+        "mergedSmallCells": 304,
+        "qualityRepartitions": 0,
+        "qualityIssues": 0
+      },
+      "nativeRun": {
+        "stopReason": "target-met",
+        "mergedCells": 304,
+        "passes": 8,
+        "candidateCount": 1612,
+        "maximumUnionCellCount": 3,
+        "remainingIssues": 0,
+        "shapeSeconds": 1.269400292
+      }
+    }
+  ],
+  "paired160": {
+    "meshes": [
+      {
+        "mesh": {
+          "path": "outputs/shape-agglomeration/legacy160.solver.cm2d",
+          "sha256": "281238d871bebdca03085ee061d5f5196ae05a1a83af342add604db3f96e36f2"
+        },
+        "nativeQualityReport": {
+          "quality_class": "solver_quality",
+          "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+          "valid": true,
+          "policy": {
+            "max_non_orthogonality_deg": 70,
+            "max_internal_skewness": 4,
+            "max_boundary_skewness": 4,
+            "max_concavity_deg": 80,
+            "max_cell_aspect": 1000,
+            "min_interior_angle_deg": 0.5,
+            "min_face_length": 1.01e-10,
+            "min_face_weight": 0.05,
+            "min_volume_ratio": 0.01
+          },
+          "metrics": {
+            "max_non_orthogonality_deg": 66.01448876700728,
+            "max_internal_skewness": 2.290311789636219,
+            "max_boundary_skewness": 3.9516124539214155,
+            "max_concavity_deg": 1.4062500000058833,
+            "max_cell_aspect": 26.221040553054593,
+            "min_interior_angle_deg": 5.115314025974252,
+            "min_face_length": 4.5937092856737894e-05,
+            "min_face_weight": 0.050125925196989884,
+            "min_volume_ratio": 0.02065710445327817,
+            "min_compactness": 0.1188517515634104
+          },
+          "issue_count": 0,
+          "issues": []
+        }
+      },
+      {
+        "mesh": {
+          "path": "outputs/shape-agglomeration/final160.solver.cm2d",
+          "sha256": "2b90ec473e689ed496b76cb4e1fe1766457c3179907e0bf3f6aaab22201f49cd"
+        },
+        "nativeQualityReport": {
+          "quality_class": "solver_quality",
+          "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+          "valid": true,
+          "policy": {
+            "max_non_orthogonality_deg": 70,
+            "max_internal_skewness": 4,
+            "max_boundary_skewness": 4,
+            "max_concavity_deg": 80,
+            "max_cell_aspect": 1000,
+            "min_interior_angle_deg": 0.5,
+            "min_face_length": 1.01e-10,
+            "min_face_weight": 0.05,
+            "min_volume_ratio": 0.01
+          },
+          "metrics": {
+            "max_non_orthogonality_deg": 44.567150710232895,
+            "max_internal_skewness": 2.5053788922076423,
+            "max_boundary_skewness": 3.707879686872059,
+            "max_concavity_deg": 1.4062500000304965,
+            "max_cell_aspect": 7.28564608346971,
+            "min_interior_angle_deg": 24.60937499999968,
+            "min_face_length": 4.5937092856737894e-05,
+            "min_face_weight": 0.06379458985733699,
+            "min_volume_ratio": 0.010424020931233544,
+            "min_compactness": 0.365145917205886
+          },
+          "issue_count": 0,
+          "issues": []
+        }
+      }
+    ],
+    "old": {
+      "summary": {
+        "path": "outputs/shape-agglomeration/legacy160-simple.json",
+        "sha256": "6002a784de87b21468cc41473b5c78ec4afd9d659b966b8bca6a12272a964a63"
+      },
+      "fields": {
+        "path": "outputs/shape-agglomeration/legacy160-simple.fields.json",
+        "sha256": "8c5a50a7a39930c311ada10bfb825f42563e0aea36047c4399e43d550a7b96aa"
+      },
+      "controls": {
+        "nu": 0.1,
+        "speed": 0.5,
+        "convection": "upwind",
+        "coupling": "simple",
+        "velocityRelaxation": 0.6,
+        "pressureRelaxation": 0.25,
+        "pressureCorrectionPasses": 4,
+        "convergenceMode": "strict",
+        "adaptiveLinear": false,
+        "tolerance": 1e-08,
+        "steadyAcceleration": "none"
+      },
+      "acceptance": {
+        "converged": true,
+        "iterations": 3039,
+        "momentumResidual": 3.332999456871679e-09,
+        "continuity": 4.930901194041003e-11,
+        "velocityChange": 9.99886547175497e-09,
+        "pressureChange": 3.2833901254424413e-09,
+        "globalRelativeImbalance": 0,
+        "strictLinearFinal": true
+      },
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "pressureBackend": "cpu",
+        "gpuPressureSolves": 0,
+        "gpuPressureIterations": 0,
+        "gpuMatrixUploads": 0,
+        "gpuStartupSeconds": 0,
+        "gpuUploadSeconds": 0,
+        "gpuIterationSeconds": 0,
+        "gpuDownloadSeconds": 0,
+        "cells": 9471,
+        "faces": 19505,
+        "simpleIterations": 3039,
+        "coupledOuterIterations": 0,
+        "coupling": "simple",
+        "coupledLinearSolves": 0,
+        "coupledKrylovIterations": 0,
+        "maxCoupledKrylovIterations": 0,
+        "coupledLinearSolveSeconds": 0,
+        "lineSearchTrials": 0,
+        "lineSearchRejected": 0,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.039229,
+        "solveSeconds": 217.836960792,
+        "momentumLinearSolveSeconds": 10.386344670999977,
+        "pressureLinearSolveSeconds": 191.59495607800045,
+        "momentumSolves": 6078,
+        "momentumIterations": 30566,
+        "maxMomentumIterations": 15,
+        "pressureCorrectionPasses": 4,
+        "pressureSolves": 12156,
+        "pressureCorrectionPassesSkipped": 0,
+        "pressureFactorizations": 3039,
+        "pressureFactorReuses": 9117,
+        "pressureCholeskyBuilds": 0,
+        "pressureCholeskyRefactors": 0,
+        "pressureCholeskyReuses": 0,
+        "pressureHierarchyBuilds": 0,
+        "pressureHierarchyReuses": 0,
+        "pressureHierarchyRefreshes": 0,
+        "maxPressureHierarchyLevels": 0,
+        "maxPressureCoarseCells": 0,
+        "pressureIterations": 831977,
+        "maxPressureIterations": 213,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+      },
+      "circularReferenceDiagnostics": {
+        "velocityL2OverUref": 0.0013049904821119194,
+        "pressureL2OverUrefSquared": 0.021397186024748136,
+        "radialVelocityL2OverUref": 0.00045199914198301055,
+        "pressureL2OverAnalyticPressureSpan": 0.09851261112109663,
+        "pressureMaxOverAnalyticPressureSpan": 17.945998094618556,
+        "pressureWorstCell": 5634,
+        "pressureWorstArea": 2.335013253436964e-06,
+        "velocityMaxOverUref": 0.007478308278260091,
+        "removedPressureGauge": -8.062586403064408e-05,
+        "reference": "true circular Couette; polygon geometry and prescribed facet trace differ",
+        "fieldDefinition": "cell-centre value; volume-weighted errors; no spatial qualification inferred"
+      }
+    },
+    "new": {
+      "summary": {
+        "path": "outputs/shape-agglomeration/endpoints160-simple.json",
+        "sha256": "561c5ecec3a630ca33efa9d67992ffabbe39e341319f981cd8b39477897b5bb5"
+      },
+      "fields": {
+        "path": "outputs/shape-agglomeration/endpoints160-simple.fields.json",
+        "sha256": "6039638a3b1ee44bc85d1fdf69a5a6083a1259aa205a0fdc042cd66aa75488b2"
+      },
+      "controls": {
+        "nu": 0.1,
+        "speed": 0.5,
+        "convection": "upwind",
+        "coupling": "simple",
+        "velocityRelaxation": 0.6,
+        "pressureRelaxation": 0.25,
+        "pressureCorrectionPasses": 4,
+        "convergenceMode": "strict",
+        "adaptiveLinear": false,
+        "tolerance": 1e-08,
+        "steadyAcceleration": "none"
+      },
+      "acceptance": {
+        "converged": true,
+        "iterations": 3037,
+        "momentumResidual": 3.3321737213165404e-09,
+        "continuity": 9.807187909039122e-11,
+        "velocityChange": 9.996059955296728e-09,
+        "pressureChange": 3.0987131547568288e-09,
+        "globalRelativeImbalance": 0,
+        "strictLinearFinal": true
+      },
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "pressureBackend": "cpu",
+        "gpuPressureSolves": 0,
+        "gpuPressureIterations": 0,
+        "gpuMatrixUploads": 0,
+        "gpuStartupSeconds": 0,
+        "gpuUploadSeconds": 0,
+        "gpuIterationSeconds": 0,
+        "gpuDownloadSeconds": 0,
+        "cells": 9076,
+        "faces": 19120,
+        "simpleIterations": 3037,
+        "coupledOuterIterations": 0,
+        "coupling": "simple",
+        "coupledLinearSolves": 0,
+        "coupledKrylovIterations": 0,
+        "maxCoupledKrylovIterations": 0,
+        "coupledLinearSolveSeconds": 0,
+        "lineSearchTrials": 0,
+        "lineSearchRejected": 0,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.043203792,
+        "solveSeconds": 156.762546416,
+        "momentumLinearSolveSeconds": 9.252011192999946,
+        "pressureLinearSolveSeconds": 133.89415487900013,
+        "momentumSolves": 6074,
+        "momentumIterations": 32641,
+        "maxMomentumIterations": 14,
+        "pressureCorrectionPasses": 4,
+        "pressureSolves": 11854,
+        "pressureCorrectionPassesSkipped": 294,
+        "pressureFactorizations": 3037,
+        "pressureFactorReuses": 8080,
+        "pressureCholeskyBuilds": 0,
+        "pressureCholeskyRefactors": 0,
+        "pressureCholeskyReuses": 0,
+        "pressureHierarchyBuilds": 0,
+        "pressureHierarchyReuses": 0,
+        "pressureHierarchyRefreshes": 0,
+        "maxPressureHierarchyLevels": 0,
+        "maxPressureCoarseCells": 0,
+        "pressureIterations": 609051,
+        "maxPressureIterations": 200,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+      },
+      "circularReferenceDiagnostics": {
+        "velocityL2OverUref": 0.0018362576706853683,
+        "pressureL2OverUrefSquared": 0.004058031302041998,
+        "radialVelocityL2OverUref": 0.00027706348176840444,
+        "pressureL2OverAnalyticPressureSpan": 0.018683169792183287,
+        "pressureMaxOverAnalyticPressureSpan": 0.31556231100477306,
+        "pressureWorstCell": 2401,
+        "pressureWorstArea": 6.275230639393049e-05,
+        "velocityMaxOverUref": 0.0037277977299579788,
+        "removedPressureGauge": -0.0004449421358770083,
+        "reference": "true circular Couette; polygon geometry and prescribed facet trace differ",
+        "fieldDefinition": "cell-centre value; volume-weighted errors; no spatial qualification inferred"
+      }
+    }
+  },
+  "nativeTests": {
+    "log": "outputs/shape-agglomeration/ctest-final.log",
+    "passed": 4,
+    "scope": "shape unions, existing solver export, topology, small-cell agglomeration"
+  },
+  "productCLI": {
+    "runs": [
+      {
+        "name": "rectangle",
+        "command": [
+          "build/cartmesh2d_cli",
+          "examples/acceptance/rectangle.xy",
+          "outputs/shape-agglomeration/review-rectangle",
+          "5",
+          ".25",
+          ".1",
+          "exterior",
+          "outputs/shape-agglomeration/review-rectangle.foam",
+          "0",
+          "--shape-agglomeration"
+        ],
+        "exitCode": 0,
+        "seconds": 0.7368379999970784
+      },
+      {
+        "name": "circle",
+        "command": [
+          "build/cartmesh2d_cli",
+          "examples/acceptance/circle.xy",
+          "outputs/shape-agglomeration/review-circle",
+          "6",
+          ".25",
+          ".1",
+          "exterior",
+          "outputs/shape-agglomeration/review-circle.foam",
+          "0",
+          "--shape-agglomeration"
+        ],
+        "exitCode": 0,
+        "seconds": 0.06120174999523442
+      },
+      {
+        "name": "product256",
+        "command": [
+          "build/cartmesh2d_cli",
+          "outputs/annulus-cross/original-physical-walls.xy",
+          "outputs/shape-agglomeration/review-product256",
+          "8",
+          ".15",
+          ".1",
+          "interior",
+          "outputs/shape-agglomeration/review-product256.foam",
+          "8",
+          "--shape-agglomeration"
+        ],
+        "exitCode": 0,
+        "seconds": 1.4440024590003304
+      },
+      {
+        "name": "product128-failed",
+        "command": [
+          "build/cartmesh2d_cli",
+          "outputs/annulus-cross/original-physical-walls.xy",
+          "outputs/shape-agglomeration/review-product128-failed",
+          "7",
+          ".15",
+          ".1",
+          "interior",
+          "outputs/shape-agglomeration/review-product128-failed.foam",
+          "7",
+          "--shape-agglomeration"
+        ],
+        "exitCode": 1,
+        "seconds": 0.23463766599888913
+      },
+      {
+        "name": "concave",
+        "command": [
+          "build/cartmesh2d_cli",
+          "examples/acceptance/concave.xy",
+          "outputs/shape-agglomeration/review-concave",
+          "6",
+          ".25",
+          ".1",
+          "exterior",
+          "outputs/shape-agglomeration/review-concave.foam",
+          "0",
+          "--shape-agglomeration"
+        ],
+        "exitCode": 1,
+        "seconds": 0.15153620799537748
+      }
+    ],
+    "fine": "outputs/shape-agglomeration/review-product256.log",
+    "fineCells": 23136,
+    "coarseFailure": "outputs/shape-agglomeration/review-product128-failed.log",
+    "otherInputs": [
+      "rectangle: passed",
+      "circle: passed",
+      "concave L: rejected; five physical 270-degree corners exceed retained concavity limit"
+    ]
+  },
+  "notQualified": [
+    "Only this annular CFD comparison; no mesh independence or general stability qualification.",
+    "Circular analytic reference differs from polygon geometry/facet wall motion; errors include model approximation.",
+    "Native shape targets are engineering hypotheses; all other legacy checks remain active.",
+    "Docker daemon unavailable: no new external checkMesh or mature SIMPLE run.",
+    "No desktop UI/runtime update, full regression, platform CI or installer build.",
+    "The 128/192 grids fail the target and are retained as failed inputs; refinement is not monotonic.",
+    "The 23136-cell SIMPLE trial was deliberately terminated for cost after a prefix, not counted as converged."
+  ],
+  "representativeArchive": {
+    "path": "outputs/shape-agglomeration/representative-fields.tar.gz",
+    "sha256": "9538db41358edee291ed6f5d2a5c3d0e631b20a2defc2c8d89ddf65d9374a058"
+  }
+}

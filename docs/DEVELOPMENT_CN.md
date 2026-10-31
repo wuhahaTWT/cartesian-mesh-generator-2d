@@ -128,6 +128,34 @@ outputs/mesh-shape-limits/probe build/laminar-fixtures/annulus-l7.solver.cm2d ou
 
 消费者是下一步网格生成改造：保持原物面，重新设计内部点与连接、质量驱动的多格聚合/重构；不要让短边数量强制决定独立单元数，不以严格凸划分的过门率代替整体形状改善。先交付真正满足较好形状的自研网格，再用当前不变求解器验证。仅调整质量数字而继续产生同样碎片不算修复。文献中涉及改变自由度或方程的办法保留为资料，不纳入当前工作。
 
+### 曲壁形状驱动聚合入口
+
+`agglomerateSolverByShape2D` 位于 `quality/SolverTopology2D`；普通 CLI 显式加 `--shape-agglomeration` 使用该路径，跳过旧的面积分数邻格选择和普通源单元凸分解。它不是取消最终质量检查：原门全部保留，再以此前提出的45°内部非正交、原生形状比10和最小角20°作为生成目标。角度单位为度，形状比定义同上；这些目标是项目工程假设，仅在此模式使用。必要性是避免旧流程用更差形状换取面积比/权重过门；四档圆环原生生成完整单次实测约0.48～1.74秒，尚非一般性能资格。
+
+候选从质量问题关联单元和共享面扩展，先检查两格，再按需搜索最多6格的连通并集。并集边来自已共享的精确端点，输入XY顶点及其构造注册表别名锁定；只在既有构造舍入预算内删除失去分隔作用的共线辅助点，不以几何容差抹掉可解析短边。面积中心须对所有面保持原生正法向距离，轻微真实反角因此可以保留；强反角不能通过就明确失败。候选评估包括一圈未修改邻居，独立halo批次经完整拓扑及原/目标质量评分复核才接受。来源lineage、细化key、未修改单元source身份及不可变格约束保留。
+
+分辨率预算为 `A_union <= 4 * max(AABB_area_of_initial_member_polygon)`，这个“初始”不会随聚合增大；64批次上限只限制工作量，不代表合格。它不是严格的误差/直径估计，也不是任意网格细化的充分条件。没有合法改进、达到批次上限且仍有问题时，新模式拒绝正常求解网格，保留 `.failed.solver.cm2d`、`.failed.solver-quality.json`、`.shape-quality.json`。当前不自动细化，不对失败输入回退到旧凸划分并声称形状通过。`small-alpha`在该模式仅用于原始切割诊断。
+
+真实产品CLI示例（原XY由下节冻结圆环归档恢复，输出前缀换成新路径）：
+
+```sh
+build/cartmesh2d_cli outputs/annulus-cross/original-physical-walls.xy outputs/shape-replay/product256 8 .15 .1 interior outputs/shape-replay/product256.foam 8 --shape-agglomeration
+```
+
+同背景160×160的严格对照用既有原生研究适配器复现；它固定方格域`[-1.3,1.3]^2`，不改原圆环物面。`shape`路径失败时输出带`failed`名称的网格，退出码3；不导出可求OpenFOAM网格。
+
+```sh
+mkdir -p outputs/shape-replay
+/usr/bin/clang++ -std=c++20 -O2 -Iinclude tools/benchmarks/annulus_mesh_cross.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -framework Accelerate -o outputs/shape-replay/adapter
+outputs/shape-replay/adapter native outputs/annulus-cross/original-physical-walls.xy outputs/shape-replay/legacy160 160
+outputs/shape-replay/adapter shape outputs/annulus-cross/original-physical-walls.xy outputs/shape-replay/new160 160
+build/cartmesh2d_flow_cli --mesh outputs/shape-replay/new160.solver.cm2d --case custom --boundary outputs/shape-replay/new160.boundaries --nu .1 --speed .5 --convection upwind --viscous-stress symmetric --coupling simple --linear-policy strict --max-iterations 4000 --tolerance 1e-8 --profile --output outputs/shape-replay/new160-simple
+```
+
+旧处理求解只将两个输入路径换成`legacy160`，不改任何CFD控制。128/192档尚未达到目标，160/256档通过；这是非单调的几何交切结果，不把“继续加密必然解决”作为停止条件。外流L形的物理270°角仍拒绝，后续需要受控划分；目前不替换桌面和原默认生成策略。数值/物理范围只维护在[当前状态](CURRENT_STATE_CN.md#曲壁形状驱动聚合)。
+
+新增`cartmesh2d_shape_agglomeration_tests`与既有Solver导出、拓扑、合并CTest是相关原生回归。`plot_shape_agglomeration.py`仅读实际网格/原生报告并复用已有真圆解析诊断；不是新的Python方程验收链。按本次输出布局恢复代表包后，可用 `MPLCONFIGDIR=/private/tmp/cartmesh2d-shape-mpl python3 tools/benchmarks/plot_shape_agglomeration.py` 重建图和证据；其他平台字体须换成本机中文字体，链接Accelerate仅适用于本机macOS。新非凸单元尚无新外部checkMesh结论，不能用原生通过替代。
+
 ### Cut-cell 小单元与尖锐单元处理文献
 
 本节为用户要求的小单元/尖锐单元处理调研，检索截至2026-10-29；20篇原始研究中19篇为已发表论文，1篇2026预印本单列。只用原论文、作者/机构稿和成熟项目源码作技术依据，不把二手综述、搜索摘要或方法名当作已复现资格。表中“全文关键段”表示读取可获取原文的相关段落，不表示逐页精读或已实现；“摘要/预览”表示核对原出版方或作者机构摘要，不把付费全文说成已读。方法选择是本项目的工程判断，成功率、工作日和物理精度尚未验证。

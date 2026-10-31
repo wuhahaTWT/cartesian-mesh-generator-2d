@@ -68,6 +68,45 @@ struct SolverTopologyConstraints2D {
     std::vector<std::optional<Polygon2D>> inputPolygonOverrides;
 };
 
+// Shape-driven exact unions, before any convex partition. A physical reflex
+// wall corner is retained when the area centroid is inside every face's
+// inward half-plane (the unchanged FV geometric admissibility condition).
+// These are generation targets, not a change to the legacy Solver gate.
+struct SolverShapeAgglomerationPolicy2D {
+    SolverQualityPolicy2D target = [] {
+        SolverQualityPolicy2D p;
+        p.maxNonOrthogonalityDeg = 45;
+        p.maxCellAspect = 10;
+        p.minInteriorAngleDeg = 20;
+        return p;
+    }();
+    double maximumAreaRatio = 4;
+    std::size_t maximumPasses = 64;
+    std::size_t maximumPatchCells = 6;
+};
+
+struct SolverShapeAgglomerationResult2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+    SolverQualityReport2D before, after;
+    std::size_t mergedCellCount = 0;
+    std::size_t passes = 0;
+    std::size_t candidateCount = 0;
+    std::size_t maximumUnionCellCount = 0;
+    std::string stopReason;
+    std::vector<std::string> issues;
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && topology.valid();
+    }
+    [[nodiscard]] bool targetMet() const noexcept { return valid() && after.valid(); }
+};
+
+[[nodiscard]] SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells = {},
+    const SolverShapeAgglomerationPolicy2D& policy = {},
+    const TolerancePolicy& tol = {});
+
 struct SolverLocalRepartitionResult2D {
     TopologyMesh2D topology;
     std::vector<bool> immutableCells;

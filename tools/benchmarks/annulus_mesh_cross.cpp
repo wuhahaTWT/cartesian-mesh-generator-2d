@@ -15,6 +15,7 @@
 #include <set>
 #include <map>
 #include <stdexcept>
+#include <chrono>
 
 using namespace cartmesh2d;
 void require(bool b,const std::string& s){if(!b)throw std::runtime_error(s);}
@@ -28,9 +29,9 @@ std::vector<BoundaryLoop> readLoops(const std::string& file) {
 }
 int main(int argc,char** argv) {
  try {
-  require(argc>=5 && argc<=7,"native|geos|hybrid|crop|ready XY PREFIX N [POLYGONS|TOTAL_ROWS] [RETAINED_ROWS]");
+  require(argc>=5 && argc<=7,"native|shape|geos|hybrid|crop|ready XY PREFIX N [POLYGONS|TOTAL_ROWS] [RETAINED_ROWS]");
   const std::string mode=argv[1],prefix=argv[3];const int n=std::stoi(argv[4]);
-  require(mode=="native" || mode=="geos" || mode=="hybrid" || mode=="crop" || mode=="ready","unknown mode");
+  require(mode=="native" || mode=="shape" || mode=="geos" || mode=="hybrid" || mode=="crop" || mode=="ready","unknown mode");
   require(!std::filesystem::exists(prefix+".metrics.json"),"output exists");
   auto loops=readLoops(argv[2]);BoundaryRegion2D walls(loops);
   require(walls.normalizeAlternating(),"invalid physical boundary");
@@ -117,19 +118,38 @@ int main(int argc,char** argv) {
       constraints.preserveInputCells[i]=preservedSources.contains(source);
       if(constraints.immutableInputCells[i] || constraints.preserveInputCells[i])constraints.inputPolygonOverrides[i]=originals.at(source);
     }
-  } else if(mode!="ready") {
+  } else if(mode!="ready" && mode!="shape") {
     const auto analysis=analyzeSmallCells(cells,raw);require(analysis.valid(),"small cell analysis failed");
     const auto agglomerated=agglomerateSmallCells(cells,raw,analysis,domain,walls);
     require(agglomerated.valid(),"small cell agglomeration failed");
     topology=agglomerated.topology;merged=agglomerated.mergedSmallCellCount;
   }
   SolverTopologyResult2D solver;
-  if(mode=="ready") {solver.topology=topology;solver.inputCellCount=topology.cells.size();solver.outputCellCount=topology.cells.size();}
+  if(mode=="shape") {
+    const auto started=std::chrono::steady_clock::now();
+    const auto shape=agglomerateSolverByShape2D(topology,domain,walls);
+    require(shape.valid(),shape.issues.empty()?"shape build failed":shape.issues.front());
+    std::ofstream(prefix+".shape-quality.json")<<solverQualityReportToJson(shape.after);
+    std::ofstream(prefix+".shape-run.json")<<std::setprecision(17)
+      <<"{\"stopReason\":\""<<shape.stopReason<<"\",\"mergedCells\":"<<shape.mergedCellCount
+      <<",\"passes\":"<<shape.passes<<",\"candidateCount\":"<<shape.candidateCount
+      <<",\"maximumUnionCellCount\":"<<shape.maximumUnionCellCount
+      <<",\"remainingIssues\":"<<shape.after.issues.size()
+      <<",\"shapeSeconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<<"}\n";
+    std::cout<<"shape_stop="<<shape.stopReason<<" merges="<<shape.mergedCellCount
+      <<" passes="<<shape.passes<<" candidates="<<shape.candidateCount
+      <<" remaining="<<shape.after.issues.size()<<'\n';
+    solver.topology=shape.topology;solver.inputCellCount=topology.cells.size();
+    solver.outputCellCount=shape.topology.cells.size();merged=shape.mergedCellCount;
+  }
+  else if(mode=="ready") {solver.topology=topology;solver.inputCellCount=topology.cells.size();solver.outputCellCount=topology.cells.size();}
   else solver=buildSolverTopology2D(topology,domain,walls,constraints);
   require(solver.valid(),solver.issues.empty()?"solver build failed":solver.issues.front());
   topology=std::move(solver.topology);repartitions=solver.qualityRepartitionCount;
-  require(writeCm2dTopology(topology,prefix+".solver.cm2d",&error),error);
   const auto quality=evaluateSolverQuality2D(topology);
+  const bool shapeTargetMet=mode!="shape" || evaluateSolverQuality2D(
+      topology,SolverShapeAgglomerationPolicy2D{}.target).valid();
+  require(writeCm2dTopology(topology,prefix+(shapeTargetMet?".solver.cm2d":".failed.solver.cm2d"),&error),error);
   std::ofstream(prefix+".quality.json")<<solverQualityReportToJson(quality);
   double area=0;for(const auto& c:topology.cells)area+=c.geometryArea;
   std::size_t retainedLayers=std::count(solver.immutableOutputCells.begin(),solver.immutableOutputCells.end(),true);
@@ -139,8 +159,9 @@ int main(int argc,char** argv) {
     <<",\"transitionBufferSourceCells\":"<<layerCount-protectedLayers.size()
     <<",\"retainedLayerCells\":"<<retainedLayers<<",\"mergedSmallCells\":"<<merged
     <<",\"qualityRepartitions\":"<<repartitions<<",\"qualityIssues\":"<<quality.issues.size()<<"}\n";
-  require(writeExtrudedOpenFoam2D(topology,domain,walls,prefix+".foam",.1,&error).valid(),error);
   if(!quality.valid()){std::cerr<<"quality rejection "<<quality.issues.size()<<'\n';return 3;}
+  if(!shapeTargetMet){std::cerr<<"shape target rejection\n";return 3;}
+  require(writeExtrudedOpenFoam2D(topology,domain,walls,prefix+".foam",.1,&error).valid(),error);
   // Ready external grids retain their external patch identities. Their adapter
   // writes boundary data from the actual external polyMesh, not a regular-ring
   // preset that would silently impose a different wall geometry.
