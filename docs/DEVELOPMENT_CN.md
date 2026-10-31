@@ -130,6 +130,22 @@ outputs/mesh-shape-limits/probe build/laminar-fixtures/annulus-l7.solver.cm2d ou
 
 ### PC 网格因素与成熟求解器实验
 
+CPU/GPU与计时补测用同一报告首屏；代号、固定条件和短程/完整收敛区别均在页面解释。新增稳态层流显式`--minimum-iterations N`（正整数，默认10）；它只移除等待轮数，仍检查全部原停止量和最终strict认证。非默认值不支持瞬态/材料耦合，不能写作续算物理资格。`--profile`下coupled逐轮回报进度；性能JSON记录minimumIterations。
+
+```powershell
+$env:PYTHONUTF8='1'
+$env:CARTMESH2D_TORCH_ROOT='D:\gas-turbine-envs\windows-runtime\Lib\site-packages\torch'
+# 先完成Release构建，再串行实算；工具写入不可覆盖的run receipt。
+& 'D:\gas-turbine-envs\windows-runtime\python.exe' tools/benchmarks/pc_meshing/gpu_study.py native
+& 'D:\gas-turbine-envs\windows-runtime\python.exe' tools/benchmarks/pc_meshing/field_differences.py
+& 'D:\gas-turbine-envs\windows-runtime\python.exe' tools/benchmarks/pc_meshing/report.py --no-plots
+```
+
+`gpu_study.py`的`native`包含同5轮65,536格SIMPLE/CPU/GPU、多层CPU对照、coupled最少轮数以及大档1/2轮前缀。其他实际完整补测调用同模块`native('shape160','coupled','ic0','cpu',100,150,1)`、`native('graded128','simple','aggregation','cpu',6000,180)`；命令/时间/显存与CPU口径以报告JSON和本地run receipt为准。`replay`仅为可选冻结矩阵入口，本轮没有运行，不是新GPU资格。已在构建未完成前产生的旧`gpu-study-*`解析失败记录保留并排除，正式比较只消费`gpu-study-v2-*`；失败不覆盖或伪装修复。
+
+`gpu_probe.py`实际记录本机PyFluent对二维GPU的拒绝。`fluent_gpu_study.py`提供case复用分段计时和单层三维前后对称参考构造/批量设置；本轮三维GPU启动与新二维case复用未连通，输入和日志保留，不能称成熟GPU加速实证。该挤出仅为外部求解器参考，未引入三维cartmesh核心或改变原二维产品。Fluent官方建议一块GPU先配一个CPU进程，更多CPU主要帮助设置与后处理；不要用CPU核数简单堆叠来推断GPU更快。后续优先核对[NVIDIA AMGX](https://github.com/NVIDIA/AMGX)的GPU AMG/块系统能力，再按原矩阵、原门对照，不复制重写PDE。
+
+
 能力、数值/物理资格和当前结论见[当前状态](CURRENT_STATE_CN.md#pc-网格因素与成熟求解器对照)，逐组数字及资源见[HTML](../artifacts/current/pc-mesh-study.html)和[JSON](../artifacts/current/pc-mesh-study.json)。工具只编排现有原生/成熟求解器、交换真实网格/场并绘图，不组装重复FV方程。普通桌面和产品默认不变。
 
 - 原生研究入口：`cartmesh2d_annulus_mesh_cross`，CMake目标为EXCLUDE_FROM_ALL；沿用单个源码，Windows产物位于`build/Release/`。旧`native`、`shape`、`geos`、`ready`等模式保留。新选项`--wall-refine 1`在离物面小于1.5h的原背景格内切成四个子格，再走同一真实Cut-cell/拓扑/形状聚合；只做一级局部加密。共享全局拓扑处理粗细接口，未将中心采样当切割。

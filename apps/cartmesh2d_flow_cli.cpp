@@ -181,6 +181,7 @@ int main(int argc, char** argv) {
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
+            "--minimum-iterations 10: explicit steady-laminar stop delay; >=1, residual/flux gates unchanged.\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
@@ -242,6 +243,11 @@ int main(int argc, char** argv) {
                 controls.manufacturedViscositySlope=number(v);
             } else if (a == "--speed") {
                 controls.speed = number(v);
+            } else if (a == "--minimum-iterations") {
+                const double count=number(v);
+                if(count<1 || count>1000000 || std::floor(count)!=count)
+                    throw std::invalid_argument("minimum-iterations must be an integer in [1,1000000]");
+                controls.minimumIterations=static_cast<std::size_t>(count);
             } else if (a == "--linear-policy") {
                 if(v!="strict" && v!="adaptive")throw std::invalid_argument("linear-policy must be strict or adaptive");
                 controls.adaptiveLinear=v=="adaptive";
@@ -877,6 +883,7 @@ int main(int argc, char** argv) {
             auto performance = out(prefix, ".performance.json");
             performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
                         << "\"pressureBackend\":" << std::quoted(controls.pressureBackend==fv::PressureBackend2D::Cpu?"cpu":"torch-cuda")
+                        << ",\n\"minimumIterations\":" << controls.minimumIterations
                         << ",\n\"gpuPressureSolves\":" << p.pressureGpu.solves
                         << ",\n\"gpuPressureIterations\":" << p.pressureGpu.iterations
                         << ",\n\"gpuMatrixUploads\":" << p.pressureGpu.matrixUploads

@@ -24,7 +24,7 @@ void strict(const FlowResult2D& result,const FlowControls2D& c) {
     require(result.converged,result.failureReason.empty()?"coupled did not converge":result.failureReason);
     const auto& h=result.history.back();
     require(h.strictLinearStep && detail::strictFlowConverged2D(h.iteration,h.momentumResidual,h.velocityChange,
-        h.pressureChange,h.continuity,result.globalRelativeImbalance,c.tolerance,true),"coupled bypassed strict gate");
+        h.pressureChange,h.continuity,result.globalRelativeImbalance,c.tolerance,true,c.minimumIterations),"coupled bypassed strict gate");
     require(h.fluxConsistency<std::min(c.tolerance,1e-8),"retained flux does not satisfy refreshed Rhie-Chow equation");
     require(result.outletBackflowFaces==0 && result.outletInflow==0,"coupled accepted outlet backflow");
     require(result.performance.coupledSolves>0 && result.performance.coupledIterations>0,"missing total Krylov cost");
@@ -140,6 +140,22 @@ FlowControls2D custom(const FvMesh2D& mesh,bool fixedOutlet) {
 }
 }
 int main() {
+    // Removing the waiting floor must retain every defect gate and final certification.
+    {
+        const auto mesh=rectangle(4,3,2);
+        FlowControls2D control;control.scenario="channel";control.nu=.1;control.tolerance=1e-9;
+        control.coupling=FlowCoupling2D::Coupled;control.adaptiveLinear=true;
+        const auto delayed=solveIncompressible2D(mesh,control);strict(delayed,control);
+        control.minimumIterations=1;
+        const auto early=solveIncompressible2D(mesh,control);strict(early,control);
+        require(early.history.back().iteration<10,"explicit minimum did not remove artificial wait");
+        sameFixedPoint(early,delayed,"minimum iteration delay");
+        require(!detail::strictFlowConverged2D(1,1.,0.,0.,0.,0.,control.tolerance,true,1),
+            "early stopping bypassed momentum defect");
+        control.minimumIterations=0;
+        bool rejected=false;try{(void)solveIncompressible2D(mesh,control);}catch(const std::runtime_error&){rejected=true;}
+        require(rejected,"zero minimum iterations accepted");
+    }
     const auto channel=rectangle(12,6,2),box=rectangle(10,10);
     FlowControls2D c;c.scenario="channel";c.nu=.1;c.tolerance=1e-9;
     for(const auto scheme:{ConvectionScheme2D::Upwind,ConvectionScheme2D::LimitedLinearUpwind,ConvectionScheme2D::FaceLimitedLinearUpwind}) {

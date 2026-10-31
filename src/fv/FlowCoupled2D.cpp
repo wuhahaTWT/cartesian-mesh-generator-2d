@@ -156,7 +156,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
     };
     const auto converged=[&](const FlowIteration2D& step) {
         return detail::strictFlowConverged2D(step.iteration,step.momentumResidual,step.velocityChange,
-            step.pressureChange,step.continuity,step.globalRelativeImbalance,controls.tolerance,true)
+            step.pressureChange,step.continuity,step.globalRelativeImbalance,controls.tolerance,true,controls.minimumIterations)
             && step.fluxConsistency<consistencyTolerance;
     };
     auto accepted=evaluate(state,result.flux);
@@ -272,7 +272,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
                     for(std::size_t i=0;i<n;++i){candidate.step.velocityChange=std::max(candidate.step.velocityChange,std::hypot(trial[i]-old[i],trial[n+i]-old[n+i]));candidate.step.pressureChange=std::max(candidate.step.pressureChange,std::abs(trial[2*n+i]-old[2*n+i]));}
                     // The merit chooses a step only. It never replaces the
                     // maximum-cell, field-change, continuity or strict gates.
-                    auto roundoffCandidate=candidate.step;roundoffCandidate.iteration=std::max<std::size_t>(10,iteration);
+                    auto roundoffCandidate=candidate.step;roundoffCandidate.iteration=std::max(controls.minimumIterations,iteration);
                     if(candidate.merit<=before.merit*(1.-1e-4*weight) || converged(roundoffCandidate)){found=true;break;}
                     ++result.performance.lineSearchRejected;weight*=.5;
                 }
@@ -303,7 +303,7 @@ FlowResult2D solveCoupledFlow2D(const FvMesh2D& mesh,const FlowControls2D& input
             break;
         }
         const auto& step=result.history.back();
-        if(progress && (iteration==1 || iteration%10==0))progress(step);
+        if(progress && (controls.profile || iteration==1 || iteration%10==0))progress(step);
         if(converged(step)) {
             if(step.strictLinearStep){result.converged=true;break;}
             certifyNext=true;

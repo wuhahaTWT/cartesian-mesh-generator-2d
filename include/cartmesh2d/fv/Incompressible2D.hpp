@@ -51,6 +51,8 @@ struct FlowControls2D {
     double speed = 1;
     double tolerance = 1e-6;
     std::size_t maxIterations = 1500;
+    // Explicit steady-laminar experiment; all residual/field/flux gates remain.
+    std::size_t minimumIterations = 10;
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;

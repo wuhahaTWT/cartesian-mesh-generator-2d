@@ -62,6 +62,8 @@ static FlowResult2D solveFlow(
            (c.convergence==FlowConvergence2D::Engineering && !previous && !material),
            "Engineering convergence requires steady laminar flow");
     ensure(!c.adaptiveLinear || !material,"Adaptive linear solving does not support material coupling");
+    ensure(c.minimumIterations>=1 && (c.minimumIterations==10 || (!previous && !material)),
+           "Custom minimum iterations require steady laminar flow and a positive count");
     ensure(c.steadyAcceleration==SteadyAcceleration2D::None ||
            (c.steadyAcceleration==SteadyAcceleration2D::Anderson && !previous && !material),
            "Anderson acceleration requires steady laminar flow");
@@ -515,7 +517,7 @@ static FlowResult2D solveFlow(
             const double residual=std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale;
             if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
         bool acceleratedCandidate=false;
-        const bool baseConverged=detail::strictFlowConverged2D(it,mr,du,dp,continuity,r.globalRelativeImbalance,c.tolerance,materialConverged);
+        const bool baseConverged=detail::strictFlowConverged2D(it,mr,du,dp,continuity,r.globalRelativeImbalance,c.tolerance,materialConverged,c.minimumIterations);
         if(accelerated && !finalCertification && it>=c.andersonStart && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
             const auto candidate=accelerator.propose(previousScaled,packState());
             if(candidate) {
