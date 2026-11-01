@@ -208,6 +208,23 @@ build/cartmesh2d_flow_cli --mesh outputs/shape-replay/new160.solver.cm2d --case 
 
 新增`cartmesh2d_shape_agglomeration_tests`与既有Solver导出、拓扑、合并CTest是相关原生回归。`plot_shape_agglomeration.py`仅读实际网格/原生报告并复用已有真圆解析诊断；不是新的Python方程验收链。按本次输出布局恢复代表包后，可用 `MPLCONFIGDIR=/private/tmp/cartmesh2d-shape-mpl python3 tools/benchmarks/plot_shape_agglomeration.py` 重建图和证据；其他平台字体须换成本机中文字体，链接Accelerate仅适用于本机macOS。新非凸单元尚无新外部checkMesh结论，不能用原生通过替代。
 
+### 当前网格方法清单与翼型复现
+
+家族、旧/新入口、实际可用范围及待修复项只维护在[当前状态](CURRENT_STATE_CN.md#当前网格方法与翼型选型)。[清单JSON](../artifacts/current/mesh-method-inventory.json)记录完整命令、退出码、最终或failed网格路径/SHA、原生问题与降层；旧翼型A/C明确标为复用，不把参数档位算成独立方法。
+
+普通纯网格入口为 `apps/cartmesh2d_cli.cpp` 的 `shapeAgglomeration` 分支；新聚合为 `agglomerateSolverByShape2D`，旧处理为 `SmallCell2D` 与 `buildSolverTopology2D`。混合入口为 `cartmesh2d_hybrid_cli.cpp`、`HybridMeshPolicy2D` 和 `buildRobustH4Mesh2D`；默认共享身份构造，`--legacy-construction` 显式返回旧构造。Q3合并、两格重划、分组重划递进包含；Q4和两个Q5分别控制构造选择、外过渡径向匹配、终止缓冲匹配。
+
+同背景新旧Cut-cell对照只在原A/B命令末尾加 `--shape-agglomeration` 并换新输出前缀，保持XY、尺寸场和尾流带。失败只绘制 `.failed.solver.cm2d` 和原生质量报告，不能传给CFD。混合对照只在原C命令加单个策略选项（组合组单列），保持4层、首层.0025c、增长率1.2和外域。文件相同不代表其他几何或中间构造全部等价。
+
+保存的网格和收据齐全时，用既有绘图环境重建：
+
+~~~powershell
+& D:\gas-turbine-envs\windows-runtime\python.exe -X utf8 tools/visualization/render_mesh_method_inventory.py
+ctest --test-dir build -C Release -R 'cartmesh2d_shape_agglomeration_tests|cartmesh2d_stageS1_solver_export_tests' --output-on-failure
+~~~
+
+绘图脚本仅读CM2D、原生质量JSON、分层报告和运行收据，不实现/复核FV方程。输出为 `artifacts/current/mesh-method-inventory{,-details,-hybrid,-background,-changes}.png` 及HTML/JSON；PNG人工核对，未做浏览器交互验收。重新生成网格按JSON命令换新前缀，不覆盖接受结果/失败复现。清理产品入口前须区分测试参考与真正废弃调用。
+
 ### Cut-cell 小单元与尖锐单元处理文献
 
 本节为用户要求的小单元/尖锐单元处理调研，检索截至2026-10-29；20篇原始研究中19篇为已发表论文，1篇2026预印本单列。只用原论文、作者/机构稿和成熟项目源码作技术依据，不把二手综述、搜索摘要或方法名当作已复现资格。表中“全文关键段”表示读取可获取原文的相关段落，不表示逐页精读或已实现；“摘要/预览”表示核对原出版方或作者机构摘要，不把付费全文说成已读。方法选择是本项目的工程判断，成功率、工作日和物理精度尚未验证。
