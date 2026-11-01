@@ -743,7 +743,7 @@ app.whenReady().then(async () => {
           ? `壁面 h/Lref=${choice.wallRelativeSize}，背景 h/Lref=${choice.backgroundRelativeSize}` +
             (choice.method === 'hybrid' ? `，首层 h/Lref=${choice.firstLayerRelativeSize}` : '')
           : choice.method === 'hybrid' ? `层级 ${choice.maxLevel}，首层 ${choice.firstThickness}` :
-         `壁面体长/${choice.wallCellsPerSpan}，远场 ${choice.farFieldSpans}，α ${choice.smallAlpha}`));
+         `壁面体长/${choice.wallCellsPerSpan}，远场 ${choice.farFieldSpans}，${choice.cutcellStrategy === 'shape' ? '形状聚合＋局部重划分' : 'α ' + choice.smallAlpha}`));
       try {
         const payload = await generateOnce(choice);
         if (payload.incomplete) throw new Error(payload.incomplete);

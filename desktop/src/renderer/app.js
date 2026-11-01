@@ -237,6 +237,7 @@ function buildRequest() {
   return {
     ...base,
     smallAlpha: Number($('smallAlpha').value),
+    cutcellStrategy: $('cutcellStrategy').value,
     wallCellsPerSpan: Number($('wallCellsPerSpan').value),
     farLevel: Number($('farLevel').value),
     curvatureCellsPerRadius: !base.targetCells && $('useCurvature').checked ? Number($('curvatureCellsPerRadius').value) : 0,
@@ -322,7 +323,7 @@ function useManualParameters(request) {
   if (!request || state.busy) return;
   const fields = { wallRelativeSize:'wallRelativeSize', backgroundRelativeSize:'backgroundRelativeSize',
     farFieldSpans:'relativePadding', cellsPerLevel:'relativeBandCells', firstLayerRelativeSize:'firstLayerRelativeSize',
-    nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha' };
+    nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha', cutcellStrategy:'cutcellStrategy' };
   for (const [key,id] of Object.entries(fields)) if (request[key] != null) $(id).value = request[key];
   if (request.referenceLength != null) {
     $('referenceMode').value = 'explicit'; $('referenceLength').value = request.referenceLength;
@@ -408,8 +409,9 @@ function updateControlMode() {
   $('resolutionBlock').hidden = automatic||background;
   $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
-  $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
-  $('smallAlphaNote').hidden = automatic || state.method !== 'cutcell';
+  $('cutcellStrategyField').hidden = state.method !== 'cutcell';
+  $('smallAlphaField').hidden = automatic || state.method !== 'cutcell' || $('cutcellStrategy').value === 'shape';
+  $('smallAlphaNote').hidden = $('smallAlphaField').hidden;
   $('automaticControls').hidden = !automatic;
   $('autoLayerFields').hidden = state.method !== 'hybrid';
   $('customTargetField').hidden = $('density').value !== 'custom';
@@ -785,7 +787,7 @@ async function generate() {
       $('autoNote').textContent = job.relativeSizing
         ? `${payload.cellBudget ? '参数已按最终选中的结果记录。' : payload.densityReduced ? '更密请求未满足，已降密。' : ''}上次生成的壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
         : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
-        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
+        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，${job.cutcellStrategy === 'shape' ? '形状聚合＋局部重划分' : 'α ' + job.smallAlpha}`
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
     $('exportResult').hidden = Boolean(payload.incomplete);
@@ -1548,6 +1550,7 @@ $('toggleRegions').addEventListener('click', () => {
 
 $('fitOverview').addEventListener('click', fitOverview);
 $('controlMode').addEventListener('change', updateControlMode);
+$('cutcellStrategy').addEventListener('change', () => { clearResult(); updateControlMode(); });
 $('fluidRegion').addEventListener('change', () => {
   clearResult();
   selectMethod(state.method);

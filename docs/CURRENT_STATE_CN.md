@@ -10,16 +10,21 @@
 
 **桌面与实际程序已同步。** Windows MSVC Release已从当前源码重新构建，六个CLI同步到 `build/Release` 与 `desktop/runtime/bin`；现有Torch压力模块也保留并重新构建。原MSBuild受本机路径追踪/实例识别影响，实际构建使用同一源码的 `build/ninja`，未建立源码副本。桌面显示“网格形状建议”，参考值读取生成报告，不再另写一套数值；已移除经验质量失败触发的自动改密度重试。
 
-**同一张NACA2412的实际成熟检查。** 原80点折线和尺寸参数保持，形状聚合生成32,906格，退出码0，正常写出CM2D和OpenFOAM；5条旧诊断保留，`native_fv_compatible=false`。使用现有官方 `opencfd/openfoam-run:2606`、未添加自定义 `meshQualityDict`，运行结果：
+**形状聚合后已接入局部重划分。** 聚合不再是终点：用输入单元包围盒面积作局部分辨率参考，优先沿壁面法向、角平分方向或已有顶点分割；短壁面缺少空间时，对当前格与直接邻格重新分配面积，不继续合成更大的格。保留物面折线、流体面积、共享构造身份及来源/细化谱系，不为消除凹性而把所有壁面格强行三角化。尺寸恢复候选不能使现有建议评分变差；几何不能直接使用的尖尾格优先恢复逐面正中心距离。没有新增出口验收阈值。
 
-| OpenFOAM原版工具 | 实际输出 |
-| --- | --- |
-| `checkMesh` | `Failed 2 mesh checks`：2个面锥体方向问题、2个高偏斜面；拓扑、正体积和内部非正交等项目另按原日志解释 |
-| `checkMesh -allGeometry -allTopology` | `Failed 4 mesh checks`；另有面四面体分解、凹单元等记录，完整原始输出保留 |
+**同一张NACA2412的实际结果。** 80点折线、背景及尺寸参数不变，最终32,949格；后处理累计45次单元参与（含两格局部重划），净增加43格。原生诊断与checkMesh对应的是相同前缘/尾缘位置；尾缘原最终编号31911对应原始source9618，本来就是绕尖尾的切割格，不是合并才产生。
 
-两条工具命令本身退出码均为0，但日志报告失败项；封装入口如实记录 `reported_issues`，不把退出码0误报为“网格合格”，也不删除网格或禁止后续目标CFD尝试。这里不声称流场收敛或网格无关性，本次没有运行CFD、网格无关性、额外测试矩阵或桌面视觉验收。
+| 项目 | 后处理前 | 后处理后 |
+| --- | ---: | ---: |
+| 流体单元 | 32,906 | 32,949 |
+| 最大贴壁单元面积 / c² | 0.00012844149 | 0.00006890222（约减少46.36%） |
+| 当前FV几何适用性 | 两条负法向中心距离 | `native_fv_compatible=true` |
+| OpenFOAM2606标准checkMesh | 2类失败 | `Mesh OK`；面锥体、偏斜检查通过 |
+| 同版扩展检查 | 4类失败 | 1类：943个凹单元；面四面体分解已OK |
 
-[现有方法报告及当前政策说明](../artifacts/current/mesh-method-inventory.html) · [现有数据索引](../artifacts/current/mesh-method-inventory.json) · [操作与复现](DEVELOPMENT_CN.md#当前网格方法清单与翼型复现)。继续计算的输入和原始成熟检查日志在 `outputs/quality-advisory/airfoil/`，`foam/checkMesh.json`记录实际命令、软件版本、网格文件哈希和日志名；此前失败例、原始场与研究材料未删除。后续纯Cut-cell工作以这些实际面几何问题为对象；独立浸入边界求解器作为用户明确要推进的方向保留。已有近壁细化和第三方圆环参照见后文，不能当成通用翼型能力。
+工具来自现有官方 `opencfd/openfoam-run:2606`，未添加自定义 `meshQualityDict`。扩展检查的凹单元报告保留，没有把标准结果当成完整扩展通过或物理精度。当前没有运行该翼型CFD或网格无关性。只运行直接相关的既有原生聚合回归及桌面参数传递检查，没有扩展验证矩阵、全量/平台CI或安装包视觉验收。
+
+[修改前后真实网格](../artifacts/current/shape-agglomeration-airfoil.png) · [现有方法报告](../artifacts/current/mesh-method-inventory.html) · [完整数据索引](../artifacts/current/mesh-method-inventory.json) · [操作与复现](DEVELOPMENT_CN.md#当前网格方法清单与翼型复现)。新网格、导出case和原始checkMesh日志留在 `outputs/quality-advisory/airfoil-postprocessed/` 供继续计算；旧失败输入保留在 `airfoil/`，中间试改与绘图文件仅作可重建临时产物。Windows相关程序已重建并同步 `build/Release` 与 `desktop/runtime/bin`。桌面新增“形状聚合＋局部重划分”显式选项，旧处理仍可选且默认未变；本轮未重打安装包。
 
 ## PC 网格因素与成熟求解器对照
 

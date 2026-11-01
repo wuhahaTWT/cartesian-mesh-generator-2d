@@ -105,6 +105,10 @@ int main() {
     const BoundaryRegion2D badWall{BoundaryLoop(bad.fluidPolygon.vertices)};
     const Domain2D badDomain{{{-1,-1},{3,3}}};
     const auto rejected=agglomerateSolverByShape2D(buildGlobalTopology({bad},badDomain,badWall),badDomain,badWall);
-    check(rejected.valid() && !rejected.targetMet(),"centroid outside a face half-plane remains rejected");
+    check(rejected.valid() && rejected.after.nativeFvCompatible() &&
+        rejected.repartitionedCellCount>0 && rejected.topology.cells.size()>1,
+        "a cut cell wrapping a solid tip is repartitioned instead of left unusable");
+    check(std::abs(area(rejected.topology)-bad.area)<=TolerancePolicy{}.relative*bad.area,
+        "post-agglomeration repartition preserves the complete fluid area");
     return failures?1:0;
 }

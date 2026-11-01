@@ -1057,6 +1057,8 @@ int main(int argc, char** argv) {
         if (!out.good()) {std::cerr<<"failed to write shape-quality report\n";return EXIT_FAILURE;}
         std::cout<<"shape_stop="<<shapeResult->stopReason
                  <<" shape_merged_cells="<<shapeResult->mergedCellCount
+                 <<" shape_repartitioned_cells="<<shapeResult->repartitionedCellCount
+                 <<" shape_added_cells="<<shapeResult->addedCellCount
                  <<" shape_passes="<<shapeResult->passes
                  <<" shape_candidates="<<shapeResult->candidateCount
                  <<" shape_remaining_issues="<<shapeResult->after.issues.size()<<'\n';
@@ -1120,6 +1122,7 @@ int main(int argc, char** argv) {
             solverTopology->inputCellCount=sourceTopology.cells.size();
             solverTopology->outputCellCount=shapeResult->topology.cells.size();
             solverTopology->qualityAgglomeratedSourceCellCount=shapeResult->mergedCellCount;
+            solverTopology->qualityRepartitionCount=shapeResult->repartitionedCellCount;
         } else solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
         if (!solverTopology->valid()) {
             std::cerr<<"solver topology partition failed";

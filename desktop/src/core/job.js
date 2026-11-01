@@ -103,6 +103,11 @@ function validateJob(request) {
     return {job, method};
   }
 
+  if (method.id === 'cutcell') {
+    job.cutcellStrategy = request.cutcellStrategy ?? 'legacy';
+    if (!['legacy', 'shape'].includes(job.cutcellStrategy)) throw new Error('未知 Cut-cell 处理策略。');
+  }
+
   if (request.sizingMode === 'relative') {
     job.relativeSizing = true;
     const { field, budget } = validateSizeField(request, method.safeWallLevel);
@@ -212,7 +217,8 @@ function buildInvocation(job, paths, options = {}) {
         options.dryRun ? '-' : paths.casePath,
         '0', '0',
         ...sizeFieldArgs(job.sizeField, options),
-        ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame))],
+        ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame)),
+        ...(!options.dryRun && job.cutcellStrategy === 'shape' ? ['--shape-agglomeration'] : [])],
       cm2dCandidates: [`${paths.prefix}.solver.cm2d`]
     };
   }

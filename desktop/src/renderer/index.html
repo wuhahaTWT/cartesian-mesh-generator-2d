@@ -188,6 +188,12 @@
     <section class="block">
       <h2><span>4</span>预览与保存</h2>
       <p class="note">直接生成右侧预览，无需选择目录。临时结果仅供本次使用；需要保存时点击“导出结果包”，得到一个 ZIP。</p>
+      <label class="field" id="cutcellStrategyField">Cut-cell 处理策略
+        <select id="cutcellStrategy">
+          <option value="legacy">小单元合并＋凸划分</option>
+          <option value="shape">形状聚合＋局部重划分</option>
+        </select>
+      </label>
       <label class="field" id="smallAlphaField">小单元阈值 α
         <input id="smallAlpha" type="number" min="0.001" max="0.999" step="any" value="0.15">
       </label>

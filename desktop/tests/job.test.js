@@ -147,3 +147,11 @@ test('the dry run leaves regions out, since it only resolves the field', () => {
   const frame = { centreX: 0, centreY: 0, bodySpan: 1 };
   assert.ok(!buildInvocation(job, { ...paths, frame }, { dryRun: true }).args.includes('--refine-box'));
 });
+
+
+test('shape repartition is an explicit pure Cut-cell strategy and is omitted from sizing probes', () => {
+  const { job } = validateJob(cutcell({cutcellStrategy: 'shape'}));
+  assert.ok(buildInvocation(job, paths).args.includes('--shape-agglomeration'));
+  assert.ok(!buildInvocation(job, paths, {dryRun: true}).args.includes('--shape-agglomeration'));
+  assert.throws(() => validateJob(cutcell({cutcellStrategy: 'unknown'})), /处理策略/);
+});

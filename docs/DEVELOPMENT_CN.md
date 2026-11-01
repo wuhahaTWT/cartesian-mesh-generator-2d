@@ -214,14 +214,18 @@ build/cartmesh2d_flow_cli --mesh outputs/shape-replay/new160.solver.cm2d --case 
 
 ### 当前网格方法清单与翼型复现
 
-方法范围和当前行为只看[当前状态](CURRENT_STATE_CN.md#当前网格方法与翼型选型)。历史新旧网格对照继续保留在[现有索引](../artifacts/current/mesh-method-inventory.json)，其中旧“拒绝输出”记录对应旧代码，当前经验指标已改为建议；`quality_policy_update`记录同一翼型的新程序输出与实际checkMesh结果。
+桌面纯Cut-cell的“处理策略”可选择“形状聚合＋局部重划分”，旧“小单元合并＋凸划分”仍保留默认。CLI仍用 `--shape-agglomeration`，现在同时执行聚合后的尺寸恢复和局部重划，不另建开发阶段或版本。`shape_repartitioned_cells`与`shape_added_cells`分别报告后处理单元数和净增格数。重划沿物面法向/角平分线及已有顶点尝试，必要时只重划直接相邻两格；保留原始XY和来源身份。
+
+当前固定翼型命令、网格和日志：`outputs/quality-advisory/airfoil-postprocessed/run.json`及同目录`mesh.solver.cm2d`、`foam/`。图形使用同目录可重建的`plot-comparison.py`，原失败输入留在`outputs/quality-advisory/airfoil/`。
+
+方法范围和当前行为只看[当前状态](CURRENT_STATE_CN.md#当前网格方法与翼型选型)。历史新旧网格对照继续保留在[现有索引](../artifacts/current/mesh-method-inventory.json)，其中旧“拒绝输出”记录对应旧代码，当前经验指标已改为建议；`quality_policy_update`保留取消经验硬拦截时的结果；shape_postprocessing_update记录当前局部重划分和checkMesh原始输出。
 
 纯网格入口为 `apps/cartmesh2d_cli.cpp`，形状聚合选项仍为 `--shape-agglomeration`；内部优化继续使用历史参考，但输出只要求真实拓扑/单元几何可导出。`SolverQualityReport2D::exportable`与`nativeFvCompatible`分别用于交换输出与当前有限体积离散适用性，不使用经验质量数字阻止导出/组装。优化器原有 `valid()`评分含义保留，JSON的 `recommendations_met` 明确说明建议是否满足，不是物理验收。桌面读取报告中的实际参考值并显示建议，旧质量失败自动改密度逻辑已移除。
 
 实际调用成熟工具的通用入口：
 
 ~~~powershell
-& D:\gas-turbine-envs\windows-runtime\python.exe -X utf8 tools/benchmarks/check_mesh.py outputs/quality-advisory/airfoil/foam
+& D:\gas-turbine-envs\windows-runtime\python.exe -X utf8 tools/benchmarks/check_mesh.py outputs/quality-advisory/airfoil-postprocessed/foam
 ~~~
 
 有本地 `checkMesh` 时直接运行；否则使用已安装Docker和现有官方 `opencfd/openfoam-run:2606` 镜像。封装只启动原版 `checkMesh` 与 `checkMesh -allGeometry -allTopology`，不实现重复几何方程、不写入项目自定的 `meshQualityDict`，输出保存在该case的 `checkMesh.log`、`checkMesh-extended.log`、`checkMesh.json`。判断“工具报告问题”读取其原始结论，不能仅用进程退出码0；失败项不触发删除或禁止导出。更换工况后是否继续CFD由用户决定。

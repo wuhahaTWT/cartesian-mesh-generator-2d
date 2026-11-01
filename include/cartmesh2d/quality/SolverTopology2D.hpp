@@ -71,7 +71,8 @@ struct SolverTopologyConstraints2D {
 // Shape-driven exact unions, before any convex partition. A physical reflex
 // wall corner is retained when the area centroid is inside every face's
 // inward half-plane (the unchanged FV geometric admissibility condition).
-// These are generation targets, not a change to the legacy Solver gate.
+// After exact unions, locally repartition oversized or geometrically unusable
+// cells. Targets guide optimization and never block export.
 struct SolverShapeAgglomerationPolicy2D {
     SolverQualityPolicy2D target = [] {
         SolverQualityPolicy2D p;
@@ -90,6 +91,8 @@ struct SolverShapeAgglomerationResult2D {
     std::vector<bool> immutableCells;
     SolverQualityReport2D before, after;
     std::size_t mergedCellCount = 0;
+    std::size_t repartitionedCellCount = 0;
+    std::size_t addedCellCount = 0;
     std::size_t passes = 0;
     std::size_t candidateCount = 0;
     std::size_t maximumUnionCellCount = 0;
