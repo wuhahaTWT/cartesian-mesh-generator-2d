@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>当前网格方法与版本清单</title><style>body{font:16px/1.7 'Microsoft YaHei',sans-serif;background:#f3f6f9;color:#183146;margin:0}main{max-width:1250px;margin:auto;padding:32px}section{background:white;padding:24px;margin:20px 0;border-radius:12px}h1{font-size:30px}h2{font-size:22px}img{width:100%;height:auto}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #d6e1e8;padding:12px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;word-break:break-all;font-size:12px}code{font-size:13px;word-break:break-all}.alert{border-left:5px solid #c45339;padding:12px;background:#fff1ed}a{color:#16708e}</style><main><h1>当前网格方法与版本清单</h1><p>开发线 7b3895c。只生成、检查及绘制真实网格；未启动 CFD。主路径与内部策略分开计数。</p><section><h2>先纠正上一轮</h2><p class="alert">上一轮 A/B 使用当前程序里的旧默认 Cut-cell 分支，漏加 --shape-agglomeration；C/D 只是两组层数参数。四张图没有覆盖新旧算法。桌面 Cut-cell runtime 也落后于 build/Release：缺少新聚合选项；混合程序两处哈希相同。</p><p>源码和功能可调用不等于已经替换桌面默认。此次不删除方法、不改默认，也不把失败网格当成可求输入。</p></section><section><h2>到底有多少种</h2><p><b>3 个产品家族；4 条原生流体网格主路径；2 个完整背景模式。</b>Cut-cell 有旧凸划分和新形状聚合两条；混合有旧 legacy 构造和当前共享构造两条。背景有均匀与自适应两种，均不可直接交给既有流体求解器。</p><p>混合另有6个显式策略选项，包含3种递进Q3选择、Q4构造选择、Q5外过渡和Q5终止缓冲。它们是同一生成器的局部策略，组合不是额外网格家族。4/8层、粗/细、均匀/自适应尺寸场、尾流带、背景相位和面积预算也不能各算一套独立算法。</p></section><section><h2>四条流体主路径</h2><img src="mesh-method-inventory.png"><p>新聚合在同一背景下去掉了大部分原壁面凸分解碎片，但细/粗两档仍各有5项质量问题，均涉及前缘和尾缘：有强反角、边界偏斜、粗档非正交以及非正面心法向距离。明确拒绝正常Solver/OpenFOAM输出。失败网格保留为下一步修复输入。</p><a href="mesh-method-inventory-details.png">打开前缘和尾缘等比例大图</a></section><section><h2>所有混合显式策略的实际结果</h2><img src="mesh-method-inventory-hybrid.png"><p>同一4层请求、首层0.0025c。局部降层橙色显示；有些开关接收数为0，有些改变中间构造或最终连接。最终文件哈希不同也可能包含身份/编号变化，不能直接推断流场差异。并行执行时间只记录，不作性能排名。</p><img src="mesh-method-inventory-changes.png"><p>Q3分组在翼下中段改变3条连接；Q4及组合的变化涉及中段上下侧，不能只看尾缘图判断没有变化。</p><table><tr><th>路径 / 策略</th><th>流体格数</th><th>本例结果</th><th>实际动作与完整证据</th></tr><tr><td>旧默认：小格合并＋凸划分</td><td>33,025</td><td>原生门通过</td><td><details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>当前网格方法与版本清单</title><style>body{font:16px/1.7 'Microsoft YaHei',sans-serif;background:#f3f6f9;color:#183146;margin:0}main{max-width:1250px;margin:auto;padding:32px}section{background:white;padding:24px;margin:20px 0;border-radius:12px}h1{font-size:30px}h2{font-size:22px}img{width:100%;height:auto}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #d6e1e8;padding:12px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;word-break:break-all;font-size:12px}code{font-size:13px;word-break:break-all}.alert{border-left:5px solid #c45339;padding:12px;background:#fff1ed}a{color:#16708e}</style><main><h1>当前网格方法与版本清单</h1><p>开发线 7b3895c。只生成、检查及绘制真实网格；未启动 CFD。网格方法与内部处理策略分开说明。</p><section><h2>先纠正上一轮</h2><p class="alert">上一轮 A/B 使用当前程序里的旧默认 Cut-cell 分支，漏加 --shape-agglomeration；C/D 只是两组层数参数。四张图没有覆盖新旧算法。桌面 Cut-cell runtime 也落后于 build/Release：缺少新聚合选项；混合程序两处哈希相同。</p><p>源码和功能可调用不等于已经替换桌面默认。此次不删除方法、不改默认，也不把失败网格当成可求输入。</p></section><section><h2>到底有多少种</h2><p><b>流体网格按两类维护：纯 Cut-cell、贴壁层混合。</b>完整背景是第三个几何产品家族。旧凸划分/新形状聚合属于纯 Cut-cell 内部处理策略；旧交点构造/共享交点身份属于混合网格内部策略，不能分别算作独立版本。背景有均匀与自适应两种模式。</p><p>Q3/Q4/Q5只是开发编号：Q3指终止区合并/重划，Q4指构造阶段选择连接方式，Q5指过渡区宽度匹配。对应6个显式选项，属于同一混合生成器的局部策略，不能当成三个版本。4/8层、粗/细、均匀/自适应尺寸场、尾流带、背景相位和面积预算也不能各算一套独立算法。</p></section><section><h2>新旧处理策略对照（不是四个网格版本）</h2><img src="mesh-method-inventory.png"><p>新聚合在同一背景下去掉了大部分原壁面凸分解碎片，但细/粗两档仍各有5项质量问题，均涉及前缘和尾缘：有强反角、边界偏斜、粗档非正交以及非正面心法向距离。明确拒绝正常Solver/OpenFOAM输出。失败网格保留为下一步修复输入。</p><a href="mesh-method-inventory-details.png">打开前缘和尾缘等比例大图</a></section><section><h2>纯 Cut-cell 为什么拒绝这张翼型</h2><p>“本项目网格检查”只是源码里的一组检查条件，不等于外部checkMesh通过、成熟求解器收敛或物理精度认证。必须分开看以下三层。</p><table><tr><th>检查层次</th><th>依据与局限</th></tr><tr><td>几何/离散适用条件</td><td>面积、连接、面方向须合法；当前有限体积离散要求单元中心至面沿外法向投影为正，否则扩散系数会变号。翼型尾缘两面为约-0.00317m，违反当前算子要求。不能据此外推所有CFD离散都无法处理该多边形。</td></tr><tr><td>项目质量限制</td><td>一些数值参考OpenFOAM默认检查和生成配置，但用途不完全相同。默认checkMesh的skew告警线4，与snappyHexMesh生成配置示例的边界skew20是不同设置。本项目把边界skew4作为阻止输出的条件，是项目政策，未证明它是普适CFD失败界线。原生形状比定义也不同，1000不能直接照搬为同一物理含义。</td></tr><tr><td>项目生成目标</td><td>最小角20°、原生形状比10、内部非正交45°是工程假设，并非行业标准或已完成通用CFD认证的界线。此翼型分别为24.13°/8.83/38.36°，全部满足，失败并非由这三项触发。</td></tr></table><p>细档只剩2个问题单元、5条记录：前缘1项边界偏斜5.26；尾缘凹性111.49°、偏斜7.40及两条负法向距离。把边界偏斜限制改为20也不能消除尾缘的几何问题，本次没有放宽限制。聚合以不移动物面为前提，只做有限范围并集；本例停止于没有可接受并集，尚无通用的局部细化/受控划分补救。</p><p>圆环采用许多小转角直边，本例凹性仅约1.406°，与翼型尾缘强凹口不同。9,076格形状聚合圆环已有自研SIMPLE3037轮、后续OpenFOAM SIMPLE3473轮、Fluent2026R1残差停止2027轮的既有记录；停止量定义不同，不据此比较快慢。该翼型失败网格尚未运行外部checkMesh或成熟CFD，不能假称成熟软件已经判失败。</p><p><a href="https://api.openfoam.com/2312/primitiveMeshCheck_8C_source.html">OpenFOAM默认检查源码</a> · <a href="https://doc.openfoam.com/2306/tools/pre-processing/mesh/generation/snappyhexmesh/meshquality/">OpenFOAM网格生成质量配置示例</a> · 圆环实算记录见原<a href="pc-mesh-study.json">数据JSON</a>。只纠正已有报告表述，不新增报告或修改网格/求解器算法。</p></section><section><h2>所有混合显式策略的实际结果</h2><img src="mesh-method-inventory-hybrid.png"><p>同一4层请求、首层0.0025c。局部降层橙色显示；有些开关接收数为0，有些改变中间构造或最终连接。最终文件哈希不同也可能包含身份/编号变化，不能直接推断流场差异。并行执行时间只记录，不作性能排名。</p><img src="mesh-method-inventory-changes.png"><p>终止区分组重划只改变3条连接；构造选优及组合的变化涉及中段上下侧。这些是同一生成器的小范围修复，不是独立版本。</p><table><tr><th>路径 / 策略</th><th>流体格数</th><th>本例结果</th><th>实际动作与完整证据</th></tr><tr><td>旧默认：小格合并＋凸划分</td><td>33,025</td><td>本项目网格检查通过</td><td><details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;old-cut&quot;,
   &quot;label&quot;: &quot;旧默认：小格合并＋凸划分&quot;,
   &quot;directory&quot;: &quot;outputs/airfoil-mesh-preview/A&quot;,
@@ -32,7 +32,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;complete&quot;,
   &quot;reused_from_previous_turn&quot;: true,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/airfoil-mesh-preview/A/mesh.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;c3fb1f9261cf6f7b5ef68710ef9c1a27a9b67a4852260ab079f845a83f8fb725&quot;,
@@ -242,7 +242,7 @@
     &quot;min_volume_ratio&quot;: 0.09305738735035801,
     &quot;min_compactness&quot;: 0.29955420439050723
   }
-}</pre></details></td></tr><tr><td>当前混合：共享构造</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>当前混合：共享构造</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-default&quot;,
   &quot;label&quot;: &quot;当前混合：共享构造&quot;,
   &quot;directory&quot;: &quot;outputs/airfoil-mesh-preview/C&quot;,
@@ -275,7 +275,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;complete&quot;,
   &quot;reused_from_previous_turn&quot;: true,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/airfoil-mesh-preview/C/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -310,7 +310,7 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>旧混合：legacy 构造</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>旧混合：legacy 构造</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-legacy&quot;,
   &quot;label&quot;: &quot;旧混合：legacy 构造&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-legacy&quot;,
@@ -344,7 +344,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-legacy/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -379,9 +379,9 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>Q3：终止区合并</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>终止区合并</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q3&quot;,
-  &quot;label&quot;: &quot;Q3：终止区合并&quot;,
+  &quot;label&quot;: &quot;终止区合并&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -413,7 +413,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -448,9 +448,9 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>Q3：两格重划</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>终止区两格重划</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q3-pair&quot;,
-  &quot;label&quot;: &quot;Q3：两格重划&quot;,
+  &quot;label&quot;: &quot;终止区两格重划&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3-pair&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -482,7 +482,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3-pair/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -517,9 +517,9 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>Q3：分组重划</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/2；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>终止区分组重划</td><td>22,622</td><td>本项目网格检查通过</td><td>与基础配置相比：新增3条连接，移除3条；不代表流场更优。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q3-group&quot;,
-  &quot;label&quot;: &quot;Q3：分组重划&quot;,
+  &quot;label&quot;: &quot;终止区分组重划&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3-group&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -551,7 +551,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q3-group/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;263b81f508a17070b7556faf3b87b2a35ba5b4d99012a2fb522015fb23f4de45&quot;,
@@ -591,9 +591,9 @@
     &quot;comparison&quot;: &quot;exact endpoint-coordinate pairs, no proximity matching&quot;
   },
   &quot;same_file_as_default&quot;: false
-}</pre></details></td></tr><tr><td>Q4：构造阶段选优</td><td>22,628</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>构造阶段连接选优</td><td>22,628</td><td>本项目网格检查通过</td><td>与基础配置相比：新增10条连接，移除4条；不代表流场更优。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q4&quot;,
-  &quot;label&quot;: &quot;Q4：构造阶段选优&quot;,
+  &quot;label&quot;: &quot;构造阶段连接选优&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q4&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -625,7 +625,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q4/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;2b6879f4e3f1e01c810deecd56fb0532b57865f69779b30f23203985347bca5a&quot;,
@@ -665,9 +665,9 @@
     &quot;comparison&quot;: &quot;exact endpoint-coordinate pairs, no proximity matching&quot;
   },
   &quot;same_file_as_default&quot;: false
-}</pre></details></td></tr><tr><td>Q5：外过渡径向匹配</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 2；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>外过渡宽度匹配</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q5-outer&quot;,
-  &quot;label&quot;: &quot;Q5：外过渡径向匹配&quot;,
+  &quot;label&quot;: &quot;外过渡宽度匹配&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q5-outer&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -699,7 +699,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q5-outer/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -734,9 +734,9 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>Q5：终止缓冲匹配</td><td>22,622</td><td>原生门通过</td><td>Q3接收 0/0/0；Q4接收 0；外径向分数 1；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>终止缓冲宽度匹配</td><td>22,622</td><td>本项目网格检查通过</td><td>最终网格与基础配置逐字节相同。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-q5-buffer&quot;,
-  &quot;label&quot;: &quot;Q5：终止缓冲匹配&quot;,
+  &quot;label&quot;: &quot;终止缓冲宽度匹配&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-q5-buffer&quot;,
   &quot;command&quot;: [
     &quot;D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe&quot;,
@@ -768,7 +768,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-q5-buffer/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663&quot;,
@@ -803,7 +803,7 @@
     &quot;q52_termination_buffer_rows&quot;: 3
   },
   &quot;same_file_as_default&quot;: true
-}</pre></details></td></tr><tr><td>上述可选策略组合</td><td>22,628</td><td>原生门通过</td><td>Q3接收 0/0/2；Q4接收 0；外径向分数 2；缓冲提交 False<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
+}</pre></details></td></tr><tr><td>上述可选策略组合</td><td>22,628</td><td>本项目网格检查通过</td><td>与基础配置相比：新增13条连接，移除7条；不代表流场更优。<details><summary>命令、哈希、原生问题及局部降层</summary><pre>{
   &quot;id&quot;: &quot;hybrid-combined&quot;,
   &quot;label&quot;: &quot;上述可选策略组合&quot;,
   &quot;directory&quot;: &quot;outputs/mesh-method-inventory/hybrid-combined&quot;,
@@ -840,7 +840,7 @@
   &quot;exit_code&quot;: 0,
   &quot;status&quot;: &quot;finished&quot;,
   &quot;reused_from_previous_turn&quot;: false,
-  &quot;result&quot;: &quot;原生门通过&quot;,
+  &quot;result&quot;: &quot;本项目网格检查通过&quot;,
   &quot;native_pass&quot;: true,
   &quot;mesh&quot;: &quot;outputs/mesh-method-inventory/hybrid-combined/mesh.hybrid.solver.cm2d&quot;,
   &quot;mesh_sha256&quot;: &quot;a10b8ffad9bdcd6dd6e2b4c48e949a253dc0ff391b3934c995908c543cc2ce4b&quot;,
@@ -880,4 +880,4 @@
     &quot;comparison&quot;: &quot;exact endpoint-coordinate pairs, no proximity matching&quot;
   },
   &quot;same_file_as_default&quot;: false
-}</pre></details></td></tr></table></section><section><h2>完整背景：两个独立几何产品</h2><img src="mesh-method-inventory-background.png"><p>两者都保留Inside/Outside/Intersected完整单元，solver_ready=false。均匀粗格可能没有完全位于薄翼型内部的单元，这不表示固体被删除。独立MAC浸入边界求解器有自己的计算格和固体辅助未知量，不是把这份背景JSON直接送进原生FvMesh。</p></section><section><h2>已有研究 / 第三方参照，不冒充通用翼型入口</h2><table><tr><th>方法</th><th>入口</th><th>实际范围</th><th>建议</th></tr><tr><td>近壁一级细化＋形状聚合</td><td><code>tools/benchmarks/annulus_mesh_cross.cpp --wall-refine 1 --distance-index 1</code></td><td>固定圆环/方域适配器；尚非通用翼型入口</td><td>保留并通用化</td></tr><tr><td>GEOS 原始切割</td><td><code>tools/benchmarks/geos_annulus.py</code></td><td>圆环切割对照；后处理仍共用自研旧路径</td><td>独立几何参照</td></tr><tr><td>Gmsh 映射四边形 / 三角形</td><td><code>tools/benchmarks/pc_meshing/gmsh_reference.py</code></td><td>断言两个256边圆环；不能直接用于单翼型</td><td>第三方参照</td></tr><tr><td>cfMesh cartesian2DMesh</td><td><code>tools/benchmarks/annulus_cross.py</code></td><td>独立参考，物面有近似，非严格同壁面Cut-cell</td><td>第三方参照</td></tr><tr><td>AMReX EB</td><td><code>tools/benchmarks/amrex_cutcell</code></td><td>直斜壁切割交叉诊断；不是产品网格核</td><td>参照/历史证据</td></tr></table><p><a href="shape-agglomeration.png">既有圆环新旧聚合图</a> · <a href="annulus-cross-meshes.png">既有第三方/混合参照图</a> · <a href="pc-mesh-study.html">近壁细化与Gmsh实验原报告</a></p></section><section><h2>建议如何保留和更迭</h2><table><tr><th>处理</th><th>对象与理由</th></tr><tr><td>退出常用入口候选，保留回归基线</td><td>旧纯Cut-cell凸分解流程；旧legacy交点构造。前者会制造尖碎片，后者已有共享身份构造替代。新聚合尚不能覆盖尾缘失败，所以现在不能直接删库或盲目切换默认。</td></tr><tr><td>优先继续维护</td><td>形状聚合＋有界近壁细化；当前共享构造混合网格。新聚合需解决强反角/尾缘受控划分；近壁细化研究需通用化。混合层需要保持真实降层与质量告警。</td></tr><tr><td>按用例保留研究开关</td><td>Q3/Q4/Q5和patch事务。单翼型上零接收不证明无用，原窄缝、终止区、喷管等触发例仍有价值。不能按阶段数字删除。</td></tr><tr><td>独立保留</td><td>两种完整背景产品、独立浸入边界研究、第三方几何参照。</td></tr><tr><td>只保留为内部工具 / 历史</td><td>边界层条带构造CLI是混合网格组件，非完整外流网格器；RectilinearMesh是算例/测试建格工具；H2顺序穷举参考用于H3等价测试。历史里程碑不移动。Q1已移除，不恢复。</td></tr></table></section><section><h2>验证与后续消费者</h2><p>现有Release的新聚合与Solver导出两项原生检查通过；每个生成命令的原生门、退出码和原始日志另列。没有全量测试、外部checkMesh、CFD、物理验证或安装包。尝试重新构建时，本机CMake的VS实例识别和直接MSBuild的路径追踪分别失败；本轮使用既有Release并记录哈希，没有把它描述成重新构建成功。</p><p>通过网格供用户选型后的工况配置；新聚合失败网格及输入供尾缘修复；日志和命令作复现材料；PNG/HTML与成功中间导出可重建。原始材料保留在 outputs/mesh-method-inventory 与 outputs/airfoil-mesh-preview，未删除或覆盖旧结果。</p><p><a href="mesh-method-inventory.json">完整JSON、源码入口、原生问题和二进制哈希</a></p></section></main></html>
+}</pre></details></td></tr></table></section><section><h2>完整背景：两个独立几何产品</h2><img src="mesh-method-inventory-background.png"><p>两者都保留Inside/Outside/Intersected完整单元，solver_ready=false。均匀粗格可能没有完全位于薄翼型内部的单元，这不表示固体被删除。独立MAC浸入边界求解器有自己的计算格和固体辅助未知量，不是把这份背景JSON直接送进原生FvMesh。</p></section><section><h2>已有研究 / 第三方参照，不冒充通用翼型入口</h2><table><tr><th>方法</th><th>入口</th><th>实际范围</th><th>建议</th></tr><tr><td>近壁一级细化＋形状聚合</td><td><code>tools/benchmarks/annulus_mesh_cross.cpp --wall-refine 1 --distance-index 1</code></td><td>固定圆环/方域适配器；尚非通用翼型入口</td><td>保留并通用化</td></tr><tr><td>GEOS 原始切割</td><td><code>tools/benchmarks/geos_annulus.py</code></td><td>圆环切割对照；后处理仍共用自研旧路径</td><td>独立几何参照</td></tr><tr><td>Gmsh 映射四边形 / 三角形</td><td><code>tools/benchmarks/pc_meshing/gmsh_reference.py</code></td><td>断言两个256边圆环；不能直接用于单翼型</td><td>第三方参照</td></tr><tr><td>cfMesh cartesian2DMesh</td><td><code>tools/benchmarks/annulus_cross.py</code></td><td>独立参考，物面有近似，非严格同壁面Cut-cell</td><td>第三方参照</td></tr><tr><td>AMReX EB</td><td><code>tools/benchmarks/amrex_cutcell</code></td><td>直斜壁切割交叉诊断；不是产品网格核</td><td>参照/历史证据</td></tr></table><p><a href="shape-agglomeration.png">既有圆环新旧聚合图</a> · <a href="annulus-cross-meshes.png">既有第三方/混合参照图</a> · <a href="pc-mesh-study.html">近壁细化与Gmsh实验原报告</a></p></section><section><h2>建议如何保留和更迭</h2><table><tr><th>处理</th><th>对象与理由</th></tr><tr><td>退出常用入口候选，保留回归基线</td><td>旧纯Cut-cell凸分解流程；旧legacy交点构造。前者会制造尖碎片，后者已有共享身份构造替代。新聚合尚不能覆盖尾缘失败，所以现在不能直接删库或盲目切换默认。</td></tr><tr><td>优先继续维护</td><td>形状聚合＋有界近壁细化；当前共享构造混合网格。新聚合需解决强反角/尾缘受控划分；近壁细化研究需通用化。混合层需要保持真实降层与质量告警。</td></tr><tr><td>按用例保留研究开关</td><td>Q3/Q4/Q5和patch事务。单翼型上零接收不证明无用，原窄缝、终止区、喷管等触发例仍有价值。不能按阶段数字删除。</td></tr><tr><td>独立保留</td><td>两种完整背景产品、独立浸入边界研究、第三方几何参照。</td></tr><tr><td>只保留为内部工具 / 历史</td><td>边界层条带构造CLI是混合网格组件，非完整外流网格器；RectilinearMesh是算例/测试建格工具；H2顺序穷举参考用于H3等价测试。历史里程碑不移动。Q1已移除，不恢复。</td></tr></table></section><section><h2>验证与后续消费者</h2><p>现有Release的新聚合与Solver导出两项原生检查通过；每个生成命令的本项目检查结果、退出码和原始日志另列。没有全量测试、外部checkMesh、CFD、物理验证或安装包。尝试重新构建时，本机CMake的VS实例识别和直接MSBuild的路径追踪分别失败；本轮使用既有Release并记录哈希，没有把它描述成重新构建成功。</p><p>通过网格供用户选型后的工况配置；新聚合失败网格及输入供尾缘修复；日志和命令作复现材料；PNG/HTML与成功中间导出可重建。原始材料保留在 outputs/mesh-method-inventory 与 outputs/airfoil-mesh-preview，未删除或覆盖旧结果。</p><p><a href="mesh-method-inventory.json">完整JSON、源码入口、原生问题和二进制哈希</a></p></section></main></html>

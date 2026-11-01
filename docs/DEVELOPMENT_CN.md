@@ -85,6 +85,10 @@ python3 tools/benchmarks/simple_source_compare.py --mesh outputs/simple-extensio
 | [Ansys Discovery2025R1 流体监测](https://ansyshelp.ansys.com/public/Views/Secured/corp/v251/en/discovery/UDA/user_manual/solver/topics/c_simulation_mesh_quality.html) | Orthogonal quality下限.1默认开启；skew上限.95、aspect上限20默认未开启 | 流体质量监测的默认设置；Orthogonal quality、归一化skew与原生非正交角/skew不是同一量。不能把20直接当原生形状比限值。 |
 | [Ansys Discovery2025R2最佳实践](https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/discovery/UDA/user_manual/meshing/topics/r_meshquality_bestpractices.html) | 流体OQ>.01且平均应高很多；OQ<.1可拖慢收敛；四面体skew<.95；流体网格默认growth1.2 | 文档强调拉伸方向、尺寸变化与流场梯度。同页“aspect<5”在**结构**指标表，不能错引为流体统一标准。 |
 
+**检查结果的表述。** 页面应显示“本项目网格检查通过/失败”，不再简称“原生门”，也不能把Q3/Q4/Q5开发编号显示为独立版本。默认checkMesh的skew4是检查告警线；snappyHexMesh示例的边界skew20是生成配置，见上表官方来源。本项目选择边界skew4作为输出限制，未建立它与所有CFD必然失败之间的对应关系。最小角20°/原生形状比10/内部非正交45°明确标为工程生成目标；原生形状比定义与OpenFOAM的aspect不同。
+
+当前翼型失败记录须同时指向原生质量JSON与`src/fv/FvMesh2D.cpp`：边界面的系数采用`|S|²/(S·d)`，要求`S·d>0`。细翼型两条边界面的负投影距离是当前算子的适用性问题，不是收紧角度目标造成。保留它作为生成缺陷复现，不能改文件名绕过失败输入保护，也不能把本项目检查说成外部checkMesh的实际结果。圆环成熟消费者数据沿用`pc-mesh-study.json`已有记录，不将翼型未运行项目写成已测。
+
 **指标定义不能混用。** 原生`evaluateSolverCellMetrics2D`定义的hydraulicAspect为 `lmax / (2A/P) = lmax*P/(2A)`，无量纲：正方形=2，长边a短边b的矩形（a≥b）=a/b+1；10×1矩形=11。它不是通常的最大边/最小边比，也不是OpenFOAM、Fluent所有aspect定义。原报告JSON的`max_cell_aspect`保留原接口，但解释必须写“原生形状比”。内部非正交是面法向与中心连线夹角（度）；内部/边界skew有各自长度归一化，不与Fluent0～1指标数值互换。邻接面积比是min(Ao,An)/max(Ao,An)，不是原始切割面积分数。
 
 当前默认70°、形状比1000、内角.5°允许接近退化的碎片；内部skew4和面积比.01则确有成熟工具相似参数来源，不能把所有现有数字说成都凭空过宽。问题在于阈值语义、生成目标和实际坏形状没有闭合。对刻意沿壁面布置的高拉伸层，长宽比应结合方向/正交性单列；这个例外不能套给任意尖锐三角碎片。

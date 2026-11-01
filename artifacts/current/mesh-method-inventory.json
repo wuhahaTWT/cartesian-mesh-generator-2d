@@ -3,7 +3,8 @@
   "geometry_source": "examples/complex/naca2412_dense.xy",
   "geometry_sha256": "2b1bc496c1d24cb8e61deb2417f77fec0a56fb8a5349bc3bc50f70116c1c8eb4",
   "families": 3,
-  "fluid_main_paths": 4,
+  "fluid_meshing_families": 2,
+  "processing_configurations": 4,
   "background_modes": 2,
   "hybrid_option_forms": 6,
   "binaries": {
@@ -64,7 +65,7 @@
       "exit_code": 0,
       "status": "complete",
       "reused_from_previous_turn": true,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/airfoil-mesh-preview/A/mesh.solver.cm2d",
       "mesh_sha256": "c3fb1f9261cf6f7b5ef68710ef9c1a27a9b67a4852260ab079f845a83f8fb725",
@@ -310,7 +311,7 @@
       "exit_code": 0,
       "status": "complete",
       "reused_from_previous_turn": true,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/airfoil-mesh-preview/C/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -380,7 +381,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-legacy/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -418,7 +419,7 @@
     },
     {
       "id": "hybrid-q3",
-      "label": "Q3：终止区合并",
+      "label": "终止区合并",
       "directory": "outputs/mesh-method-inventory/hybrid-q3",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -450,7 +451,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q3/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -488,7 +489,7 @@
     },
     {
       "id": "hybrid-q3-pair",
-      "label": "Q3：两格重划",
+      "label": "终止区两格重划",
       "directory": "outputs/mesh-method-inventory/hybrid-q3-pair",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -520,7 +521,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q3-pair/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -558,7 +559,7 @@
     },
     {
       "id": "hybrid-q3-group",
-      "label": "Q3：分组重划",
+      "label": "终止区分组重划",
       "directory": "outputs/mesh-method-inventory/hybrid-q3-group",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -590,7 +591,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q3-group/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "263b81f508a17070b7556faf3b87b2a35ba5b4d99012a2fb522015fb23f4de45",
@@ -633,7 +634,7 @@
     },
     {
       "id": "hybrid-q4",
-      "label": "Q4：构造阶段选优",
+      "label": "构造阶段连接选优",
       "directory": "outputs/mesh-method-inventory/hybrid-q4",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -665,7 +666,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q4/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "2b6879f4e3f1e01c810deecd56fb0532b57865f69779b30f23203985347bca5a",
@@ -708,7 +709,7 @@
     },
     {
       "id": "hybrid-q5-outer",
-      "label": "Q5：外过渡径向匹配",
+      "label": "外过渡宽度匹配",
       "directory": "outputs/mesh-method-inventory/hybrid-q5-outer",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -740,7 +741,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q5-outer/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -778,7 +779,7 @@
     },
     {
       "id": "hybrid-q5-buffer",
-      "label": "Q5：终止缓冲匹配",
+      "label": "终止缓冲宽度匹配",
       "directory": "outputs/mesh-method-inventory/hybrid-q5-buffer",
       "command": [
         "D:/Desktop/cartesian-mesh-generator-2d/build/Release/cartmesh2d_hybrid_cli.exe",
@@ -810,7 +811,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-q5-buffer/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a55e337bcce8e6b2f93eb842fac9c3e7a53dc90cf95f610be3645a05e73a3663",
@@ -883,7 +884,7 @@
       "exit_code": 0,
       "status": "finished",
       "reused_from_previous_turn": false,
-      "result": "原生门通过",
+      "result": "本项目网格检查通过",
       "native_pass": true,
       "mesh": "outputs/mesh-method-inventory/hybrid-combined/mesh.hybrid.solver.cm2d",
       "mesh_sha256": "a10b8ffad9bdcd6dd6e2b4c48e949a253dc0ff391b3934c995908c543cc2ce4b",
