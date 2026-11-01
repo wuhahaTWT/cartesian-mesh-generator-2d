@@ -190,7 +190,7 @@ HTML可直接双击打开，PNG和JSON须与其放在同目录；绘图读取真
 
 候选从质量问题关联单元和共享面扩展，先检查两格，再按需搜索最多6格的连通并集。并集边来自已共享的精确端点，输入XY顶点及其构造注册表别名锁定；只在既有构造舍入预算内删除失去分隔作用的共线辅助点，不以几何容差抹掉可解析短边。面积中心须对所有面保持原生正法向距离，轻微真实反角因此可以保留；强反角不能通过就明确失败。候选评估包括一圈未修改邻居，独立halo批次经完整拓扑及原/目标质量评分复核才接受。来源lineage、细化key、未修改单元source身份及不可变格约束保留。
 
-分辨率预算为 `A_union <= 4 * max(AABB_area_of_initial_member_polygon)`，这个“初始”不会随聚合增大；64批次上限只限制工作量，不代表合格。它不是严格的误差/直径估计，也不是任意网格细化的充分条件。没有合法改进、达到批次上限且仍有问题时，新模式拒绝正常求解网格，保留 `.failed.solver.cm2d`、`.failed.solver-quality.json`、`.shape-quality.json`。当前不自动细化，不对失败输入回退到旧凸划分并声称形状通过。`small-alpha`在该模式仅用于原始切割诊断。
+分辨率预算为 `A_union <= 4 * max(AABB_area_of_initial_member_polygon)`，这个“初始”不会随聚合增大；64批次上限只限制工作量，不代表合格。它不是严格的误差/直径估计，也不是任意网格细化的充分条件。历史版本没有合法改进时拒绝正常求解网格，保留 `.failed.solver.cm2d`、`.failed.solver-quality.json`、`.shape-quality.json`。当前不自动细化；现已取消经验指标对正常导出的硬拦截，建议与当前离散不兼容信息分别报告，实际成熟检查见下节。`small-alpha`在该模式仅用于原始切割诊断。
 
 真实产品CLI示例（原XY由下节冻结圆环归档恢复，输出前缀换成新路径）：
 
@@ -214,20 +214,19 @@ build/cartmesh2d_flow_cli --mesh outputs/shape-replay/new160.solver.cm2d --case 
 
 ### 当前网格方法清单与翼型复现
 
-家族、旧/新入口、实际可用范围及待修复项只维护在[当前状态](CURRENT_STATE_CN.md#当前网格方法与翼型选型)。[清单JSON](../artifacts/current/mesh-method-inventory.json)记录完整命令、退出码、最终或failed网格路径/SHA、原生问题与降层；旧翼型A/C明确标为复用，不把参数档位算成独立方法。
+方法范围和当前行为只看[当前状态](CURRENT_STATE_CN.md#当前网格方法与翼型选型)。历史新旧网格对照继续保留在[现有索引](../artifacts/current/mesh-method-inventory.json)，其中旧“拒绝输出”记录对应旧代码，当前经验指标已改为建议；`quality_policy_update`记录同一翼型的新程序输出与实际checkMesh结果。
 
-普通纯网格入口为 `apps/cartmesh2d_cli.cpp` 的 `shapeAgglomeration` 分支；新聚合为 `agglomerateSolverByShape2D`，旧处理为 `SmallCell2D` 与 `buildSolverTopology2D`。混合入口为 `cartmesh2d_hybrid_cli.cpp`、`HybridMeshPolicy2D` 和 `buildRobustH4Mesh2D`；默认共享身份构造，`--legacy-construction` 显式返回旧构造。Q3合并、两格重划、分组重划递进包含；Q4和两个Q5分别控制构造选择、外过渡径向匹配、终止缓冲匹配。
+纯网格入口为 `apps/cartmesh2d_cli.cpp`，形状聚合选项仍为 `--shape-agglomeration`；内部优化继续使用历史参考，但输出只要求真实拓扑/单元几何可导出。`SolverQualityReport2D::exportable`与`nativeFvCompatible`分别用于交换输出与当前有限体积离散适用性，不使用经验质量数字阻止导出/组装。优化器原有 `valid()`评分含义保留，JSON的 `recommendations_met` 明确说明建议是否满足，不是物理验收。桌面读取报告中的实际参考值并显示建议，旧质量失败自动改密度逻辑已移除。
 
-同背景新旧Cut-cell对照只在原A/B命令末尾加 `--shape-agglomeration` 并换新输出前缀，保持XY、尺寸场和尾流带。失败只绘制 `.failed.solver.cm2d` 和原生质量报告，不能传给CFD。混合对照只在原C命令加单个策略选项（组合组单列），保持4层、首层.0025c、增长率1.2和外域。文件相同不代表其他几何或中间构造全部等价。
-
-保存的网格和收据齐全时，用既有绘图环境重建：
+实际调用成熟工具的通用入口：
 
 ~~~powershell
-& D:\gas-turbine-envs\windows-runtime\python.exe -X utf8 tools/visualization/render_mesh_method_inventory.py
-ctest --test-dir build -C Release -R 'cartmesh2d_shape_agglomeration_tests|cartmesh2d_stageS1_solver_export_tests' --output-on-failure
+& D:\gas-turbine-envs\windows-runtime\python.exe -X utf8 tools/benchmarks/check_mesh.py outputs/quality-advisory/airfoil/foam
 ~~~
 
-绘图脚本仅读CM2D、原生质量JSON、分层报告和运行收据，不实现/复核FV方程。输出为 `artifacts/current/mesh-method-inventory{,-details,-hybrid,-background,-changes}.png` 及HTML/JSON；PNG人工核对，未做浏览器交互验收。重新生成网格按JSON命令换新前缀，不覆盖接受结果/失败复现。清理产品入口前须区分测试参考与真正废弃调用。
+有本地 `checkMesh` 时直接运行；否则使用已安装Docker和现有官方 `opencfd/openfoam-run:2606` 镜像。封装只启动原版 `checkMesh` 与 `checkMesh -allGeometry -allTopology`，不实现重复几何方程、不写入项目自定的 `meshQualityDict`，输出保存在该case的 `checkMesh.log`、`checkMesh-extended.log`、`checkMesh.json`。判断“工具报告问题”读取其原始结论，不能仅用进程退出码0；失败项不触发删除或禁止导出。更换工况后是否继续CFD由用户决定。
+
+图表重建仍使用 `tools/visualization/render_mesh_method_inventory.py`；它只读已有数据，不发起CFD或检查矩阵。新结果收据在 `outputs/quality-advisory/result.json`，原始输入/失败例和旧场保留；再运行生成命令使用新前缀，不覆盖已有计算输入。Windows本次替代构建目录为 `build/ninja`，工具链使用既有MSVC和Windows SDK，GPU选项与既有Torch路径保持，六个实际运行CLI已同步。
 
 ### Cut-cell 小单元与尖锐单元处理文献
 

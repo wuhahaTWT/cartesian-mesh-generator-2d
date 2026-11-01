@@ -172,7 +172,7 @@
         "max_concavity_deg": 111.48733749064274,
         "max_cell_aspect": 8.83236807382885,
         "min_interior_angle_deg": 24.130527817060624,
-        "min_face_length": 3.1728883003082756e-06,
+        "min_face_length": 0.0000031728883003082756,
         "min_face_weight": 0.061993681676219464,
         "min_volume_ratio": 0.012517003448008754,
         "min_compactness": 0.31591615403361223
@@ -272,7 +272,7 @@
         "max_concavity_deg": 111.48733749064274,
         "max_cell_aspect": 9.271167663453184,
         "min_interior_angle_deg": 27.745133501236285,
-        "min_face_length": 2.0909966881195157e-05,
+        "min_face_length": 0.000020909966881195157,
         "min_face_weight": 0.11393435985347213,
         "min_volume_ratio": 0.09305738735035801,
         "min_compactness": 0.29955420439050723
@@ -329,7 +329,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -399,7 +399,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -469,7 +469,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -539,7 +539,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -609,7 +609,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -684,7 +684,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.012607586226868035,
         "min_compactness": 0.10740353803256233
@@ -759,7 +759,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -829,7 +829,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.015345952888245184,
         "min_compactness": 0.10740353803256233
@@ -902,7 +902,7 @@
         "max_concavity_deg": 23.164789844822764,
         "max_cell_aspect": 28.832728776319627,
         "min_interior_angle_deg": 4.379129670318899,
-        "min_face_length": 3.255091486330665e-05,
+        "min_face_length": 0.00003255091486330665,
         "min_face_weight": 0.05336999441755032,
         "min_volume_ratio": 0.012607586226868035,
         "min_compactness": 0.10740353803256233
@@ -982,5 +982,124 @@
       "scope": "直斜壁切割交叉诊断；不是产品网格核",
       "keep": "参照/历史证据"
     }
-  ]
+  ],
+  "quality_policy_update": {
+    "scope": "Quality limits are recommendations, not export/solver vetoes; actual OpenFOAM checkMesh executed with tool defaults.",
+    "source_base": "bf5463f",
+    "cells": 32906,
+    "rawMesh": "D:/Desktop/cartesian-mesh-generator-2d/outputs/quality-advisory/airfoil/mesh.solver.cm2d",
+    "meshSha256": "e57cf41c0fdb403bc77075fdc8a0be039ef5e0d9f61446ac3d3dccc7fdf82db6",
+    "generationExitCode": 0,
+    "assessment": "advisory",
+    "exportable": true,
+    "nativeFvCompatible": false,
+    "advisoryCount": 5,
+    "external": {
+      "software": "OpenFOAM checkMesh",
+      "criteria": "tool defaults; no project meshQualityDict",
+      "case": "D:\\Desktop\\cartesian-mesh-generator-2d\\outputs\\quality-advisory\\airfoil\\foam",
+      "mesh_sha256": {
+        "points": "52600a655b90785f7ee8e01a00bb819624f205c88c74fe5d34d3a5c39771c2aa",
+        "faces": "bfd6433d23fccaddbdac6f5dc72c7abb5df423cb5161a2200328ebf782cb1ada",
+        "owner": "609660b195fe729e9030c54fe8e2c33c474201692c31d11b60622415a5183b5b",
+        "neighbour": "d99e119f8a809df065dd25b379ea6db83cf43677e7385c3c478616e32f175954",
+        "boundary": "8afb7ba0ebc33deb8ceecc8c792eee27dba4e36ded99df800c5e5a7143720d69"
+      },
+      "mesh_unchanged": true,
+      "checks": [
+        {
+          "name": "standard",
+          "outcome": "reported_issues",
+          "exit_code": 0,
+          "seconds": 4.313000000001921,
+          "command": [
+            "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "D:\\Desktop\\cartesian-mesh-generator-2d\\outputs\\quality-advisory\\airfoil\\foam:/case",
+            "--entrypoint",
+            "/bin/bash",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc >/dev/null 2>&1 && exec checkMesh -case /case \"$@\"",
+            "checkMesh"
+          ],
+          "version": "2606",
+          "log": "checkMesh.log"
+        },
+        {
+          "name": "extended",
+          "outcome": "reported_issues",
+          "exit_code": 0,
+          "seconds": 5.436999999998079,
+          "command": [
+            "C:/Program Files/Docker/Docker/resources/bin/docker.exe",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "D:\\Desktop\\cartesian-mesh-generator-2d\\outputs\\quality-advisory\\airfoil\\foam:/case",
+            "--entrypoint",
+            "/bin/bash",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc >/dev/null 2>&1 && exec checkMesh -case /case \"$@\"",
+            "checkMesh",
+            "-allGeometry",
+            "-allTopology"
+          ],
+          "version": "2606",
+          "log": "checkMesh-extended.log"
+        }
+      ]
+    },
+    "binaries": [
+      {
+        "name": "cartmesh2d_cli",
+        "sha256": "b3e66bfe80196c4087e794131db1eb300f0c5380169496c625aad5efd8672db3"
+      },
+      {
+        "name": "cartmesh2d_hybrid_cli",
+        "sha256": "e8ae8eaf88bcfe67611e09c51b1769e894a5a3d485fe83174e57ed2b87dc3121"
+      },
+      {
+        "name": "cartmesh2d_flow_cli",
+        "sha256": "1818890e29bd5f66c4eb29ad9053634fe54fcb541bdac8a81c71752737f3bd4d"
+      },
+      {
+        "name": "cartmesh2d_euler_cli",
+        "sha256": "952afc8089e822c6047965ca73ed85585b6e9a68f886a2451a5ea9ebdc1000f7"
+      },
+      {
+        "name": "cartmesh2d_transport_cli",
+        "sha256": "07841ea76633348cfbbdbf40f902650799852680ab2fbdaa3da81fc9a659c754"
+      },
+      {
+        "name": "cartmesh2d_dxf_cli",
+        "sha256": "fff170120b4ee461c4146e7ed7d24a00c1f2dacbe6006b88dc7f75117f634c5a"
+      }
+    ],
+    "standardLog": "outputs/quality-advisory/airfoil/foam/checkMesh.log",
+    "extendedLog": "outputs/quality-advisory/airfoil/foam/checkMesh-extended.log",
+    "actualFindings": {
+      "standardFailedChecks": 2,
+      "extendedFailedChecks": 4,
+      "facePyramidIssueFaces": 2,
+      "highSkewFaces": 2
+    },
+    "notRun": [
+      "CFD solve",
+      "grid independence study",
+      "full test suites",
+      "desktop visual acceptance"
+    ],
+    "externalLogText": {
+      "standard": "/*---------------------------------------------------------------------------*\\\n| =========                 |                                                 |\n| \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |\n|  \\\\    /   O peration     | Version:  2606                                  |\n|   \\\\  /    A nd           | Website:  www.openfoam.com                      |\n|    \\\\/     M anipulation  |                                                 |\n\\*---------------------------------------------------------------------------*/\nBuild  : _481094f-20260618 OPENFOAM=2606 version=2606\nArch   : \"LSB;label=32;scalar=64\"\nExec   : checkMesh -case /case\nDate   : Nov 01 2026\nTime   : 13:19:06\nHost   : fcfb50cd7fcc\nPID    : 1\nI/O    : uncollated\nCase   : /case\nnProcs : 1\ntrapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).\nmemory pool : not available\nfileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)\n\n--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.\n                   This can be a security risk if running untrusted cases\n                   through e.g. 'coded' on-the-fly-compilation functionality.\n\n// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //\nCreate time\n\nCreate mesh for time = 0\n\nCheck mesh...\n\nTime = 0\n\nMesh stats \n    points:           67692\n    internal points:  0\n    faces:            132564\n    internal faces:   65914\n    cells:            32906\n    faces per cell:   6.031665958\n    boundary patches: 6\n    point zones:      0\n    face zones:       0\n    cell zones:       0\n\nOverall number of cells of each type:\n    hexahedra:     31972\n    prisms:        3\n    wedges:        0\n    pyramids:      0\n    tet wedges:    0\n    tetrahedra:    0\n    polyhedra:     931\n    Breakdown of polyhedra by number of faces:\n        faces   number of cells\n            7   840\n            8   74\n            9   13\n           10   2\n           11   2\n\nChecking topology...\n    Boundary definition OK.\n    Cell to face addressing OK.\n    Point usage OK.\n  <<Found 19 neighbouring cells with multiple inbetween faces.\n    Upper triangular ordering OK.\n  <<Writing 38 unordered faces to set upperTriangularFace\n    Face vertices OK.\n    Number of regions: 1 (OK).\n\nChecking patch topology for multiply connected surfaces...\n                   Patch    Faces   Points  Surface topology\n                  wall_0      326      652  ok (non-closed singly connected)\n                    left      128      258  ok (non-closed singly connected)\n                   right      128      258  ok (non-closed singly connected)\n                  bottom      128      258  ok (non-closed singly connected)\n                     top      128      258  ok (non-closed singly connected)\n            frontAndBack    65812    67692  ok (non-closed singly connected)\n                    \".*\"    66650    67692      ok (closed singly connected)\n\n\nChecking faceZone topology for multiply connected surfaces...\n    No faceZones found.\n\nChecking basic cellZone addressing...\n    No cellZones found.\n\nChecking basic pointZone addressing...\n    No pointZones found.\n\nChecking geometry...\n    Overall domain bounding box (-8 -8.481615882 0) (9.000083814 8.518467932 0.0004883221748)\n    Mesh has 2 geometric (non-empty/wedge) directions (1 1 0)\n    Mesh has 2 solution (non-empty) directions (1 1 0)\n    All edges aligned with or perpendicular to non-empty directions.\n    Boundary openness (2.251423678e-20 1.951233855e-20 -1.923325582e-19) OK.\n    Max cell openness = 1.92775974e-16 OK.\n    Max aspect ratio = 6.108252568 OK.\n    Minimum face area = 1.549391715e-09. Maximum face area = 0.01763933409.  Face area magnitudes OK.\n    Min volume = 3.322897892e-10. Max volume = 8.613677984e-06.  Total volume = 0.1410863618.  Cell volumes OK.\n    Mesh non-orthogonality Max: 38.35973858 average: 3.113836522\n    Non-orthogonality check OK.\n ***Error in face pyramids: 2 faces are incorrectly oriented.\n  <<Writing 2 faces with incorrect orientation to set wrongOrientedFaces\n ***Max skewness = 7.595797271, 2 highly skew faces detected which may impair the quality of the results\n  <<Writing 2 skew faces to set skewFaces\n    Coupled point location match (average 0) OK.\n\nFailed 2 mesh checks.\n\nEnd\n\n",
+      "extended": "/*---------------------------------------------------------------------------*\\\n| =========                 |                                                 |\n| \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |\n|  \\\\    /   O peration     | Version:  2606                                  |\n|   \\\\  /    A nd           | Website:  www.openfoam.com                      |\n|    \\\\/     M anipulation  |                                                 |\n\\*---------------------------------------------------------------------------*/\nBuild  : _481094f-20260618 OPENFOAM=2606 version=2606\nArch   : \"LSB;label=32;scalar=64\"\nExec   : checkMesh -case /case -allGeometry -allTopology\nDate   : Nov 01 2026\nTime   : 13:19:10\nHost   : a8f51d5d5e5a\nPID    : 1\nI/O    : uncollated\nCase   : /case\nnProcs : 1\ntrapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).\nmemory pool : not available\nfileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)\n\n--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.\n                   This can be a security risk if running untrusted cases\n                   through e.g. 'coded' on-the-fly-compilation functionality.\n\n// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //\nCreate time\n\nCreate mesh for time = 0\n\nCheck mesh...\n    Enabling all (cell, face, edge, point) topology checks.\n    Enabling all geometry checks.\n\nTime = 0\n\nMesh stats \n    points:           67692\n    internal points:  0\n    edges:            167350\n    internal edges:   33008\n    internal edges using one boundary point:   0\n    internal edges using two boundary points:  33008\n    faces:            132564\n    internal faces:   65914\n    cells:            32906\n    faces per cell:   6.031665958\n    boundary patches: 6\n    point zones:      0\n    face zones:       0\n    cell zones:       0\n\nOverall number of cells of each type:\n    hexahedra:     31972\n    prisms:        3\n    wedges:        0\n    pyramids:      0\n    tet wedges:    0\n    tetrahedra:    0\n    polyhedra:     931\n    Breakdown of polyhedra by number of faces:\n        faces   number of cells\n            7   840\n            8   74\n            9   13\n           10   2\n           11   2\n\nChecking topology...\n    Boundary definition OK.\n    Cell to face addressing OK.\n    Point usage OK.\n  <<Found 19 neighbouring cells with multiple inbetween faces.\n    Upper triangular ordering OK.\n  <<Writing 38 unordered faces to set upperTriangularFace\n    Face vertices OK.\n    Topological cell zip-up check OK.\n    Face-face connectivity OK.\n  <<Writing 7 cells with two non-boundary faces to set twoInternalFacesCells\n    Number of regions: 1 (OK).\n\nChecking patch topology for multiply connected surfaces...\n                   Patch    Faces   Points  Surface topology  Bounding box\n                  wall_0      326      652  ok (non-closed singly connected) (0 -0.0423457394 0) (1.000083814 0.079197789 0.0004883221748)\n                    left      128      258  ok (non-closed singly connected) (-8 -8.481615882 0) (-8 8.518467932 0.0004883221748)\n                   right      128      258  ok (non-closed singly connected) (9.000083814 -8.481615882 0) (9.000083814 8.518467932 0.0004883221748)\n                  bottom      128      258  ok (non-closed singly connected) (-8 -8.481615882 0) (9.000083814 -8.481615882 0.0004883221748)\n                     top      128      258  ok (non-closed singly connected) (-8 8.518467932 0) (9.000083814 8.518467932 0.0004883221748)\n            frontAndBack    65812    67692  ok (non-closed singly connected) (-8 -8.481615882 0) (9.000083814 8.518467932 0.0004883221748)\n                    \".*\"    66650    67692      ok (closed singly connected) (-8 -8.481615882 0) (9.000083814 8.518467932 0.0004883221748)\n\n\nChecking faceZone topology for multiply connected surfaces...\n    No faceZones found.\n\nChecking basic cellZone addressing...\n    No cellZones found.\n\nChecking basic pointZone addressing...\n    No pointZones found.\n\nChecking geometry...\n    Overall domain bounding box (-8 -8.481615882 0) (9.000083814 8.518467932 0.0004883221748)\n    Mesh has 2 geometric (non-empty/wedge) directions (1 1 0)\n    Mesh has 2 solution (non-empty) directions (1 1 0)\n    All edges aligned with or perpendicular to non-empty directions.\n    Boundary openness (2.251423678e-20 1.951233855e-20 -1.923325582e-19) OK.\n    Max cell openness = 1.92775974e-16 OK.\n    Max aspect ratio = 6.108252568 OK.\n    Minimum face area = 1.549391715e-09. Maximum face area = 0.01763933409.  Face area magnitudes OK.\n    Min volume = 3.322897892e-10. Max volume = 8.613677984e-06.  Total volume = 0.1410863618.  Cell volumes OK.\n    Mesh non-orthogonality Max: 38.35973858 average: 3.113836522\n    Non-orthogonality check OK.\n ***Error in face pyramids: 2 faces are incorrectly oriented.\n  <<Writing 2 faces with incorrect orientation to set wrongOrientedFaces\n ***Max skewness = 7.595797271, 2 highly skew faces detected which may impair the quality of the results\n  <<Writing 2 skew faces to set skewFaces\n    Coupled point location match (average 0) OK.\n ***Error in face tets: 8 faces with low quality or negative volume decomposition tets.\n  <<Writing 4 faces with low quality or negative volume decomposition tets to set lowQualityTetFaces\n   *Edges too small, min/max edge length = 3.1728883e-06 0.1328131548, number too small: 12\n  <<Writing 12 points on short edges to set shortEdges\n   *There are 12 faces with concave angles between consecutive edges. Max concave angle = 68.51266251 degrees.\n  <<Writing 12 faces with concave angles to set concaveFaces\n    Face flatness (1 = flat, 0 = butterfly) : min = 0.9141640453  average = 0.9999987049\n    All face flatness OK.\n    Cell determinant (wellposedness) : minimum: 0.09130258886 average: 0.5070103947\n    Cell determinant check OK.\n ***Concave cells (using face planes) found, number of cells: 929\n  <<Writing 929 concave cells to set concaveCells\n    Face interpolation weight : minimum: 0.06199368168 average: 0.4949904312\n    Face interpolation weight check OK.\n    Face volume ratio : minimum: 0.01251700345 average: 0.9775537888\n    Face volume ratio check OK.\n\nFailed 4 mesh checks.\n\nEnd\n\n"
+    }
+  }
 }

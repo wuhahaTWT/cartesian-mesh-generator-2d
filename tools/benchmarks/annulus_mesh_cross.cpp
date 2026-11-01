@@ -180,7 +180,7 @@ int main(int argc,char** argv) {
   topology=std::move(solver.topology);repartitions=solver.qualityRepartitionCount;
   const auto quality=evaluateSolverQuality2D(topology);
   const bool shapeTargetMet=!shapeMode || evaluateSolverQuality2D(topology,shapePolicy.target).valid();
-  require(writeCm2dTopology(topology,prefix+(shapeTargetMet?".solver.cm2d":".failed.solver.cm2d"),&error),error);
+  require(writeCm2dTopology(topology,prefix+".solver.cm2d",&error),error);
   std::ofstream(prefix+".quality.json")<<solverQualityReportToJson(quality);
   double area=0;for(const auto& c:topology.cells)area+=c.geometryArea;
   std::vector<bool> touchesWall(topology.cells.size(),false);
@@ -205,13 +205,18 @@ int main(int argc,char** argv) {
     <<",\"boundaryP50Area\":"<<quantile(wallAreas,.5)<<",\"boundaryP95Area\":"<<quantile(wallAreas,.95)
     <<",\"boundaryMaxArea\":"<<quantile(wallAreas,1.)
     <<",\"boundaryMaxOverInteriorMedian\":"<<(interiorMedian?quantile(wallAreas,1.)/interiorMedian:0.)<<"}\n";
-  if(!quality.valid()){std::cerr<<"quality rejection "<<quality.issues.size()<<'\n';return 3;}
-  if(!shapeTargetMet){std::cerr<<"shape target rejection\n";return 3;}
+  require(quality.exportable(),"invalid mesh topology/cell geometry");
+  if(!quality.valid() || !shapeTargetMet)
+    std::cerr<<"mesh quality recommendations remain: "<<quality.issues.size()<<'\n';
   require(writeExtrudedOpenFoam2D(topology,domain,walls,prefix+".foam",.1,&error).valid(),error);
   // Ready external grids retain their external patch identities. Their adapter
   // writes boundary data from the actual external polyMesh, not a regular-ring
   // preset that would silently impose a different wall geometry.
   if(mode=="ready")return 0;
+  if(!quality.nativeFvCompatible()) {
+    std::cerr<<"native FV geometry incompatible; exported mesh remains available to external consumers\n";
+    return 0;
+  }
   const auto mesh=fv::makeFvMesh2D(topology);fv::FlowControls2D c;c.scenario="custom";c.speed=.5;
   c.boundaryConditions=fv::rotatingAnnulusBoundaryPreset2D(mesh,.5);
   std::ofstream boundary(prefix+".boundaries");fv::writeFlowBoundaryConditions2D(boundary,mesh,c);

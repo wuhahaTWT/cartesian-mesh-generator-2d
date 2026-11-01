@@ -102,13 +102,14 @@ test('a lone pair keeps a value containing spaces', () => {
   assert.equal(values.cm2d, '/Users/a b/mesh.cm2d');
 });
 
-test('solver metrics are judged in the direction each limit runs', () => {
+test('metric recommendations use reported policy rather than invented UI limits', () => {
+  const policy = { max_non_orthogonality_deg: 45, min_face_weight: 0.05, min_volume_ratio: 0.01 };
   const summary = summarizeSolverQuality({
     max_non_orthogonality_deg: 42.3, min_face_weight: 0.0749, min_volume_ratio: 0.0187
-  }, false);
-  const byKey = Object.fromEntries(summary.rows.map(row => [row.key, row.pass]));
-  assert.equal(byKey.max_non_orthogonality_deg, true);
-  assert.equal(byKey.min_face_weight, true, '0.0749 clears the 0.05 solver floor');
-  assert.equal(byKey.min_volume_ratio, true, '0.0187 clears the 0.01 solver floor');
-  assert.equal(summarizeSolverQuality({ min_face_weight: 0.02 }, false).rows[0].pass, false);
+  }, false, { policy, native_fv_compatible: true });
+  assert.equal(summary.advisory, true);
+  assert.equal(summary.nativeFvCompatible, true);
+  assert.ok(summary.rows.every(row => row.pass === true));
+  assert.equal(summarizeSolverQuality({ min_face_weight: 0.02 }, false).rows[0].pass, null);
+  assert.equal(summarizeSolverQuality({ min_face_weight: 0.02 }, false, { policy }).rows[0].pass, false);
 });

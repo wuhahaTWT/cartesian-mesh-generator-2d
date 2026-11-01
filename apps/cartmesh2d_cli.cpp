@@ -1141,10 +1141,9 @@ int main(int argc, char** argv) {
             out<<meshResolutionReportToJson2D(solverTopology->topology,resolutionTargets);
             if (!out.good()) { std::cerr<<"failed while writing resolution JSON output\n"; return EXIT_FAILURE; }
         }
-        if (!solverQuality->valid()) {
-            // Keep the rejected topology inspectable under an explicit failed
-            // name. Normal solver files and OpenFOAM export remain behind the
-            // quality gate, and the process still returns failure.
+        if (!solverQuality->exportable()) {
+            // Invalid topology/cell geometry still fails. Numeric quality
+            // recommendations and native-FV compatibility do not block exchange.
             const auto failedMeshPath=outputPrefix.string()+".failed.solver.cm2d";
             std::string diagnosticError;
             if (writeCm2dTopology(solverTopology->topology,failedMeshPath,&diagnosticError))
@@ -1158,7 +1157,7 @@ int main(int argc, char** argv) {
                 if (out.good()) std::cerr<<"failed_solver_quality_json="<<failedQualityPath<<'\n';
                 else std::cerr<<"failed quality diagnostic could not be written\n";
             }
-            std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
+            std::cerr<<"invalid mesh topology/cell geometry with "<<solverQuality->issues.size()
                      <<" issue(s) after "
                      <<solverTopology->qualityAgglomeratedSourceCellCount
                      <<" quality-driven source agglomeration(s) and "
@@ -1246,6 +1245,11 @@ int main(int argc, char** argv) {
             std::cerr << error << '\n';
             return EXIT_FAILURE;
         }
+    }
+    if (solverQuality) {
+        std::ofstream out(outputPrefix.string()+".solver-quality.json");
+        out<<solverQualityReportToJson(*solverQuality);
+        if (!out.good()) { std::cerr<<"failed to write mesh recommendations\n"; return EXIT_FAILURE; }
     }
     {
         std::ofstream out(qualityPath);
@@ -1361,7 +1365,10 @@ int main(int argc, char** argv) {
                   << "size_field_json=" << sizeFieldPath.string() << '\n';
     }
     if (openFoamReport) {
-        std::cout<<"solver_quality=PASS\n"
+        std::cout<<"solver_quality="<<(solverQuality->valid()?"NO_ADVISORIES":"ADVISORY")<<'\n'
+                 <<"solver_quality_issue_count="<<solverQuality->issues.size()<<'\n'
+                 <<"native_fv_compatible="<<(solverQuality->nativeFvCompatible()?"true":"false")<<'\n'
+                 <<"external_check=not_run\n"
                  <<"solver_max_nonorthogonality_deg="<<solverQuality->maxNonOrthogonalityDeg<<'\n'
                  <<"solver_max_internal_skewness="<<solverQuality->maxInternalSkewness<<'\n'
                  <<"solver_max_boundary_skewness="<<solverQuality->maxBoundarySkewness<<'\n'

@@ -599,22 +599,30 @@ function renderGates(result) {
     result.gates.topology.pass ? '生成器内部检查通过；外部 checkMesh 需另外执行。' : '本次未完整成功，不能据此确认通过。'));
   const solver = result.gates.solver;
   if (solver) {
-    const worst = solver.rows.filter(row => !row.pass);
-    parts.push(gateRow('Solver 质量', solver.valid ? 'PASS' : 'FAIL',
-      worst.length ? worst.map(row => `${row.label} ${row.value.toPrecision(4)} (限 ${row.limit})`).join('　') :
-        solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')));
+    const worst = solver.rows.filter(row => row.pass === false);
+    parts.push(gateRow('网格形状建议', worst.length ? 'WARN' : 'INFO',
+      (worst.length ? worst.map(row => `${row.label} ${row.value.toPrecision(4)}（参考 ${row.limit}）`).join('　') :
+        solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')) +
+      '。仅供优化参考，不阻止导出或计算；不是外部 checkMesh 结果。'));
+    if (solver.nativeFvCompatible === false)
+      parts.push(gateRow('当前原生离散', 'WARN',
+        '存在当前离散无法使用的面几何；网格仍可导出，由目标 CFD 软件检查和处理。'));
   }
   const directional = result.resolution?.directional_connectivity;
   if (directional) {
     const minimum = Number.isFinite(directional.minimum) ? directional.minimum.toPrecision(5) : '未测得';
-    parts.push(gateRow('方向连通质量', directional.valid ? 'PASS' : 'FAIL',
-      `最小 determinant ${minimum}，下限 ${directional.threshold}；不合格单元 ${directional.failed_cell_ids.length}。` +
-      '适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。'));
+    parts.push(gateRow('挤出方向诊断建议', directional.valid ? 'INFO' : 'WARN',
+      `最小 determinant ${minimum}，参考值 ${directional.threshold}；需关注单元 ${directional.failed_cell_ids.length}。` +
+      '仅为本项目诊断，不阻止导出；外部 checkMesh 结果单独显示。'));
   }
   if (result.actualMethod === 'cutcell-fallback')
     parts.push(gateRow('方法', 'WARN', '请求了贴体边界层，实际落到纯 Cut-cell fallback'));
   if (!result.openFoam.written)
-    parts.push(gateRow('OpenFOAM 导出', 'WARN', '未写出。solver 门未通过，或导出阶段自身失败；CM2D 与 VTK 仍然可用'));
+    parts.push(gateRow('OpenFOAM 导出', 'WARN', '未写出。请查看实际拓扑、几何或文件导出错误；经验质量建议不阻止导出。'));
+  const external = result.externalCheck;
+  parts.push(gateRow('OpenFOAM checkMesh', external ? (external.checks.some(check => check.outcome !== 'passed') ? 'WARN' : 'INFO') : '未运行',
+    external ? external.checks.map(check => `${check.name === 'standard' ? '标准检查' : '扩展检查'}：${({ passed: '工具未报告失败项', reported_issues: '工具报告问题', tool_error: '工具未完成' })[check.outcome] || check.outcome}，退出码 ${check.exit_code}`).join('；') :
+      '尚无该导出网格的外部检查结果；本项目建议不代表成熟工具检查。'));
   $('gates').innerHTML = parts.join('');
 }
 
@@ -713,10 +721,6 @@ function advice(message) {
   if (/topology audit|UnclassifiedBoundaryEdge/.test(message)) {
     return '提示：这是壁面顶点擦过格点的构造失败（见 CURRENT_STATE_CN.md 第 4 节 A）。' +
       '把远场距离改动 ±1 倍体长会移动整个格点阵列，通常比调壁面分辨率更有效。';
-  }
-  if (/solver-quality gate failed/.test(message)) {
-    return '提示：把小单元阈值 α 提高一档先合并掉薄片，或把远场距离改动 ±1 倍体长以改变格点对齐。' +
-      '两者都不改变你要求的壁面分辨率。';
   }
   return '';
 }

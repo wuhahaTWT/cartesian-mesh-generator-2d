@@ -40,6 +40,14 @@ std::size_t solverQualityEvaluations=0U;
     return std::string(static_cast<std::size_t>(std::max(0,count)),' ');
 }
 
+// JSON must remain readable when a diagnostic is infinite; never serialize NaN.
+[[nodiscard]] std::string jsonNumber(double value) {
+    if (!std::isfinite(value)) return "null";
+    std::ostringstream out;
+    out<<std::setprecision(17)<<value;
+    return out.str();
+}
+
 } // namespace
 
 SolverCellMetrics2D evaluateSolverCellMetrics2D(const Polygon2D& polygon,
@@ -398,6 +406,12 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i1<<"\"quality_class\": \"solver_quality\",\n";
     out<<i1<<"\"metric_semantics\": \"native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence\",\n";
     out<<i1<<"\"valid\": "<<(report.valid()?"true":"false")<<",\n";
+    out<<i1<<"\"assessment\": \"advisory\",\n";
+    out<<i1<<"\"recommendations_met\": "<<(report.valid()?"true":"false")<<",\n";
+    out<<i1<<"\"exportable\": "<<(report.exportable()?"true":"false")<<",\n";
+    out<<i1<<"\"native_fv_compatible\": "<<(report.nativeFvCompatible()?"true":"false")<<",\n";
+    out<<i1<<"\"policy_basis\": \"historical/project optimization recommendations, not external checkMesh acceptance; native hydraulic aspect is not OpenFOAM aspect\",\n";
+    out<<i1<<"\"external_check\": \"not_run\",\n";
     out<<i1<<"\"policy\": {\n";
     out<<i2<<"\"max_non_orthogonality_deg\": "<<report.policy.maxNonOrthogonalityDeg<<",\n";
     out<<i2<<"\"max_internal_skewness\": "<<report.policy.maxInternalSkewness<<",\n";
@@ -410,16 +424,16 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i2<<"\"min_volume_ratio\": "<<report.policy.minVolumeRatio<<"\n";
     out<<i1<<"},\n";
     out<<i1<<"\"metrics\": {\n";
-    out<<i2<<"\"max_non_orthogonality_deg\": "<<report.maxNonOrthogonalityDeg<<",\n";
-    out<<i2<<"\"max_internal_skewness\": "<<report.maxInternalSkewness<<",\n";
-    out<<i2<<"\"max_boundary_skewness\": "<<report.maxBoundarySkewness<<",\n";
-    out<<i2<<"\"max_concavity_deg\": "<<report.maxConcavityDeg<<",\n";
-    out<<i2<<"\"max_cell_aspect\": "<<report.maxCellAspect<<",\n";
-    out<<i2<<"\"min_interior_angle_deg\": "<<report.minInteriorAngleDeg<<",\n";
-    out<<i2<<"\"min_face_length\": "<<report.minFaceLength<<",\n";
-    out<<i2<<"\"min_face_weight\": "<<report.minFaceWeight<<",\n";
-    out<<i2<<"\"min_volume_ratio\": "<<report.minVolumeRatio<<",\n";
-    out<<i2<<"\"min_compactness\": "<<report.minCompactness<<"\n";
+    out<<i2<<"\"max_non_orthogonality_deg\": "<<jsonNumber(report.maxNonOrthogonalityDeg)<<",\n";
+    out<<i2<<"\"max_internal_skewness\": "<<jsonNumber(report.maxInternalSkewness)<<",\n";
+    out<<i2<<"\"max_boundary_skewness\": "<<jsonNumber(report.maxBoundarySkewness)<<",\n";
+    out<<i2<<"\"max_concavity_deg\": "<<jsonNumber(report.maxConcavityDeg)<<",\n";
+    out<<i2<<"\"max_cell_aspect\": "<<jsonNumber(report.maxCellAspect)<<",\n";
+    out<<i2<<"\"min_interior_angle_deg\": "<<jsonNumber(report.minInteriorAngleDeg)<<",\n";
+    out<<i2<<"\"min_face_length\": "<<jsonNumber(report.minFaceLength)<<",\n";
+    out<<i2<<"\"min_face_weight\": "<<jsonNumber(report.minFaceWeight)<<",\n";
+    out<<i2<<"\"min_volume_ratio\": "<<jsonNumber(report.minVolumeRatio)<<",\n";
+    out<<i2<<"\"min_compactness\": "<<jsonNumber(report.minCompactness)<<"\n";
     out<<i1<<"},\n";
     out<<i1<<"\"issue_count\": "<<report.issues.size()<<",\n";
     out<<i1<<"\"issues\": [";
@@ -427,7 +441,7 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
         const auto& issue=report.issues[i];
         out<<(i==0?"\n":",\n")<<i2<<"{\"code\": "<<static_cast<int>(issue.code)
            <<", \"cell_id\": "<<issue.cellId<<", \"edge_id\": "<<issue.edgeId
-           <<", \"measured\": "<<issue.measured<<", \"limit\": "<<issue.limit
+           <<", \"measured\": "<<jsonNumber(issue.measured)<<", \"limit\": "<<jsonNumber(issue.limit)
            <<", \"message\": \""<<issue.message<<"\"}";
     }
     if (!report.issues.empty()) out<<'\n'<<i1;

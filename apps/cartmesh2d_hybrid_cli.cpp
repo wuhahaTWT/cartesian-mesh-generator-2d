@@ -481,7 +481,7 @@ int main(int argc, char** argv) {
                  <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" solver_cells="<<fallback.solverTopology.cells.size()
                  <<" area_error="<<fallback.areaError
-                 <<" solver_quality=pass openfoam="<<openFoamStatus
+                 <<" solver_quality="<<(fallback.solverQuality.valid()?"no_advisories":"advisory")<<" openfoam="<<openFoamStatus
                  <<" vtk="<<vtkPath<<'\n';
         printTiming(elapsedSeconds(exportStart));
         return EXIT_SUCCESS;
@@ -551,8 +551,8 @@ int main(int argc, char** argv) {
 
     std::string openFoamStatus = "not_requested";
     if (argc == 12) {
-        if (!hybrid.solverQuality.valid() || !hybrid.solverTopology.valid()) {
-            std::cerr << "hybrid solver-quality gate failed; refusing OpenFOAM output\n";
+        if (!hybrid.solverQuality.exportable() || !hybrid.solverTopology.valid()) {
+            std::cerr << "invalid hybrid topology/cell geometry; refusing OpenFOAM output\n";
             return EXIT_FAILURE;
         }
         const auto foam = writeExtrudedOpenFoam2D(
@@ -586,7 +586,7 @@ int main(int argc, char** argv) {
               << " lineage_mismatches="
               << hybrid.sourceLineageAudit.mismatchedCells
               << " solver_quality="
-              << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << (hybrid.solverQuality.valid() ? "no_advisories" : "advisory")
               << " target_solver_issues="
               << hybrid.metrics.targetPolicyRepairIssueCountBefore << "->"
               << hybrid.metrics.targetPolicyRepairIssueCountAfter

@@ -110,7 +110,23 @@ struct SolverQualityReport2D {
     double minCompactness = 1.0;
     std::vector<SolverQualityIssue2D> issues;
 
+    // Optimization targets only: exceeding a numeric recommendation is not an
+    // export or solver-admission veto. Keep valid() for existing optimizer scores.
     [[nodiscard]] bool valid() const noexcept { return issues.empty(); }
+
+    [[nodiscard]] bool exportable() const noexcept {
+        for (const auto& issue:issues)
+            if (issue.code==SolverQualityIssueCode2D::InvalidTopology ||
+                issue.code==SolverQualityIssueCode2D::InvalidCell) return false;
+        return true;
+    }
+
+    [[nodiscard]] bool nativeFvCompatible() const noexcept {
+        if (!exportable()) return false;
+        for (const auto& issue:issues)
+            if (issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry) return false;
+        return true;
+    }
 };
 
 [[nodiscard]] SolverQualityReport2D evaluateSolverQuality2D(

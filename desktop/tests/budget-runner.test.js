@@ -133,33 +133,11 @@ test('stops after the first in-range result', async () => {
   assert.equal(result.cellBudget.reached, true);
 });
 
-test('retries a classified coarse quality failure within three attempts and preserves failures', async () => {
-  const choices = [];
-  const result = await runBudget(request({ farFieldSpans: 10, targetCells: 2000 }), { bodySpan: 1, fluidArea: 441 }, {
-    generate: async choice => {
-      choices.push(choice);
-      if (choices.length < 3) throw Object.assign(new Error('solver quality failed'),
-        { solverQualityFailure: true, outputDirectory: '/retained/' + choices.length });
-      return payload(4400);
-    }
-  });
-  assert.equal(choices.length, 3);
-  for (const c of choices) {
-    assert.equal(c.farFieldSpans, 10);
-    assert.equal(c.fluidRegion, 'exterior');
-    assert.equal(c.targetCells, 2000);
-  }
-  assert.equal(choices[2].wallRelativeSize, choices[0].wallRelativeSize / 4);
-  assert.deepEqual(result.attempts.map(a => a.success), [false, false, true]);
-  assert.equal(result.attempts[0].outputDirectory, '/retained/1');
-  assert.equal(result.cellBudget.reached, false);
-});
-
-test('quality retry respects the wall depth ceiling and keeps all-failed evidence', async () => {
+test('a legacy quality-failure marker does not silently change resolution', async () => {
   let calls = 0;
-  await assert.rejects(runBudget(request({ farFieldSpans: 10, targetCells: 2000, safeWallLevel: 6 }), { bodySpan: 1, fluidArea: 441 }, {
-    generate: async () => { calls++; throw Object.assign(new Error('quality failed'), { solverQualityFailure: true }); }
-  }), error => { assert.equal(error.attempts.length, 1); return /quality failed/.test(error.message); });
+  await assert.rejects(runBudget(request(), frame, {
+    generate: async () => { calls++; throw Object.assign(new Error('reported problem'), { solverQualityFailure: true }); }
+  }), error => { assert.equal(error.attempts.length, 1); return /reported problem/.test(error.message); });
   assert.equal(calls, 1);
 });
 

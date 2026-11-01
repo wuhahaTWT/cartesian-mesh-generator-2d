@@ -1973,7 +1973,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     }
     auto solverQuality=evaluateSolverQuality2D(
         solverTopologyReport.topology,{},policy.tolerance);
-    if (!solverQuality.valid()) {
+    if (!solverQuality.exportable()) {
         std::ostringstream detail;
         detail<<"solver quality remains invalid after constrained repair: issues="
               <<solverQuality.issues.size()<<" max_nonorthogonality="
@@ -2359,7 +2359,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.solverTopology=result.solverTopologyReport.topology;
     result.solverQuality=evaluateSolverQuality2D(
         result.solverTopology,{},policy.tolerance);
-    if (!result.solverQuality.valid()) {
+    if (!result.solverQuality.exportable()) {
         std::ostringstream message;
         message<<"pure Cut-cell fallback solver quality failed: issues="
                <<result.solverQuality.issues.size()

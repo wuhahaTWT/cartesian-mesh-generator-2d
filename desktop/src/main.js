@@ -127,12 +127,14 @@ async function collectReports(method, prefix) {
       resolution: await readJson(`${prefix}.resolution.json`),
       sizeField: await readJson(`${prefix}.size-field.json`),
       hybrid: await readJson(`${prefix}.hybrid.json`),
-      solverQuality: await readJson(`${prefix}.hybrid.solver-quality.json`)
+      solverQuality: await readJson(`${prefix}.hybrid.solver-quality.json`),
+      externalCheck: await readJson(`${prefix}-openfoam/checkMesh.json`)
     };
   }
   return {
     resolution: await readJson(`${prefix}.resolution.json`),
-    solverQuality: await readJson(`${prefix}-openfoam/solver_quality.json`),
+    solverQuality: await readJson(`${prefix}.solver-quality.json`) || await readJson(`${prefix}-openfoam/solver_quality.json`),
+    externalCheck: await readJson(`${prefix}-openfoam/checkMesh.json`),
     sizeField: await readJson(`${prefix}.size-field.json`),
     sizing: await readJson(`${prefix}.sizing.json`)
   };
@@ -649,14 +651,9 @@ app.whenReady().then(async () => {
     const reports = await collectReports(job.method, prefix);
     const mesh = await firstReadable(invocation.cm2dCandidates);
     if (failure) {
-      const failedQuality = await readJson(`${prefix}.failed.solver-quality.json`);
-      failure.solverQualityFailure = job.method === 'cutcell' && failure.code === 1 &&
-        /solver-quality gate failed/.test(failure.stderr || '') &&
-        failedQuality?.quality_class === 'solver_quality' && failedQuality.valid === false;
       failure.outputDirectory = job.outputDirectory;
       await fs.writeFile(path.join(job.outputDirectory, 'generation-failure.json'), JSON.stringify({
         parameters: job, invocation, reason: failure.message,
-        solverQualityFailure: failure.solverQualityFailure,
         stdout: failure.stdout || '', stderr: failure.stderr || ''
       }, null, 2));
     }
