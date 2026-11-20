@@ -8,13 +8,14 @@
 namespace cartmesh2d::structured {
 namespace {
 using Vector = std::vector<double>;
+using Index = Grid::Index;
 using Clock = std::chrono::steady_clock;
 enum Direction { West, East, South, North };
 enum Boundary { Internal, Inlet, Outlet, Wall, Lid, Cylinder };
 constexpr std::array opposite{East, West, North, South};
 
 struct Face {
-    int p, q;
+    Index p, q;
     Direction direction;
     Boundary boundary;
     double area, distance, weight, flux{};
@@ -22,8 +23,8 @@ struct Face {
 
 struct Geometry {
     const Grid& g;
-    std::array<int, 4> offset;
-    std::vector<int> cells;
+    std::array<Index, 4> offset;
+    std::vector<Index> cells;
     Vector volume;
     std::vector<Face> internal, boundary;
     double inflow{};
@@ -32,13 +33,13 @@ struct Geometry {
         : g(grid), offset{-1, 1, -g.stride, g.stride}, volume(g.fluid.size()) {
         for (int j = 0; j < g.ny; ++j) {
             for (int i = 0; i < g.nx; ++i) {
-                const int p = g.index(i, j);
+                const auto p = g.index(i, j);
                 if (!g.fluid[p]) continue;
                 cells.push_back(p);
                 const double dx = g.x[i + 1] - g.x[i], dy = g.y[j + 1] - g.y[j];
                 volume[p] = dx * dy;
                 for (Direction d : {West, East, South, North}) {
-                    const int q = p + offset[d];
+                    const auto q = p + offset[d];
                     const bool xFace = d <= East;
                     const double area = xFace ? dy : dx;
                     const double half = .5 * (xFace ? dx : dy);
@@ -69,7 +70,7 @@ using Matrix = std::vector<Coefficients>;
 
 void clear(Vector& v) { std::fill(v.begin(), v.end(), 0.); }
 
-double product(const Coefficients& a, const Vector& x, int p, int stride) {
+double product(const Coefficients& a, const Vector& x, Index p, Index stride) {
     return a.diagonal * x[p] - a.neighbour[West] * x[p - 1] - a.neighbour[East] * x[p + 1]
         - a.neighbour[South] * x[p - stride] - a.neighbour[North] * x[p + stride];
 }
@@ -85,7 +86,7 @@ bool prescribed(Boundary b, bool thermal) {
 }
 
 double wallWidth(const Face& f, const Geometry& m) {
-    const int inward = f.p - m.offset[f.direction];
+    const auto inward = f.p - m.offset[f.direction];
     return m.volume[inward] / f.area;
 }
 
@@ -149,7 +150,7 @@ void pressureGradient(const Geometry& m, const Vector& p, Vector& gx, Vector& gy
     }
     for (const Face& f : m.boundary)
         if (f.boundary == Outlet) gx[f.p] -= f.area * p[f.p];
-    for (int k : m.cells) {
+    for (auto k : m.cells) {
         gx[k] /= m.volume[k];
         gy[k] /= m.volume[k];
     }
@@ -161,15 +162,15 @@ void lines(const Geometry& m, const Matrix& a, const Vector& b, Vector& x,
     const Grid& g = m.g;
     const int length = alongX ? g.nx : g.ny;
     const int count = alongX ? g.ny : g.nx;
-    const int step = alongX ? 1 : g.stride;
-    const int lateral = alongX ? g.stride : 1;
+    const Index step = alongX ? 1 : g.stride;
+    const Index lateral = alongX ? g.stride : 1;
     const Direction back = alongX ? West : South, forward = alongX ? East : North;
     const Direction low = alongX ? South : West, high = alongX ? North : East;
     for (int line = 0; line < count; ++line) {
         const int outer = reverse ? count - 1 - line : line;
-        const int first = alongX ? g.index(0, outer) : g.index(outer, 0);
+        const auto first = alongX ? g.index(0, outer) : g.index(outer, 0);
         double previousUpper = 0, previousValue = 0;
-        for (int t = 0, k = first; t < length; ++t, k += step) {
+        for (Index t = 0, k = first; t < length; ++t, k += step) {
             if (!g.fluid[k]) {
                 previousUpper = previousValue = 0;
                 upper[t] = 0;
@@ -183,7 +184,7 @@ void lines(const Geometry& m, const Matrix& a, const Vector& b, Vector& x,
                 row.neighbour[low] * x[k - lateral] + row.neighbour[high] * x[k + lateral]) * inverse;
         }
         double next = 0;
-        for (int t = length - 1, k = first + t * step; t >= 0; --t, k -= step)
+        for (Index t = length - 1, k = first + t * step; t >= 0; --t, k -= step)
             x[k] = next = x[k] + upper[t] * next;
     }
 }
@@ -249,46 +250,43 @@ struct PressureSolver {
     }
 
     void precondition(const Geometry& m) {
-        const int stride = m.g.stride;
-        for (int k : m.cells) {
+        const auto stride = m.g.stride;
+        for (auto k : m.cells) {
             const auto& c = a[k].neighbour;
             z[k] = (r[k] + c[West] * z[k - 1] + c[South] * z[k - stride]) * inverse[k];
         }
         for (auto it = m.cells.rbegin(); it != m.cells.rend(); ++it) {
-            const int k = *it;
+            const auto k = *it;
             const auto& c = a[k].neighbour;
             z[k] += inverse[k] * (c[East] * z[k + 1] + c[North] * z[k + stride]);
         }
     }
 
-    void solve(const Geometry& m, const Vector& balance, Vector& correction, double absolute) {
-        const int stride = m.g.stride;
+    void solve(const Geometry& m, const Vector& balance, Vector& correction, double target) {
+        const auto stride = m.g.stride;
         clear(correction);
-        double rhsNorm = 0;
-        for (int k : m.cells) {
+        if (target == 0.) return;
+        for (auto k : m.cells) {
             const auto& c = a[k].neighbour;
             // Modified IC(0): return most of the dropped fill to the diagonal.
             const double west = c[West] * (c[West] + .97 * a[k - 1].neighbour[North]) * inverse[k - 1];
             const double south = c[South] * (c[South] + .97 * a[k - stride].neighbour[East]) * inverse[k - stride];
             inverse[k] = 1 / (a[k].diagonal - west - south);
             r[k] = -balance[k];
-            rhsNorm += std::abs(r[k]);
         }
-        const double target = std::min(absolute, .01 * rhsNorm);
-        if (rhsNorm == 0) return;
         precondition(m);
         direction = z;
         double previous = 0;
-        for (int k : m.cells) previous += r[k] * z[k];
+        for (auto k : m.cells) previous += r[k] * z[k];
         for (std::size_t iteration = 0; iteration < m.cells.size(); ++iteration) {
             double denominator = 0;
-            for (int k : m.cells) {
+            for (auto k : m.cells) {
                 ad[k] = product(a[k], direction, k, stride);
                 denominator += direction[k] * ad[k];
             }
             const double step = previous / denominator;
             double norm = 0;
-            for (int k : m.cells) {
+            for (auto k : m.cells) {
                 correction[k] += step * direction[k];
                 r[k] -= step * ad[k];
                 norm += std::abs(r[k]);
@@ -296,9 +294,9 @@ struct PressureSolver {
             if (!(norm > target)) break; // also return a nonfinite iterate to the residual check
             precondition(m);
             double next = 0;
-            for (int k : m.cells) next += r[k] * z[k];
+            for (auto k : m.cells) next += r[k] * z[k];
             const double beta = next / previous;
-            for (int k : m.cells) direction[k] = z[k] + beta * direction[k];
+            for (auto k : m.cells) direction[k] = z[k] + beta * direction[k];
             previous = next;
         }
     }
@@ -310,7 +308,7 @@ void correct(Geometry& m, Fields& f, const Vector& response, const Vector& pc,
     for (Face& e : m.boundary)
         if (e.boundary == Outlet) e.flux += mobility(e, response) * pc[e.p];
     pressureGradient(m, pc, gx, gy);
-    for (int k : m.cells) {
+    for (auto k : m.cells) {
         f.u[k] -= response[k] * gx[k];
         f.v[k] -= response[k] * gy[k];
         f.p[k] += alphaP * pc[k];
@@ -330,7 +328,7 @@ void vorticity(const Geometry& m, Fields& f) {
         if (e.direction >= South) f.vorticity[e.p] -= (e.direction == North ? 1. : -1.) *
             e.area * wallValue(e.boundary, 0);
         else if (e.boundary == Outlet) f.vorticity[e.p] += e.area * f.v[e.p];
-    for (int k : m.cells) f.vorticity[k] /= m.volume[k];
+    for (auto k : m.cells) f.vorticity[k] /= m.volume[k];
 }
 }
 
@@ -346,8 +344,9 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
     Result result;
     auto& f = result.fields;
     f = {Vector(size), Vector(size), Vector(size), Vector(size), {}};
-    if (m.inflow)
-        for (int k : m.cells) f.u[k] = 1.;
+    if (!p.initialField.empty()) interpolateInitialField(p.initialField, g, f);
+    else if (m.inflow)
+        for (auto k : m.cells) f.u[k] = 1.;
     Vector uOld(size), vOld(size), gx(size), gy(size), ru(size), rv(size), relaxation(size);
     Vector response(size), correction(size), balance(size), upper(std::max(g.nx, g.ny));
     Matrix a(size);
@@ -359,7 +358,7 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
         pressureGradient(m, f.p, gx, gy);
         transportSource(ru, m, f.u, diffusion, p.secondOrder, 0);
         transportSource(rv, m, f.v, diffusion, p.secondOrder, 1);
-        for (int k : m.cells) {
+        for (auto k : m.cells) {
             ru[k] -= m.volume[k] * gx[k];
             rv[k] -= m.volume[k] * gy[k];
         }
@@ -368,7 +367,7 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
     for (int it = 1; it <= p.maxIterations; ++it) {
         uOld = f.u;
         vOld = f.v;
-        for (int k : m.cells) {
+        for (auto k : m.cells) {
             relaxation[k] = a[k].diagonal * ((1 - p.alphaU) / p.alphaU);
             response[k] = m.volume[k] / (a[k].diagonal + relaxation[k]);
             ru[k] += relaxation[k] * uOld[k];
@@ -380,27 +379,29 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
         }
         result.outletScale = predictFlux(m, f, uOld, vOld, gx, gy, response, p.alphaU);
         divergence(m, balance);
-        pressure.assemble(m, response);
-        pressure.solve(m, balance, correction, .1 * p.tolerance * reference);
-        correct(m, f, response, correction, gx, gy, p.alphaP);
         Residual r{it};
+        for (auto k : m.cells) r.continuity += std::abs(balance[k]);
+        pressure.assemble(m, response);
+        pressure.solve(m, balance, correction, p.pressureRelativeTolerance * r.continuity);
+        r.continuity /= reference;
+        correct(m, f, response, correction, gx, gy, p.alphaP);
         r.globalMass = divergence(m, balance) / reference;
         assembleMomentum();
-        for (int k : m.cells) {
-            r.continuity += std::abs(balance[k]);
+        for (auto k : m.cells) {
+            r.correctedContinuity += std::abs(balance[k]);
             r.u += std::abs(ru[k] - product(a[k], f.u, k, g.stride));
             r.v += std::abs(rv[k] - product(a[k], f.v, k, g.stride));
         }
-        r.continuity /= reference;
+        r.correctedContinuity /= reference;
         r.u /= reference;
         r.v /= reference;
         result.flowHistory.push_back(r);
         if (progress) progress(false, r);
-        if (!std::isfinite(r.continuity + r.u + r.v + r.globalMass)) {
+        if (!std::isfinite(r.continuity + r.u + r.v + r.globalMass + r.correctedContinuity)) {
             result.stop = "Nonfinite flow residual";
             break;
         }
-        if (std::max({r.continuity, r.u, r.v, r.globalMass}) < p.tolerance) {
+        if (std::max({r.continuity, r.u, r.v}) < p.tolerance) {
             result.flowConverged = true;
             break;
         }
@@ -419,7 +420,7 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
             transportSource(ru, m, f.temperature, diffusivity, p.secondOrder, 2);
             Residual r = result.flowHistory.back();
             r.iteration = it;
-            for (int k : m.cells)
+            for (auto k : m.cells)
                 r.temperature += std::abs(ru[k] - product(a[k], f.temperature, k, g.stride));
             r.temperature /= reference;
             result.thermalHistory.push_back(r);

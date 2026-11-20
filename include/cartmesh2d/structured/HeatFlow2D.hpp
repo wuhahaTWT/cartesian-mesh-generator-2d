@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -13,15 +14,18 @@ struct Parameters {
     Case problem = Case::Square;
     int n = 10, baseN = 0, nx = 240, ny = 40, maxIterations = 12000;
     double stretch = 1.1, re = 20, pr = .71, alphaU = .7, alphaP = .3;
-    double tolerance = 1e-6;
+    double tolerance = 1e-6, pressureRelativeTolerance = .05;
     bool secondOrder = true;
+    std::filesystem::path initialField;
 };
 
 struct Grid {
+    using Index = std::ptrdiff_t;
     std::vector<double> x, y;
     std::vector<unsigned char> fluid;
-    int nx{}, ny{}, stride{};
-    int index(int i, int j) const { return (j + 1) * stride + i + 1; }
+    int nx{}, ny{};
+    Index stride{};
+    Index index(int i, int j) const { return (static_cast<Index>(j) + 1) * stride + i + 1; }
     double xc(int i) const { return .5 * (x[i] + x[i + 1]); }
     double yc(int j) const { return .5 * (y[j] + y[j + 1]); }
 };
@@ -32,7 +36,7 @@ struct Fields {
 
 struct Residual {
     int iteration{};
-    double continuity{}, u{}, v{}, temperature{}, globalMass{};
+    double continuity{}, u{}, v{}, temperature{}, globalMass{}, correctedContinuity{};
 };
 
 struct Result {
@@ -45,14 +49,16 @@ struct Result {
 };
 
 struct SquareMetrics {
-    double cdPressure{}, cdViscous{}, reattachment{};
+    double cdPressure{}, cdPressureExtrapolated{}, cdViscous{}, reattachment{}, leadingCornerPressure{};
     std::array<double, 4> nu{}; // front, rear, bottom, top
     double cd() const { return cdPressure + cdViscous; }
+    double cdExtrapolated() const { return cdPressureExtrapolated + cdViscous; }
     double meanNu() const { return .25 * (nu[0] + nu[1] + nu[2] + nu[3]); }
 };
 
 Parameters readParameters(const std::filesystem::path&);
 Grid makeGrid(const Parameters&);
+void interpolateInitialField(const std::filesystem::path&, const Grid&, Fields&);
 Result solve(const Grid&, const Parameters&, const std::function<void(bool, const Residual&)>& = {});
 SquareMetrics squareMetrics(const Grid&, const Fields&, double viscosity);
 void updateVorticity(const Grid&, Case, Fields&);

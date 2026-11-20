@@ -18,6 +18,10 @@ std::ofstream output(const std::filesystem::path& path) {
 double wallDerivative(double value, double next, double wall, double s, double t) {
     return (value - wall) / s + s / t * ((value - wall) / s - (next - value) / (t - s));
 }
+
+double wallPressure(double value, double next, double s, double t) {
+    return value - s * (next - value) / (t - s);
+}
 }
 
 SquareMetrics squareMetrics(const Grid& g, const Fields& f, double viscosity) {
@@ -26,13 +30,20 @@ SquareMetrics squareMetrics(const Grid& g, const Fields& f, double viscosity) {
     const int right = static_cast<int>(std::lower_bound(g.x.begin(), g.x.end(), 5.5) - g.x.begin());
     const int bottom = static_cast<int>(std::lower_bound(g.y.begin(), g.y.end(), 4.5) - g.y.begin());
     const int top = static_cast<int>(std::lower_bound(g.y.begin(), g.y.end(), 5.5) - g.y.begin());
+    result.leadingCornerPressure = f.p[g.index(left, top)];
+    const double sf = 4.5 - g.xc(left - 1), tf = 4.5 - g.xc(left - 2);
+    const double sr = g.xc(right) - 5.5, tr = g.xc(right + 1) - 5.5;
     for (int j = bottom; j < top; ++j) {
         const double area = g.y[j + 1] - g.y[j];
-        result.cdPressure += 2 * area * (f.p[g.index(left - 1, j)] - f.p[g.index(right, j)]);
+        const double front = f.p[g.index(left - 1, j)], rear = f.p[g.index(right, j)];
+        result.cdPressure += 2 * area * (front - rear);
+        result.cdPressureExtrapolated += 2 * area *
+            (wallPressure(front, f.p[g.index(left - 2, j)], sf, tf) -
+             wallPressure(rear, f.p[g.index(right + 1, j)], sr, tr));
         result.nu[0] -= area * wallDerivative(f.temperature[g.index(left - 1, j)],
-            f.temperature[g.index(left - 2, j)], 1., 4.5 - g.xc(left - 1), 4.5 - g.xc(left - 2));
+            f.temperature[g.index(left - 2, j)], 1., sf, tf);
         result.nu[1] -= area * wallDerivative(f.temperature[g.index(right, j)],
-            f.temperature[g.index(right + 1, j)], 1., g.xc(right) - 5.5, g.xc(right + 1) - 5.5);
+            f.temperature[g.index(right + 1, j)], 1., sr, tr);
     }
     for (int i = left; i < right; ++i) {
         const double area = g.x[i + 1] - g.x[i];
@@ -71,7 +82,7 @@ void writeFields(const std::filesystem::path& directory, const Grid& g, const Fi
     csv << "i,j,x,y,dx,dy,fluid,u,v,p,theta,vorticity\n";
     for (int j = 0; j < g.ny; ++j)
         for (int i = 0; i < g.nx; ++i) {
-            const int k = g.index(i, j);
+            const auto k = g.index(i, j);
             csv << i << ',' << j << ',' << g.xc(i) << ',' << g.yc(j) << ',' << g.x[i + 1] - g.x[i]
                 << ',' << g.y[j + 1] - g.y[j] << ',' << static_cast<int>(g.fluid[k]) << ',' << f.u[k]
                 << ',' << f.v[k] << ',' << f.p[k] << ',' << f.temperature[k] << ',' << f.vorticity[k] << '\n';
@@ -84,7 +95,7 @@ void writeFields(const std::filesystem::path& directory, const Grid& g, const Fi
     vtk << "Z_COORDINATES 1 double\n0\nCELL_DATA " << count << "\nVECTORS velocity double\n";
     for (int j = 0; j < g.ny; ++j)
         for (int i = 0; i < g.nx; ++i) {
-            const int k = g.index(i, j);
+            const auto k = g.index(i, j);
             vtk << f.u[k] << ' ' << f.v[k] << " 0\n";
         }
     const auto scalar = [&](const char* name, const auto& values) {
@@ -107,11 +118,11 @@ void writeResult(const std::filesystem::path& directory, const Grid& g, const Pa
             outlet << g.yc(j) << ',' << r.outletU[j] << ',' << r.fields.v[g.index(g.nx - 1, j)] << '\n';
     }
     auto history = output(directory / "residuals.csv");
-    history << "phase,iteration,continuity,u,v,theta,global_mass\n";
+    history << "phase,iteration,continuity,u,v,theta,global_mass,corrected_continuity\n";
     const auto rows = [&](const char* phase, const auto& values) {
         for (const auto& row : values)
             history << phase << ',' << row.iteration << ',' << row.continuity << ',' << row.u << ','
-                << row.v << ',' << row.temperature << ',' << row.globalMass << '\n';
+                << row.v << ',' << row.temperature << ',' << row.globalMass << ',' << row.correctedContinuity << '\n';
     };
     rows("flow", r.flowHistory);
     rows("thermal", r.thermalHistory);
@@ -120,10 +131,13 @@ void writeResult(const std::filesystem::path& directory, const Grid& g, const Pa
         << "\nfluid_cells," << std::count(g.fluid.begin(), g.fluid.end(), 1) << "\nre," << p.re << "\npr," << p.pr
         << "\nflow_iterations," << r.flowHistory.size() << "\nflow_seconds," << r.flowSeconds
         << "\nthermal_iterations," << r.thermalHistory.size() << "\nthermal_seconds," << r.thermalSeconds
-        << "\noutlet_scale," << r.outletScale << '\n';
+        << "\noutlet_scale," << r.outletScale << "\np_rel_tol," << p.pressureRelativeTolerance
+        << "\ninterpolated_initial_field," << !p.initialField.empty() << '\n';
     if (r.flowConverged && r.thermalConverged) {
         const auto m = squareMetrics(g, r.fields, 1. / p.re);
-        summary << "cd," << m.cd() << "\ncd_pressure," << m.cdPressure << "\ncd_viscous," << m.cdViscous
+        summary << "cd," << m.cd() << "\ncd_extrapolated," << m.cdExtrapolated()
+            << "\ncd_pressure," << m.cdPressure << "\ncd_pressure_extrapolated," << m.cdPressureExtrapolated
+            << "\ncd_viscous," << m.cdViscous << "\nleading_corner_pressure," << m.leadingCornerPressure
             << "\nnu," << m.meanNu() << "\nnu_front," << m.nu[0] << "\nnu_rear," << m.nu[1]
             << "\nnu_bottom," << m.nu[2] << "\nnu_top," << m.nu[3] << "\nlr," << m.reattachment << '\n';
     }

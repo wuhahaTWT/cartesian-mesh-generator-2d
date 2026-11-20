@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
         for (const auto& cell : topology.cells) {
             const auto id = cell.id;
             const int i = static_cast<int>(cell.sourceId) % g.nx, j = static_cast<int>(cell.sourceId) / g.nx;
-            const int k = g.index(i, j);
+            const auto k = g.index(i, j);
             fields.u[k] = step.accepted->flow.u[id];
             fields.v[k] = step.accepted->flow.v[id];
             fields.p[k] = step.accepted->flow.p[id];
@@ -184,7 +184,8 @@ int main(int argc, char** argv) {
         writeFields(output, g, fields);
         const auto m = squareMetrics(g, fields, fc.nu);
         summary << "status,Converged\nstep_max_velocity_change," << du << "\nstep_max_theta_change," << dt
-            << "\ncd," << m.cd() << "\nnu," << m.meanNu() << "\nlr," << m.reattachment << '\n';
+            << "\ncd," << m.cd() << "\ncd_extrapolated," << m.cdExtrapolated()
+            << "\nnu," << m.meanNu() << "\nlr," << m.reattachment << '\n';
         std::cout << "Native comparison converged: Cd=" << m.cd() << " Nu=" << m.meanNu()
             << " Lr/D=" << m.reattachment << '\n';
         return 0;

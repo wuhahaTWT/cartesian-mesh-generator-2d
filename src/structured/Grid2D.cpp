@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -11,17 +10,12 @@ namespace cartmesh2d::structured {
 namespace {
 void validate(const Parameters& p) {
     const auto positive = [](double v) { return std::isfinite(v) && v > 0; };
-    if (!positive(p.re) || !positive(p.pr) || !positive(p.tolerance) || p.tolerance > 1e-6 ||
+    if (!positive(p.re) || !positive(p.pr) || !positive(p.tolerance) ||
         !(p.alphaU > 0 && p.alphaU <= 1 && p.alphaP > 0 && p.alphaP <= 1) ||
-        !(p.stretch >= 1 && p.stretch <= 1.1) || p.maxIterations < 1 || p.n < 2 ||
-        p.baseN < 0 || p.baseN == 1 || (p.baseN && p.n % p.baseN) ||
-        p.nx < 4 || p.ny < 4)
+        !(p.pressureRelativeTolerance > 0 && p.pressureRelativeTolerance < 1) ||
+        !std::isfinite(p.stretch) || p.stretch < 1 || p.maxIterations < 1 || p.n < 1 ||
+        p.baseN < 0 || (p.baseN && p.n % p.baseN) || p.nx < 1 || p.ny < 1)
         throw std::invalid_argument("Invalid grid, fluid properties or SIMPLE controls");
-    const auto cells = p.problem == Case::Square
-        ? (20LL * p.n + 2) * static_cast<long double>(10LL * p.n + 2)
-        : (p.nx + 2LL) * static_cast<long double>(p.ny + 2LL);
-    if (cells > std::numeric_limits<int>::max())
-        throw std::invalid_argument("Grid exceeds supported indexing range");
 }
 
 std::vector<double> outward(double length, double h, double ratio) {
@@ -46,8 +40,6 @@ std::vector<double> outward(double length, double h, double ratio) {
     }
     const double fitted = .5 * (low + high);
     width = h * length / lengthAt(fitted);
-    if (width * ratio < h)
-        throw std::invalid_argument("Stretch ratio too small to join the square and outer grid");
     std::vector<double> offsets{0};
     for (int i = 0; i < count; ++i, width *= fitted) offsets.push_back(offsets.back() + width);
     offsets.back() = length;
@@ -58,7 +50,7 @@ std::vector<double> squareAxis(double length, int n, int base, double ratio) {
     if (ratio == 1) {
         if (base % 2) throw std::invalid_argument("Unit stretch requires an even base_n to align the half-unit walls");
         std::vector<double> axis;
-        for (int k = 0; k <= static_cast<int>(length) * n; ++k)
+        for (Grid::Index k = 0; k <= static_cast<Grid::Index>(length) * n; ++k)
             axis.push_back(static_cast<double>(k) / n);
         return axis;
     }
@@ -109,6 +101,10 @@ Parameters readParameters(const std::filesystem::path& path) {
             else throw std::invalid_argument("Unknown convection scheme: " + value);
             continue;
         }
+        if (key == "init_from") {
+            p.initialField = (path.parent_path() / value).lexically_normal();
+            continue;
+        }
         if (key == "n") number >> p.n;
         else if (key == "base_n") number >> p.baseN;
         else if (key == "nx") number >> p.nx;
@@ -119,6 +115,7 @@ Parameters readParameters(const std::filesystem::path& path) {
         else if (key == "alpha_u") number >> p.alphaU;
         else if (key == "alpha_p") number >> p.alphaP;
         else if (key == "tolerance") number >> p.tolerance;
+        else if (key == "p_rel_tol") number >> p.pressureRelativeTolerance;
         else if (key == "max_iterations") number >> p.maxIterations;
         else throw std::invalid_argument("Unknown parameter: " + key);
         if (!number || (number >> extra)) throw std::invalid_argument("Invalid value for " + key);
@@ -139,8 +136,8 @@ Grid makeGrid(const Parameters& p) {
     }
     g.nx = static_cast<int>(g.x.size()) - 1;
     g.ny = static_cast<int>(g.y.size()) - 1;
-    g.stride = g.nx + 2;
-    g.fluid.resize(static_cast<std::size_t>(g.stride) * (g.ny + 2));
+    g.stride = static_cast<Grid::Index>(g.nx) + 2;
+    g.fluid.resize(static_cast<std::size_t>(g.stride) * (static_cast<std::size_t>(g.ny) + 2));
     for (int j = 0; j < g.ny; ++j)
         for (int i = 0; i < g.nx; ++i)
             g.fluid[g.index(i, j)] = !(p.problem == Case::Square &&

@@ -1,12 +1,14 @@
 # 当前状态与接手重点
 
-更新：2026-11-20。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
+更新：2026-11-21。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
 
 ## 同位结构化方柱流动与换热
 
 课程求解器位于 `src/structured/`，`cartmesh2d_heat_cli` 在对齐方柱的矩形网格上求稳态 SIMPLE 和单向耦合温度。输入见 `examples/square-cylinder-heat/`。
-Windows MSVC Release 实跑 Re=20 的 2,522／10,088／40,352 格、Re=40 补充算例、方腔及平板通道。Re=20 细网格的 Cd/Nu/Lr/D 为 3.16836／2.22645／1.12752。Nu、Lr 可作三网格外推，Cd 的细化增量扩大，尚无可靠 GCI。
-`cartmesh2d_heat_reference` 在 Re=20 中网格上运行原生有限体积和热联算，得到 3.05240／2.28111／1.12503；两套离散不同。原始计算场、剖面对照、报告和可复算压缩包在 `outputs/square-cylinder-heat/`。
+以压力校正前的连续性残差判停，校正后失衡单列。压力校正默认只将当步线性残差降到初值的 5%。支持从 `field.csv` 双线性插值初值。
+Windows MSVC Release 已重算全部算例。Re=20 四档为 2,522／10,088／40,352／161,408 格。N=80 从本轮 N=40 插值启动，8771／1503 步收敛，Cd（格心／外推壁压）为 3.19947／3.24129，Nu 为 2.22461，Lr/D 为 1.13492。
+按 N=20／40／80，格心与外推壁压 Cd 的 GCI 为 4.082%／0.783%，Nu 与 Lr/D 为 0.134%／0.624%。角点压力随加密增大，原有入口段管壁分辨率限制保留。
+`cartmesh2d_heat_reference` 已重跑 Re=20 中网格原生热联算。初值输入、原始场、中文图、报告及压缩包在 `outputs/square-cylinder-heat/`，上一轮原始产物留在 `outputs/square-cylinder-heat-before-review/` 供对照。
 
 ## 当前网格方法与翼型选型
 

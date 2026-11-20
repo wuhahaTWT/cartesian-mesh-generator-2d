@@ -97,6 +97,7 @@ endif()
 # Standalone collocated structured SIMPLE and heat transport.
 add_library(cartmesh2d_structured
     src/structured/Grid2D.cpp
+    src/structured/HeatInitial2D.cpp
     src/structured/HeatFlow2D.cpp
     src/structured/HeatOutput2D.cpp)
 target_include_directories(cartmesh2d_structured PUBLIC include)
