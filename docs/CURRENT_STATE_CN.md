@@ -1,6 +1,12 @@
 # 当前状态与接手重点
 
-更新：2026-11-01。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
+更新：2026-11-20。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
+
+## 同位结构化方柱流动与换热
+
+课程求解器位于 `src/structured/`，`cartmesh2d_heat_cli` 在对齐方柱的矩形网格上求稳态 SIMPLE 和单向耦合温度。输入见 `examples/square-cylinder-heat/`。
+Windows MSVC Release 实跑 Re=20 的 2,522／10,088／40,352 格、Re=40 补充算例、方腔及平板通道。Re=20 细网格的 Cd/Nu/Lr/D 为 3.16836／2.22645／1.12752。Nu、Lr 可作三网格外推，Cd 的细化增量扩大，尚无可靠 GCI。
+`cartmesh2d_heat_reference` 在 Re=20 中网格上运行原生有限体积和热联算，得到 3.05240／2.28111／1.12503；两套离散不同。原始计算场、剖面对照、报告和可复算压缩包在 `outputs/square-cylinder-heat/`。
 
 ## 当前网格方法与翼型选型
 

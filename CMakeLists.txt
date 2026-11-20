@@ -94,6 +94,19 @@ if(MSVC)
     endforeach()
 endif()
 
+# Standalone collocated structured SIMPLE and heat transport.
+add_library(cartmesh2d_structured
+    src/structured/Grid2D.cpp
+    src/structured/HeatFlow2D.cpp
+    src/structured/HeatOutput2D.cpp)
+target_include_directories(cartmesh2d_structured PUBLIC include)
+target_compile_features(cartmesh2d_structured PUBLIC cxx_std_20)
+cartmesh2d_enable_warnings(cartmesh2d_structured)
+
+add_executable(cartmesh2d_heat_cli apps/cartmesh2d_heat_cli.cpp)
+target_link_libraries(cartmesh2d_heat_cli PRIVATE cartmesh2d_structured)
+cartmesh2d_enable_warnings(cartmesh2d_heat_cli)
+
 # Native two-dimensional finite-volume foundation, independently executable.
 add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowCase2D.cpp src/fv/FlowMomentum2D.cpp src/fv/FlowFlux2D.cpp src/fv/FlowForces2D.cpp src/fv/FlowConvergence2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_sources(cartmesh2d_fv PRIVATE src/fv/FlowCoupled2D.cpp src/fv/FlowEquation2D.cpp src/fv/FlowGpuPressure2D.cpp)
@@ -135,6 +148,9 @@ endif()
 target_compile_features(cartmesh2d_fv PUBLIC cxx_std_20)
 add_executable(cartmesh2d_fv_cli apps/cartmesh2d_fv_cli.cpp)
 target_link_libraries(cartmesh2d_fv_cli PRIVATE cartmesh2d_fv)
+add_executable(cartmesh2d_heat_reference apps/cartmesh2d_heat_reference.cpp)
+target_link_libraries(cartmesh2d_heat_reference PRIVATE cartmesh2d_structured cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_heat_reference)
 if(MSVC)
     target_sources(cartmesh2d_fv_cli PRIVATE apps/cartmesh2d.exe.manifest)
 endif()
