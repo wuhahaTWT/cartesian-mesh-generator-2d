@@ -110,5 +110,67 @@ int main() {
         "a cut cell wrapping a solid tip is repartitioned instead of left unusable");
     check(std::abs(area(rejected.topology)-bad.area)<=TolerancePolicy{}.relative*bad.area,
         "post-agglomeration repartition preserves the complete fluid area");
+
+    // 1) Physical 90-degree reflex corner (ExcessiveConcavity=90 > 80) must be
+    // repartitioned without moving any input physical vertex.
+    {
+        const std::vector<Point2D> lShape{{0,0},{2,0},{2,1},{1,1},{1,2},{0,2}};
+        const BoundaryRegion2D lWall{BoundaryLoop(lShape)};
+        const Domain2D lDomain{{{-1,-1},{3,3}}};
+        const auto lCell=cell(20,lShape);
+        const auto lRaw=buildGlobalTopology({lCell},lDomain,lWall);
+        const auto lFixed=agglomerateSolverByShape2D(lRaw,lDomain,lWall);
+        check(lRaw.valid() && !lFixed.before.valid(),
+            "L-shaped 90-degree reflex cell must report excessive concavity before repair");
+        check(lFixed.valid() && lFixed.targetMet() && lFixed.after.nativeFvCompatible() &&
+            lFixed.after.maxConcavityDeg<=80.0 && lFixed.topology.cells.size()>1,
+            "excessive concavity must trigger local repartitioning until target is met");
+        check(std::abs(area(lFixed.topology)-lCell.area)<=TolerancePolicy{}.relative*lCell.area,
+            "concave-corner repartition must preserve exact fluid area");
+        std::set<std::pair<double,double>> verts;
+        for (const auto& v:lFixed.topology.vertices) verts.emplace(v.point.x,v.point.y);
+        for (const auto& p:lShape)
+            check(verts.contains({p.x,p.y}),"concave-corner repartition must keep every physical vertex");
+        const auto lAgain=agglomerateSolverByShape2D(lRaw,lDomain,lWall);
+        check(signature(lFixed.topology)==signature(lAgain.topology),
+            "concave-corner repartition must be deterministic");
+    }
+
+    // 2) Two-cell patch sharing a collinear T-junction vertex on its perimeter
+    // with two smaller right-hand neighbours: ray-hit snapping must land on the
+    // exact existing vertex instead of leaving an ULP-mismatched single-owner edge.
+    {
+        const double xMid=1.0063920596630851;
+        const double yMid=0.0018243804503903505;
+        const std::vector<Point2D> outer{
+            {0.998091,-0.006476},{1.014693,-0.006476},{1.014693,0.010125},
+            {0.998091,0.010125},{0.998091,0.001672},{0.998557,0.001575},
+            {1.000084,0.001257},{0.998361,-0.00137},{0.998091,-0.00139}};
+        const BoundaryRegion2D teWall{BoundaryLoop(outer)};
+        const Domain2D teDomain{{{0.99,-0.015},{1.02,0.02}}};
+        std::vector<CutCell2D> teCells{
+            cell(30,{{1.000084,0.001257},{0.998361,-0.00137},{0.998091,-0.00139},
+                     {0.998091,-0.006476},{xMid,-0.006476},{xMid,-5.7218258570053762e-05}}),
+            cell(31,{{xMid,-5.7218258570053762e-05},{xMid,yMid},{0.998091,yMid},
+                     {0.998091,0.001672},{0.998557,0.001575},{1.000084,0.001257}}),
+            cell(32,{{0.998091,yMid},{xMid,yMid},{xMid,0.010125},{0.998091,0.010125}}),
+            cell(33,{{xMid,-0.006476},{1.014693,-0.006476},{1.014693,yMid},
+                     {xMid,yMid},{xMid,-5.7218258570053762e-05}}),
+            cell(34,{{xMid,yMid},{1.014693,yMid},{1.014693,0.010125},{xMid,0.010125}})
+        };
+        const auto teRaw=buildGlobalTopology(teCells,teDomain,teWall);
+        const auto teFixed=agglomerateSolverByShape2D(teRaw,teDomain,teWall,{false,false,false,true,true});
+        check(teRaw.valid() && !teFixed.before.valid(),
+            "trailing-edge sliver patch must be valid topology with boundary skewness advisories");
+        check(teFixed.valid() && teFixed.after.nativeFvCompatible() &&
+            teFixed.after.issues.size()<teFixed.before.issues.size(),
+            "two-cell patch with perimeter T-junction must recut cleanly without ULP topology failure");
+        check(std::abs(area(teFixed.topology)-area(teRaw))<=TolerancePolicy{}.relative*area(teRaw),
+            "trailing-edge patch recut must preserve exact fluid area");
+        const auto teAgain=agglomerateSolverByShape2D(teRaw,teDomain,teWall,{false,false,false,true,true});
+        check(signature(teFixed.topology)==signature(teAgain.topology),
+            "trailing-edge patch recut must be deterministic");
+    }
+
     return failures?1:0;
 }

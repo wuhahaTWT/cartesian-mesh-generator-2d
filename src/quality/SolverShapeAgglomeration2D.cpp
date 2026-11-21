@@ -26,12 +26,21 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
             std::vector<Polygon2D> pieces;
             LocalQualityRank2D rank;
             double referenceArea;
+            bool improvesTarget=false;
         };
-        std::vector<SplitProposal> proposals;
-        std::set<std::size_t> skewedCells;
-        for (const auto& issue:result.after.issues)
-            if (issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness)
-                skewedCells.insert(issue.cellId);
+        std::set<std::size_t> issueCells;
+        for (const auto& issue:result.after.issues) {
+            if (issue.cellId<mesh.cells.size()) issueCells.insert(issue.cellId);
+            const bool faceIssue=internalInterfaceIssue(issue.code) ||
+                issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness ||
+                issue.code==SolverQualityIssueCode2D::ShortFace;
+            if (faceIssue && issue.edgeId<mesh.edges.size()) {
+                const auto& edge=mesh.edges[issue.edgeId];
+                if (edge.owner<mesh.cells.size()) issueCells.insert(edge.owner);
+                if (edge.neighbour && *edge.neighbour<mesh.cells.size())
+                    issueCells.insert(*edge.neighbour);
+            }
+        }
         const auto usable=[&](const Polygon2D& polygon) {
             const auto centre=polygon.centroid(tol);
             if (!centre) return false;
@@ -41,7 +50,8 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
             return true;
         };
 
-        const auto splitChoices=[&](const Polygon2D& polygon) {
+        const auto splitChoices=[&](const Polygon2D& polygon,
+                                    const std::vector<Point2D>& anchorVertices) {
             std::vector<std::vector<Polygon2D>> choices;
             const auto n=polygon.vertices.size();
             const auto add=[&](std::size_t start,std::size_t edge,const Point2D& q,bool vertexEnd) {
@@ -70,26 +80,50 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                 const auto p=polygon.vertices[start];
                 auto incoming=p-polygon.vertices[(start+n-1)%n];
                 auto outgoing=polygon.vertices[(start+1)%n]-p;
-                incoming=incoming*(1/std::sqrt(squaredNorm(incoming)));
-                outgoing=outgoing*(1/std::sqrt(squaredNorm(outgoing)));
+                const double inNorm=std::sqrt(squaredNorm(incoming));
+                const double outNorm=std::sqrt(squaredNorm(outgoing));
+                if (!(inNorm>0.0) || !(outNorm>0.0)) continue;
+                incoming=incoming*(1.0/inNorm);
+                outgoing=outgoing*(1.0/outNorm);
                 const Vector2D firstNormal{-incoming.y,incoming.x};
                 const Vector2D secondNormal{-outgoing.y,outgoing.x};
                 const Vector2D bisector{firstNormal.x+secondNormal.x,firstNormal.y+secondNormal.y};
-                const std::array<Vector2D,6> directions{firstNormal,secondNormal,bisector,
-                    bisector*(-1),incoming,outgoing*(-1)};
-                for (const auto direction:directions) {
+                const std::array<Vector2D,6> directions{
+                    firstNormal,secondNormal,bisector,bisector*(-1.0),
+                    incoming,outgoing*(-1.0)};
+                for (const auto rawDirection:directions) {
+                    const double dirNorm=std::sqrt(squaredNorm(rawDirection));
+                    if (!(dirNorm>1.0e-12)) continue;
+                    const Vector2D direction=rawDirection*(1.0/dirNorm);
                     std::optional<std::pair<std::size_t,Point2D>> hit;
                     double closest=std::numeric_limits<double>::infinity();
                     for (std::size_t edge=0;edge<n;++edge) {
                         if (edge==start || (edge+1)%n==start) continue;
                         const auto a=polygon.vertices[edge];
-                        const auto tangent=polygon.vertices[(edge+1)%n]-a;
+                        const auto b=polygon.vertices[(edge+1)%n];
+                        const auto tangent=b-a;
+                        const double edgeLength=std::sqrt(squaredNorm(tangent));
                         const double determinant=cross(direction,tangent);
-                        if (determinant==0) continue;
+                        if (std::abs(determinant)<=1.0e-15*edgeLength) continue;
                         const double distance=cross(a-p,tangent)/determinant;
                         const double fraction=cross(a-p,direction)/determinant;
-                        if (distance<=0 || fraction<=0 || fraction>=1 || distance>=closest) continue;
-                        closest=distance;hit={{edge,a+tangent*fraction}};
+                        if (distance<=0.0 || fraction<=1.0e-9 || fraction>=1.0-1.0e-9 || distance>=closest) continue;
+                        Point2D point=a+tangent*fraction;
+                        // Snap ray hits within roundoff of an existing shared topology
+                        // vertex (which simplifyUnion may have dropped as collinear) so
+                        // global edge matching never sees ULP-mismatched T-junctions.
+                        const double snapLimit=std::max(tol.absolute,tol.relative*edgeLength);
+                        const double snapLimitSq=snapLimit*snapLimit;
+                        double bestDistSq=snapLimitSq;
+                        for (const auto& anchor:anchorVertices) {
+                            const double distSq=squaredNorm(anchor-point);
+                            if (distSq<=bestDistSq) {
+                                bestDistSq=distSq;
+                                point=anchor;
+                            }
+                        }
+                        if (squaredNorm(point-a)<=snapLimitSq || squaredNorm(point-b)<=snapLimitSq) continue;
+                        closest=distance;hit={{edge,point}};
                     }
                     if (hit) add(start,hit->first,hit->second,false);
                 }
@@ -115,6 +149,7 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
             const double areaTolerance=tol.absolute*tol.absolute+tol.relative*resolutionArea;
             const bool oversized=members.size()==1 && polygon.area()>resolutionArea+areaTolerance;
             const auto before=localReplacementQualityRank(mesh,halo,members,originals,tol,policy.target);
+            const auto beforeLegacy=localReplacementQualityRank(mesh,halo,members,originals,tol);
             std::optional<LocalQualityRank2D> bestRank;
             std::vector<Polygon2D> bestPieces;
             double bestLargest=std::numeric_limits<double>::infinity();
@@ -130,6 +165,11 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                 if (members.size()>1 && largest>resolutionArea+areaTolerance) return;
                 auto rank=localReplacementQualityRank(mesh,halo,members,pieces,tol,policy.target);
                 if (!rank) return;
+                if (!badGeometry && oversized) {
+                    const auto candidateLegacy=localReplacementQualityRank(mesh,halo,members,pieces,tol);
+                    if (!candidateLegacy ||
+                        (beforeLegacy && betterQualityScore(beforeLegacy->issues,candidateLegacy->issues))) return;
+                }
                 if (!badGeometry && !oversized && (!before ||
                     !betterQualityScore(rank->issues,before->issues))) return;
                 if (oversized && largest>=polygon.area()-areaTolerance) return;
@@ -143,29 +183,145 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                     bestRank=*rank;bestPieces=std::move(pieces);bestLargest=largest;
                 }
             };
-            for (const auto& pieces:splitChoices(polygon)) consider(pieces);
-            if (badGeometry || bestPieces.empty()) {
+            std::vector<Point2D> anchorVertices;
+            for (const auto& orig:originals)
+                anchorVertices.insert(anchorVertices.end(),orig.vertices.begin(),orig.vertices.end());
+            for (const auto& pieces:splitChoices(polygon,anchorVertices)) consider(pieces);
+            if (badGeometry || bestPieces.empty() ||
+                (bestRank && bestRank->issues.issueCount>0U && polygon.vertices.size()<=12U)) {
                 for (const auto& pieces:convexThreePieceFanSplits(polygon,domain,boundary,tol))
                     consider({pieces.begin(),pieces.end()});
                 const auto pieces=partitionOnePolygon(polygon,domain,boundary,tol);
                 if (pieces) consider(*pieces);
             }
             if (!bestRank) return std::nullopt;
+            const bool improvesTarget=before && betterQualityScore(bestRank->issues,before->issues);
             if (before) rankRelativeToBase(*bestRank,*before);
-            return SplitProposal{members,halo,std::move(bestPieces),*bestRank,resolutionArea};
+            return SplitProposal{members,halo,std::move(bestPieces),*bestRank,resolutionArea,improvesTarget};
         };
+        const auto commitProposals=[&](std::vector<SplitProposal>& proposals,
+                                       bool fixingBadGeometry,
+                                       bool restoringSizeOnly) -> bool {
+            if (proposals.empty()) return false;
+            std::sort(proposals.begin(),proposals.end(),[](const SplitProposal& a,const SplitProposal& b) {
+                if (betterLocalQualityRank(a.rank,b.rank)) return true;
+                if (betterLocalQualityRank(b.rank,a.rank)) return false;
+                return a.members<b.members;
+            });
+            std::vector<std::vector<std::size_t>> halos;
+            for (const auto& proposal:proposals) halos.push_back(proposal.halo);
+            const auto selected=selectIndependentSolverRepairPatches2D(halos);
+            const auto legacyBefore=evaluateSolverQuality2D(mesh,{},tol);
+            const auto targetScoreBefore=qualityScore(result.after);
+            const auto legacyScoreBefore=qualityScore(legacyBefore);
+            const auto invalidFaceCount=[](const SolverQualityReport2D& report) {
+                std::size_t count=0;
+                for (const auto& issue:report.issues)
+                    if (issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry) ++count;
+                return count;
+            };
+            const std::size_t badFacesBefore=invalidFaceCount(result.after);
+            const auto trySubset=[&](const std::vector<std::size_t>& indices) -> bool {
+                if (indices.empty()) return false;
+                std::map<std::size_t,const SplitProposal*> replacements;
+                std::set<std::size_t> removed;
+                std::size_t changed=0,added=0;
+                for (const auto index:indices) {
+                    const auto& proposal=proposals[index];
+                    replacements.emplace(proposal.members.front(),&proposal);
+                    removed.insert(proposal.members.begin()+1,proposal.members.end());
+                    changed+=proposal.members.size();
+                    added+=proposal.pieces.size()-proposal.members.size();
+                }
+                std::size_t nextSource=0;
+                for (const auto& cell:mesh.cells) nextSource=std::max(nextSource,cell.sourceId+1);
+                std::vector<CutCell2D> cells;
+                std::map<std::pair<std::uint64_t,std::size_t>,std::pair<double,bool>> metadata;
+                for (std::size_t id=0;id<mesh.cells.size();++id) {
+                    if (removed.contains(id)) continue;
+                    const auto& old=mesh.cells[id];
+                    const auto replacement=replacements.find(id);
+                    const auto pieces=replacement==replacements.end()
+                        ?std::vector<Polygon2D>{topologyCellPolygon(mesh,id)}:replacement->second->pieces;
+                    auto lineage=old.sourceLineage;
+                    auto refinementKeys=old.refinementLineageKeys;
+                    double resolutionArea=referenceArea[id];
+                    if (replacement!=replacements.end()) {
+                        resolutionArea=replacement->second->referenceArea;
+                        for (const auto member:replacement->second->members) {
+                            lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
+                            const auto& keys=mesh.cells[member].refinementLineageKeys;
+                            refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
+                        }
+                        std::sort(refinementKeys.begin(),refinementKeys.end());
+                        refinementKeys.erase(std::unique(refinementKeys.begin(),refinementKeys.end()),refinementKeys.end());
+                    }
+                    for (std::size_t piece=0;piece<pieces.size();++piece) {
+                        auto cell=makeCell(piece==0?old.sourceId:nextSource++,pieces[piece],tol,lineage);
+                        cell.sourceKey=old.sourceKey;cell.refinementLineageKeys=refinementKeys;
+                        metadata[{cell.sourceKey,cell.sourceId}]={resolutionArea,
+                            !result.immutableCells.empty() && result.immutableCells[id]};
+                        cells.push_back(std::move(cell));
+                    }
+                }
+                auto candidate=buildGlobalTopology(cells,domain,boundary,tol,
+                    mesh.constructionRegistry,mesh.embeddedBoundaryFragments);
+                if (!candidate.valid()) return false;
+                const auto afterTarget=evaluateSolverQuality2D(candidate,policy.target,tol);
+                const auto afterLegacy=evaluateSolverQuality2D(candidate,{},tol);
+                const std::size_t badFacesAfter=invalidFaceCount(afterTarget);
+                if (fixingBadGeometry) {
+                    if (badFacesAfter>=badFacesBefore) return false;
+                } else {
+                    const bool targetImproved=betterQualityScore(qualityScore(afterTarget),targetScoreBefore);
+                    const bool targetWorse=betterQualityScore(targetScoreBefore,qualityScore(afterTarget));
+                    const bool legacyWorse=restoringSizeOnly &&
+                        betterQualityScore(legacyScoreBefore,qualityScore(afterLegacy));
+                    if (badFacesAfter>badFacesBefore || legacyWorse || targetWorse ||
+                        (!restoringSizeOnly && !targetImproved)) return false;
+                }
+                std::vector<double> newAreas;
+                std::vector<bool> locked;
+                for (const auto& cell:candidate.cells) {
+                    const auto& entry=metadata.at({cell.sourceKey,cell.sourceId});
+                    newAreas.push_back(entry.first);locked.push_back(entry.second);
+                }
+                result.topology=std::move(candidate);referenceArea=std::move(newAreas);
+                result.immutableCells=std::move(locked);
+                result.repartitionedCellCount+=changed;result.addedCellCount+=added;
+                result.after=afterTarget;
+                return true;
+            };
+            // Try full independent batch first, then halved prefixes; if prefix 1
+            // fails due to a global halo interaction, scan individual candidates
+            // across all sorted proposals so a rejected patch never starves
+            // overlapping or unrelated valid repairs.
+            for (std::size_t count=selected.size();count>0;count=count==1?0:(count+1)/2) {
+                std::vector<std::size_t> subset(selected.begin(),
+                    selected.begin()+static_cast<std::ptrdiff_t>(count));
+                if (trySubset(subset)) return true;
+            }
+            const std::size_t singleLimit=std::min<std::size_t>(proposals.size(),12U);
+            for (std::size_t k=0;k<singleLimit;++k) {
+                if (!selected.empty() && k==selected.front()) continue;
+                if (trySubset({k})) return true;
+            }
+            return false;
+        };
+
+        // Strict three-tier priority prevents geometry recovery from admitting
+        // unrelated size-restoration splits that worsen global quality.
+        std::vector<SplitProposal> badProposals,issueProposals,sizeProposals;
         for (std::size_t id=0;id<mesh.cells.size();++id) {
             if (!result.immutableCells.empty() && result.immutableCells[id]) continue;
             const auto polygon=topologyCellPolygon(mesh,id);
             const bool badGeometry=!usable(polygon);
+            const bool hasIssue=issueCells.contains(id);
             const bool oversized=polygon.area()>referenceArea[id]+tol.absolute*tol.absolute+
                 tol.relative*referenceArea[id];
-            if (!badGeometry && !oversized && !skewedCells.contains(id)) continue;
+            if (!badGeometry && !hasIssue && !oversized) continue;
             auto best=propose({id},polygon);
-            // A wall facet very close to a grid line needs room on both sides
-            // of that grid line. Recut a two-cell patch instead of shaving a
-            // thin strip from a single cell or making another larger union.
-            if (badGeometry || skewedCells.contains(id)) {
+            if (badGeometry || hasIssue) {
                 std::set<std::size_t> neighbours;
                 for (const auto edgeId:mesh.cells[id].edges) {
                     const auto& edge=mesh.edges[edgeId];
@@ -181,67 +337,16 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                         best=std::move(candidate);
                 }
             }
-            if (best) proposals.push_back(std::move(*best));
+            if (!best) continue;
+            if (badGeometry) badProposals.push_back(std::move(*best));
+            else if (hasIssue && best->improvesTarget) issueProposals.push_back(std::move(*best));
+            else if (oversized) sizeProposals.push_back(std::move(*best));
         }
-        if (proposals.empty()) break;
-        std::vector<std::vector<std::size_t>> halos;
-        for (const auto& proposal:proposals) halos.push_back(proposal.halo);
-        const auto selected=selectIndependentSolverRepairPatches2D(halos);
-        std::map<std::size_t,const SplitProposal*> replacements;
-        std::set<std::size_t> removed;
-        std::size_t changed=0,added=0;
-        for (const auto index:selected) {
-            const auto& proposal=proposals[index];
-            replacements.emplace(proposal.members.front(),&proposal);
-            removed.insert(proposal.members.begin()+1,proposal.members.end());
-            changed+=proposal.members.size();added+=proposal.pieces.size()-proposal.members.size();
-        }
-        std::size_t nextSource=0;
-        for (const auto& cell:mesh.cells) nextSource=std::max(nextSource,cell.sourceId+1);
-        std::vector<CutCell2D> cells;
-        std::map<std::pair<std::uint64_t,std::size_t>,std::pair<double,bool>> metadata;
-        for (std::size_t id=0;id<mesh.cells.size();++id) {
-            if (removed.contains(id)) continue;
-            const auto& old=mesh.cells[id];
-            const auto replacement=replacements.find(id);
-            const auto pieces=replacement==replacements.end()
-                ?std::vector<Polygon2D>{topologyCellPolygon(mesh,id)}:replacement->second->pieces;
-            auto lineage=old.sourceLineage;
-            auto refinementKeys=old.refinementLineageKeys;
-            double resolutionArea=referenceArea[id];
-            if (replacement!=replacements.end()) {
-                resolutionArea=replacement->second->referenceArea;
-                for (const auto member:replacement->second->members) {
-                    lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
-                    const auto& keys=mesh.cells[member].refinementLineageKeys;
-                    refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
-                }
-                std::sort(refinementKeys.begin(),refinementKeys.end());
-                refinementKeys.erase(std::unique(refinementKeys.begin(),refinementKeys.end()),refinementKeys.end());
-            }
-            for (std::size_t piece=0;piece<pieces.size();++piece) {
-                auto cell=makeCell(piece==0?old.sourceId:nextSource++,pieces[piece],tol,lineage);
-                cell.sourceKey=old.sourceKey;cell.refinementLineageKeys=refinementKeys;
-                metadata[{cell.sourceKey,cell.sourceId}]={resolutionArea,
-                    !result.immutableCells.empty() && result.immutableCells[id]};
-                cells.push_back(std::move(cell));
-            }
-        }
-        auto candidate=buildGlobalTopology(cells,domain,boundary,tol,
-            mesh.constructionRegistry,mesh.embeddedBoundaryFragments);
-        if (!candidate.valid()) {
-            result.issues.push_back("post-agglomeration repartition produced invalid topology");break;
-        }
-        std::vector<double> newAreas;
-        std::vector<bool> locked;
-        for (const auto& cell:candidate.cells) {
-            const auto& entry=metadata.at({cell.sourceKey,cell.sourceId});
-            newAreas.push_back(entry.first);locked.push_back(entry.second);
-        }
-        result.topology=std::move(candidate);referenceArea=std::move(newAreas);
-        result.immutableCells=std::move(locked);
-        result.repartitionedCellCount+=changed;result.addedCellCount+=added;
-        result.after=evaluateSolverQuality2D(result.topology,policy.target,tol);
+        bool committed=false;
+        if (!badProposals.empty()) committed=commitProposals(badProposals,true,false);
+        if (!committed && !issueProposals.empty()) committed=commitProposals(issueProposals,false,false);
+        if (!committed && !sizeProposals.empty()) committed=commitProposals(sizeProposals,false,true);
+        if (!committed) break;
     }
 
 }
