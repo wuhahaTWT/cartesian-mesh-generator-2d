@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  suggestFlowRefinement: request => ipcRenderer.invoke('suggest-flow-refinement', request),
   saveFlowCase: request => ipcRenderer.invoke('save-flow-case', request),
   loadFlowCase: () => ipcRenderer.invoke('load-flow-case'),
   prepareFlowBoundaries: request => ipcRenderer.invoke('prepare-flow-boundaries', request),

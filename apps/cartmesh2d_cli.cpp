@@ -269,6 +269,26 @@ bool parseSizingOptions(int argc, char** argv, int first,
             boxRegions.push_back(region);
             continue;
         }
+        if (option=="--refine-boxes-json") {
+            if (index+1>argc) {
+                error="--refine-boxes-json requires <file.json>";
+                return false;
+            }
+            const std::filesystem::path jsonPath=argv[index++];
+            std::ifstream in(jsonPath);
+            if (!in) {
+                error="cannot open --refine-boxes-json file: "+jsonPath.string();
+                return false;
+            }
+            std::ostringstream buffer;
+            buffer<<in.rdbuf();
+            std::string parseError;
+            if (!parseBoxRefinementRegionsJson2D(buffer.str(),boxRegions,&parseError)) {
+                error="invalid --refine-boxes-json file: "+parseError;
+                return false;
+            }
+            continue;
+        }
         if (option=="--size-field") {
             (void)requireSizeField();
             continue;
@@ -554,7 +574,8 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
                  "[boundary-simplify-cell-fraction=0] "
                  "[--distance-band <distance> <target-level>]... "
-                 "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]...\n"
+                 "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]... "
+                 "[--refine-boxes-json <file.adaptive.json>]...\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
                  "--shape-agglomeration: opt-in shape-driven exact unions, no convex partition;\n"

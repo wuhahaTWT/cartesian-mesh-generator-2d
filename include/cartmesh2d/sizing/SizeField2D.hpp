@@ -143,4 +143,12 @@ struct ResolvedSizeField2D {
 [[nodiscard]] std::string resolvedSizeFieldToJson(
     const ResolvedSizeField2D& resolved, int indentSpaces = 2);
 
+// Parse refinement boxes from a cartmesh2d-adaptive-refinement-v1 JSON file
+// (or any JSON object containing a "boxes" array of {xmin,ymin,xmax,ymax,target_level}).
+// Returns true on success; on failure appends to `error` (if non-null) and leaves `out` unchanged.
+[[nodiscard]] bool parseBoxRefinementRegionsJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error = nullptr);
+
 } // namespace cartmesh2d

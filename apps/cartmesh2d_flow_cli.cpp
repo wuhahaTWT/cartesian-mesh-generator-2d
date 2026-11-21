@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowAdaptiveSizing2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowTimeStep2D.hpp"
 #include "cartmesh2d/fv/FlowInitialization2D.hpp"
@@ -88,6 +89,39 @@ fv::FlowInitialGuess2D initialGuessCsv(const std::string& path,const fv::FvMesh2
     return result;
 }
 
+fv::FlowInitialGuess2D flowFieldCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open flow cells CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    const bool eightCol=(line=="cell,x,y,area,u,v,p,speed");
+    const bool sixCol=(line=="cell,x,y,u,v,p");
+    if(!eightCol && !sixCol)
+        throw std::runtime_error("flow cells CSV header must be cell,x,y,area,u,v,p,speed or cell,x,y,u,v,p");
+    const std::size_t expectedCols=eightCol?8U:6U;
+    fv::FlowInitialGuess2D result;
+    result.u.reserve(mesh.cells.size());result.v.reserve(mesh.cells.size());result.p.reserve(mesh.cells.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        if(line.empty())continue;
+        std::istringstream row(line);std::string token;std::vector<double> values;
+        while(std::getline(row,token,',')) {
+            if(values.size()==expectedCols)throw std::runtime_error("flow cells CSV row has extra fields");
+            values.push_back(number(token));
+        }
+        const auto i=result.u.size();
+        if(values.size()!=expectedCols || line.back()==',' || i>=mesh.cells.size() || values[0]!=static_cast<double>(i))
+            throw std::runtime_error("flow cells CSV row or cell order invalid");
+        const auto centre=mesh.cells[i].centre;
+        const double scale=std::max({std::abs(centre.x),std::abs(centre.y),std::sqrt(mesh.cells[i].area)});
+        if(std::abs(values[1]-centre.x)>64*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(values[2]-centre.y)>64*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("flow cells CSV coordinates differ from target mesh");
+        const std::size_t uIdx=eightCol?4U:3U;
+        result.u.push_back(values[uIdx]);result.v.push_back(values[uIdx+1U]);result.p.push_back(values[uIdx+2U]);
+    }
+    if(!input.eof() || result.u.size()!=mesh.cells.size())throw std::runtime_error("flow cells CSV does not cover target mesh");
+    return result;
+}
+
 std::vector<double> initialFluxCsv(const std::string& path,const fv::FvMesh2D& mesh) {
     std::ifstream input(path);if(!input)throw std::runtime_error("cannot open initial flux CSV");
     std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
@@ -149,6 +183,9 @@ int main(int argc, char** argv) {
     bool transientOutputStarted=false;
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
+        std::string suggestPath,suggestFromCsvPath;
+        fv::FlowAdaptivePolicy2D adaptPolicy;
+        bool adaptOptions=false;
         fv::FlowControls2D controls;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
@@ -179,6 +216,9 @@ int main(int argc, char** argv) {
             "  simple-consistent uses the full momentum response and both SIMPLE relaxations; pressure passes do not apply.\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
+            "--suggest-refinement FILE.adaptive.json: emit flow-gradient adaptive refinement boxes JSON.\n"
+            "--suggest-refinement-from CELLS.csv: generate --suggest-refinement from an existing cells CSV without re-solving.\n"
+            "--adapt-fraction 0.15 --adapt-max-boxes 6 --adapt-pad-cells 1 --adapt-max-level N --adapt-wall-level N: AMR controls.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--minimum-iterations 10: explicit steady-laminar stop delay; >=1, residual/flux gates unchanged.\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
@@ -232,6 +272,29 @@ int main(int argc, char** argv) {
                 boundaryPath = v;
             } else if (a == "--export-boundaries") {
                 boundaryExportPath = v;
+            } else if (a == "--suggest-refinement") {
+                suggestPath = v;
+            } else if (a == "--suggest-refinement-from") {
+                suggestFromCsvPath = v;
+            } else if (a == "--adapt-fraction") {
+                adaptOptions = true;
+                adaptPolicy.refineFraction = number(v);
+            } else if (a == "--adapt-max-boxes") {
+                adaptOptions = true;
+                const double n = number(v);
+                if (n < 1 || n > 32 || n != std::floor(n))
+                    throw std::invalid_argument("adapt-max-boxes must be an integer in [1, 32]");
+                adaptPolicy.maxBoxes = static_cast<std::size_t>(n);
+            } else if (a == "--adapt-pad-cells") {
+                adaptOptions = true;
+                adaptPolicy.padCells = number(v);
+            } else if (a == "--adapt-max-level" || a == "--adapt-wall-level") {
+                adaptOptions = true;
+                const double n = number(v);
+                if (n < 0 || n > 28 || n != std::floor(n))
+                    throw std::invalid_argument(a + " must be an integer in [0, 28]");
+                if (a == "--adapt-max-level") adaptPolicy.maxTargetLevel = static_cast<std::size_t>(n);
+                else adaptPolicy.wallLevel = static_cast<std::size_t>(n);
             } else if (a == "--nu") {
                 controls.nu = number(v);
             } else if (a == "--face-viscosity") {
@@ -356,8 +419,17 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("unknown option " + a);
             }
         }
-        if (path.empty() || (prefix.empty() && boundaryExportPath.empty())) {
+        if (path.empty() || (prefix.empty() && boundaryExportPath.empty() && suggestFromCsvPath.empty())) {
             throw std::invalid_argument("--mesh and --output required");
+        }
+        if (adaptOptions && suggestPath.empty()) {
+            throw std::invalid_argument("adaptive sizing options require --suggest-refinement FILE");
+        }
+        if (!suggestFromCsvPath.empty()) {
+            if (suggestPath.empty())
+                throw std::invalid_argument("--suggest-refinement-from requires --suggest-refinement FILE");
+            if (!boundaryExportPath.empty() || timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty())
+                throw std::invalid_argument("--suggest-refinement-from cannot be combined with time stepping, restart, or boundary export");
         }
         if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty()))
             throw std::invalid_argument("boundary template export does not run time steps or restart");
@@ -397,6 +469,24 @@ int main(int argc, char** argv) {
             throw std::runtime_error(read.error);
         }
         const auto mesh = fv::makeFvMesh2D(read.topology);
+        if (!suggestFromCsvPath.empty()) {
+            const auto field = flowFieldCsv(suggestFromCsvPath, mesh);
+            const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
+                read.topology, mesh, field.u, field.v, field.p, adaptPolicy);
+            if (!suggestion.valid()) {
+                throw std::runtime_error(suggestion.issues.front());
+            }
+            const auto outParent = std::filesystem::path(suggestPath).parent_path();
+            if (!outParent.empty()) std::filesystem::create_directories(outParent);
+            std::ofstream suggestFile(suggestPath);
+            suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
+            suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
+            suggestFile.close();
+            std::cout << "adaptive_refinement_json=" << suggestPath
+                      << "\nadaptive_boxes=" << suggestion.boxes.size()
+                      << "\nadaptive_selected_cells=" << suggestion.selectedCellCount << '\n';
+            return 0;
+        }
         if (controls.scenario == "custom") {
             if (boundaryPath.empty()) throw std::invalid_argument("custom case requires --boundary FILE");
             std::ifstream input(boundaryPath);
@@ -864,6 +954,19 @@ int main(int argc, char** argv) {
         history.close();
         summary.close();
         vtk.close();
+        if (!suggestPath.empty()) {
+            const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
+                read.topology, mesh, r.u, r.v, r.p, adaptPolicy);
+            if (!suggestion.valid()) {
+                throw std::runtime_error(suggestion.issues.front());
+            }
+            const auto suggestParent = std::filesystem::path(suggestPath).parent_path();
+            if (!suggestParent.empty()) std::filesystem::create_directories(suggestParent);
+            std::ofstream suggestFile(suggestPath);
+            suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
+            suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
+            suggestFile.close();
+        }
         if (controls.profile) {
             const auto& p = r.performance;
             auto performance = out(prefix, ".performance.json");

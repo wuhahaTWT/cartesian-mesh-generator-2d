@@ -15,6 +15,7 @@ add_library(cartmesh2d_fv
     src/fv/ViscousStress2D.cpp
     src/fv/WallGradient2D.cpp
     src/fv/FlowBoundaryIO2D.cpp
+    src/fv/FlowAdaptiveSizing2D.cpp
     src/fv/ScalarTransport2D.cpp
     src/fv/ThermalFlow2D.cpp
 )

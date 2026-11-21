@@ -19,6 +19,7 @@ const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
+const { buildAdaptiveInvocation, parseAdaptiveSuggestion } = require('./core/adaptive-refinement');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { runSmoke } = require('./smoke-runner');
@@ -456,6 +457,29 @@ app.whenReady().then(async () => {
     }
   }));
 
+  ipcMain.handle('suggest-flow-refinement', (_event, request = {}) => exclusive(async () => {
+    requireFluidMesh(currentResult);
+    if (!currentResult.flow) throw new Error('请先运行层流预览求解，再按流场梯度生成自适应加密区。');
+    const cellsCsvPath = `${currentResult.prefix}.flow.cells.csv`;
+    await fs.stat(cellsCsvPath);
+    const outputJsonPath = `${currentResult.prefix}.flow.adaptive.json`;
+    const sizeField = currentResult.result?.sizeField || null;
+    const mergedRequest = {
+      ...request,
+      wallLevel: request.wallLevel ?? sizeField?.wall_level ?? undefined,
+      maxTargetLevel: request.maxTargetLevel ?? sizeField?.max_level ?? undefined
+    };
+    const invocation = buildAdaptiveInvocation(currentResult.cm2dPath, cellsCsvPath, outputJsonPath, mergedRequest);
+    log('正在按当前流场速度/压力梯度提取自适应加密区…');
+    await runProcess(executable(invocation.executable), invocation.args, line => log(line), operation.signal);
+    operation.signal.throwIfAborted();
+    const raw = await readJson(outputJsonPath);
+    const parsed = parseAdaptiveSuggestion(raw, currentResult.frame || null);
+    currentResult.adaptiveRefinement = parsed;
+    log(`流场自适应分析完成：提取 ${parsed.regions.length} 个加密区（选中 ${parsed.selectedCellCount}/${parsed.cellCount} 单元）。`);
+    return parsed;
+  }));
+
   ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
   ipcMain.handle('pick-thermal-checkpoint',()=>exclusive(async()=>{
     requireFluidMesh(currentResult);
@@ -649,6 +673,7 @@ app.whenReady().then(async () => {
       prefix,
       outputDirectory: job.outputDirectory,
       cm2dPath: mesh.path,
+      frame: paths.frame,
       mesh: parsed,
       levelBasis: 'size',
       levelHistogram: levelHistogram(parsed),

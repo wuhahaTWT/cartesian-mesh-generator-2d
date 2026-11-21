@@ -72,6 +72,7 @@ function setBusy(busy) {
   $('returnHome').disabled = busy;
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
+  $('suggestFlowRefinement').disabled = busy || !state.result || !state.flow || state.method === 'background';
   updateFlowMode();
   updateReady();
 }
@@ -107,6 +108,7 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   view.setFlowFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
+  $('suggestFlowRefinement').disabled = true;
   $('flowSpeedOption').hidden = true;
   $('flowPressureOption').hidden = true;
   if (['speed', 'pressure'].includes($('displayMode').value)) {
@@ -1221,6 +1223,7 @@ function bindFlow(payload) {
   $('flowSpeedOption').hidden=false; $('flowPressureOption').hidden=false;
   $('displayMode').value='speed';view.mode='speed';view.draw();
   renderLegend(state.mesh,state.levelBasis);renderFlowResult(payload.summary);renderFlowMonitor();
+  $('suggestFlowRefinement').disabled = state.busy || !state.result || state.method === 'background';
 }
 async function refreshFlowState(restoreResult=false) {
   const saved=await window.cartmesh.flowState();
@@ -1312,6 +1315,39 @@ async function runFlow() {
   } finally {setBusy(false);applyRestartControls();}
 }
 
+async function suggestFlowRefinement() {
+  if (state.busy || !state.result || !state.flow || state.method === 'background') return;
+  const refineFraction = Number($('flowAdaptFraction').value);
+  const maxBoxes = Number($('flowAdaptMaxBoxes').value);
+  setBusy(true);
+  status('流场自适应分析中', '正在按当前速度与压力梯度提取局部加密区…');
+  try {
+    const suggestion = await window.cartmesh.suggestFlowRefinement({ refineFraction, maxBoxes });
+    if (!suggestion.regions.length) {
+      $('flowAdaptNote').textContent = '当前流场梯度接近均匀，未生成新的局部加密区。';
+      status('无需局部加密', '当前流场未检测到显著高梯度区。');
+      return;
+    }
+    if ($('controlMode').value !== 'manual') {
+      $('controlMode').value = 'manual';
+      updateControlMode();
+    }
+    state.regions = suggestion.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) => ({
+      xmin, xmax, ymin, ymax, levelsBelowWall, active: true
+    }));
+    renderRegions();
+    const pct = (suggestion.selectedAreaFraction * 100).toFixed(1);
+    $('flowAdaptNote').textContent = `已生成 ${state.regions.length} 个加密区（选中 ${suggestion.selectedCellCount}/${suggestion.cellCount} 单元，面积占比 ${pct}%），可微调后点击“生成网格”。`;
+    status('自适应加密区已就绪', `已按流场梯度填入 ${state.regions.length} 个局部加密区并显示在画布上，点击“生成网格”即可局部重划。`);
+  } catch (error) {
+    const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
+    status('自适应分析失败', message.split('\n')[0]);
+    log(message);
+  } finally {
+    setBusy(false);
+  }
+}
+
 async function importGeometryFile(picked) {
   if (!picked || state.busy) return;
   if (/\.(png|jpe?g)$/i.test(picked)) {
@@ -1366,6 +1402,7 @@ $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
+$('suggestFlowRefinement').addEventListener('click', suggestFlowRefinement);
 $('saveFlowCase').addEventListener('click', saveFlowCase);
 $('loadFlowCase').addEventListener('click', loadFlowCase);
 $('runThermal').addEventListener('click', runThermal);
@@ -1502,7 +1539,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, suggestFlowRefinement, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {
