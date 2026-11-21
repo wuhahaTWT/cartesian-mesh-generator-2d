@@ -1,7 +1,8 @@
 #include "FvTestMesh2D.hpp"
-#include "cartmesh2d/fv/EulerCheckpoint2D.hpp"
+#include "cartmesh2d/fv/ViscousStress2D.hpp"
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
@@ -39,20 +40,6 @@ int main(){try {
     // accuracy target. It is normalized by the physical flux / row rate.
     require(maximumAffineError<1024*std::numeric_limits<double>::epsilon(),"affine stress/work consistency failed");
     require(maximumRateError<1024*std::numeric_limits<double>::epsilon(),"full momentum Jacobian bound differs");
-    const auto mesh=fv_test::rectangle(8,4,2,true);std::vector<EulerBoundary2D> bc;
-    for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour)bc.push_back({id,EulerBoundaryKind2D::NoSlipWall,{}, {},"wall"});
-    const IdealGas2D gas{1.4,1};const EulerTransport2D transport{.5,.2};EulerStepper2D solver(mesh,bc,gas,transport);
-    EulerState2D state{0,0,std::vector<EulerConservative2D>(mesh.cells.size(),eulerConservative2D({1,.1,-.2,1},gas))};
-    EulerStepControls2D controls;controls.fluxScheme=EulerFluxScheme2D::Hllc;controls.order=2;
-    const auto initial=state;double total0=0;for(std::size_t i=0;i<state.cells.size();++i)total0+=mesh.cells[i].area*state.cells[i][3];
-    for(int step=0;step<30;++step){const auto next=solver.advance(state,controls);for(const auto& b:bc)require(next.faceFlux[b.face][0]==0&&next.faceFlux[b.face][3]==0,"stationary insulated wall leaks mass/energy");require(next.combinedCourant<=controls.acousticCourant*(1+1e-13),"combined CFL invalid");state=next.state;}
-    double total=0;for(std::size_t i=0;i<state.cells.size();++i)total+=mesh.cells[i].area*state.cells[i][3];require(std::abs(total-total0)<1e-13*total0,"sealed energy not conserved");
-    std::stringstream checkpoint;writeEulerCheckpoint2D(checkpoint,mesh,bc,gas,state,"viscous",transport);const auto text=checkpoint.str();require(text.starts_with("CM2D_EULER_CHECKPOINT 3\n"),"viscous checkpoint version");
-    const auto restored=readEulerCheckpoint2D(checkpoint,mesh,bc,gas,"viscous",transport);require(restored.cells==state.cells,"restart state differs");
-    rejects([&]{std::istringstream in(text);readEulerCheckpoint2D(in,mesh,bc,gas,"viscous",{.5,.3});});
-    rejects([&]{EulerStepper2D bad(mesh,bc,gas,{.5,0});});
-    auto wrong=bc;wrong[0].wallVelocity=mesh.faces[wrong[0].face].areaVector;rejects([&]{EulerStepper2D bad(mesh,wrong,gas,transport);});
-    rejects([&]{EulerStepper2D bad(mesh,bc,gas,{.5,-1});});
-    std::cout<<std::setprecision(17)<<"{\"affineStressWorkError\":"<<maximumAffineError<<",\"momentumRowNormRelativeError\":"<<maximumRateError<<",\"sealedEnergyRelativeError\":"<<std::abs(total-total0)/total0<<"}\n";
+    std::cout<<std::setprecision(17)<<"{\"affineStressWorkError\":"<<maximumAffineError<<",\"momentumRowNormRelativeError\":"<<maximumRateError<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

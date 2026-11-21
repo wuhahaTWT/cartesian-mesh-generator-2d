@@ -1,6 +1,14 @@
 # 当前状态与接手重点
 
-更新：2026-11-01。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
+更新：2026-11-22。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
+
+## 主线收敛与模块归档（2026-11-22）
+
+按用户决定，主线全面收敛到 **“原生二维前处理网格（Cut-cell、共形边界层、形状驱动聚合与局部重划分、质量诊断与 OpenFOAM/Fluent 导出）+ 内置不可压层流/被动温度快速预览”**，为后续高鲁棒前处理、预览驱动自适应加密及未来向三维延展打牢架构基础。
+
+- **归档备份**：完整历史已打不可移动 Git 标签 `archive/full-modules-2026-11`（提交 `8c51d56`）；同时将 6 个暂不参与主线开发的实验/野心模块（燃烧 Cantera、纯笛卡尔浸入边界、可压 Euler 及其桌面胶水、未验证 SST、Torch-CUDA 压力模块、流道拓扑优化）及历史一次性实验/绘图脚本整理存放在本地 `D:\Desktop\ambition-2D/`（每个子目录附独立 `MODULE_README.md` 恢复指南）。
+- **主线瘦身**：`CMakeLists.txt` 拆分为 `CMakeLists.txt` + `cmake/{MeshTargets,FvTargets,Tests}.cmake`；`tools/` 从 155 个文件精简至 20 个核心工具；桌面端移除可压 Euler 试验面板与依赖，聚焦几何导入、网格生成/质量建议、不可压层流/被动温度预览与导出。
+- **保留不变**：`outputs/` 中全部原始研究场、失败复现输入、`outputs/cfd-demo-reference/`、`artifacts/` 历史证据与固定里程碑 `mesher-v0.3.0` 全部保留未动。
 
 ## 当前网格方法与翼型选型
 

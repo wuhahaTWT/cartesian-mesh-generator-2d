@@ -1,6 +1,6 @@
 'use strict';
 
-function exportGuide({ result, rasterImport, flow, thermal, euler, background }) {
+function exportGuide({ result, rasterImport, flow, thermal, background }) {
   if(background) return `# 完整笛卡尔背景网格
 
 本次 ${result.counts.cells} 个完整单元，保留物体内部。分类为外部、内部、相交；相交单元没有被裁切。
@@ -75,21 +75,7 @@ ${thermal ? `## 温度结果
 
 D=k/(rho cp)，源项为 Q/(rho cp)，通量为向外 q/(rho cp)。这是单向恒物性热输运，没有浮力、温度反馈、辐射或共轭传热。
 ` : ''}
-${euler ? `## 可压 Euler 结果
-
-最后完整可压场：t=${euler.summary.time} s，本次${euler.summary.acceptedSteps}个接受步。先看 **euler-preview.png**。
-
-当前完整结果清单：${euler.manifest}
-
-- euler.cells.csv / euler.fields.json / euler.vtk：密度kg/m³、绝对压力Pa、速度m/s、温度K、Mach数；rhoE为总能量密度J/m³。
-- euler.faces.csv：实际面上质量、两分量动量和总能量通量，按owner外向、每单位厚度；heatFlux 为 Fourier 导热 W/m，convectiveEnergy 为对流能量，两者之和为总能量通量。
-- euler.history.csv：每个已接受时间步的物理时间、声学/导热组合 CFL、密度/压力下限、质量、能量与向外净热量率 boundaryHeat（W/m）。
-- desktop-state.json + euler.checkpoint：恢复相同网格后可在App中载入的续算清单与状态；两文件需要保留在同一目录。
-- euler-run-* 各自独立；只有 desktop-state.json 中 complete 是到达目标时间的完整结果。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
-
-本次格式：${euler.summary.method}。理想气体层流模型，动力黏度 μ=${euler.summary.dynamicViscosity??0} Pa·s，壁面模型 ${euler.summary.wallModel??'slip'}。HLLC 使用多维压力感知的 HLLE 混合保护；正性回退和退阶计数保存在摘要与历史中。本次导热系数 k=${euler.summary.thermalConductivity??0} W/(m·K)，热壁为 ${euler.summary.wallThermal??'insulated'}，边界值 ${euler.summary.wallValue??0}（定温 K，向外热流 W/m²，负值加热）。导热进入总能量并反馈压力与流动；开边界默认零 Fourier 通量，仍可通过对流携带能量。黏性采用 Stokes 假设的 Newtonian 应力，同时计入总能量机械功。开边界取零黏性牵引；未包含湍流、变物性或固体共轭导热。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
-` : ''}
-**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体无黏工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
+**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }
 

@@ -15,9 +15,6 @@ const state = {
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
-  euler: null,
-  eulerRestart: null,
-  eulerHistory: [],
   thermal: null,
   thermalRestart: null,
   thermalHistory: [],
@@ -76,12 +73,11 @@ function setBusy(busy) {
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
   updateFlowMode();
-  updateEulerControls();
   updateReady();
 }
 function validInputs() {
   for (const input of document.querySelectorAll('.panel input[type=number]')) {
-    if (!input.closest('#flowBlock, #thermalBlock, #eulerBlock') && !input.disabled && input.getClientRects().length &&
+    if (!input.closest('#flowBlock, #thermalBlock') && !input.disabled && input.getClientRects().length &&
         (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity();
       input.focus();
@@ -122,7 +118,6 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   if (state.mesh) renderLegend(state.mesh, state.levelBasis);
 }
 function clearResult() {
-  clearEulerBinding(true);
   clearFlowBinding({ hidePanel: true });
   clearThermalBinding({ hidePanel: true });
   state.mesh = null; state.result = null; state.wallBounds = null;
@@ -170,12 +165,6 @@ window.__exportThermalPreview = async () => {
   await document.fonts.ready;
   const payload = await window.cartmesh.exportPreviewData();
   return payload.thermal ? window.CartMeshExport.renderThermal(payload.mesh, payload.thermal) : null;
-};
-
-window.__exportEulerPreview = async () => {
-  await document.fonts.load('13px "CartMesh UI"','可压结果');await document.fonts.ready;
-  const payload=await window.cartmesh.exportPreviewData();
-  return payload.euler ? window.CartMeshExport.renderEuler(payload.mesh,payload.euler) : null;
 };
 
 let previewSequence = 0;
@@ -673,7 +662,7 @@ function renderLegend(mesh, basis) {
     }
     container.hidden=false;return;
   }
-  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode) || view.mode.startsWith('euler-');
+  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode);
   const coloured = view.mode === 'level' || fieldMode;
   const ramp = document.createElement('div');
   ramp.className = 'ramp';
@@ -689,7 +678,7 @@ function renderLegend(mesh, basis) {
   const fine = document.createElement('span');
   if (fieldMode) {
     const range = view.fieldRange;
-    const unit = ({'euler-rho':'kg/m³','euler-p':'Pa','euler-temperature':'K','euler-mach':'Mach','euler-speed':'m/s'})[view.mode] || (view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²');
+    const unit = view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²';
     coarse.textContent = range ? `${range.min.toPrecision(4)} ${unit}` : '最小';
     fine.textContent = range ? `${range.max.toPrecision(4)} ${unit}` : '最大';
   } else {
@@ -793,11 +782,8 @@ async function generate() {
     $('exportResult').hidden = Boolean(payload.incomplete);
     $('flowBlock').hidden = Boolean(payload.incomplete || payload.background);
     $('thermalBlock').hidden = Boolean(payload.incomplete || payload.background);
-    $('eulerBlock').hidden = Boolean(payload.incomplete || payload.background);
     if (!payload.incomplete && !payload.background) {
       $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
-      $('eulerCase').value=payload.job.fluidRegion==='interior'?'sod':'external';
-      updateEulerControls();
       updateFlowScope();
     }
     const seconds = payload.result.timings.total_seconds;
@@ -1304,118 +1290,6 @@ async function loadFlowCase() {
   }catch(error){status('工况读取失败',error.message);log(error.message);return null;}
   finally{setBusy(false);}
 }
-const EULER_CONTROLS={dynamicViscosity:'eulerViscosity',thermalConductivity:'eulerConductivity',wallValue:'eulerWallValue',density:'eulerDensity',u:'eulerU',v:'eulerV',pressure:'eulerPressure',gamma:'eulerGamma',gasConstant:'eulerGasConstant',split:'eulerSplit',endTime:'eulerEndTime',maximumStep:'eulerMaximumStep',minimumStep:'eulerMinimumStep',cfl:'eulerCfl',maximumSteps:'eulerMaximumSteps',maximumSeconds:'eulerMaximumSeconds'};
-const EULER_PHYSICAL=['dynamicViscosity','thermalConductivity','wallValue','density','u','v','pressure','gamma','gasConstant','split'];
-const EULER_OPTIONS=['eulerDensityOption','eulerPressureOption','eulerTemperatureOption','eulerMachOption','eulerSpeedOption'];
-function eulerRequest() {
-  const request={case:$('eulerCase').value,resume:$('eulerResume').checked,fluxScheme:$('eulerFluxScheme').value,order:Number($('eulerOrder').value),wallThermal:$('eulerWallThermal').value,wallModel:$('eulerWallModel').value,wallGradient:$('eulerWallGradient').value};
-  for(const [key,id] of Object.entries(EULER_CONTROLS))request[key]=Number($(id).value);
-  if(request.case!=='sod')request.split=.5;
-  if(request.wallThermal==='insulated')request.wallValue=0;
-  return request;
-}
-function updateEulerControls() {
-  const restart=state.eulerRestart;if(!restart)$('eulerResume').checked=false;
-  const resuming=Boolean(restart&&$('eulerResume').checked),sod=$('eulerCase').value==='sod';
-  $('eulerResume').disabled=Boolean(state.busy||!restart);$('eulerCase').disabled=Boolean(state.busy||resuming);
-  for(const [key,id] of Object.entries(EULER_CONTROLS))$(id).disabled=Boolean(state.busy||(resuming&&EULER_PHYSICAL.includes(key))||(sod&&['u','v'].includes(key)));
-  if(sod){$('eulerU').value=0;$('eulerV').value=0;}
-  $('eulerSplitField').hidden=!sod;
-  const conduction=Number($('eulerConductivity').value)>0,hasWall=$('eulerCase').value!=='uniform';
-  const viscous=Number($('eulerViscosity').value)>0;
-  if(!viscous||!hasWall)$('eulerWallModel').value='slip';
-  $('eulerWallModel').disabled=Boolean(state.busy||resuming||!viscous||!hasWall);
-  if(!conduction||!hasWall)$('eulerWallThermal').value='insulated';
-  const thermalKind=$('eulerWallThermal').value;
-  $('eulerWallThermal').disabled=Boolean(state.busy||resuming||!conduction||!hasWall);
-  $('eulerWallValue').disabled=Boolean(state.busy||resuming||thermalKind==='insulated');
-  $('eulerWallValueField').hidden=thermalKind==='insulated';
-  $('eulerWallValueLabel').textContent=thermalKind==='temperature'?'壁温（K）':'向外热流（W/m²；负值加热）';
-  if(thermalKind==='temperature')$('eulerWallValue').min='0.000000000001';else $('eulerWallValue').removeAttribute('min');
-  $('eulerFluxScheme').disabled=Boolean(state.busy);$('eulerOrder').disabled=Boolean(state.busy);$('eulerWallGradient').disabled=Boolean(state.busy);
-  $('pickEulerCheckpoint').disabled=Boolean(state.busy||!state.result);
-  $('runEuler').disabled=Boolean(state.busy||!state.result||$('eulerBlock').hidden);
-  if(!state.busy)$('runEuler').textContent=resuming?'继续可压计算':'启动可压计算';
-  $('eulerScope').textContent=sod?'仅限轴对齐矩形。左侧使用下方密度和压力，右侧分别为其0.125倍、0.1倍；初始速度为零，上下壁面、左右透射；壁面条件在下方选择。':$('eulerCase').value==='external'?'下方为初始场与远场状态。物面采用下方机械及热条件，外域施加特征远场并取零黏性牵引；边界层分辨率需要单独验证。':$('eulerCase').value==='sealed'?'下方为初始场；所有物面与外边界均为固定壁，采用下方机械及热条件。封闭系统只通过设定的壁面导热交换能量。':'无物面的均匀初始场，所有外边界施加相同特征远场。';
-  $('eulerRestartInfo').textContent=restart?`可续算到 t=${restart.time.toPrecision(6)} s 的已接受状态（${restart.steps}步）。物理参数锁定，目标时间需更晚；取消续算则从初始场重新计算。`:'每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。';
-}
-function applyEulerRestart() {
-  if($('eulerResume').checked&&state.eulerRestart) {
-    const request=state.eulerRestart.request;$('eulerCase').value=request.case;
-    for(const key of EULER_PHYSICAL)$(EULER_CONTROLS[key]).value=request[key]??0;
-    $('eulerWallThermal').value=request.wallThermal??'insulated';$('eulerWallModel').value=request.wallModel??'slip';
-    $('eulerFluxScheme').value=request.fluxScheme??'rusanov';$('eulerOrder').value=String(request.order??1);$('eulerWallGradient').value=request.wallGradient??'linear';
-  }
-  updateEulerControls();
-}
-function clearEulerBinding(hidePanel=false) {
-  state.euler=null;state.eulerHistory=[];view.setEulerFields(null);
-  $('eulerResult').hidden=true;$('eulerResult').replaceChildren();$('eulerTimeline').hidden=true;
-  for(const id of EULER_OPTIONS)$(id).hidden=true;
-  if($('displayMode').value.startsWith('euler-')){$('displayMode').value='level';view.mode='level';view.draw();}
-  if(hidePanel){state.eulerRestart=null;$('eulerResume').checked=false;$('eulerBlock').hidden=true;}
-  if(state.mesh)renderLegend(state.mesh,state.levelBasis);
-}
-function renderEulerMonitor() {
-  const rows=state.eulerHistory||[];$('eulerTimeline').hidden=!rows.length;const svg=$('eulerMonitor');svg.replaceChildren();if(!rows.length)return;
-  const metric=$('eulerMonitorMetric').value,values=rows.map(r=>r[metric]);let min=Infinity,max=-Infinity;
-  for(const value of values){min=Math.min(min,value);max=Math.max(max,value);}
-  const first=rows[0].time,last=rows.at(-1).time,span=max-min||Math.max(Math.abs(max)*.02,1e-12);
-  const sampled=rows.filter((_r,i)=>i%Math.max(1,Math.ceil(rows.length/1000))===0||i===rows.length-1);
-  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
-  line.setAttribute('points',sampled.map(r=>`${55+620*(r.time-first)/(last-first||1)},${108-85*(r[metric]-min)/span}`).join(' '));
-  line.setAttribute('fill','none');line.setAttribute('stroke','#61b7dd');line.setAttribute('stroke-width','2');svg.appendChild(line);
-  for(const [x,y,value] of [[6,20,max.toPrecision(4)],[6,110,min.toPrecision(4)],[55,128,first.toPrecision(4)+' s'],[600,128,last.toPrecision(4)+' s']]) {
-    const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x',x);text.setAttribute('y',y);text.setAttribute('fill','currentColor');text.setAttribute('font-size','11');text.textContent=value;svg.appendChild(text);
-  }
-  $('eulerMonitorCaption').textContent=`已接受状态 · 最新 ${values.at(-1).toPrecision(6)} · 运行时每25步更新，完成后读回全部历史；导出 CSV 保留每一步。`;
-}
-function bindEuler(payload) {
-  state.euler=payload;state.eulerHistory=payload.history.map(row=>({...row}));view.setEulerFields(payload.fields.cells);
-  for(const id of EULER_OPTIONS)$(id).hidden=false;
-  $('displayMode').value='euler-rho';view.mode='euler-rho';view.draw();renderLegend(state.mesh,state.levelBasis);
-  const container=$('eulerResult');container.replaceChildren();container.hidden=false;
-  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · ${payload.request.fluxScheme==='hllc'?'HLLC/HLLE':'Rusanov'} / ${payload.request.order===2?'二阶':'一阶'} · ${payload.request.dynamicViscosity>0?'黏性层流':'无黏'} · ${payload.request.wallGradient==='quadratic'?'二次壁面梯度':'线性壁面梯度'}`;container.appendChild(title);
-  const last=payload.history.at(-1),lines=[`最小密度 ${last.minimumDensity.toPrecision(6)} kg/m³；最小绝对压力 ${last.minimumPressure.toPrecision(6)} Pa`,
-    `最后步声学 CFL ${payload.audit.acousticCourant.toPrecision(4)}；逐格守恒相对误差 ${payload.audit.maximumCellBalanceRelative.toExponential(2)}`,
-    `动力黏度 ${payload.request.dynamicViscosity??0} Pa·s；壁面 ${payload.request.wallModel==='no-slip'?'无滑移':'自由滑移'}；导热系数 ${payload.request.thermalConductivity??0} W/m/K；最后步组合 CFL ${(payload.audit.combinedCourant??payload.audit.acousticCourant).toPrecision(4)}；向外净热流 ${(payload.audit.boundaryHeat??0).toPrecision(6)} W/m`,
-    `本次 HLLC 通量回退 ${payload.summary.hllcFallbackEvaluations??0} 次；重构退阶 ${payload.summary.reconstructionFallbackCells??0} 个单元阶段`,
-    '到达目标时间不代表稳态或任意工况精度合格；黏性功与导热通过总能量耦合；未包含湍流或固体共轭传热。'];
-  for(const line of lines){const p=document.createElement('p');p.className='note';p.textContent=line;container.appendChild(p);}renderEulerMonitor();
-}
-async function refreshEulerState(show=false) {
-  const saved=await window.cartmesh.eulerState();state.eulerRestart=saved.restart||null;
-  if(show&&saved.euler)bindEuler(saved.euler);return saved;
-}
-async function runEuler() {
-  if(state.busy||!state.result||!state.mesh)return;
-  for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))if(!input.disabled&&(!input.value.trim()||!input.checkValidity())){input.reportValidity();status('可压参数需要调整','检查气体、时间和计算预算。');return;}
-  const request=eulerRequest();clearEulerBinding();setBusy(true);$('runEuler').textContent='可压推进中…';status('可压 Euler 推进中','显式声学时间步；取消后保留已接受状态。');
-  try {
-    const payload=await window.cartmesh.runEuler(request);bindEuler(payload);await refreshEulerState();$('eulerResume').checked=true;
-    status('可压时间推进完成',`t=${payload.summary.time.toPrecision(6)} s；可查看密度、绝对压力、温度、Mach数和速度，并导出实际场。`);
-  }catch(error) {
-    const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
-    const saved=await refreshEulerState(true).catch(()=>null);$('eulerResume').checked=Boolean(saved?.restart);
-    status(/取消|cancelled/.test(message)?'可压计算已取消':'可压计算未完成',message.split('\n')[0]+(saved?.euler?' 显示上次完整结果。':''));log(message);
-  }finally{setBusy(false);applyEulerRestart();}
-}
-$('runEuler').addEventListener('click',runEuler);
-$('eulerResume').addEventListener('change',applyEulerRestart);
-$('eulerCase').addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-$('eulerMonitorMetric').addEventListener('change',renderEulerMonitor);
-for(const id of ['eulerFluxScheme','eulerOrder','eulerWallThermal','eulerWallModel','eulerWallGradient'])$(id).addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-$('pickEulerCheckpoint').addEventListener('click',async()=>{
-  if(state.busy||!state.result)return;setBusy(true);
-  try{const selected=await window.cartmesh.pickEulerCheckpoint();if(selected){state.eulerRestart=selected;$('eulerResume').checked=true;applyEulerRestart();status('可压续算清单已载入','原生计算开始前还会核对完整网格与物理边界。');}}
-  catch(error){status('可压续算载入失败',error.message);log(error.message);}finally{setBusy(false);}
-});
-window.cartmesh.onEulerProgress(progress=>{
-  if(!state.busy||state.euler)return;
-  state.eulerHistory.push(progress);if(state.eulerHistory.length>1400)state.eulerHistory=state.eulerHistory.filter((_r,i)=>i%2===0||i===state.eulerHistory.length-1);
-  renderEulerMonitor();status('可压 Euler 推进中',`已接受 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 声学 CFL ${progress.acousticCourant.toPrecision(4)}`);
-});
 
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
@@ -1628,7 +1502,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

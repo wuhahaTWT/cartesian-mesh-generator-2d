@@ -21,7 +21,6 @@ const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
-const { runEulerJob, importEulerRestart } = require('./core/euler-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
@@ -50,11 +49,6 @@ async function exportPackage(destination) {
     const thermalPng=await mainWindow.webContents.executeJavaScript('window.__exportThermalPreview()');
     if(typeof thermalPng!=='string'||!thermalPng.startsWith('data:image/png;base64,'))throw new Error('温度结果图片生成失败。');
     await fs.writeFile(path.join(currentResult.outputDirectory,'temperature-preview.png'),Buffer.from(thermalPng.split(',')[1],'base64'));
-  }
-  if (currentResult.euler) {
-    const png=await mainWindow.webContents.executeJavaScript('window.__exportEulerPreview()');
-    if(typeof png!=='string'||!png.startsWith('data:image/png;base64,'))throw new Error('可压结果图片生成失败。');
-    await fs.writeFile(path.join(currentResult.outputDirectory,'euler-preview.png'),Buffer.from(png.split(',')[1],'base64'));
   }
   await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
   const temporary = path.join(sessionDirectory, 'export.zip');
@@ -231,7 +225,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('export-preview-data', async () => {
     if (!currentResult) throw new Error('没有可导出的网格。');
     return { mesh: currentResult.mesh || (currentResult.background ? parseBackgroundGrid(await fs.readFile(currentResult.backgroundPath,'utf8')) : parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8'))),
-      result: currentResult.result, thermal: currentResult.thermal || null, euler:currentResult.euler || null };
+      result: currentResult.result, thermal: currentResult.thermal || null };
   });
   ipcMain.handle('export-result', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成网格。');
@@ -459,22 +453,6 @@ app.whenReady().then(async () => {
       error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
       throw error;
     }
-  }));
-
-  ipcMain.handle('euler-state', () => ({euler:currentResult?.euler || null,restart:currentResult?.eulerRestart?.metadata || null}));
-  ipcMain.handle('run-euler', (_event,request) => exclusive(async()=>{
-    requireFluidMesh(currentResult);
-    const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
-    return runEulerJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
-      onProgress:progress=>mainWindow.webContents.send('euler-progress',progress),log:line=>mainWindow.webContents.send('run-line',line)});
-  }));
-  ipcMain.handle('pick-euler-checkpoint',()=>exclusive(async()=>{
-    requireFluidMesh(currentResult);
-    const selected=await dialog.showOpenDialog(mainWindow,{title:'选择 Euler 结果目录中的 desktop-state.json',filters:[{name:'Euler 续算清单',extensions:['json']}],properties:['openFile']});
-    if(selected.canceled)return null;
-    const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
-    currentResult.eulerRestart=await importEulerRestart(selected.filePaths[0],mesh,currentResult.cm2dPath);
-    return currentResult.eulerRestart.metadata;
   }));
 
   ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
@@ -1105,68 +1083,6 @@ async function runSmoke() {
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
     }
-    if (${JSON.stringify(argument('euler') === 'true')}) {
-      const target=Number(${JSON.stringify(argument('euler-end-time')||'.0005')});
-      for(const [id,value] of Object.entries({eulerCase:${JSON.stringify(argument('euler-case')||'sod')},eulerDensity:'1.225',eulerPressure:'101325',
-        eulerWallGradient:${JSON.stringify(argument('euler-wall-gradient')||'linear')},eulerViscosity:${JSON.stringify(argument('euler-viscosity')||'0')},eulerWallModel:${JSON.stringify(argument('euler-wall-model')||'slip')},
-        eulerConductivity:${JSON.stringify(argument('euler-conductivity')||'0')},eulerWallThermal:${JSON.stringify(argument('euler-wall-thermal')||'insulated')},eulerWallValue:${JSON.stringify(argument('euler-wall-value')||'0')},
-        eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerFluxScheme:${JSON.stringify(argument('euler-flux')||'rusanov')},eulerOrder:${JSON.stringify(argument('euler-order')||'1')},eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
-      document.getElementById('eulerCase').dispatchEvent(new Event('change'));
-      await smoke.runEuler();
-      if(!smoke.state.euler||smoke.state.euler.summary.time!==target)throw new Error('Euler result did not reach renderer: '+document.getElementById('statusText').textContent);
-      const first=smoke.state.euler;
-      if(first.summary.fluxScheme!==document.getElementById('eulerFluxScheme').value||first.summary.order!==Number(document.getElementById('eulerOrder').value))throw new Error('Euler method controls did not reach native solver');
-      if(first.summary.thermalConductivity!==Number(document.getElementById('eulerConductivity').value)||first.summary.wallThermal!==document.getElementById('eulerWallThermal').value||first.summary.wallValue!==smoke.eulerRequest().wallValue)throw new Error('Thermal controls did not reach native solver');
-      if(first.summary.wallGradient!==document.getElementById('eulerWallGradient').value)throw new Error('Wall gradient control did not reach native solver');
-      if(first.summary.dynamicViscosity!==Number(document.getElementById('eulerViscosity').value)||first.summary.wallModel!==document.getElementById('eulerWallModel').value)throw new Error('Viscous controls did not reach native solver');
-      if(!['eulerViscosity','eulerWallModel','eulerConductivity','eulerWallThermal','eulerWallValue'].every(id=>document.getElementById(id).disabled))throw new Error('Restart thermal parameters are not locked');
-      document.getElementById('eulerWallGradient').value=first.summary.wallGradient==='quadratic'?'linear':'quadratic';
-      document.getElementById('eulerWallGradient').dispatchEvent(new Event('change'));
-      if(smoke.state.euler)throw new Error('Wall gradient change left stale displayed fields');
-      document.getElementById('eulerWallGradient').value=first.summary.wallGradient;
-      if(first.summary.dynamicViscosity>0) {
-        document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
-        document.getElementById('eulerViscosity').value=String(first.summary.dynamicViscosity*2);
-        document.getElementById('eulerViscosity').dispatchEvent(new Event('change'));
-        if(smoke.state.euler)throw new Error('Viscosity change left stale displayed fields');
-        document.getElementById('eulerViscosity').value=String(first.summary.dynamicViscosity);
-      }
-      if(first.summary.thermalConductivity>0) {
-        document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
-        document.getElementById('eulerConductivity').value=String(first.summary.thermalConductivity*2);
-        document.getElementById('eulerConductivity').dispatchEvent(new Event('change'));
-        if(smoke.state.euler)throw new Error('Thermal change left stale displayed fields');
-        document.getElementById('eulerConductivity').value=String(first.summary.thermalConductivity);
-      }
-      document.getElementById('eulerOrder').value=first.summary.order===1?'2':'1';
-      document.getElementById('eulerOrder').dispatchEvent(new Event('change'));
-      if(smoke.state.euler)throw new Error('Euler method change left a stale displayed result');
-      document.getElementById('eulerOrder').value=String(first.summary.order);
-      document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
-      await smoke.runEuler();
-      if(JSON.stringify(first.fields)!==JSON.stringify(smoke.state.euler?.fields)||JSON.stringify(first.history)!==JSON.stringify(smoke.state.euler?.history))throw new Error('Repeated Euler calculation differs: fields='+String(JSON.stringify(first.fields)===JSON.stringify(smoke.state.euler?.fields))+', history rows='+first.history.length+'/'+smoke.state.euler?.history.length);
-      document.getElementById('eulerEndTime').value=String(2*target);await smoke.runEuler();
-      if(smoke.state.euler?.summary.time!==2*target)throw new Error('Euler resume failed');
-      const complete=smoke.state.euler;
-      document.getElementById('eulerMaximumSteps').value='1';document.getElementById('eulerEndTime').value=String(10*target);await smoke.runEuler();
-      if(smoke.state.euler.summary.time!==complete.summary.time||!(smoke.state.eulerRestart.time>complete.summary.time))throw new Error('Failed Euler budget lost prior complete result or accepted state');
-      document.getElementById('eulerMaximumSteps').value='1000000';document.getElementById('eulerEndTime').value='100';
-      const pending=smoke.runEuler(),deadline=Date.now()+30000;
-      while(smoke.state.busy&&!smoke.state.eulerHistory.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));
-      if(!smoke.state.busy||!smoke.state.eulerHistory.length)throw new Error('No live Euler progress observed');
-      await window.cartmesh.cancel();await pending;
-      const cancelledTime=smoke.state.eulerRestart?.time;
-      if(!(cancelledTime>complete.summary.time)||smoke.state.euler.summary.time!==complete.summary.time)throw new Error('Euler cancel lost accepted state or previous result');
-      document.getElementById('eulerMaximumSteps').value='100000';document.getElementById('eulerEndTime').value=String(cancelledTime+target);await smoke.runEuler();
-      if(smoke.state.euler?.summary.time!==cancelledTime+target)throw new Error('Euler cancel/resume time mismatch');
-      for(const mode of ['euler-rho','euler-p','euler-temperature','euler-mach','euler-speed']) {
-        document.getElementById('displayMode').value=mode;document.getElementById('displayMode').dispatchEvent(new Event('change'));
-        if(!smoke.view.fieldRange||!Number.isFinite(smoke.view.fieldRange.min))throw new Error('Euler field map missing: '+mode);
-      }
-      document.getElementById('displayMode').value=first.summary.thermalConductivity>0?'euler-temperature':'euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
-      document.getElementById('eulerBlock').scrollIntoView({block:'start'});
-      smoke.state.eulerSmoke={wallGradient:first.summary.wallGradient,wallGradientControlsReachedNative:true,wallGradientChangeClearedStaleResult:true,dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
-    }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();
@@ -1258,10 +1174,6 @@ async function runSmoke() {
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
-      euler:smoke.state.euler?{summary:smoke.state.euler.summary,request:smoke.state.euler.request,files:smoke.state.euler.files,manifest:smoke.state.euler.manifest,
-        fieldCells:smoke.state.euler.fields.cells.length,historyRows:smoke.state.euler.history.length,audit:smoke.state.euler.audit,
-        resultText:document.getElementById('eulerResult').innerText,restart:smoke.state.eulerRestart,checks:smoke.state.eulerSmoke,
-        displayMode:document.getElementById('displayMode').value,monitorVisible:!document.getElementById('eulerTimeline').hidden}:null,
       thermal: smoke.state.thermal ? {summary:smoke.state.thermal.summary,request:smoke.state.thermal.request,files:smoke.state.thermal.files,
         fieldCells:smoke.state.thermal.fields.cells.length,historyRows:smoke.state.thermal.history.length,
         resultText:document.getElementById('thermalResult').innerText,restart:smoke.state.thermalRestart,
@@ -1317,12 +1229,12 @@ async function runSmoke() {
     if(currentResult?.background) {
       report.background = await mainWindow.webContents.executeJavaScript(`(async()=>{
         const rejected=[];
-        for(const name of ['runFlow','runThermal','runEuler']) {
+        for(const name of ['runFlow','runThermal']) {
           try {await window.cartmesh[name]({}); throw new Error('Background accepted by '+name);}
           catch(error){if(!error.message.includes('完整笛卡尔背景网格'))throw error;rejected.push(name);}
         }
         return {rejected,displayMode:document.getElementById('displayMode').value,
-          panelsHidden:['flowBlock','thermalBlock','eulerBlock'].every(id=>document.getElementById(id).hidden),
+          panelsHidden:['flowBlock','thermalBlock'].every(id=>document.getElementById(id).hidden),
           legend:document.getElementById('legend').innerText};
       })()`);
       if(!report.background.panelsHidden)throw new Error('Background grid exposed flow controls');
@@ -1358,13 +1270,6 @@ async function runSmoke() {
       report.home.mainPreviewReleased = currentResult?.mesh === null;
       if (!Object.values(report.home).every(Boolean)) throw new Error('Return to start did not release preview or preserve export');
       if (argument('export')) report.home.exported = await exportPackage(argument('export').replace(/\.zip$/, '') + '-home.zip');
-    }
-    if(report.euler && shot){
-      mainWindow.setSize(1320,900);
-      await new Promise(resolve=>setTimeout(resolve,200));
-      await mainWindow.webContents.executeJavaScript("document.getElementById('eulerViscosity').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
-      await new Promise(resolve=>setTimeout(resolve,200));
-      await fs.writeFile(shot.replace(/\.png$/, '-euler-controls.png'),(await mainWindow.webContents.capturePage()).toPNG());
     }
     if(report.thermal && shot){
       mainWindow.setSize(1320,900);
