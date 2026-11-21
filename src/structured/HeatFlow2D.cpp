@@ -190,13 +190,17 @@ void lines(const Geometry& m, const Matrix& a, const Vector& b, Vector& x,
 }
 
 double predictFlux(Geometry& m, const Fields& field, const Vector& uOld, const Vector& vOld,
-                   const Vector& gx, const Vector& gy, const Vector& response, double alpha) {
+                   const Vector& gx, const Vector& gy, const Vector& response, double alpha, bool rhieChow) {
     for (Face& f : m.internal) {
         const bool x = f.direction == East;
         const Vector& velocity = x ? field.u : field.v;
         const Vector& old = x ? uOld : vOld;
         const Vector& grad = x ? gx : gy;
         const auto interpolate = [&](const Vector& z) { return std::lerp(z[f.p], z[f.q], f.weight); };
+        if (!rhieChow) {
+            f.flux = f.area * interpolate(velocity);
+            continue;
+        }
         const double defect = (field.p[f.q] - field.p[f.p]) / f.distance - interpolate(grad);
         f.flux = f.area * (interpolate(velocity) - interpolate(response) * defect) +
             (1 - alpha) * (f.flux - f.area * interpolate(old));
@@ -343,15 +347,15 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
     const double diffusion = 1 / p.re, reference = m.inflow ? m.inflow : 1.;
     Result result;
     auto& f = result.fields;
-    f = {Vector(size), Vector(size), Vector(size), Vector(size), {}};
-    if (!p.initialField.empty()) interpolateInitialField(p.initialField, g, f);
-    else if (m.inflow)
+    f = p.initialField.empty() ? Fields{Vector(size), Vector(size), Vector(size), Vector(size), {}}
+                               : readFieldCsv(p.initialField, g, true);
+    if (p.initialField.empty() && m.inflow)
         for (auto k : m.cells) f.u[k] = 1.;
     Vector uOld(size), vOld(size), gx(size), gy(size), ru(size), rv(size), relaxation(size);
     Vector response(size), correction(size), balance(size), upper(std::max(g.nx, g.ny));
     Matrix a(size);
     PressureSolver pressure(size);
-    result.outletScale = predictFlux(m, f, f.u, f.v, gx, gy, response, 1.);
+    result.outletScale = predictFlux(m, f, f.u, f.v, gx, gy, response, 1., p.rhieChow);
 
     const auto assembleMomentum = [&] {
         buildTransport(a, m, diffusion, false);
@@ -377,7 +381,7 @@ Result solve(const Grid& g, const Parameters& p, const std::function<void(bool, 
             lines(m, a, ru, f.u, relaxation, upper, alongX, it % 2 == 0);
             lines(m, a, rv, f.v, relaxation, upper, alongX, it % 2 == 0);
         }
-        result.outletScale = predictFlux(m, f, uOld, vOld, gx, gy, response, p.alphaU);
+        result.outletScale = predictFlux(m, f, uOld, vOld, gx, gy, response, p.alphaU, p.rhieChow);
         divergence(m, balance);
         Residual r{it};
         for (auto k : m.cells) r.continuity += std::abs(balance[k]);

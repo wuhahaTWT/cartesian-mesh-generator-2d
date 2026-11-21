@@ -15,7 +15,7 @@ struct Parameters {
     int n = 10, baseN = 0, nx = 240, ny = 40, maxIterations = 12000;
     double stretch = 1.1, re = 20, pr = .71, alphaU = .7, alphaP = .3;
     double tolerance = 1e-6, pressureRelativeTolerance = .05;
-    bool secondOrder = true;
+    bool secondOrder = true, rhieChow = true;
     std::filesystem::path initialField;
 };
 
@@ -58,10 +58,11 @@ struct SquareMetrics {
 
 Parameters readParameters(const std::filesystem::path&);
 Grid makeGrid(const Parameters&);
-void interpolateInitialField(const std::filesystem::path&, const Grid&, Fields&);
+Fields readFieldCsv(const std::filesystem::path&, const Grid&, bool interpolate);
 Result solve(const Grid&, const Parameters&, const std::function<void(bool, const Residual&)>& = {});
 SquareMetrics squareMetrics(const Grid&, const Fields&, double viscosity);
 void updateVorticity(const Grid&, Case, Fields&);
 void writeFields(const std::filesystem::path&, const Grid&, const Fields&);
+void writeSquareSurface(const std::filesystem::path&, const Grid&, const Fields&);
 void writeResult(const std::filesystem::path&, const Grid&, const Parameters&, const Result&);
 }

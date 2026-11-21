@@ -105,6 +105,11 @@ Parameters readParameters(const std::filesystem::path& path) {
             p.initialField = (path.parent_path() / value).lexically_normal();
             continue;
         }
+        if (key == "rhie_chow") {
+            if (value != "0" && value != "1") throw std::invalid_argument("rhie_chow expects 0 or 1");
+            p.rhieChow = value == "1";
+            continue;
+        }
         if (key == "n") number >> p.n;
         else if (key == "base_n") number >> p.baseN;
         else if (key == "nx") number >> p.nx;

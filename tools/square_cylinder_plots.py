@@ -202,6 +202,51 @@ def native_profiles(structured, native, directory):
     save(fig, directory, "native-profiles.png")
 
 
+def alternating_pressure(data):
+    p = data["p"][6:-6, 6:-6]
+    return (p[:-1, :-1] - p[:-1, 1:] - p[1:, :-1] + p[1:, 1:]) / 4
+
+
+def checkerboard_demo(reference, direct, directory):
+    fig, axes = plt.subplots(2, 2, figsize=(7, 6), layout="constrained")
+    cases = (reference, direct)
+    centred = [data["p"] - data["p"].mean() for data in cases]
+    alternating = [alternating_pressure(data) for data in cases]
+    limits = [max(np.quantile(np.abs(values), .99) for values in row) for row in (centred, alternating)]
+    for i, (data, title) in enumerate(zip(cases, ("Rhie–Chow 动量插值", "面速度直接线性插值"))):
+        x, y = edges(data)
+        pressure = axes[0, i].pcolormesh(x, y, centred[i], cmap="RdBu_r", vmin=-limits[0], vmax=limits[0])
+        local = axes[1, i].pcolormesh(data["x"][0, 6:-6], data["y"][6:-6, 0], alternating[i],
+                                      cmap="RdBu_r", vmin=-limits[1], vmax=limits[1])
+        axes[0, i].set_title(title)
+        for ax in axes[:, i]:
+            ax.set(xlabel="流向坐标 x", ylabel="横向坐标 y", aspect="equal")
+    fig.colorbar(pressure, ax=axes[0], label="减去域平均的压力", extend="both")
+    fig.colorbar(local, ax=axes[1], label="内部 2×2 压力交替差", extend="both")
+    save(fig, directory, "checkerboard-pressure.png")
+
+
+def surface_profiles(root, directory):
+    fig, axes = plt.subplots(1, 2, figsize=(9.8, 3.7), layout="constrained")
+    faces = ("front", "top", "rear")
+    for n, style, color in [(40, "--", "#9b5b19"), (80, "-", "#17658b")]:
+        data = np.genfromtxt(root / f"re20-n{n}" / "surface.csv", delimiter=",", names=True,
+                             dtype=None, encoding="utf-8")
+        for name, ax in zip(("nu", "cp"), axes):
+            for face in faces:
+                on_face = (data["face"] == face) & (data["s_over_d"] <= 2)
+                ax.plot(data["s_over_d"][on_face], data[name][on_face], style, color=color,
+                        label=f"N = {n}" if face == "front" else None)
+    for ax, ylabel in zip(axes, ("局部努塞尔数 Nu", "表面压力系数 Cp")):
+        for s in (.5, 1.5):
+            ax.axvline(s, color=".5", linewidth=.8)
+        for s, label in zip((.25, 1., 1.75), ("迎风面", "上表面", "背风面")):
+            ax.text(s, 1.02, label, transform=ax.get_xaxis_transform(), ha="center")
+        ax.set(xlim=(0, 2), xlabel="从前驻点起的弧长 s/D", ylabel=ylabel)
+        ax.legend(loc="best")
+    save(fig, directory, "surface-profiles.png")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
@@ -227,6 +272,8 @@ def main():
     outlet = np.genfromtxt(args.output / "channel-re20" / "outlet.csv", delimiter=",", names=True)
     reference = np.genfromtxt(args.reference, delimiter=",", names=True, dtype=None, encoding="utf-8")
     verification(cavity, outlet, reference, directory)
+    checkerboard_demo(cavity, field(args.output / "cavity-direct-interpolation"), directory)
+    surface_profiles(args.output, directory)
     convergence(args.output, directory)
     native = args.output / "native-re20-n20"
     if (native / "field.csv").exists():

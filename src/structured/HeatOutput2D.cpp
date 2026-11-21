@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <stdexcept>
+#include <utility>
 
 namespace cartmesh2d::structured {
 namespace {
@@ -22,41 +23,64 @@ double wallDerivative(double value, double next, double wall, double s, double t
 double wallPressure(double value, double next, double s, double t) {
     return value - s * (next - value) / (t - s);
 }
+
+int wallIndex(const std::vector<double>& axis, double coordinate) {
+    return static_cast<int>(std::lower_bound(axis.begin(), axis.end(), coordinate) - axis.begin());
+}
+
+enum Side { Front, Rear, Bottom, Top };
+struct WallSample {
+    double arc, x, y, length, pCell, pWall, nu, shearGradient;
+};
+
+std::array<std::vector<WallSample>, 4> squareWalls(const Grid& g, const Fields& f) {
+    std::array<std::vector<WallSample>, 4> walls;
+    const int left = wallIndex(g.x, 4.5), right = wallIndex(g.x, 5.5);
+    const int bottom = wallIndex(g.y, 4.5), top = wallIndex(g.y, 5.5);
+    const auto trace = [&](Side side, double arc, double x, double y, double length,
+                           Grid::Index p, Grid::Index q, double s, double t) {
+        walls[side].push_back({arc, x, y, length, f.p[p], wallPressure(f.p[p], f.p[q], s, t),
+            -wallDerivative(f.temperature[p], f.temperature[q], 1., s, t),
+            wallDerivative(f.u[p], f.u[q], 0., s, t)});
+    };
+    const double sf = 4.5 - g.xc(left - 1), tf = 4.5 - g.xc(left - 2);
+    const double sr = g.xc(right) - 5.5, tr = g.xc(right + 1) - 5.5;
+    for (int j = bottom; j < top; ++j) {
+        const double y = g.yc(j), length = g.y[j + 1] - g.y[j];
+        trace(Front, y >= 5 ? y - 5 : y - 1, 4.5, y, length,
+              g.index(left - 1, j), g.index(left - 2, j), sf, tf);
+        trace(Rear, 7 - y, 5.5, y, length, g.index(right, j), g.index(right + 1, j), sr, tr);
+    }
+    const double sb = 4.5 - g.yc(bottom - 1), tb = 4.5 - g.yc(bottom - 2);
+    const double st = g.yc(top) - 5.5, tt = g.yc(top + 1) - 5.5;
+    for (int i = left; i < right; ++i) {
+        const double x = g.xc(i), length = g.x[i + 1] - g.x[i];
+        trace(Bottom, 8 - x, x, 4.5, length,
+              g.index(i, bottom - 1), g.index(i, bottom - 2), sb, tb);
+        trace(Top, x - 4, x, 5.5, length, g.index(i, top), g.index(i, top + 1), st, tt);
+    }
+    return walls;
+}
 }
 
 SquareMetrics squareMetrics(const Grid& g, const Fields& f, double viscosity) {
     SquareMetrics result;
-    const int left = static_cast<int>(std::lower_bound(g.x.begin(), g.x.end(), 4.5) - g.x.begin());
-    const int right = static_cast<int>(std::lower_bound(g.x.begin(), g.x.end(), 5.5) - g.x.begin());
-    const int bottom = static_cast<int>(std::lower_bound(g.y.begin(), g.y.end(), 4.5) - g.y.begin());
-    const int top = static_cast<int>(std::lower_bound(g.y.begin(), g.y.end(), 5.5) - g.y.begin());
-    result.leadingCornerPressure = f.p[g.index(left, top)];
-    const double sf = 4.5 - g.xc(left - 1), tf = 4.5 - g.xc(left - 2);
-    const double sr = g.xc(right) - 5.5, tr = g.xc(right + 1) - 5.5;
-    for (int j = bottom; j < top; ++j) {
-        const double area = g.y[j + 1] - g.y[j];
-        const double front = f.p[g.index(left - 1, j)], rear = f.p[g.index(right, j)];
-        result.cdPressure += 2 * area * (front - rear);
-        result.cdPressureExtrapolated += 2 * area *
-            (wallPressure(front, f.p[g.index(left - 2, j)], sf, tf) -
-             wallPressure(rear, f.p[g.index(right + 1, j)], sr, tr));
-        result.nu[0] -= area * wallDerivative(f.temperature[g.index(left - 1, j)],
-            f.temperature[g.index(left - 2, j)], 1., sf, tf);
-        result.nu[1] -= area * wallDerivative(f.temperature[g.index(right, j)],
-            f.temperature[g.index(right + 1, j)], 1., sr, tr);
+    const auto walls = squareWalls(g, f);
+    for (std::size_t i = 0; i < walls[Front].size(); ++i) {
+        const auto& a = walls[Front][i];
+        const auto& b = walls[Rear][i];
+        result.cdPressure += 2 * a.length * (a.pCell - b.pCell);
+        result.cdPressureExtrapolated += 2 * a.length * (a.pWall - b.pWall);
     }
-    for (int i = left; i < right; ++i) {
-        const double area = g.x[i + 1] - g.x[i];
-        const double sb = 4.5 - g.yc(bottom - 1), tb = 4.5 - g.yc(bottom - 2);
-        const double st = g.yc(top) - 5.5, tt = g.yc(top + 1) - 5.5;
-        result.cdViscous += 2 * viscosity * area *
-            (wallDerivative(f.u[g.index(i, bottom - 1)], f.u[g.index(i, bottom - 2)], 0., sb, tb) +
-             wallDerivative(f.u[g.index(i, top)], f.u[g.index(i, top + 1)], 0., st, tt));
-        result.nu[2] -= area * wallDerivative(f.temperature[g.index(i, bottom - 1)],
-            f.temperature[g.index(i, bottom - 2)], 1., sb, tb);
-        result.nu[3] -= area * wallDerivative(f.temperature[g.index(i, top)],
-            f.temperature[g.index(i, top + 1)], 1., st, tt);
+    for (std::size_t i = 0; i < walls[Bottom].size(); ++i) {
+        const auto& a = walls[Bottom][i];
+        const auto& b = walls[Top][i];
+        result.cdViscous += 2 * viscosity * a.length * (a.shearGradient + b.shearGradient);
     }
+    for (std::size_t side = 0; side < walls.size(); ++side)
+        for (const auto& face : walls[side]) result.nu[side] += face.length * face.nu;
+    result.leadingCornerPressure = f.p[g.index(wallIndex(g.x, 4.5), wallIndex(g.y, 5.5))];
+    const int right = wallIndex(g.x, 5.5), bottom = wallIndex(g.y, 4.5);
     int mid = bottom;
     while (g.yc(mid) < 5.) ++mid;
     const double weight = (5. - g.yc(mid - 1)) / (g.yc(mid) - g.yc(mid - 1));
@@ -72,6 +96,22 @@ SquareMetrics squareMetrics(const Grid& g, const Fields& f, double viscosity) {
     }
     result.reattachment = -1; // reverse flow extends to the outlet
     return result;
+}
+
+void writeSquareSurface(const std::filesystem::path& path, const Grid& g, const Fields& f) {
+    constexpr std::array sideNames{"front", "rear", "bottom", "top"};
+    const auto walls = squareWalls(g, f);
+    std::vector<std::pair<const WallSample*, const char*>> ordered;
+    for (std::size_t side = 0; side < walls.size(); ++side)
+        for (const auto& face : walls[side]) ordered.emplace_back(&face, sideNames[side]);
+    std::sort(ordered.begin(), ordered.end(), [](const auto& a, const auto& b) { return a.first->arc < b.first->arc; });
+    auto out = output(path);
+    out << "s_over_d,x_over_d,y_over_d,face,face_length,nu,cp,cp_cell\n";
+    for (const auto& [sample, side] : ordered) {
+        const auto& w = *sample;
+        out << w.arc << ',' << w.x << ',' << w.y << ',' << side << ',' << w.length << ','
+            << w.nu << ',' << 2 * w.pWall << ',' << 2 * w.pCell << '\n';
+    }
 }
 
 void writeFields(const std::filesystem::path& directory, const Grid& g, const Fields& f) {
@@ -132,9 +172,11 @@ void writeResult(const std::filesystem::path& directory, const Grid& g, const Pa
         << "\nflow_iterations," << r.flowHistory.size() << "\nflow_seconds," << r.flowSeconds
         << "\nthermal_iterations," << r.thermalHistory.size() << "\nthermal_seconds," << r.thermalSeconds
         << "\noutlet_scale," << r.outletScale << "\np_rel_tol," << p.pressureRelativeTolerance
-        << "\ninterpolated_initial_field," << !p.initialField.empty() << '\n';
+        << "\ninterpolated_initial_field," << !p.initialField.empty()
+        << "\nrhie_chow," << p.rhieChow << '\n';
     if (r.flowConverged && r.thermalConverged) {
         const auto m = squareMetrics(g, r.fields, 1. / p.re);
+        writeSquareSurface(directory / "surface.csv", g, r.fields);
         summary << "cd," << m.cd() << "\ncd_extrapolated," << m.cdExtrapolated()
             << "\ncd_pressure," << m.cdPressure << "\ncd_pressure_extrapolated," << m.cdPressureExtrapolated
             << "\ncd_viscous," << m.cdViscous << "\nleading_corner_pressure," << m.leadingCornerPressure
