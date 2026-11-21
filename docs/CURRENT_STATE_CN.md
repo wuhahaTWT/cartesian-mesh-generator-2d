@@ -2,13 +2,21 @@
 
 更新：2026-11-22。这里是版本、能力、验证与待办的唯一状态入口；操作见[桌面使用](DESKTOP_APP_CN.md)，算法及复现见[开发指南](DEVELOPMENT_CN.md)。
 
-## 主线收敛与模块归档（2026-11-22）
+## 主线收敛、模块化与 A/C 方向进展（2026-11-22）
 
-按用户决定，主线全面收敛到 **“原生二维前处理网格（Cut-cell、共形边界层、形状驱动聚合与局部重划分、质量诊断与 OpenFOAM/Fluent 导出）+ 内置不可压层流/被动温度快速预览”**，为后续高鲁棒前处理、预览驱动自适应加密及未来向三维延展打牢架构基础。
+按用户决定，主线全面收敛到 **“原生二维前处理网格（Cut-cell、共形边界层、形状驱动聚合与局部重划分、质量诊断与 OpenFOAM/Fluent 导出）+ 内置不可压层流/被动温度快速预览”**，为高鲁棒前处理、预览驱动自适应加密及后续向三维延展打牢基础。
 
-- **归档备份**：完整历史已打不可移动 Git 标签 `archive/full-modules-2026-11`（提交 `8c51d56`）；同时将 6 个暂不参与主线开发的实验/野心模块（燃烧 Cantera、纯笛卡尔浸入边界、可压 Euler 及其桌面胶水、未验证 SST、Torch-CUDA 压力模块、流道拓扑优化）及历史一次性实验/绘图脚本整理存放在本地 `D:\Desktop\ambition-2D/`（每个子目录附独立 `MODULE_README.md` 恢复指南）。
-- **主线瘦身**：`CMakeLists.txt` 拆分为 `CMakeLists.txt` + `cmake/{MeshTargets,FvTargets,Tests}.cmake`；`tools/` 从 155 个文件精简至 20 个核心工具；桌面端移除可压 Euler 试验面板与依赖，聚焦几何导入、网格生成/质量建议、不可压层流/被动温度预览与导出。
-- **保留不变**：`outputs/` 中全部原始研究场、失败复现输入、`outputs/cfd-demo-reference/`、`artifacts/` 历史证据与固定里程碑 `mesher-v0.3.0` 全部保留未动。
+- **归档备份**：完整历史已打不可移动 Git 标签 `archive/full-modules-2026-11`（提交 `8c51d56`）；6 个暂不参与主线的实验模块（燃烧 Cantera、纯笛卡尔浸入边界、可压 Euler 及其桌面胶水、未验证 SST、Torch-CUDA 压力模块、流道拓扑优化）及历史一次性实验/绘图脚本整理存放在本地 `D:\Desktop\ambition-2D/`（各含 `MODULE_README.md` 恢复指南）。
+- **结构模块化**：`CMakeLists.txt` 拆分为 `CMakeLists.txt` + `cmake/{MeshTargets,FvTargets,Tests}.cmake`；核心超大文件拆分为职责清晰的编译单元（`src/quality/SolverTopology{Common,QualityRepair,ShortFaceRepair,TerminationRepair}2D.cpp` + `SolverShapeAgglomeration2D.cpp`、`src/hybrid/HybridMesh{Fallback,IO}2D.cpp`、`src/boundary_layer/BoundaryLayerIO2D.cpp`、`desktop/src/smoke-runner.js`）；`tools/` 精简至 21 个核心工具；桌面端移除可压 Euler 面板与旧 CLI 依赖。
+- **方向 A（复杂几何鲁棒形状重划分）**：`src/quality/SolverShapeAgglomeration2D.cpp` 泛化 `repartitionAgglomeratedCells` 至全部目标形状告警（不再只触发于边界偏斜），增加三层严格优先级（几何可求恢复 → 目标质量改善 → 尺寸恢复）、全局单调复核与降级回退，并修复合并多边形外轮廓共线 T 节点在射线求交时因 ULP 漂移导致的全局拓扑单边错误。实测结果：
+  - 14 组复杂几何套件（含凹 L 形、齿轮星形、蛇形、厚翼型、窄缝、双环、嵌套岛等）：`recommendations_met=true` 从 9/14 提升至 **14/14 零建议告警**，`native_fv_compatible=true`（如 `gear_star_l8` 最大凹角 128.9°→0°、`thick_airfoil_l8` 125.7°→32.2°、`serpentine_l7` 最大非正交 49.1°→43.6°）。
+  - 11 组高密/相位平移压力例（含 9,936 格 `gear_star_sf128`、5,410 格 `serpentine_sf128`、7,048 格 `narrow_gap_sf128`、4,882 格 `sharp_te_sf128`）：**11/11 零告警**，`native_fv_compatible=true`；超安全层级例（level 12）按设计显式拒绝。
+  - 同一 32k NACA2412（32,947 格）：**0 告警**，`native_fv_compatible=true`，最大内部非正交由 44.47° 降至 **41.50°**，最大边界偏斜 3.991，耗时 8.15 s；3 组复杂几何原生层流求解对照（`gear_star_l8`、`thick_airfoil_l8`、`serpentine_l7`）均在 strict `1e-6` 收敛。
+- **方向 C（快速预览驱动自适应加密闭环）**：新增原生 `cartmesh2d::fv::suggestFlowAdaptiveRefinement2D`（`include/cartmesh2d/fv/FlowAdaptiveSizing2D.hpp`、`src/fv/FlowAdaptiveSizing2D.cpp`），在真实最终多边形网格上用加权最小二乘梯度构造尺度/旋转不变的速度-压力复合无量纲指示子，按同级带面邻接聚类、低填充率稀疏二分及面积加权中位层级升级生成分级多尺度加密区，防止近壁细格把远尾迹放大成全壁面细格。
+  - CLI 闭环：`cartmesh2d_flow_cli` 新增 `--suggest-refinement FILE.adaptive.json` 与离线无重算 `--suggest-refinement-from CELLS.csv`；`cartmesh2d_cli` 新增 `--refine-boxes-json FILE.adaptive.json`。
+  - 桌面端闭环：`desktop/src/core/adaptive-refinement.js` + `suggest-flow-refinement` IPC + 流场面板“按当前流场生成自适应加密区”按钮，可将建议加密框直接填入局部加密列表并在画布高亮微调。
+  - 两轮真实闭环验证（均未手工指定尾迹方向或壁面层级）：圆柱 Re=40（Pass1 1,432 格 → 自动识别远尾迹 L5、上下对称剪切层 L7、前驻点 L7 与上下贴壁层 L9 → Pass2 2,188 格，0 告警，严格收敛，`fy=0` 对称保持，`fx: 1.9708→1.9173`）；NACA2412 Re=50（Pass1 1,087 格 → 选中 1.3% 面积，自动聚焦前缘吸力峰 L9、上下翼面剪切层与尾迹 L6/L8 → Pass2 1,990 格，0 告警，严格收敛，`fx: 0.3368→0.3313`）；在线与离线 CSV 生成结果逐字节一致。
+- **产物与限制**：Windows x64 Release 全部 5 份主线 CLI 已重建并同步 `build/Release` 与 `desktop/runtime/bin`（`verifyRuntime` 通过）；本次验证覆盖原生 CTest 与桌面单测（186/186），未重打跨平台安装包、未执行外部 OpenFOAM/Fluent 批量精算；`outputs/` 中全部历史研究场、失败输入、`outputs/cfd-demo-reference/`、`artifacts/` 与 `mesher-v0.3.0` 保持不变，本次实验产物保留在忽略目录 `outputs/direction-a-study/` 与 `outputs/direction-c-demo/` 供复查或随时清理。
 
 ## 当前网格方法与翼型选型
 
@@ -16,7 +24,7 @@
 
 **经验质量数字只作建议。** 角度、偏斜、原生形状比、面权重、邻接面积比和短边参考值不再阻止正常CM2D/OpenFOAM导出，也不再作为原生求解器读入时的经验阈值拦截。优化器仍可使用这些历史参考寻找更好的形状；未达到参考值时保留全部诊断并继续输出。JSON明确区分 `assessment=advisory`、`exportable`、`native_fv_compatible` 和 `recommendations_met`，旧字段 `valid` 仅保留历史诊断兼容含义，不作产品验收。非法拓扑/单元几何仍报告错误；当前离散遇非正法向中心距离等实际不适用条件仍拒绝组装，但不妨碍交给目标CFD软件检查。没有新增阈值或把阈值改大来伪造通过。
 
-**桌面与实际程序已同步。** Windows MSVC Release已从当前源码重新构建，六个CLI同步到 `build/Release` 与 `desktop/runtime/bin`；现有Torch压力模块也保留并重新构建。原MSBuild受本机路径追踪/实例识别影响，实际构建使用同一源码的 `build/ninja`，未建立源码副本。桌面显示“网格形状建议”，参考值读取生成报告，不再另写一套数值；已移除经验质量失败触发的自动改密度重试。
+**桌面与实际程序已同步。** Windows MSVC Release 已从当前源码通过 `build/ninja` 重新构建，五份主线 CLI（`cartmesh2d_cli`、`cartmesh2d_hybrid_cli`、`cartmesh2d_dxf_cli`、`cartmesh2d_flow_cli`、`cartmesh2d_transport_cli`）同步到 `build/Release` 与 `desktop/runtime/bin`。桌面显示“网格形状建议”，参考值读取生成报告，不再另写一套数值；已移除经验质量失败触发的自动改密度重试。
 
 **形状聚合后已接入局部重划分。** 聚合不再是终点：用输入单元包围盒面积作局部分辨率参考，优先沿壁面法向、角平分方向或已有顶点分割；短壁面缺少空间时，对当前格与直接邻格重新分配面积，不继续合成更大的格。保留物面折线、流体面积、共享构造身份及来源/细化谱系，不为消除凹性而把所有壁面格强行三角化。尺寸恢复候选不能使现有建议评分变差；几何不能直接使用的尖尾格优先恢复逐面正中心距离。没有新增出口验收阈值。
 
