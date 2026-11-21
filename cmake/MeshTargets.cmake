@@ -2,6 +2,7 @@
 # shape agglomeration/repartitioning, quality diagnostics, and mesh I/O.
 add_library(cartmesh2d
     src/boundary_layer/BoundaryLayer2D.cpp
+    src/boundary_layer/BoundaryLayerIO2D.cpp
     src/geometry/Geometry2D.cpp
     src/geometry/ConstructionIdentity2D.cpp
     src/geometry/ConstructionRecovery2D.cpp
@@ -11,6 +12,8 @@ add_library(cartmesh2d
     src/grid/CartesianGrid2D.cpp
     src/grid/RectilinearMesh2D.cpp
     src/hybrid/HybridMesh2D.cpp
+    src/hybrid/HybridMeshFallback2D.cpp
+    src/hybrid/HybridMeshIO2D.cpp
     src/hybrid/TransitionCanonicalization2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
@@ -27,6 +30,11 @@ add_library(cartmesh2d
     src/quality/Quality2D.cpp
     src/quality/SolverQuality2D.cpp
     src/quality/PatchLocalQuality2D.cpp
+    src/quality/SolverTopologyCommon2D.cpp
+    src/quality/SolverTopologyQualityRepair2D.cpp
+    src/quality/SolverTopologyShortFaceRepair2D.cpp
+    src/quality/SolverTopologyTerminationRepair2D.cpp
+    src/quality/SolverShapeAgglomeration2D.cpp
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
     src/io/BackgroundGridIO2D.cpp
