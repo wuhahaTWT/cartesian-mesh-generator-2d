@@ -1,0 +1,1179 @@
+{
+  "schema_version": 1,
+  "scope": "Detailed H2/air BVP reference refinement and controlled full-native initial-data sensitivity.",
+  "mature_combustion_goal_complete": false,
+  "qualified_flame": false,
+  "branch": "codex/cfd-development",
+  "native_source_commit": "a61ee624a3745dd807aaf99efb0ed8944d3ee410",
+  "build_manifest": "outputs/combustion-foundation/reference-refinement-001/build.json",
+  "source_sha256": {
+    "tools/verification/prepare_reacting_flame.py": "f9b68e975b676a10aecd820baaf019e0accc8c5ca9c1b4bd1bda9b1f5885c27a",
+    "tools/verification/prepare_reacting_flame_momentum.py": "71fd245168483b91478f61891ec6b005d5c8cb3e4fd2a5fb7898f1cc4fdbf17b",
+    "tools/verification/verify_reacting_flame.py": "e00828cd0e34d850c0bdfd97e9938a25e23d121b5e1c19cd4d6ef0279fd77f33",
+    "tests/reacting_flame_reference_probe.cpp": "d7f4bda3af541056f7ef956af0bff19a3684fa9112b8b18c8e628ed169844cc2",
+    "CMakeLists.txt": "ed6c7b24747ad1a9221626afb083b3305227b6c8757070627cbed15da3c26217"
+  },
+  "reference_analysis": {
+    "qualified_reference_or_flame": false,
+    "script_sha256": "7fde5015a1ab0b0f7883d085a5db514fba0d8e19632b1f1be92f26002b688d87",
+    "reference_sha256": "4e4d9fc73a23deaa41d76978893159d290c3fe5656653dbb3107aa05415a7f6b",
+    "stages": [
+      {
+        "points": 134,
+        "speed_m_per_s": 2.4837996709614862,
+        "end_temperature_K": 2219.035234295443,
+        "enthalpy_defect_J_per_kg": -4249.961579754934,
+        "enthalpy_defect_over_end_cp_K": -2.615179801383275,
+        "maximum_species_sum_error": 2.220446049250313e-14,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-0.json",
+        "sha256": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de"
+      },
+      {
+        "points": 238,
+        "speed_m_per_s": 2.477463422440337,
+        "end_temperature_K": 2226.7761620664633,
+        "enthalpy_defect_J_per_kg": -2541.940224487247,
+        "enthalpy_defect_over_end_cp_K": -1.5612471855262868,
+        "maximum_species_sum_error": 7.882583474838611e-14,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-1.json",
+        "sha256": "9d55a9d5f05bb99382dd028357fe7fecb6098b4bb49412313da4914c7f8e2a57"
+      },
+      {
+        "points": 459,
+        "speed_m_per_s": 2.4830659424121304,
+        "end_temperature_K": 2234.4436489125546,
+        "enthalpy_defect_J_per_kg": -1295.6378567665815,
+        "enthalpy_defect_over_end_cp_K": -0.7942848346527619,
+        "maximum_species_sum_error": 1.2367884494324244e-13,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-2.json",
+        "sha256": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746"
+      },
+      {
+        "points": 890,
+        "speed_m_per_s": 2.4850079478240126,
+        "end_temperature_K": 2237.9277904417418,
+        "enthalpy_defect_J_per_kg": -640.6736553879746,
+        "enthalpy_defect_over_end_cp_K": -0.3924285298170582,
+        "maximum_species_sum_error": 3.6270986214503864e-13,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-3.json",
+        "sha256": "563ee03f843a579e1ebc9131fa4af44acda4107e242ab0bfdd84dce38d75b8df"
+      },
+      {
+        "points": 1753,
+        "speed_m_per_s": 2.488573730030607,
+        "end_temperature_K": 2240.8519621096602,
+        "enthalpy_defect_J_per_kg": -320.235996387928,
+        "enthalpy_defect_over_end_cp_K": -0.196018104439015,
+        "maximum_species_sum_error": 6.877831637552845e-13,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-4.json",
+        "sha256": "cd2c2b1976aec6559d6eccf55d480e3edd098a547269899094423c9e57f3218a"
+      },
+      {
+        "points": 3446,
+        "speed_m_per_s": 2.489708123443705,
+        "end_temperature_K": 2241.966480422432,
+        "enthalpy_defect_J_per_kg": -163.43934475863352,
+        "enthalpy_defect_over_end_cp_K": -0.10001404910935648,
+        "maximum_species_sum_error": 1.365241253381555e-12,
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-5.json",
+        "sha256": "33b20cf6105869b4e759d32c82c5d1bebbd77f83829ad3c9cf5f83cfb61b6f47"
+      }
+    ],
+    "algebraic_closure_comparison": {
+      "459": {
+        "same_grid": true,
+        "maximum_temperature_difference_K": 7.503331289626658e-12,
+        "maximum_mass_fraction_difference": 1.5776269179923474e-13,
+        "speed_difference_m_per_s": 1.545430450278218e-13,
+        "solutions": {
+          "original": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/tool-checks/459-original.json",
+            "sha256": "b2234d84453cc958cd53409bdccebe522f644fa8328365c0c1b406eed7ace066",
+            "original_species_equations_L1_kg_per_m2_s": 4.1575205313352487e-11,
+            "chemical_net_source_L1_kg_per_m2_s": 0.7436322295028592,
+            "all_original_species_equations_L1_over_chemical_source": 5.590828861888729e-11,
+            "dependent_original_equation_L1_over_chemical_source": 2.366258477194917e-12,
+            "maximum_mass_fraction_sum_defect": 2.0938806244430452e-13
+          },
+          "constrained": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/tool-checks/459-constrained.json",
+            "sha256": "350c8214b8c7388863bcd9a868745f3c185f4fcedda0a95a795b97ed9de412b2",
+            "original_species_equations_L1_kg_per_m2_s": 6.501987257772003e-11,
+            "chemical_net_source_L1_kg_per_m2_s": 0.7436322295028395,
+            "all_original_species_equations_L1_over_chemical_source": 8.743552255822683e-11,
+            "dependent_original_equation_L1_over_chemical_source": 3.576928310899998e-11,
+            "maximum_mass_fraction_sum_defect": 2.220446049250313e-16
+          }
+        }
+      },
+      "3446": {
+        "same_grid": true,
+        "maximum_temperature_difference_K": 1.7917045624926686e-10,
+        "maximum_mass_fraction_difference": 1.0346168366481834e-12,
+        "speed_difference_m_per_s": -6.910028105266974e-13,
+        "solutions": {
+          "original": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/tool-checks/3446-original.json",
+            "sha256": "6ffbbf956a7c692ccfb8377c38abdcb5ee36f46c44b7b2a1b3b71da9b2ac7bb8",
+            "original_species_equations_L1_kg_per_m2_s": 2.293039896700886e-09,
+            "chemical_net_source_L1_kg_per_m2_s": 0.7440264184030506,
+            "all_original_species_equations_L1_over_chemical_source": 3.081933436748896e-09,
+            "dependent_original_equation_L1_over_chemical_source": 1.718215766740178e-10,
+            "maximum_mass_fraction_sum_defect": 1.4153123117921496e-12
+          },
+          "constrained": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/tool-checks/3446-constrained.json",
+            "sha256": "906c37bfe8a0c3d74a4f0457562851eea155d373c44c12c36ebf893e21873929",
+            "original_species_equations_L1_kg_per_m2_s": 3.5406307588621077e-09,
+            "chemical_net_source_L1_kg_per_m2_s": 0.7440264184026599,
+            "all_original_species_equations_L1_over_chemical_source": 4.758743333957737e-09,
+            "dependent_original_equation_L1_over_chemical_source": 1.9217933168727723e-09,
+            "maximum_mass_fraction_sum_defect": 4.440892098500626e-16
+          }
+        }
+      }
+    },
+    "projection": {
+      "maximum_absolute_mass_fraction_change": 8.881784197001252e-16,
+      "allowance": 1.6631940186722205e-13,
+      "allowance_basis": "10 times BVP absolute species tolerance plus 64*(N+1)*machine epsilon for closure arithmetic",
+      "maximum_element_mass_fraction_change": 8.881784197001252e-16,
+      "rho_momentum_total_energy_preserved_per_reference_point": true,
+      "native_time_step_projection": false,
+      "large_negative_input_rejected": true
+    },
+    "equation_diagnostic": "Original Cantera species residual [1/s] times density and nonuniform dual widths, divided by the integral of the L1 net mass-production source; all interior species equations retained in this diagnostic.",
+    "limits": [
+      "Reference and native share mechanism and transport data; no experimental independence.",
+      "Constant-pressure BVP versus full compressible FV; finest reference is still not an extrapolated or domain-converged truth.",
+      "These equation diagnostics and profile differences are recorded values, not a newly weakened physical gate."
+    ]
+  },
+  "native_comparison": {
+    "qualified_flame": false,
+    "mature_combustion_goal_complete": false,
+    "script_sha256": "3358f696bc2308bec91f6d9b34fa52cfae09e1c4278f7dcfe75ae8a423575f49",
+    "same_native_binary": true,
+    "same_native_grid_and_controls": {
+      "method": "CVODES-BDF",
+      "errorControlCorrection": "fullPredictorCorrection",
+      "maximumOrder": 5,
+      "maximumNonlinearIterations": 3,
+      "continueDampedNewton": false,
+      "reflectSpeciesNewton": true,
+      "relativeTolerance": 1e-07,
+      "spatialOrder": 2,
+      "jacobianAdvectionOrder": 1,
+      "absoluteConservedTolerance": 1e-12,
+      "absoluteSpeciesFraction": 1e-18,
+      "maximumStep": 1e-05,
+      "maximumResidualEvaluations": 100000,
+      "sampleEveryAcceptedSteps": 50,
+      "maximumSamples": 128
+    },
+    "same_exact_binding_excluding_boundary_data": true,
+    "boundary_differences_from_coarse_original": {
+      "coarse-original": [],
+      "coarse-momentum": [],
+      "fine-original": [
+        {
+          "boundary_record": 1,
+          "coarse": "BC 2 2.4830659424121304 0 0 0.67331059938131121 -10519.651975548924 0.015451684460002311 0 0 0.15328093977900378 7.9877758807592417e-21 0 0 0 0 0.50457797514230507",
+          "case": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507"
+        },
+        {
+          "boundary_record": 448,
+          "coarse": "BC 2 2.4830659424121304 0 0 0.67331059938131121 -10519.651975548924 0.015451684460002311 0 0 0.15328093977900378 7.9877758807592417e-21 0 0 0 0 0.50457797514230507",
+          "case": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507"
+        }
+      ],
+      "fine-momentum": [
+        {
+          "boundary_record": 1,
+          "coarse": "BC 2 2.4830659424121304 0 0 0.67331059938131121 -10519.651975548924 0.015451684460002311 0 0 0.15328093977900378 7.9877758807592417e-21 0 0 0 0 0.50457797514230507",
+          "case": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507"
+        },
+        {
+          "boundary_record": 448,
+          "coarse": "BC 2 2.4830659424121304 0 0 0.67331059938131121 -10519.651975548924 0.015451684460002311 0 0 0.15328093977900378 7.9877758807592417e-21 0 0 0 0 0.50457797514230507",
+          "case": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507"
+        }
+      ]
+    },
+    "same_exact_boundary_binding_within_each_reference_pair": true,
+    "common_marker_temperature_K": 1317.2218244563126,
+    "native_cells": 890,
+    "common_endpoint_s": 1e-05,
+    "metrics": {
+      "coarse-original": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/report.json",
+        "report_sha256": "0a7241e2ddddea08bf69706b004fe9eb18a7a0db0eb5ff70937ab2167eb9c567",
+        "field_sha256": "02a7040c7d9022c92251f4cd785d707e7f0e7a35df467321c2d8500641150435",
+        "time_s": 1e-05,
+        "steps": 659,
+        "maximum_temperature_drift_K": 3.3258679188593305,
+        "maximum_temperature_shape_difference_after_translation_K": 2.574695159917269,
+        "marker_displacement_m": -9.097230212959384e-07,
+        "series": [
+          {
+            "time_s": 0,
+            "steps": 0,
+            "maximum_temperature_drift_K": 0.0,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0,
+            "marker_displacement_m": 0.0
+          },
+          {
+            "time_s": 1.8751870311856797e-07,
+            "steps": 50,
+            "maximum_temperature_drift_K": 0.0645718646981095,
+            "maximum_temperature_shape_difference_after_translation_K": 0.06594472578262867,
+            "marker_displacement_m": -1.4133926648854378e-08
+          },
+          {
+            "time_s": 4.586847582811905e-07,
+            "steps": 100,
+            "maximum_temperature_drift_K": 0.13581627709504573,
+            "maximum_temperature_shape_difference_after_translation_K": 0.1487504364014285,
+            "marker_displacement_m": -3.696871740677121e-08
+          },
+          {
+            "time_s": 7.29850813443813e-07,
+            "steps": 150,
+            "maximum_temperature_drift_K": 0.23355123116812138,
+            "maximum_temperature_shape_difference_after_translation_K": 0.24361269644657568,
+            "marker_displacement_m": -6.475702496802627e-08
+          },
+          {
+            "time_s": 1.0728705683307696e-06,
+            "steps": 200,
+            "maximum_temperature_drift_K": 0.35927263610801674,
+            "maximum_temperature_shape_difference_after_translation_K": 0.35837274053596957,
+            "marker_displacement_m": -9.950215209240942e-08
+          },
+          {
+            "time_s": 1.4877440229420603e-06,
+            "steps": 250,
+            "maximum_temperature_drift_K": 0.510884144630154,
+            "maximum_temperature_shape_difference_after_translation_K": 0.49385323374349355,
+            "marker_displacement_m": -1.4146753769817e-07
+          },
+          {
+            "time_s": 1.9489871042216885e-06,
+            "steps": 300,
+            "maximum_temperature_drift_K": 0.6802013794658706,
+            "maximum_temperature_shape_difference_after_translation_K": 0.6442389167388001,
+            "marker_displacement_m": -1.884303231503015e-07
+          },
+          {
+            "time_s": 2.5746315891436047e-06,
+            "steps": 350,
+            "maximum_temperature_drift_K": 0.9083051072266244,
+            "maximum_temperature_shape_difference_after_translation_K": 0.8421606015693897,
+            "marker_displacement_m": -2.517335742444754e-07
+          },
+          {
+            "time_s": 3.4099555764495837e-06,
+            "steps": 400,
+            "maximum_temperature_drift_K": 1.2091680888672727,
+            "maximum_temperature_shape_difference_after_translation_K": 1.0956567161960038,
+            "marker_displacement_m": -3.3509975498613453e-07
+          },
+          {
+            "time_s": 4.880357762846006e-06,
+            "steps": 450,
+            "maximum_temperature_drift_K": 1.7205756566406762,
+            "maximum_temperature_shape_difference_after_translation_K": 1.5043024392489315,
+            "marker_displacement_m": -4.7618771127980186e-07
+          },
+          {
+            "time_s": 6.557879974296759e-06,
+            "steps": 500,
+            "maximum_temperature_drift_K": 2.273269038629678,
+            "maximum_temperature_shape_difference_after_translation_K": 1.9122124895519619,
+            "marker_displacement_m": -6.277182237647561e-07
+          },
+          {
+            "time_s": 7.77054009481441e-06,
+            "steps": 550,
+            "maximum_temperature_drift_K": 2.6563548588837875,
+            "maximum_temperature_shape_difference_after_translation_K": 2.170367021287916,
+            "marker_displacement_m": -7.311313225417254e-07
+          },
+          {
+            "time_s": 8.802420513302488e-06,
+            "steps": 600,
+            "maximum_temperature_drift_K": 2.9715084597025907,
+            "maximum_temperature_shape_difference_after_translation_K": 2.3681498939382664,
+            "marker_displacement_m": -8.155170808151618e-07
+          },
+          {
+            "time_s": 9.834300931790566e-06,
+            "steps": 650,
+            "maximum_temperature_drift_K": 3.2775531195766234,
+            "maximum_temperature_shape_difference_after_translation_K": 2.5475011654124273,
+            "marker_displacement_m": -8.969201528118143e-07
+          },
+          {
+            "time_s": 1e-05,
+            "steps": 659,
+            "maximum_temperature_drift_K": 3.3258679188593305,
+            "maximum_temperature_shape_difference_after_translation_K": 2.574695159917269,
+            "marker_displacement_m": -9.097230212959384e-07
+          }
+        ],
+        "initial_species_residual": 0.0257931870731371,
+        "final_species_residual": 0.11030888747147036,
+        "initial_axial_momentum_flux_span_Pa": 16.194968224692275,
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 105136.58945058679,
+        "hydrogen_consumption_initial_kg_per_m2_s": 0.038023706301407584,
+        "hydrogen_consumption_final_kg_per_m2_s": 0.03794124113481436,
+        "sample_count": 15,
+        "all_saved_frames_passed_original_audits": true,
+        "rhs_calls": 3800,
+        "elapsed_seconds_including_all_IO": 311.2551850830205,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 2.6088529052781416e-16,
+          "element_budget_per_initial_mass": 1.6207161138978232e-15,
+          "energy_budget_scaled": 6.118790338236282e-17,
+          "momentum_budget_scaled": 3.271109109984753e-15
+        },
+        "marker_displacements_m": {
+          "1000.0": -6.24897628715565e-07,
+          "1317.2218244563126": -9.097230212959384e-07,
+          "2000.0": -2.855177710257492e-06
+        }
+      },
+      "coarse-momentum": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/report.json",
+        "report_sha256": "a1106bba764798f620bbdffdd58bd996e0f365579041aebc07f44abb71aa03d6",
+        "field_sha256": "9c8a3f09d1260bf2d82e5ab328b14e7f22b7c3ee67cf9bfabe7ec255903ee226",
+        "time_s": 1e-05,
+        "steps": 660,
+        "maximum_temperature_drift_K": 1.9503630501358202,
+        "maximum_temperature_shape_difference_after_translation_K": 2.488912740235378,
+        "marker_displacement_m": -5.467174400523855e-07,
+        "series": [
+          {
+            "time_s": 0,
+            "steps": 0,
+            "maximum_temperature_drift_K": 0.0,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0,
+            "marker_displacement_m": 0.0
+          },
+          {
+            "time_s": 1.7300007803707555e-07,
+            "steps": 50,
+            "maximum_temperature_drift_K": 0.055779295779075255,
+            "maximum_temperature_shape_difference_after_translation_K": 0.062164303679196564,
+            "marker_displacement_m": -1.1183334034867154e-08
+          },
+          {
+            "time_s": 4.810703083252139e-07,
+            "steps": 100,
+            "maximum_temperature_drift_K": 0.126507301451511,
+            "maximum_temperature_shape_difference_after_translation_K": 0.15475697942270017,
+            "marker_displacement_m": -2.973642401933596e-08
+          },
+          {
+            "time_s": 7.891405386133496e-07,
+            "steps": 150,
+            "maximum_temperature_drift_K": 0.19856248535825216,
+            "maximum_temperature_shape_difference_after_translation_K": 0.2514876245062396,
+            "marker_displacement_m": -5.018313486981896e-08
+          },
+          {
+            "time_s": 1.0972107689014878e-06,
+            "steps": 200,
+            "maximum_temperature_drift_K": 0.26858308222585947,
+            "maximum_temperature_shape_difference_after_translation_K": 0.34702372632091283,
+            "marker_displacement_m": -7.050285408434498e-08
+          },
+          {
+            "time_s": 1.54317654485869e-06,
+            "steps": 250,
+            "maximum_temperature_drift_K": 0.36659230983264024,
+            "maximum_temperature_shape_difference_after_translation_K": 0.4859051415991189,
+            "marker_displacement_m": -9.981800080938186e-08
+          },
+          {
+            "time_s": 2.0778199759319594e-06,
+            "steps": 300,
+            "maximum_temperature_drift_K": 0.4832551381266512,
+            "maximum_temperature_shape_difference_after_translation_K": 0.6523675098609374,
+            "marker_displacement_m": -1.3499674019618046e-07
+          },
+          {
+            "time_s": 2.8738296152777043e-06,
+            "steps": 350,
+            "maximum_temperature_drift_K": 0.6618892940487058,
+            "maximum_temperature_shape_difference_after_translation_K": 0.8922104894623999,
+            "marker_displacement_m": -1.861539881305163e-07
+          },
+          {
+            "time_s": 4.029675503924022e-06,
+            "steps": 400,
+            "maximum_temperature_drift_K": 0.914275095310586,
+            "maximum_temperature_shape_difference_after_translation_K": 1.2194624052752943,
+            "marker_displacement_m": -2.570365878005326e-07
+          },
+          {
+            "time_s": 5.244099386642509e-06,
+            "steps": 450,
+            "maximum_temperature_drift_K": 1.1610945321035615,
+            "maximum_temperature_shape_difference_after_translation_K": 1.5323415083862528,
+            "marker_displacement_m": -3.2599776483323295e-07
+          },
+          {
+            "time_s": 6.458523269360996e-06,
+            "steps": 500,
+            "maximum_temperature_drift_K": 1.3883859283794209,
+            "maximum_temperature_shape_difference_after_translation_K": 1.8152326224026183,
+            "marker_displacement_m": -3.894586947817552e-07
+          },
+          {
+            "time_s": 7.672947152079485e-06,
+            "steps": 550,
+            "maximum_temperature_drift_K": 1.596671690004996,
+            "maximum_temperature_shape_difference_after_translation_K": 2.0727390797915177,
+            "marker_displacement_m": -4.476651915292368e-07
+          },
+          {
+            "time_s": 8.887371034798014e-06,
+            "steps": 600,
+            "maximum_temperature_drift_K": 1.7882078052568886,
+            "maximum_temperature_shape_difference_after_translation_K": 2.301861787530811,
+            "marker_displacement_m": -5.012610385449201e-07
+          },
+          {
+            "time_s": 9.846055980431323e-06,
+            "steps": 650,
+            "maximum_temperature_drift_K": 1.928665914768544,
+            "maximum_temperature_shape_difference_after_translation_K": 2.4642512116926127,
+            "marker_displacement_m": -5.4062963945542e-07
+          },
+          {
+            "time_s": 1e-05,
+            "steps": 660,
+            "maximum_temperature_drift_K": 1.9503630501358202,
+            "maximum_temperature_shape_difference_after_translation_K": 2.488912740235378,
+            "marker_displacement_m": -5.467174400523855e-07
+          }
+        ],
+        "initial_species_residual": 0.02381567782360207,
+        "final_species_residual": 0.05210625651668159,
+        "initial_axial_momentum_flux_span_Pa": 0.47135747695574537,
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 12599.235782968415,
+        "hydrogen_consumption_initial_kg_per_m2_s": 0.03801676425098117,
+        "hydrogen_consumption_final_kg_per_m2_s": 0.03793435497094291,
+        "sample_count": 15,
+        "all_saved_frames_passed_original_audits": true,
+        "rhs_calls": 3793,
+        "elapsed_seconds_including_all_IO": 311.3112697079778,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 1.0048299769781762e-15,
+          "element_budget_per_initial_mass": 5.954339936403998e-16,
+          "energy_budget_scaled": 1.818506807564742e-16,
+          "momentum_budget_scaled": 6.759931952998282e-15
+        },
+        "marker_displacements_m": {
+          "1000.0": -2.620964978921475e-07,
+          "1317.2218244563126": -5.467174400523855e-07,
+          "2000.0": -2.533493223936395e-06
+        }
+      },
+      "fine-original": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-original-10us/report.json",
+        "report_sha256": "cb476557c609d84d67e0d50b154a12ae4483d50d072de66f09a6f43a1b2d74b7",
+        "field_sha256": "b84740283ff84934688306de08b742063921c06b5446cac25e11c21f9c7cb7aa",
+        "time_s": 1e-05,
+        "steps": 596,
+        "maximum_temperature_drift_K": 1.6946054969325814,
+        "maximum_temperature_shape_difference_after_translation_K": 0.6562651804980533,
+        "marker_displacement_m": -4.202420557219283e-07,
+        "series": [
+          {
+            "time_s": 0,
+            "steps": 0,
+            "maximum_temperature_drift_K": 0.0,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0,
+            "marker_displacement_m": 0.0
+          },
+          {
+            "time_s": 2.5353738277220263e-07,
+            "steps": 50,
+            "maximum_temperature_drift_K": 0.021931241139554913,
+            "maximum_temperature_shape_difference_after_translation_K": 0.012285460897942357,
+            "marker_displacement_m": -5.5501330094298584e-09
+          },
+          {
+            "time_s": 7.221034006848057e-07,
+            "steps": 100,
+            "maximum_temperature_drift_K": 0.10015425769120156,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0555867668490464,
+            "marker_displacement_m": -2.5308522411462975e-08
+          },
+          {
+            "time_s": 1.1939812429328178e-06,
+            "steps": 150,
+            "maximum_temperature_drift_K": 0.18192495206051262,
+            "maximum_temperature_shape_difference_after_translation_K": 0.09710948615122561,
+            "marker_displacement_m": -4.593129302246646e-08
+          },
+          {
+            "time_s": 1.6658590851808273e-06,
+            "steps": 200,
+            "maximum_temperature_drift_K": 0.2638242055406863,
+            "maximum_temperature_shape_difference_after_translation_K": 0.1366543951149879,
+            "marker_displacement_m": -6.684613419391527e-08
+          },
+          {
+            "time_s": 2.137736927428842e-06,
+            "steps": 250,
+            "maximum_temperature_drift_K": 0.34540990109712766,
+            "maximum_temperature_shape_difference_after_translation_K": 0.17500018370083126,
+            "marker_displacement_m": -8.803522466224734e-08
+          },
+          {
+            "time_s": 2.609614769676862e-06,
+            "steps": 300,
+            "maximum_temperature_drift_K": 0.42679702207499304,
+            "maximum_temperature_shape_difference_after_translation_K": 0.21478685197098457,
+            "marker_displacement_m": -1.0930066101505487e-07
+          },
+          {
+            "time_s": 3.081492611924882e-06,
+            "steps": 350,
+            "maximum_temperature_drift_K": 0.5085300922132774,
+            "maximum_temperature_shape_difference_after_translation_K": 0.2539214321543568,
+            "marker_displacement_m": -1.3054738071116567e-07
+          },
+          {
+            "time_s": 3.553370454172902e-06,
+            "steps": 400,
+            "maximum_temperature_drift_K": 0.5897742785720084,
+            "maximum_temperature_shape_difference_after_translation_K": 0.29176408951093435,
+            "marker_displacement_m": -1.516830231158145e-07
+          },
+          {
+            "time_s": 4.7477912733441254e-06,
+            "steps": 450,
+            "maximum_temperature_drift_K": 0.7971659189927323,
+            "maximum_temperature_shape_difference_after_translation_K": 0.38103523727897937,
+            "marker_displacement_m": -2.0446389988916513e-07
+          },
+          {
+            "time_s": 6.906894039266422e-06,
+            "steps": 500,
+            "maximum_temperature_drift_K": 1.1714281100787503,
+            "maximum_temperature_shape_difference_after_translation_K": 0.5152762847326358,
+            "marker_displacement_m": -2.964867973041796e-07
+          },
+          {
+            "time_s": 8.752146978893859e-06,
+            "steps": 550,
+            "maximum_temperature_drift_K": 1.4850517983359168,
+            "maximum_temperature_shape_difference_after_translation_K": 0.6065783951048616,
+            "marker_displacement_m": -3.713859173248846e-07
+          },
+          {
+            "time_s": 1e-05,
+            "steps": 596,
+            "maximum_temperature_drift_K": 1.6946054969325814,
+            "maximum_temperature_shape_difference_after_translation_K": 0.6562651804980533,
+            "marker_displacement_m": -4.202420557219283e-07
+          }
+        ],
+        "initial_species_residual": 0.008484943858937935,
+        "final_species_residual": 0.07418833027525736,
+        "initial_axial_momentum_flux_span_Pa": 16.372033835810726,
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 106039.31825444326,
+        "hydrogen_consumption_initial_kg_per_m2_s": 0.03814861655989232,
+        "hydrogen_consumption_final_kg_per_m2_s": 0.03811525862466935,
+        "sample_count": 13,
+        "all_saved_frames_passed_original_audits": true,
+        "rhs_calls": 3427,
+        "elapsed_seconds_including_all_IO": 280.70718291704543,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 2.6933408521521564e-16,
+          "element_budget_per_initial_mass": 1.677585674915381e-15,
+          "energy_budget_scaled": 2.4422541464748707e-16,
+          "momentum_budget_scaled": 2.7954014209914678e-15
+        },
+        "marker_displacements_m": {
+          "1000.0": -3.4233100594006916e-07,
+          "1317.2218244563126": -4.202420557219283e-07,
+          "2000.0": -5.910983503550765e-07
+        }
+      },
+      "fine-momentum": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/report.json",
+        "report_sha256": "acf3d50ba1e80ba461c991128fd746283494c577d41744be89b09a225ced5908",
+        "field_sha256": "c14e1b9060a797469f72ddfbdf46063bbf9d11eb543ed070d468c282f0242945",
+        "time_s": 1e-05,
+        "steps": 636,
+        "maximum_temperature_drift_K": 0.30809861422790163,
+        "maximum_temperature_shape_difference_after_translation_K": 0.566009765797844,
+        "marker_displacement_m": -5.2816148661191664e-08,
+        "series": [
+          {
+            "time_s": 0,
+            "steps": 0,
+            "maximum_temperature_drift_K": 0.0,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0,
+            "marker_displacement_m": 0.0
+          },
+          {
+            "time_s": 2.354182887953606e-07,
+            "steps": 50,
+            "maximum_temperature_drift_K": 0.009992266091330748,
+            "maximum_temperature_shape_difference_after_translation_K": 0.01466233634926084,
+            "marker_displacement_m": -2.722080132480653e-09
+          },
+          {
+            "time_s": 5.496940702054874e-07,
+            "steps": 100,
+            "maximum_temperature_drift_K": 0.01959593324022535,
+            "maximum_temperature_shape_difference_after_translation_K": 0.0334842558628452,
+            "marker_displacement_m": -5.449660538808798e-09
+          },
+          {
+            "time_s": 8.639698516156142e-07,
+            "steps": 150,
+            "maximum_temperature_drift_K": 0.028663668283343213,
+            "maximum_temperature_shape_difference_after_translation_K": 0.052736964778773654,
+            "marker_displacement_m": -7.866278808887905e-09
+          },
+          {
+            "time_s": 1.2410527884089055e-06,
+            "steps": 200,
+            "maximum_temperature_drift_K": 0.040316175943416965,
+            "maximum_temperature_shape_difference_after_translation_K": 0.07717571592047534,
+            "marker_displacement_m": -1.0917330147547366e-08
+          },
+          {
+            "time_s": 1.9468874696477927e-06,
+            "steps": 250,
+            "maximum_temperature_drift_K": 0.06353094180690277,
+            "maximum_temperature_shape_difference_after_translation_K": 0.12385336617933262,
+            "marker_displacement_m": -1.680410370748231e-08
+          },
+          {
+            "time_s": 2.949994074015039e-06,
+            "steps": 300,
+            "maximum_temperature_drift_K": 0.09691736101694914,
+            "maximum_temperature_shape_difference_after_translation_K": 0.19588842430198383,
+            "marker_displacement_m": -2.4885446051059468e-08
+          },
+          {
+            "time_s": 3.5159051918922767e-06,
+            "steps": 350,
+            "maximum_temperature_drift_K": 0.1149692646024505,
+            "maximum_temperature_shape_difference_after_translation_K": 0.23496965595688835,
+            "marker_displacement_m": -2.9056016507753024e-08
+          },
+          {
+            "time_s": 4.058160319806475e-06,
+            "steps": 400,
+            "maximum_temperature_drift_K": 0.1316395708543041,
+            "maximum_temperature_shape_difference_after_translation_K": 0.27084466763653836,
+            "marker_displacement_m": -3.274427038887917e-08
+          },
+          {
+            "time_s": 4.600415447720672e-06,
+            "steps": 450,
+            "maximum_temperature_drift_K": 0.14739013323605832,
+            "maximum_temperature_shape_difference_after_translation_K": 0.3049276368280971,
+            "marker_displacement_m": -3.613219474660201e-08
+          },
+          {
+            "time_s": 5.14267057563487e-06,
+            "steps": 500,
+            "maximum_temperature_drift_K": 0.162393151190372,
+            "maximum_temperature_shape_difference_after_translation_K": 0.3395244011219347,
+            "marker_displacement_m": -3.920436622908974e-08
+          },
+          {
+            "time_s": 5.684925703549068e-06,
+            "steps": 550,
+            "maximum_temperature_drift_K": 0.17793908048122375,
+            "maximum_temperature_shape_difference_after_translation_K": 0.37284928384610794,
+            "marker_displacement_m": -4.1953038909178786e-08
+          },
+          {
+            "time_s": 7.164785190817435e-06,
+            "steps": 600,
+            "maximum_temperature_drift_K": 0.222709306713341,
+            "maximum_temperature_shape_difference_after_translation_K": 0.4528054063051741,
+            "marker_displacement_m": -4.779313095976123e-08
+          },
+          {
+            "time_s": 1e-05,
+            "steps": 636,
+            "maximum_temperature_drift_K": 0.30809861422790163,
+            "maximum_temperature_shape_difference_after_translation_K": 0.566009765797844,
+            "marker_displacement_m": -5.2816148661191664e-08
+          }
+        ],
+        "initial_species_residual": 0.008295195464060098,
+        "final_species_residual": 0.011050168832799316,
+        "initial_axial_momentum_flux_span_Pa": 0.48321192570438143,
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 13591.548150973218,
+        "hydrogen_consumption_initial_kg_per_m2_s": 0.038141668242764104,
+        "hydrogen_consumption_final_kg_per_m2_s": 0.03810825553524624,
+        "sample_count": 14,
+        "all_saved_frames_passed_original_audits": true,
+        "rhs_calls": 3604,
+        "elapsed_seconds_including_all_IO": 293.42651308403583,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 1.3153139921882831e-15,
+          "element_budget_per_initial_mass": 1.0065857191116476e-15,
+          "energy_budget_scaled": 1.8581889538373713e-16,
+          "momentum_budget_scaled": 2.80614771249982e-15
+        },
+        "marker_displacements_m": {
+          "1000.0": 2.4145072184678096e-08,
+          "1317.2218244563126": -5.2816148661191664e-08,
+          "2000.0": -2.6145647228671687e-07
+        }
+      }
+    },
+    "reference_refinement_effects": {
+      "original": {
+        "drift_reduction_fraction": 0.49047721127970156,
+        "shape_difference_reduction_fraction": 0.7451095606521665
+      },
+      "momentum": {
+        "drift_reduction_fraction": 0.8420301214143459,
+        "shape_difference_reduction_fraction": 0.7725875412794438
+      }
+    },
+    "limits": [
+      "This is reference-input sensitivity on one unchanged native grid and at one short endpoint, not native mesh/time convergence or flame-speed qualification.",
+      "Refinement changes the reference flame profile and inlet eigenvalue consistently; reservoir data are explicitly different across reference levels.",
+      "Pressure-compatible preparation changes initial rho/u/energy but preserves the corresponding T/Y and inlet, and does not alter accepted checkpoints.",
+      "Same source binary, full equations and physical gates; original references and all unsuccessful diagnostics are retained."
+    ]
+  },
+  "tool_validation": {
+    "passed": true,
+    "controlled_BVP_runs": 4,
+    "input_rejections": 10,
+    "invalid_fixed_grid_rejected": "invalid fixed-grid geometry or fixture layout",
+    "default_fixtures_byte_identical": true,
+    "existing_verifier_functions_unchanged": true
+  },
+  "failures_retained": [
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/canonical-reference-001.log",
+      "reason": "Refined unconstrained BVP exceeds the unchanged reference import allowance."
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/canonical-reference-002.log",
+      "reason": "Changing a BVP initial guess and resolving does not remove the raw species-sum defect; import still rejects."
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/closure-utc-checks.log",
+      "reason": "Tighter BVP tolerances fail to reach a steady solution within the backend timestep budget."
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/canonical-reference-003.log",
+      "reason": "Preparation attempted before the optional reference executable was built; no fixture exported."
+    }
+  ],
+  "verification_scope": "System-clang reference target built; four original/constrained BVP comparisons, input rejection/default reproduction, and two complete native 10-microsecond evolutions with all saved frames audited. No transient solver/default changes; no full CTest, frontend, App or platform qualification rerun.",
+  "raw_evidence": {
+    "outputs/combustion-foundation/reference-refinement-001/build.json": {
+      "sha256": "7cdf44a77ac93b21b9ee787ae996544271f5848d11dd918bc5629a111fe8c87d",
+      "bytes": 8847
+    },
+    "outputs/combustion-foundation/reference-refinement-001/native-runs.json": {
+      "sha256": "663cea1b11b166863846727028b5e88625d55dbc4bf525ab193d1a1b9f198d5c",
+      "bytes": 3585
+    },
+    "outputs/combustion-foundation/reference-refinement-001/native-analysis.json": {
+      "sha256": "635397c2eceaec8380d90b690a09e420cf695dae0ca43440a13ff9ca1a255131",
+      "bytes": 27055
+    },
+    "outputs/combustion-foundation/reference-refinement-001/reference-analysis.json": {
+      "sha256": "b7c4fd5ddff9b9650c77988ca52655a16269938b96f85a3ff4935eee333b343b",
+      "bytes": 7803
+    },
+    "outputs/combustion-foundation/reference-refinement-001/tool-checks.json": {
+      "sha256": "0ae7eef5aad4384f1dbfa7cbc6ac7ae93fad116fd14c7cbefa94480d9c9027fc",
+      "bytes": 13231
+    },
+    "outputs/combustion-foundation/reference-refinement-001/run_native.py": {
+      "sha256": "4bfee0509c0e0b24aa3d6a4e1195a8b43c7019bbfdafc7302cabefe5c6bce71d",
+      "bytes": 4273
+    },
+    "outputs/combustion-foundation/reference-refinement-001/analyze_native.py": {
+      "sha256": "3358f696bc2308bec91f6d9b34fa52cfae09e1c4278f7dcfe75ae8a423575f49",
+      "bytes": 8532
+    },
+    "outputs/combustion-foundation/reference-refinement-001/analyze_references_2.py": {
+      "sha256": "7fde5015a1ab0b0f7883d085a5db514fba0d8e19632b1f1be92f26002b688d87",
+      "bytes": 4100
+    },
+    "outputs/combustion-foundation/reference-refinement-001/check_tools.py": {
+      "sha256": "21d659793573730c8a83b69f0603e2175552c70d01bff0e29e763e24648f58d9",
+      "bytes": 6021
+    },
+    "outputs/combustion-foundation/reference-refinement-001/write_evidence.py": {
+      "sha256": "44280782f1381440dfd6ea84ff1b6d3d25adcaeb407ab1968ede76ee97f2970a",
+      "bytes": 9212
+    },
+    "outputs/combustion-foundation/reference-refinement-001/constraint-comparison-003.json": {
+      "sha256": "66994e88984ab336933c41f59ac8ba52b2be5152db27741ca9733c807edf020d",
+      "bytes": 6547
+    },
+    "outputs/combustion-foundation/reference-refinement-001/compare_constraint_3.py": {
+      "sha256": "9eba3aae30a9089e8b232f56b200f78be043ecc2a2c024a5899513318752bffc",
+      "bytes": 3883
+    },
+    "outputs/combustion-foundation/reference-refinement-001/constrained_reference.cpp": {
+      "sha256": "e67cd25b503fb69182ef1218176936662147868bb018a05acb45e70e6204f430",
+      "bytes": 6786
+    },
+    "outputs/combustion-foundation/reference-refinement-001/constrained-reference": {
+      "sha256": "8162609e191e3a6ecdff92803074b5a2315d930714c2643a46563c0e8faf37f7",
+      "bytes": 76904
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-001.log": {
+      "sha256": "7ec862938cd200bedb048297e4ef81e1e26c82d5e9f9c0ddea991c45622677e8",
+      "bytes": 25287
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-002.log": {
+      "sha256": "6662360470054fb6550e4b3b352fb8cd2bf699c1bb25aec7cf3244e95273ea06",
+      "bytes": 25441
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-003.log": {
+      "sha256": "23b943bb2aac98bc3599135c2be6b05a6f09556c7cff61ecc36634633d4720c6",
+      "bytes": 25731
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004.log": {
+      "sha256": "cb88541b3268a0cfd573becb15b942856ea19f615061c127c6552d44aa6e823e",
+      "bytes": 27745
+    },
+    "outputs/combustion-foundation/reference-refinement-001/closure-fresh.log": {
+      "sha256": "72d9c52bec22e19d9c03c2a53f78f4c1a319c374aa0b70a3095bf3f9eb58522c",
+      "bytes": 34043
+    },
+    "outputs/combustion-foundation/reference-refinement-001/closure-utc-checks.log": {
+      "sha256": "2a461c1914b5d119ca20761da64b97ca71c5706fb8bf49ea79a46b7d8d286cd3",
+      "bytes": 10210
+    },
+    "outputs/combustion-foundation/reference-refinement-001/check_closure_fresh.py": {
+      "sha256": "a1246f74dea9c0befb9abc6b910f228267bb93d81708e961e50bb0b88927bbe9",
+      "bytes": 13860
+    },
+    "outputs/combustion-foundation/reference-refinement-001/check_reference_closure_utc.py": {
+      "sha256": "23bfdecc17ec0203d79698632741775eb0383d44f381c8c2355db7b08f8f7dde",
+      "bytes": 2316
+    },
+    "outputs/combustion-foundation/reference-refinement-001/prepare_reacting_flame-failed-001.py": {
+      "sha256": "66432e38e9009873bbd0ec4ded06a8fcf609722ecbcee20cdf209b8e9e0f1c17",
+      "bytes": 12985
+    },
+    "outputs/combustion-foundation/reference-refinement-001/prepare_reacting_flame-failed-polish-002.py": {
+      "sha256": "095ec3d63bf21383ed252ea642feb6ecb7f5253204efcb59a54280d2b12bd321",
+      "bytes": 15215
+    },
+    "outputs/combustion-foundation/reference-refinement-001/prepare_reacting_flame-missing-probe-003.py": {
+      "sha256": "a6bb84a2136c3b902a69d25b671530cd141db1d3b105646986faa95a02ba5a1d",
+      "bytes": 16615
+    },
+    "outputs/combustion-foundation/reference-refinement-001/configure.log": {
+      "sha256": "5d26aa1a22a0c54ade003471e535441034f822ad51a7525b0ba928f5a53b6ba5",
+      "bytes": 146
+    },
+    "outputs/combustion-foundation/reference-refinement-001/build-reference-probe.log": {
+      "sha256": "adb3a781e3adb916678b110bb1a77fdd13b39b6ad69eb2aa5374f396d6de9e59",
+      "bytes": 261
+    },
+    "outputs/combustion-foundation/reference-refinement-001/closure-probe": {
+      "sha256": "a7db210667a87356aea884a6483059c1c5012c57018aeaeadd817f89808b3b58",
+      "bytes": 93960
+    },
+    "outputs/combustion-foundation/reference-refinement-001/frozen-source/CMakeLists.txt": {
+      "sha256": "ed6c7b24747ad1a9221626afb083b3305227b6c8757070627cbed15da3c26217",
+      "bytes": 68456
+    },
+    "outputs/combustion-foundation/reference-refinement-001/frozen-source/reacting_flame_reference_probe.cpp": {
+      "sha256": "d7f4bda3af541056f7ef956af0bff19a3684fa9112b8b18c8e628ed169844cc2",
+      "bytes": 8610
+    },
+    "outputs/combustion-foundation/reference-refinement-001/frozen-source/prepare_reacting_flame.py": {
+      "sha256": "f9b68e975b676a10aecd820baaf019e0accc8c5ca9c1b4bd1bda9b1f5885c27a",
+      "bytes": 16901
+    },
+    "outputs/combustion-foundation/reference-refinement-001/frozen-source/prepare_reacting_flame_momentum.py": {
+      "sha256": "71fd245168483b91478f61891ec6b005d5c8cb3e4fd2a5fb7898f1cc4fdbf17b",
+      "bytes": 9372
+    },
+    "outputs/combustion-foundation/reference-refinement-001/frozen-source/verify_reacting_flame.py": {
+      "sha256": "e00828cd0e34d850c0bdfd97e9938a25e23d121b5e1c19cd4d6ef0279fd77f33",
+      "bytes": 35162
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference.json": {
+      "sha256": "4e4d9fc73a23deaa41d76978893159d290c3fe5656653dbb3107aa05415a7f6b",
+      "bytes": 7650
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/closure-guess.txt": {
+      "sha256": "ead00e46fb671cfc11cef629004fa6bdec3027bd1b696fbe2dce88c4eff95c48",
+      "bytes": 956528
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-5.json": {
+      "sha256": "33b20cf6105869b4e759d32c82c5d1bebbd77f83829ad3c9cf5f83cfb61b6f47",
+      "bytes": 1051763
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-4.yaml": {
+      "sha256": "b325e828c6b141797bf3f7087c1c0f352f3df89f29d45e097f540a190dc7d134",
+      "bytes": 551678
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-5.yaml": {
+      "sha256": "3cd75c5dfc127a82a65196b9abef6b30605fd909827d760a26af2bc7220a0e16",
+      "bytes": 1088063
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/prepared-reference.npz": {
+      "sha256": "870f816702c8aca248a4a7130595f711688c5cd3e5f98ef26d1fc7677d29e1b9",
+      "bytes": 1021524
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-4.json": {
+      "sha256": "cd2c2b1976aec6559d6eccf55d480e3edd098a547269899094423c9e57f3218a",
+      "bytes": 534530
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-closed.json": {
+      "sha256": "5abdbcc13f529aa55d3c314d8139a0c6c3748e97a42c8caf457c5fe37dcb6a72",
+      "bytes": 1842449
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-3.json": {
+      "sha256": "563ee03f843a579e1ebc9131fa4af44acda4107e242ab0bfdd84dce38d75b8df",
+      "bytes": 270975
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-2.yaml": {
+      "sha256": "1ba9289eb39290cc9f6df038665bb0a7871ec0c614d7a7efa5409ea2728bfb52",
+      "bytes": 144630
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-3.yaml": {
+      "sha256": "09423918954a909309a5aa8959c6847c27f881137d90e4b168218b62765c7502",
+      "bytes": 279602
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-2.json": {
+      "sha256": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746",
+      "bytes": 139818
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-0.yaml": {
+      "sha256": "74ad5a167eb56d59f3a84ac9323f2909b56cc8df63a90cef3e8fa3f874ca800e",
+      "bytes": 42746
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/closure.stdout": {
+      "sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+      "bytes": 154
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-1.json": {
+      "sha256": "9d55a9d5f05bb99382dd028357fe7fecb6098b4bb49412313da4914c7f8e2a57",
+      "bytes": 72358
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-0.json": {
+      "sha256": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de",
+      "bytes": 40749
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference-1.yaml": {
+      "sha256": "ea6ffcfe0b923bfe5dc74aad03db3a4f3ab466647add027a9e807963a685b8c3",
+      "bytes": 75186
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/closure.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/grid-0.fixture": {
+      "sha256": "ede73526500a8f9a8f80ead70334a5ac1247c47a4bf3877ec0057d60f88a2ec9",
+      "bytes": 130354
+    },
+    "outputs/combustion-foundation/reference-refinement-001/tool-checks/459-original.json": {
+      "sha256": "b2234d84453cc958cd53409bdccebe522f644fa8328365c0c1b406eed7ace066",
+      "bytes": 245349
+    },
+    "outputs/combustion-foundation/reference-refinement-001/tool-checks/459-constrained.json": {
+      "sha256": "350c8214b8c7388863bcd9a868745f3c185f4fcedda0a95a795b97ed9de412b2",
+      "bytes": 245207
+    },
+    "outputs/combustion-foundation/reference-refinement-001/tool-checks/3446-original.json": {
+      "sha256": "6ffbbf956a7c692ccfb8377c38abdcb5ee36f46c44b7b2a1b3b71da9b2ac7bb8",
+      "bytes": 1843736
+    },
+    "outputs/combustion-foundation/reference-refinement-001/tool-checks/3446-constrained.json": {
+      "sha256": "906c37bfe8a0c3d74a4f0457562851eea155d373c44c12c36ebf893e21873929",
+      "bytes": 1842632
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/reference.json": {
+      "sha256": "709a28d75806e16526d61318e23d20174829a92d1e17f86de487d5ace43881d5",
+      "bytes": 6543
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/preparation.json": {
+      "sha256": "101cc55953c3ee1c7bc74c33e1c9a12193df7b5664cd5bff4346f1fd44fa3a19",
+      "bytes": 2922
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/grid.fixture": {
+      "sha256": "dae4ffea1c289cfbb079c26f394e2511805ad9d02310aa814ed74d1332dfc8cf",
+      "bytes": 129990
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/report.json": {
+      "sha256": "0a7241e2ddddea08bf69706b004fe9eb18a7a0db0eb5ff70937ab2167eb9c567",
+      "bytes": 7006
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/resolved-mechanism.yaml": {
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+      "bytes": 10596
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/evaluation-progress.jsonl": {
+      "sha256": "805c117880239a77f8d5d076f7793e1a7a9beab8e3e63ca2faab2864a2251ba9",
+      "bytes": 25140
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/field.json": {
+      "sha256": "02a7040c7d9022c92251f4cd785d707e7f0e7a35df467321c2d8500641150435",
+      "bytes": 3015351
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/steps.jsonl": {
+      "sha256": "926d3e000ea1a8f1812149b58cc63c74f6c3f11730428fe9b279dde7e0f46686",
+      "bytes": 158838
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/accepted-state.json": {
+      "sha256": "ceb505968e8e0d436d655a1355ffca99b3eac3b8a5e4a000c401798a69222557",
+      "bytes": 272268
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/accepted.checkpoint": {
+      "sha256": "b1de3b52bb427b837588481477dddb96402c539746b20f8d1b64fe0df7434b33",
+      "bytes": 636355
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/samples.jsonl": {
+      "sha256": "4a26cf830bbbd3605ef83401d6aca2a64dee4d090518952bbf147bfa0d69019a",
+      "bytes": 22020157
+    },
+    "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/sample-audits.json": {
+      "sha256": "12a67014069f769f952afc6c7d5c18c2b45c79265747e70703dbf0dcc742c4c9",
+      "bytes": 56657
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/report.json": {
+      "sha256": "a1106bba764798f620bbdffdd58bd996e0f365579041aebc07f44abb71aa03d6",
+      "bytes": 7007
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/resolved-mechanism.yaml": {
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+      "bytes": 10596
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/evaluation-progress.jsonl": {
+      "sha256": "50800b05c5eb6583678c6969d43a56c7ca8b73e927c107532a09acc74abfbc47",
+      "bytes": 24491
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/field.json": {
+      "sha256": "9c8a3f09d1260bf2d82e5ab328b14e7f22b7c3ee67cf9bfabe7ec255903ee226",
+      "bytes": 3014967
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/steps.jsonl": {
+      "sha256": "00c49c39312a5bbb1bc9f1dc578281df3efb26134fdb9511465a7c6c7c95e67b",
+      "bytes": 158878
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/accepted-state.json": {
+      "sha256": "5819100958857375a46a46faf6ab915f9e35ebced3444825533747971a8319df",
+      "bytes": 272248
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/accepted.checkpoint": {
+      "sha256": "3831c086a4087011ea2e439c78602ee40071e26e4d37db018768759283d221b8",
+      "bytes": 636335
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/samples.jsonl": {
+      "sha256": "0935e65d96007b5788641911f38309c5a690d4662ea72151716286e781795348",
+      "bytes": 22037653
+    },
+    "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/sample-audits.json": {
+      "sha256": "158848ebcbc6a05794aa6c83db9bb54697d2a3fd8f05186efc769d4629dcc2fa",
+      "bytes": 56694
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/report.json": {
+      "sha256": "cb476557c609d84d67e0d50b154a12ae4483d50d072de66f09a6f43a1b2d74b7",
+      "bytes": 7130
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/resolved-mechanism.yaml": {
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+      "bytes": 10596
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/evaluation-progress.jsonl": {
+      "sha256": "e8f8d0c1a1dd64496d690f529d8a80cc5c7e69a009d6dbe7f4f5df4dc6309a99",
+      "bytes": 22449
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/field.json": {
+      "sha256": "b84740283ff84934688306de08b742063921c06b5446cac25e11c21f9c7cb7aa",
+      "bytes": 3042569
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/steps.jsonl": {
+      "sha256": "38aefbf08c520ae74f33de690d85f81fded033d9943790f39bd82739b39e191a",
+      "bytes": 143365
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/accepted-state.json": {
+      "sha256": "07971d95c6781312a7ef7818304ac51c0a65c4d65d537486d45a84ebce806434",
+      "bytes": 272149
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/accepted.checkpoint": {
+      "sha256": "eb519fdf43a493a323edd0a3a080f1240cad6335a062d650ca4f8de97837f1fc",
+      "bytes": 636276
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/samples.jsonl": {
+      "sha256": "01f804c49464d3dd33b3cf6f5ff6a408e75c10aff8f1d0e7e7d8056121a38555",
+      "bytes": 19186747
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-original-10us/native-0/sample-audits.json": {
+      "sha256": "8bdbb19ac074c57c741ea1e82812f862b2de47ddf984a60c7d4bd3f58c6b56ad",
+      "bytes": 49198
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/report.json": {
+      "sha256": "acf3d50ba1e80ba461c991128fd746283494c577d41744be89b09a225ced5908",
+      "bytes": 7128
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/resolved-mechanism.yaml": {
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+      "bytes": 10596
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/evaluation-progress.jsonl": {
+      "sha256": "f68715a26a8f4b7296862d5083fe16a106324ae5fd66f69fb1b3ac2c47b5771b",
+      "bytes": 23721
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/field.json": {
+      "sha256": "c14e1b9060a797469f72ddfbdf46063bbf9d11eb543ed070d468c282f0242945",
+      "bytes": 3045410
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/steps.jsonl": {
+      "sha256": "e3b31e34566d419ccef439d7b89c1d79b0e9d7bc717629b989505bbd881d5523",
+      "bytes": 153429
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/accepted-state.json": {
+      "sha256": "2d1b9f3c78b6cfc544b37ae243a1e7134cc32784d0bd1d26f28775d35f1aa27f",
+      "bytes": 272195
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/accepted.checkpoint": {
+      "sha256": "ca145c4828aaa6aa0eed573f39f74116dbf4ff9b3b1cbdf30ad899771b11ecdb",
+      "bytes": 636322
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/samples.jsonl": {
+      "sha256": "9d04bae2fa2c98c55702de95c4b3ae00e559ebff53242c377924010c087e7d3a",
+      "bytes": 20711852
+    },
+    "outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/sample-audits.json": {
+      "sha256": "f8e790a104a6ff6ae18d824d92313f9d8973dcc7ecb8d88b6ad3c09ed8d8dff5",
+      "bytes": 52946
+    }
+  },
+  "figure": {
+    "path": "artifacts/current/native-reacting-reference-refinement.png",
+    "sha256": "45fde518c18b1398541f2bbee7580875fefd2358dd7f683936061a0f61dbeafc"
+  },
+  "limits": [
+    "This is reference-input sensitivity on one unchanged native grid and at one short endpoint, not native mesh/time convergence or flame-speed qualification.",
+    "Refinement changes the reference flame profile and inlet eigenvalue consistently; reservoir data are explicitly different across reference levels.",
+    "Pressure-compatible preparation changes initial rho/u/energy but preserves the corresponding T/Y and inlet, and does not alter accepted checkpoints.",
+    "Same source binary, full equations and physical gates; original references and all unsuccessful diagnostics are retained.",
+    "Reference and native share mechanism and transport data; no experimental independence.",
+    "Constant-pressure BVP versus full compressible FV; finest reference is still not an extrapolated or domain-converged truth.",
+    "These equation diagnostics and profile differences are recorded values, not a newly weakened physical gate."
+  ]
+}

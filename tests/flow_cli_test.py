@@ -102,6 +102,36 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         wall_force_errors.append(abs(data['wallViscousForceX'] - .32))
         assert abs(data['wallViscousForceY']) < 1e-8
         if ny == 8:
+            # A portable JSON case resolves inputs relative to the case file,
+            # while an explicit CLI override has identical ordinary semantics.
+            case_file = root / 'channel.case.json'
+            case_options = dict(mesh=mesh.name, output='case-file', case='channel',
+                                nu=.01, speed=1, **{'max-iterations': 700})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1',
+                                                 options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)],
+                                    cwd=root.parent, text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('case-file' + suffix)).read_bytes() == (root / (f'channel{ny}' + suffix)).read_bytes()
+            result = subprocess.run([cli, '--output', str(root/'case-override'),
+                                     '--max-iterations', '1', '--case-file', str(case_file)],
+                                    text=True, capture_output=True, timeout=40)
+            assert result.returncode == 2, result.stderr
+            assert json.loads((root/'case-override.json').read_text())['iterations'] == 1
+            for invalid in [
+                '{"format":"cartmesh2d-native-flow-case-v2","options":{}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":0.1,"nu":0.2}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":"0.1"}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"profile":1}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"mesh":"\\uD800"}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{"nu":01}}',
+                '{"format":"cartmesh2d-native-flow-case-v1","options":{}} trailing',
+            ]:
+                case_file.write_text(invalid)
+                result = subprocess.run([cli, '--case-file', str(case_file)],
+                                        text=True, capture_output=True, timeout=10)
+                assert result.returncode == 1 and 'case-file JSON' in result.stderr, result.stderr
             # Profiling must observe, never alter the physical solve or exports.
             run('profiled', mesh, extra=('--profile',))
             for suffix in ('.json', '.fields.json', '.cells.csv', '.faces.csv',
@@ -126,6 +156,78 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
                 assert math.isfinite(profile[key]) and profile[key] >= 0, (key, profile[key])
             assert profile['solveSeconds'] >= profile['momentumLinearSolveSeconds'] + profile['pressureLinearSolveSeconds']
             assert profile['pressurePreconditioner'] == 'ic0'
+            coupled, coupled_field = run('coupled', mesh,
+                extra=('--coupling', 'coupled', '--linear-policy', 'adaptive', '--profile'))
+            assert coupled['coupling'] == 'coupled' and coupled['strictLinearFinal']
+            assert coupled['iterations'] >= 10 and coupled['fluxConsistency'] < 1e-8
+            for key in ('pressureCorrectionPasses', 'velocityRelaxation', 'pressureRelaxation'):
+                assert coupled[key] is None
+            coupled_profile = json.loads((root / 'coupled.performance.json').read_text())
+            assert coupled_profile['simpleIterations'] == 0
+            assert coupled_profile['coupledOuterIterations'] == coupled['iterations']
+            assert coupled_profile['coupledKrylovIterations'] == coupled['coupledKrylovIterations'] > 0
+            assert coupled_profile['lineSearchTrials'] >= coupled['iterations']
+            assert coupled_profile['solveSeconds'] >= coupled_profile['coupledLinearSolveSeconds'] >= coupled_profile['pressureLinearSolveSeconds']
+            for first, second in zip(field, coupled_field):
+                assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+            case_options.update(output='coupled-case', coupling='coupled', **{'linear-policy': 'adaptive'})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('coupled-case' + suffix)).read_bytes() == (root / ('coupled' + suffix)).read_bytes()
+            consistent, consistent_field = run('consistent', mesh,
+                extra=('--coupling', 'simple-consistent', '--linear-policy', 'adaptive',
+                       '--velocity-relaxation', '.7', '--pressure-relaxation', '.4', '--profile'))
+            assert consistent['coupling'] == 'simple-consistent' and consistent['strictLinearFinal']
+            assert consistent['pressureCorrectionPasses'] is None
+            assert consistent['velocityRelaxation'] == .7 and consistent['pressureRelaxation'] == .4
+            assert consistent['fluxConsistency'] < 1e-8
+            for first, second in zip(coupled_field, consistent_field):
+                assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+            case_options.update(output='consistent-case', coupling='simple-consistent',
+                                **{'velocity-relaxation': .7, 'pressure-relaxation': .4})
+            case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=case_options)))
+            result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+            assert result.returncode == 0, result.stderr
+            for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv'):
+                assert (root / ('consistent-case' + suffix)).read_bytes() == (root / ('consistent' + suffix)).read_bytes()
+            for method in ('simpler', 'pimple'):
+                extension, extension_field = run(method, mesh,
+                    extra=('--coupling', method, '--pressure-relaxation', '.6', '--profile'))
+                assert extension['coupling'] == method and extension['strictLinearFinal']
+                assert extension['pressureRelaxation'] == .6
+                assert extension['momentumCorrectors'] == (2 if method == 'pimple' else None)
+                for first, second in zip(field, extension_field):
+                    assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 2e-5
+                options = dict(mesh=mesh.name, output=method+'-case', case='channel', nu=.01, speed=1,
+                               coupling=method, profile=True, **{'max-iterations': 700, 'pressure-relaxation': .6})
+                if method == 'pimple':
+                    options['momentum-correctors'] = 2
+                case_file.write_text(json.dumps(dict(format='cartmesh2d-native-flow-case-v1', options=options)))
+                result = subprocess.run([cli, '--case-file', str(case_file)], text=True, capture_output=True, timeout=40)
+                assert result.returncode == 0, result.stderr
+                for suffix in ('.cells.csv', '.faces.csv', '.residuals.csv', '.json'):
+                    assert (root / (method+'-case'+suffix)).read_bytes() == (root / (method+suffix)).read_bytes()
+            run('simpler-transient', mesh, extra=('--coupling', 'simpler', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='only SIMPLE/PIMPLE support time stepping')
+            run('invalid-momentum-correctors', mesh, extra=('--coupling', 'pimple', '--momentum-correctors', '1.5'),
+                code=1, error_contains='integer in [1,8]')
+            run('consistent-transient', mesh, extra=('--coupling', 'simple-consistent', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='requires steady')
+            run('coupled-engineering', mesh, extra=('--coupling', 'coupled', '--convergence', 'engineering'),
+                code=1, error_contains='requires strict convergence')
+            run('coupled-backflow', mesh, extra=('--coupling', 'coupled', '--outlet-backflow', 'normal-inlet'),
+                code=1, error_contains='requires outlet backflow rejection')
+            run('coupled-transient', mesh, extra=('--coupling', 'coupled', '--time-step', '.1', '--steps', '1'),
+                code=1, error_contains='requires steady')
+            failure_mesh = root / 'coupled-failure.solver.cm2d'
+            rectangle(failure_mesh, 4, 4, width=1)
+            failure, _ = run('coupled-failure', failure_mesh,
+                extra=('--coupling', 'coupled', '--tolerance', '1e-30'), code=2)
+            assert failure['status'] == 'solve_failed' and failure['failureReason']
+            assert failure['iterations'] == 0 and failure['retainedState'] == 'initialization'
+            assert not failure['strictLinearFinal']
             aggregation, aggregation_field = run(
                 'aggregation', mesh,
                 extra=('--pressure-preconditioner', 'aggregation', '--profile'))

@@ -1,6 +1,7 @@
 #include "cartmesh2d/sizing/SizeField2D.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -451,6 +452,216 @@ std::string resolvedSizeFieldToJson(const ResolvedSizeField2D& resolved, int ind
     out << i1 << "]\n";
     out << "}\n";
     return out.str();
+}
+
+namespace {
+
+struct JsonCursor {
+    const std::string& text;
+    std::size_t pos = 0;
+
+    void skipWs() noexcept {
+        while (pos < text.size() && std::isspace(static_cast<unsigned char>(text[pos]))) ++pos;
+    }
+    bool consume(char ch) noexcept {
+        skipWs();
+        if (pos < text.size() && text[pos] == ch) { ++pos; return true; }
+        return false;
+    }
+    bool parseString(std::string& value) {
+        skipWs();
+        if (pos >= text.size() || text[pos] != '"') return false;
+        ++pos;
+        value.clear();
+        while (pos < text.size()) {
+            const char c = text[pos++];
+            if (c == '"') return true;
+            if (c == '\\') {
+                if (pos >= text.size()) return false;
+                value.push_back(text[pos++]);
+            } else {
+                value.push_back(c);
+            }
+        }
+        return false;
+    }
+    bool parseNumber(double& value) {
+        skipWs();
+        const std::size_t start = pos;
+        if (pos < text.size() && (text[pos] == '-' || text[pos] == '+')) ++pos;
+        bool digits = false;
+        while (pos < text.size() && std::isdigit(static_cast<unsigned char>(text[pos]))) { ++pos; digits = true; }
+        if (pos < text.size() && text[pos] == '.') {
+            ++pos;
+            while (pos < text.size() && std::isdigit(static_cast<unsigned char>(text[pos]))) { ++pos; digits = true; }
+        }
+        if (!digits) return false;
+        if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E')) {
+            ++pos;
+            if (pos < text.size() && (text[pos] == '-' || text[pos] == '+')) ++pos;
+            bool expDigits = false;
+            while (pos < text.size() && std::isdigit(static_cast<unsigned char>(text[pos]))) { ++pos; expDigits = true; }
+            if (!expDigits) return false;
+        }
+        try {
+            std::size_t consumed = 0;
+            const std::string token = text.substr(start, pos - start);
+            const double parsed = std::stod(token, &consumed);
+            if (consumed != token.size() || !std::isfinite(parsed)) return false;
+            value = parsed;
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+    bool skipValue() {
+        skipWs();
+        if (pos >= text.size()) return false;
+        const char c = text[pos];
+        if (c == '"') { std::string tmp; return parseString(tmp); }
+        if (c == '{') {
+            ++pos;
+            if (consume('}')) return true;
+            for (;;) {
+                std::string key;
+                if (!parseString(key) || !consume(':') || !skipValue()) return false;
+                if (consume('}')) return true;
+                if (!consume(',')) return false;
+            }
+        }
+        if (c == '[') {
+            ++pos;
+            if (consume(']')) return true;
+            for (;;) {
+                if (!skipValue()) return false;
+                if (consume(']')) return true;
+                if (!consume(',')) return false;
+            }
+        }
+        if (text.compare(pos, 4U, "true") == 0) { pos += 4U; return true; }
+        if (text.compare(pos, 5U, "false") == 0) { pos += 5U; return true; }
+        if (text.compare(pos, 4U, "null") == 0) { pos += 4U; return true; }
+        double num = 0.0;
+        return parseNumber(num);
+    }
+};
+
+} // namespace
+
+namespace {
+
+bool parseRegionArrayJson(
+    JsonCursor& cursor,
+    const char* arrayName,
+    std::vector<BoxRefinementRegion2D>& parsed,
+    std::string& errorMessage) {
+    const auto fail = [&](const std::string& msg) {
+        errorMessage = msg;
+        return false;
+    };
+    if (!cursor.consume('[')) return fail(std::string("\"") + arrayName + "\" must be a JSON array");
+    if (cursor.consume(']')) return true;
+    for (;;) {
+        if (!cursor.consume('{')) return fail("each region entry must be a JSON object");
+        double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0, levelNum = -1.0;
+        bool hasXmin = false, hasYmin = false, hasXmax = false, hasYmax = false, hasLevel = false;
+        if (!cursor.consume('}')) {
+            for (;;) {
+                std::string field;
+                if (!cursor.parseString(field) || !cursor.consume(':'))
+                    return fail("malformed region object key/value");
+                if (field == "xmin") { if (!cursor.parseNumber(xmin)) return fail("invalid region xmin"); hasXmin = true; }
+                else if (field == "ymin") { if (!cursor.parseNumber(ymin)) return fail("invalid region ymin"); hasYmin = true; }
+                else if (field == "xmax") { if (!cursor.parseNumber(xmax)) return fail("invalid region xmax"); hasXmax = true; }
+                else if (field == "ymax") { if (!cursor.parseNumber(ymax)) return fail("invalid region ymax"); hasYmax = true; }
+                else if (field == "target_level" || field == "targetLevel") {
+                    if (!cursor.parseNumber(levelNum)) return fail("invalid region target_level");
+                    hasLevel = true;
+                } else {
+                    if (!cursor.skipValue()) return fail("malformed value in region object");
+                }
+                if (cursor.consume('}')) break;
+                if (!cursor.consume(',')) return fail("expected ',' or '}' in region object");
+            }
+        }
+        if (!hasXmin || !hasYmin || !hasXmax || !hasYmax || !hasLevel)
+            return fail("region entry missing xmin/ymin/xmax/ymax/target_level");
+        if (!(xmax > xmin) || !(ymax > ymin))
+            return fail("region entry must satisfy xmax > xmin and ymax > ymin");
+        if (levelNum < 0.0 || levelNum > 28.0 || std::floor(levelNum) != levelNum)
+            return fail("region target_level must be an integer in [0, 28]");
+        parsed.push_back({{{xmin, ymin}, {xmax, ymax}}, static_cast<std::size_t>(levelNum)});
+        if (cursor.consume(']')) break;
+        if (!cursor.consume(',')) return fail("expected ',' or ']' in region array");
+    }
+    return true;
+}
+
+bool parseAdaptiveRegionsImpl(
+    const std::string& jsonText,
+    bool preferCellTargets,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error) {
+    const auto fail = [&](const std::string& msg) {
+        if (error) *error = msg;
+        return false;
+    };
+    JsonCursor cursor{jsonText, 0U};
+    if (!cursor.consume('{')) return fail("expected JSON object for refinement regions");
+    bool sawBoxes = false;
+    bool sawCellTargets = false;
+    std::vector<BoxRefinementRegion2D> parsedBoxes;
+    std::vector<BoxRefinementRegion2D> parsedCells;
+    std::string arrayError;
+    if (!cursor.consume('}')) {
+        for (;;) {
+            std::string key;
+            if (!cursor.parseString(key) || !cursor.consume(':'))
+                return fail("malformed top-level JSON key/value");
+            if (key == "boxes") {
+                sawBoxes = true;
+                if (!parseRegionArrayJson(cursor, "boxes", parsedBoxes, arrayError))
+                    return fail(arrayError);
+            } else if (key == "cell_targets") {
+                sawCellTargets = true;
+                if (!parseRegionArrayJson(cursor, "cell_targets", parsedCells, arrayError))
+                    return fail(arrayError);
+            } else {
+                if (!cursor.skipValue()) return fail("malformed value in refinement regions JSON");
+            }
+            if (cursor.consume('}')) break;
+            if (!cursor.consume(',')) return fail("expected ',' or '}' in top-level JSON object");
+        }
+    }
+    cursor.skipWs();
+    if (cursor.pos != jsonText.size()) return fail("trailing characters after refinement regions JSON");
+    if (preferCellTargets && sawCellTargets) {
+        out.insert(out.end(), parsedCells.begin(), parsedCells.end());
+        return true;
+    }
+    if (sawBoxes) {
+        out.insert(out.end(), parsedBoxes.begin(), parsedBoxes.end());
+        return true;
+    }
+    return fail(preferCellTargets
+        ? "refinement field JSON is missing \"cell_targets\" and \"boxes\" arrays"
+        : "refinement boxes JSON is missing \"boxes\" array");
+}
+
+} // namespace
+
+bool parseBoxRefinementRegionsJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error) {
+    return parseAdaptiveRegionsImpl(jsonText, false, out, error);
+}
+
+bool parseCellRefinementFieldJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error) {
+    return parseAdaptiveRegionsImpl(jsonText, true, out, error);
 }
 
 } // namespace cartmesh2d

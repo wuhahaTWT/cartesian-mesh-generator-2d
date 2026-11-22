@@ -147,3 +147,77 @@ test('the dry run leaves regions out, since it only resolves the field', () => {
   const frame = { centreX: 0, centreY: 0, bodySpan: 1 };
   assert.ok(!buildInvocation(job, { ...paths, frame }, { dryRun: true }).args.includes('--refine-box'));
 });
+
+
+test('shape repartition is an explicit pure Cut-cell strategy and is omitted from sizing probes', () => {
+  const { job } = validateJob(cutcell({cutcellStrategy: 'shape'}));
+  assert.ok(buildInvocation(job, paths).args.includes('--shape-agglomeration'));
+  assert.ok(!buildInvocation(job, paths, {dryRun: true}).args.includes('--shape-agglomeration'));
+  assert.throws(() => validateJob(cutcell({cutcellStrategy: 'unknown'})), /处理策略/);
+});
+
+test('fluent .msh export flag is forwarded for fluid runs and omitted on dry runs', () => {
+  const { job } = validateJob(cutcell());
+  const withFluent = buildInvocation(job, { ...paths, fluentMshPath: '/tmp/out/circle.msh' }).args;
+  const idx = withFluent.indexOf('--fluent-msh');
+  assert.ok(idx > 0 && withFluent[idx + 1] === '/tmp/out/circle.msh');
+  assert.ok(!buildInvocation(job, { ...paths, fluentMshPath: '/tmp/out/circle.msh' }, { dryRun: true }).args.includes('--fluent-msh'));
+});
+
+test('hybrid relative sizing forwards refinement boxes to cartmesh2d_hybrid_cli', () => {
+  const { job } = validateJob({
+    method: 'hybrid',
+    geometryPath: '/tmp/circle.xy',
+    outputDirectory: '/tmp/out',
+    sizingMode: 'relative',
+    wallRelativeSize: 0.05,
+    backgroundRelativeSize: 0.4,
+    farFieldSpans: 2,
+    cellsPerLevel: 3,
+    nLayers: 4,
+    firstLayerRelativeSize: 0.01,
+    growthRatio: 1.2,
+    extrusionRelativeSize: 0.01,
+    refineBoxes: [{ xmin: 0.5, xmax: 3.0, ymin: -0.6, ymax: 0.6, levelsBelowWall: 1 }]
+  });
+  const frame = { centreX: 0, centreY: 0, bodySpan: 2 };
+  const inv = buildInvocation(job, { ...paths, frame });
+  assert.equal(inv.executable, 'cartmesh2d_hybrid_cli');
+  const idx = inv.args.indexOf('--refine-box');
+  assert.ok(idx > 0, 'hybrid invocation must include --refine-box');
+  assert.deepEqual(inv.args.slice(idx + 1, idx + 5), ['1', '-1.2', '6', '1.2']);
+});
+
+test('cell-level refineFieldJsonPath replaces --refine-box for cutcell and hybrid, omitted on dryRun', () => {
+  const frame = { centreX: 0, centreY: 0, bodySpan: 2 };
+  const fieldPath = '/tmp/out/body.input-adaptive-field.json';
+  const cutJob = validateJob(cutcell({
+    refineBoxes: [{ xmin: 0.5, xmax: 3.0, ymin: -0.6, ymax: 0.6, levelsBelowWall: 1 }]
+  })).job;
+  const cutInv = buildInvocation(cutJob, { ...paths, frame, refineFieldJsonPath: fieldPath });
+  assert.equal(cutInv.args[cutInv.args.indexOf('--refine-field-json') + 1], fieldPath);
+  assert.ok(!cutInv.args.includes('--refine-box'));
+  assert.ok(!buildInvocation(cutJob, { ...paths, frame, refineFieldJsonPath: fieldPath }, { dryRun: true })
+    .args.includes('--refine-field-json'));
+
+  const hybridJob = validateJob({
+    method: 'hybrid',
+    geometryPath: '/tmp/circle.xy',
+    outputDirectory: '/tmp/out',
+    sizingMode: 'relative',
+    wallRelativeSize: 0.05,
+    backgroundRelativeSize: 0.4,
+    farFieldSpans: 2,
+    cellsPerLevel: 3,
+    nLayers: 4,
+    firstLayerRelativeSize: 0.01,
+    growthRatio: 1.2,
+    extrusionRelativeSize: 0.01,
+    refineBoxes: [{ xmin: 0.5, xmax: 3.0, ymin: -0.6, ymax: 0.6, levelsBelowWall: 1 }]
+  }).job;
+  const hybridInv = buildInvocation(hybridJob, { ...paths, frame, refineFieldJsonPath: fieldPath });
+  assert.equal(hybridInv.args[hybridInv.args.indexOf('--refine-field-json') + 1], fieldPath);
+  assert.ok(!hybridInv.args.includes('--refine-box'));
+  assert.ok(!buildInvocation(hybridJob, { ...paths, frame, refineFieldJsonPath: fieldPath }, { dryRun: true })
+    .args.includes('--refine-field-json'));
+});

@@ -1,5 +1,6 @@
 #include "cartmesh2d/hybrid/HybridMesh2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include "cartmesh2d/io/FluentMsh2D.hpp"
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/sizing/SizeField2D.hpp"
 #include "cartmesh2d/sizing/MeshResolution2D.hpp"
@@ -119,7 +120,11 @@ void usage(std::ostream& out = std::cerr) {
            "  --reference-length <value> --wall-relative-size <h/Lref>\n"
            "  --background-relative-size <h/Lref> --far-field-spans <padding/Lref>\n"
            "  --first-layer-relative-size <height/Lref> --cells-per-level <n>\n"
-           "  --max-safe-wall-level <n> --allow-unsafe-wall-level --size-field-only\n";
+           "  --max-safe-wall-level <n> --allow-unsafe-wall-level --size-field-only\n"
+           "  --refine-box <xmin> <ymin> <xmax> <ymax> <target-level>\n"
+           "  --refine-boxes-json <file.adaptive.json>\n"
+           "  --refine-field-json <file.adaptive.json>\n"
+           "  --fluent-msh <file.msh>\n";
 }
 
 } // namespace
@@ -152,6 +157,8 @@ int main(int argc, char** argv) {
     std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
     std::optional<ResolvedSizeField2D> resolvedSizeField;
     std::optional<double> firstLayerRelativeSize;
+    std::vector<BoxRefinementRegion2D> extraBoxRegions;
+    std::optional<std::filesystem::path> fluentMshPath;
     bool sizeFieldOnly=false;
     const auto requireSizeField = [&]() -> SizeFieldPolicy2D& {
         if (!sizeFieldPolicy) sizeFieldPolicy.emplace();
@@ -163,6 +170,55 @@ int main(int argc, char** argv) {
     }
     for (int i=optionStart; i<argc; ++i) {
         const std::string option=argv[i];
+        if (option=="--fluent-msh") {
+            if (++i>=argc || fluentMshPath) {
+                std::cerr<<"--fluent-msh requires one <file.msh> path\n";
+                return EXIT_FAILURE;
+            }
+            fluentMshPath=std::filesystem::path(argv[i]);
+            continue;
+        }
+        if (option=="--refine-box") {
+            BoxRefinementRegion2D region;
+            if (i+5>=argc ||
+                !parseDouble(argv[i+1],region.bounds.min.x) ||
+                !parseDouble(argv[i+2],region.bounds.min.y) ||
+                !parseDouble(argv[i+3],region.bounds.max.x) ||
+                !parseDouble(argv[i+4],region.bounds.max.y) ||
+                !parseSize(argv[i+5],region.targetLevel) ||
+                !(region.bounds.max.x>region.bounds.min.x) ||
+                !(region.bounds.max.y>region.bounds.min.y) ||
+                region.targetLevel>28U) {
+                std::cerr<<"invalid --refine-box <xmin> <ymin> <xmax> <ymax> <target-level>\n";
+                return EXIT_FAILURE;
+            }
+            i+=5;
+            extraBoxRegions.push_back(region);
+            continue;
+        }
+        if (option=="--refine-boxes-json" || option=="--refine-field-json") {
+            const bool cellField = (option == "--refine-field-json");
+            if (++i>=argc) {
+                std::cerr<<option<<" requires <file.adaptive.json>\n";
+                return EXIT_FAILURE;
+            }
+            std::ifstream in(argv[i]);
+            if (!in) {
+                std::cerr<<"cannot open "<<option<<" file: "<<argv[i]<<'\n';
+                return EXIT_FAILURE;
+            }
+            std::ostringstream buffer;
+            buffer<<in.rdbuf();
+            std::string parseError;
+            const bool ok = cellField
+                ? parseCellRefinementFieldJson2D(buffer.str(),extraBoxRegions,&parseError)
+                : parseBoxRefinementRegionsJson2D(buffer.str(),extraBoxRegions,&parseError);
+            if (!ok) {
+                std::cerr<<"invalid "<<option<<" file: "<<parseError<<'\n';
+                return EXIT_FAILURE;
+            }
+            continue;
+        }
         if (option=="--size-field" || option=="--size-field-only") {
             (void)requireSizeField();
             if (option=="--size-field-only") sizeFieldOnly=true;
@@ -327,6 +383,14 @@ int main(int argc, char** argv) {
         }
         if (sizeFieldOnly) return EXIT_SUCCESS;
     }
+    for (const auto& region : extraBoxRegions) {
+        if (region.targetLevel > maxLevel) {
+            std::cerr << "--refine-box level " << region.targetLevel
+                      << " exceeds hybrid max-level (" << maxLevel << ")\n";
+            return EXIT_FAILURE;
+        }
+        refinement.boxRegions.push_back(region);
+    }
     resolutionTargets.firstLayerHeight=layerParameters.thickness;
     resolutionTargets.requestedLayerCount=layerParameters.nLayers;
     if (resolvedSizeField) {
@@ -481,7 +545,7 @@ int main(int argc, char** argv) {
                  <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" solver_cells="<<fallback.solverTopology.cells.size()
                  <<" area_error="<<fallback.areaError
-                 <<" solver_quality=pass openfoam="<<openFoamStatus
+                 <<" solver_quality="<<(fallback.solverQuality.valid()?"no_advisories":"advisory")<<" openfoam="<<openFoamStatus
                  <<" vtk="<<vtkPath<<'\n';
         printTiming(elapsedSeconds(exportStart));
         return EXIT_SUCCESS;
@@ -551,8 +615,8 @@ int main(int argc, char** argv) {
 
     std::string openFoamStatus = "not_requested";
     if (argc == 12) {
-        if (!hybrid.solverQuality.valid() || !hybrid.solverTopology.valid()) {
-            std::cerr << "hybrid solver-quality gate failed; refusing OpenFOAM output\n";
+        if (!hybrid.solverQuality.exportable() || !hybrid.solverTopology.valid()) {
+            std::cerr << "invalid hybrid topology/cell geometry; refusing OpenFOAM output\n";
             return EXIT_FAILURE;
         }
         const auto foam = writeExtrudedOpenFoam2D(
@@ -563,6 +627,20 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
         openFoamStatus = "written";
+    }
+    std::string fluentStatus = "not_requested";
+    if (fluentMshPath) {
+        if (!hybrid.solverQuality.exportable() || !hybrid.solverTopology.valid()) {
+            std::cerr << "invalid hybrid topology/cell geometry; refusing Fluent .msh output\n";
+            return EXIT_FAILURE;
+        }
+        const auto fluent = writeFluentMsh2D(
+            hybrid.solverTopology, domain, originalWalls, *fluentMshPath, &error);
+        if (!fluent.valid()) {
+            std::cerr << "Fluent .msh output failed: " << error << '\n';
+            return EXIT_FAILURE;
+        }
+        fluentStatus = fluentMshPath->string();
     }
 
     std::cout << "hybrid_status=success cells=" << hybrid.metrics.unifiedCellCount              << " solver_cells=" << hybrid.metrics.solverCellCount
@@ -586,7 +664,7 @@ int main(int argc, char** argv) {
               << " lineage_mismatches="
               << hybrid.sourceLineageAudit.mismatchedCells
               << " solver_quality="
-              << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << (hybrid.solverQuality.valid() ? "no_advisories" : "advisory")
               << " target_solver_issues="
               << hybrid.metrics.targetPolicyRepairIssueCountBefore << "->"
               << hybrid.metrics.targetPolicyRepairIssueCountAfter
@@ -686,6 +764,7 @@ int main(int argc, char** argv) {
               << " q51_declined="
               << hybrid.metrics.q51OuterTransitionRadialDeclined
               << " openfoam=" << openFoamStatus
+              << " fluent_msh=" << fluentStatus
               << " vtk=" << vtkPath
               << " solver_vtk=" << solverVtkPath
               << " solver_cm2d=" << solverCm2dPath

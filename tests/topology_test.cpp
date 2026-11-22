@@ -411,6 +411,48 @@ int main() {
     check(thinMesh.cells.size() == 2 && hasPoint(thinMesh, thinWidth, 0.0, 1.0e-14),
           "thin-cell interface remains a distinct canonical coordinate");
 
+    // Minimal glancing-corner weld regression: a shallow solid wall enters a
+    // leaf at y=0.5 (dx=1.5e-3*h left of grid corner x=0.5) and exits on x=0.5
+    // within gridCornerWeldFraction (1e-4*h) below y=0.5. The registry welds the
+    // exit to (0.5,0.5), turning the lower leaf solid while the upper fluid leaf
+    // retains the canonical welded edge [a, (0.5,0.5)] as EmbeddedBoundary.
+    {
+        const Domain2D weldDomain{{{0.0, 0.0}, {1.0, 1.0}}};
+        // Solid polygon whose top-right edge crosses y=0.5 at x=0.49925 and
+        // crosses x=0.5 at y=0.5 - 2e-5 (within 1e-4 * h where h=0.5).
+        BoundaryLoop weldSolid({
+            {0.1, 0.1}, {0.6, 0.1}, {0.6, 0.49731333333333333},
+            {0.49925, 0.5}, {0.1, 0.51064666666666667}
+        });
+        BoundaryRegion2D weldRegion(weldSolid);
+        IntersectionRegistryPolicy2D regPol;
+        regPol.gridCornerWeldFractionOfLocalH = 1.0e-4;
+        auto reg = std::make_shared<IntersectionRegistry2D>(regPol);
+        reg->configureGrid(weldDomain.bounds, 1);
+        const std::vector<QuadtreeLeaf2D> leaves{
+            {0U, 0U, 1U, 0U, 0U, {{0.0, 0.0}, {0.5, 0.5}}, CellClass::Intersected},
+            {1U, 1U, 1U, 1U, 0U, {{0.5, 0.0}, {1.0, 0.5}}, CellClass::Intersected},
+            {2U, 2U, 1U, 0U, 1U, {{0.0, 0.5}, {0.5, 1.0}}, CellClass::Intersected},
+            {3U, 3U, 1U, 1U, 1U, {{0.5, 0.5}, {1.0, 1.0}}, CellClass::Outside}
+        };
+        std::vector<CutCell2D> weldCells;
+        std::size_t sid = 0;
+        for (const auto& leaf : leaves) {
+            auto parts = buildCutCellsShared(
+                leaf, weldRegion, *reg, IntersectionSource2D::WallCartesian,
+                FluidRegion2D::Exterior);
+            for (auto& c : parts) {
+                c.sourceId = sid++;
+                c.sourceKey = leaf.key;
+                weldCells.push_back(std::move(c));
+            }
+        }
+        const auto weldTopo = buildGlobalTopology(
+            weldCells, weldDomain, weldRegion, TolerancePolicy{}, reg);
+        check(weldTopo.valid() && weldTopo.audit.unclassifiedBoundaryEdges == 0U,
+              "shallow-corner grid-welded glancing edge classifies as EmbeddedBoundary");
+    }
+
     if (failures != 0) {
         std::cerr << failures << " test(s) failed\n";
         return EXIT_FAILURE;

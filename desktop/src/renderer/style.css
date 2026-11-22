@@ -79,7 +79,7 @@ body {
 .panel {
   background: var(--panel);
   border-right: 1px solid var(--line);
-  padding: 13px 16px 20px;
+  padding: 13px 16px 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -121,10 +121,21 @@ button:disabled { opacity: .4; cursor: default; }
 button.wide { width: 100%; }
 button.ghost { background: transparent; }
 
+.panel-footer {
+  position: sticky;
+  bottom: 0;
+  margin: auto -16px 0;
+  padding: 10px 16px 14px;
+  background: var(--panel);
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 6px;
+  z-index: 3;
+}
 button.primary {
+  width: 100%;
   background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
   font-weight: 600; padding: 11px; letter-spacing: .04em;
-  position: sticky; bottom: 0;
 }
 button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 
@@ -469,6 +480,7 @@ body[data-theme="duet"] .canvasWrap.light .legend {
 @media (max-width: 900px) {
   .shell { grid-template-columns: 292px 1fr; }
   .panel { padding-left: 13px; padding-right: 13px; }
+  .panel-footer { margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px; }
   .results {
     grid-template-columns: minmax(180px, 220px) minmax(250px, 1fr);
     grid-template-rows: repeat(6, max-content);

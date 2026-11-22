@@ -273,3 +273,25 @@ test('temperature binding rejects nonfinite or mismatched final-mesh cells', () 
     assert.throws(() => view.setThermalFields(cells), /不匹配/);
   assert.equal(view.thermalFields, null);
 });
+
+test('adaptive indicator heatmap binds dimensionless cell scores and clears with mesh reset', () => {
+  const { sandbox } = viewportSandbox();
+  const { canvas } = fakeCanvas();
+  const mesh = {
+    bounds: { minX: 0, minY: 0, maxX: 2, maxY: 1 }, minLevel: 0, maxLevel: 0,
+    vertices: [[0, 0], [1, 0], [1, 1], [0, 1], [2, 0], [2, 1]],
+    cells: [{ id: 0, level: 0, vertices: [0, 1, 2, 3] }, { id: 1, level: 0, vertices: [1, 4, 5, 2] }], edges: []
+  };
+  const view = new sandbox.window.MeshView.Viewport(canvas);
+  view.setMesh(mesh);
+  view.setAdaptiveFields([{ id: 0, indicator: 0.05, selected: 0 }, { id: 1, indicator: 0.92, selected: 1 }]);
+  view.mode = 'adaptive';
+  view.draw();
+  assert.equal(view.fieldRange.min, 0.05);
+  assert.equal(view.fieldRange.max, 0.92);
+  assert.equal(view.fieldRange.key, 'indicator');
+  assert.equal(view.fieldPalette(), sandbox.window.MeshView.ADAPTIVE_RAMP);
+  assert.throws(() => view.setAdaptiveFields([{ id: 0, indicator: NaN }]), /不匹配/);
+  view.setMesh(mesh);
+  assert.equal(view.adaptiveFields, null);
+});

@@ -131,6 +131,7 @@ body[data-theme="duet"] .panel {
 body[data-theme="duet"] .titlebar { background: rgba(12, 11, 16, .8); }
 body[data-theme="duet"] .statusbar,
 body[data-theme="duet"] .results { background: rgba(25, 23, 31, .73); }
+body[data-theme="duet"] .panel-footer { background: rgba(20, 17, 25, .94); }
 body[data-theme="duet"] .logpanel { background: rgba(20, 18, 25, .86); }
 body[data-theme="duet"] .panel .note,
 body[data-theme="duet"] .panel .field,

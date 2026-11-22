@@ -136,6 +136,35 @@ int main() {
               "every stabilized cell has positive simple polygon geometry");
     }
 
+    // Minimal concave-pocket chained small-cell regression: two adjacent small
+    // cells S0 (alpha=0.04) and S1 (alpha=0.05) where S0 only touches S1 and S1
+    // touches stable cell L (alpha=1.0). Strict default rejects chaining;
+    // opt-in bounded chaining merges {S0, S1, L} cleanly with exact area.
+    {
+        const Domain2D chainDomain{{{0.0, 0.0}, {2.0, 1.0}}};
+        BoundaryLoop chainBoundary({{0.91, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.91, 1.0}});
+        std::vector<CutCell2D> chainCells;
+        chainCells.push_back(polygonCell(100, 100, {{0.91, 0.0}, {0.95, 0.0}, {0.95, 1.0}, {0.91, 1.0}},
+                                         {{0.0, 0.0}, {1.0, 1.0}}, CutCellKind::Cut));
+        chainCells.push_back(polygonCell(101, 101, {{0.95, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.95, 1.0}},
+                                         {{0.0, 0.0}, {1.0, 1.0}}, CutCellKind::Cut));
+        chainCells.push_back(polygonCell(102, 102, {{1.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {1.0, 1.0}},
+                                         {{1.0, 0.0}, {2.0, 1.0}}, CutCellKind::Full));
+        const auto chainTopo = buildGlobalTopology(chainCells, chainDomain, chainBoundary);
+        SmallCellPolicy2D strictPol; strictPol.areaFractionThreshold = 0.10;
+        const auto strictAnalysis = analyzeSmallCells(chainCells, chainTopo, strictPol);
+        const auto strictMerged = agglomerateSmallCells(chainCells, chainTopo, strictAnalysis,
+                                                        chainDomain, chainBoundary);
+        check(!strictMerged.valid(), "strict 2D-5B still rejects small-to-small chaining by default");
+        auto boundedAnalysis = strictAnalysis;
+        boundedAnalysis.policy.allowBoundedSmallChaining = true;
+        const auto boundedMerged = agglomerateSmallCells(chainCells, chainTopo, boundedAnalysis,
+                                                         chainDomain, chainBoundary);
+        check(boundedMerged.valid() && boundedMerged.outputCellCount == 1U &&
+              std::abs(boundedMerged.areaError) <= 1e-12,
+              "opt-in bounded small-cell chaining merges pocket cleanly with exact area");
+    }
+
     if (failures) { std::cerr<<failures<<" test(s) failed\n"; return EXIT_FAILURE; }
     std::cout<<"cartmesh2d 2D-5B agglomeration tests passed\n";
     return EXIT_SUCCESS;

@@ -1,0 +1,608 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "qualified_flame": false,
+  "mature_combustion_goal_complete": false,
+  "scope": "Ten-microsecond native evolution comparing legacy and conservative full-chemistry BVP initial states on the same reference grid and native mesh.",
+  "same_native_binary_sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0",
+  "same_reference_grid_points": 3446,
+  "same_native_cells": 890,
+  "same_controls": {
+    "method": "CVODES-BDF",
+    "errorControlCorrection": "fullPredictorCorrection",
+    "maximumOrder": 5,
+    "maximumNonlinearIterations": 3,
+    "continueDampedNewton": false,
+    "reflectSpeciesNewton": true,
+    "relativeTolerance": 1e-07,
+    "spatialOrder": 2,
+    "jacobianAdvectionOrder": 1,
+    "absoluteConservedTolerance": 1e-12,
+    "absoluteSpeciesFraction": 1e-18,
+    "maximumStep": 1e-05,
+    "maximumResidualEvaluations": 100000,
+    "sampleEveryAcceptedSteps": 50,
+    "maximumSamples": 128
+  },
+  "same_binding_except_reservoir_values": true,
+  "boundary_changes": [
+    {
+      "record": 1,
+      "legacy": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507",
+      "conservative": "BC 2 2.4955985559518963 0 0 0.6733105993813111 -10519.651975549006 0.015451684460002328 0 7.5274998413736762e-18 0.15328093977900373 0 4.6474751613853704e-20 2.1042480070049828e-18 2.332472300706427e-19 2.6216981437456943e-19 0.50457797514230507"
+    },
+    {
+      "record": 448,
+      "legacy": "BC 2 2.4897081244333443 0 0 0.6733105993813111 -10519.651975548812 0.015451684460002316 4.7335315340472308e-19 0 0.15328093977900373 3.4965560996139411e-18 0 0 0 0 0.50457797514230507",
+      "conservative": "BC 2 2.4955985559518963 0 0 0.6733105993813111 -10519.651975549006 0.015451684460002328 0 7.5274998413736762e-18 0.15328093977900373 0 4.6474751613853704e-20 2.1042480070049828e-18 2.332472300706427e-19 2.6216981437456943e-19 0.50457797514230507"
+    }
+  ],
+  "inlet_reference_velocity_m_per_s": {
+    "legacy": 2.4897081244333443,
+    "conservative": 2.4955985559518963
+  },
+  "common_marker_temperature_K": 1320.983240476264,
+  "metrics": {
+    "legacy": {
+      "time_s": 1e-05,
+      "steps": 636,
+      "maximum_temperature_drift_K": 0.30809861422790163,
+      "maximum_temperature_shape_difference_after_translation_K": 0.5704605627286128,
+      "marker_displacement_m": -5.3697453650247695e-08,
+      "excluded_columns": 1,
+      "series": [
+        {
+          "time_s": 0,
+          "steps": 0,
+          "maximum_temperature_drift_K": 0.0,
+          "maximum_temperature_shape_difference_after_translation_K": 0.0,
+          "marker_displacement_m": 0.0,
+          "excluded_columns": 0
+        },
+        {
+          "time_s": 2.354182887953606e-07,
+          "steps": 50,
+          "maximum_temperature_drift_K": 0.009992266091330748,
+          "maximum_temperature_shape_difference_after_translation_K": 0.014700848485858842,
+          "marker_displacement_m": -2.731581322246157e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.496940702054874e-07,
+          "steps": 100,
+          "maximum_temperature_drift_K": 0.01959593324022535,
+          "maximum_temperature_shape_difference_after_translation_K": 0.03357151171633177,
+          "marker_displacement_m": -5.4711871144697e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 8.639698516156142e-07,
+          "steps": 150,
+          "maximum_temperature_drift_K": 0.028663668283343213,
+          "maximum_temperature_shape_difference_after_translation_K": 0.052904972903661474,
+          "marker_displacement_m": -7.907727484976479e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1.2410527884089055e-06,
+          "steps": 200,
+          "maximum_temperature_drift_K": 0.040316175943416965,
+          "maximum_temperature_shape_difference_after_translation_K": 0.07746239177856751,
+          "marker_displacement_m": -1.0988054910399114e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1.9468874696477927e-06,
+          "steps": 250,
+          "maximum_temperature_drift_K": 0.06353094180690277,
+          "maximum_temperature_shape_difference_after_translation_K": 0.12445996964299866,
+          "marker_displacement_m": -1.6938711653799454e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 2.949994074015039e-06,
+          "steps": 300,
+          "maximum_temperature_drift_K": 0.09691736101694914,
+          "maximum_temperature_shape_difference_after_translation_K": 0.1969385864359765,
+          "marker_displacement_m": -2.511848159504615e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 3.5159051918922767e-06,
+          "steps": 350,
+          "maximum_temperature_drift_K": 0.1149692646024505,
+          "maximum_temperature_shape_difference_after_translation_K": 0.2362713383722621,
+          "marker_displacement_m": -2.9344865495883887e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 4.058160319806475e-06,
+          "steps": 400,
+          "maximum_temperature_drift_K": 0.1316395708543041,
+          "maximum_temperature_shape_difference_after_translation_K": 0.27238724525477664,
+          "marker_displacement_m": -3.308657507000712e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 4.600415447720672e-06,
+          "steps": 450,
+          "maximum_temperature_drift_K": 0.14739013323605832,
+          "maximum_temperature_shape_difference_after_translation_K": 0.3067080565017477,
+          "marker_displacement_m": -3.652727761406516e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.14267057563487e-06,
+          "steps": 500,
+          "maximum_temperature_drift_K": 0.162393151190372,
+          "maximum_temperature_shape_difference_after_translation_K": 0.34168706706054763,
+          "marker_displacement_m": -3.965153820215117e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.684925703549068e-06,
+          "steps": 550,
+          "maximum_temperature_drift_K": 0.17793908048122375,
+          "maximum_temperature_shape_difference_after_translation_K": 0.37526013392096047,
+          "marker_displacement_m": -4.245152763343585e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 7.164785190817435e-06,
+          "steps": 600,
+          "maximum_temperature_drift_K": 0.222709306713341,
+          "maximum_temperature_shape_difference_after_translation_K": 0.4558769569772494,
+          "marker_displacement_m": -4.842823199402435e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1e-05,
+          "steps": 636,
+          "maximum_temperature_drift_K": 0.30809861422790163,
+          "maximum_temperature_shape_difference_after_translation_K": 0.5704605627286128,
+          "marker_displacement_m": -5.3697453650247695e-08,
+          "excluded_columns": 1
+        }
+      ],
+      "sample_count": 14,
+      "initial_species_residual": 0.008295195464060098,
+      "final_species_residual": 0.011050168832799316,
+      "initial_axial_momentum_flux_span_Pa": 0.48321192570438143,
+      "hydrogen_consumption_initial_kg_per_m2_s": 0.038141668242764104,
+      "hydrogen_consumption_final_kg_per_m2_s": 0.03810825553524624,
+      "rhs_calls": 3604,
+      "elapsed_seconds_including_all_IO": 293.42651308403583,
+      "budget_defects": {
+        "mass_budget_per_initial_mass": 1.3153139921882831e-15,
+        "element_budget_per_initial_mass": 1.0065857191116476e-15,
+        "energy_budget_scaled": 1.8581889538373713e-16,
+        "momentum_budget_scaled": 2.80614771249982e-15
+      },
+      "marker_displacements_m": {
+        "600.0": 6.67785599994114e-08,
+        "1000.0": 2.4145072184678096e-08,
+        "1500.0": -1.205169392129446e-07,
+        "2000.0": -2.6145647228671687e-07
+      }
+    },
+    "conservative": {
+      "time_s": 1e-05,
+      "steps": 1318,
+      "maximum_temperature_drift_K": 0.44761178456815287,
+      "maximum_temperature_shape_difference_after_translation_K": 0.4452154617030146,
+      "marker_displacement_m": 4.949868275677671e-10,
+      "excluded_columns": 1,
+      "series": [
+        {
+          "time_s": 0,
+          "steps": 0,
+          "maximum_temperature_drift_K": 0.0,
+          "maximum_temperature_shape_difference_after_translation_K": 0.0,
+          "marker_displacement_m": 0.0,
+          "excluded_columns": 0
+        },
+        {
+          "time_s": 1.9132084953104697e-07,
+          "steps": 50,
+          "maximum_temperature_drift_K": 0.02030852583447995,
+          "maximum_temperature_shape_difference_after_translation_K": 0.0214962111595014,
+          "marker_displacement_m": -1.73322313619384e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 4.4929840039233576e-07,
+          "steps": 100,
+          "maximum_temperature_drift_K": 0.03283064227161958,
+          "maximum_temperature_shape_difference_after_translation_K": 0.04396961537872812,
+          "marker_displacement_m": -3.579582706636497e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 8.414805097829282e-07,
+          "steps": 150,
+          "maximum_temperature_drift_K": 0.04558480196169512,
+          "maximum_temperature_shape_difference_after_translation_K": 0.07211782975787173,
+          "marker_displacement_m": -5.520632482408638e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1.2336626191735206e-06,
+          "steps": 200,
+          "maximum_temperature_drift_K": 0.0619791992876344,
+          "maximum_temperature_shape_difference_after_translation_K": 0.09734200018192496,
+          "marker_displacement_m": -7.3578118858080854e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1.625844728564113e-06,
+          "steps": 250,
+          "maximum_temperature_drift_K": 0.07681527259774157,
+          "maximum_temperature_shape_difference_after_translation_K": 0.12006779268199352,
+          "marker_displacement_m": -8.999397624678829e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 2.0180268379547085e-06,
+          "steps": 300,
+          "maximum_temperature_drift_K": 0.0909216193708744,
+          "maximum_temperature_shape_difference_after_translation_K": 0.14121067496262185,
+          "marker_displacement_m": -1.0463464476806461e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 2.4102089473453114e-06,
+          "steps": 350,
+          "maximum_temperature_drift_K": 0.10730062407469632,
+          "maximum_temperature_shape_difference_after_translation_K": 0.16060895058126334,
+          "marker_displacement_m": -1.173330451201271e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 2.8023910567359143e-06,
+          "steps": 400,
+          "maximum_temperature_drift_K": 0.12438032108707375,
+          "maximum_temperature_shape_difference_after_translation_K": 0.1783583434528282,
+          "marker_displacement_m": -1.2604309080829768e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 3.1945731661265172e-06,
+          "steps": 450,
+          "maximum_temperature_drift_K": 0.14145345610825188,
+          "maximum_temperature_shape_difference_after_translation_K": 0.19562227473784333,
+          "marker_displacement_m": -1.3304427323723722e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 3.58675527551712e-06,
+          "steps": 500,
+          "maximum_temperature_drift_K": 0.15818590604976634,
+          "maximum_temperature_shape_difference_after_translation_K": 0.21418240785578746,
+          "marker_displacement_m": -1.3817859387948994e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 3.978937384907715e-06,
+          "steps": 550,
+          "maximum_temperature_drift_K": 0.17460619438406866,
+          "maximum_temperature_shape_difference_after_translation_K": 0.23198436589973426,
+          "marker_displacement_m": -1.4158804281794168e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 4.371119494298296e-06,
+          "steps": 600,
+          "maximum_temperature_drift_K": 0.19064999242448266,
+          "maximum_temperature_shape_difference_after_translation_K": 0.24866848183842194,
+          "marker_displacement_m": -1.4316810952041958e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 4.763301603688878e-06,
+          "steps": 650,
+          "maximum_temperature_drift_K": 0.20640534297410795,
+          "maximum_temperature_shape_difference_after_translation_K": 0.26423136767255073,
+          "marker_displacement_m": -1.426931778465701e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.15548371307946e-06,
+          "steps": 700,
+          "maximum_temperature_drift_K": 0.22191000293389607,
+          "maximum_temperature_shape_difference_after_translation_K": 0.2788104680895458,
+          "marker_displacement_m": -1.4040924402325405e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.547665822470042e-06,
+          "steps": 750,
+          "maximum_temperature_drift_K": 0.23713256335292954,
+          "maximum_temperature_shape_difference_after_translation_K": 0.29274762066972926,
+          "marker_displacement_m": -1.3666144901489097e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 5.939847931860623e-06,
+          "steps": 800,
+          "maximum_temperature_drift_K": 0.2519867518387855,
+          "maximum_temperature_shape_difference_after_translation_K": 0.308893413355122,
+          "marker_displacement_m": -1.3156732047575614e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 6.332030041251205e-06,
+          "steps": 850,
+          "maximum_temperature_drift_K": 0.26769481603366785,
+          "maximum_temperature_shape_difference_after_translation_K": 0.32401582470834,
+          "marker_displacement_m": -1.2491449362730944e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 6.724212150641787e-06,
+          "steps": 900,
+          "maximum_temperature_drift_K": 0.2855176540999764,
+          "maximum_temperature_shape_difference_after_translation_K": 0.33807804917682915,
+          "marker_displacement_m": -1.1657382014557127e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 7.116394260032369e-06,
+          "steps": 950,
+          "maximum_temperature_drift_K": 0.3031099097407832,
+          "maximum_temperature_shape_difference_after_translation_K": 0.3517104748481188,
+          "marker_displacement_m": -1.0670226717815479e-08,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 7.50857636942295e-06,
+          "steps": 1000,
+          "maximum_temperature_drift_K": 0.3204186877677557,
+          "maximum_temperature_shape_difference_after_translation_K": 0.3661176195040525,
+          "marker_displacement_m": -9.549033801528606e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 7.900758478813533e-06,
+          "steps": 1050,
+          "maximum_temperature_drift_K": 0.3394298638706914,
+          "maximum_temperature_shape_difference_after_translation_K": 0.38088693040708677,
+          "marker_displacement_m": -8.306544032471441e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 8.292940588204115e-06,
+          "steps": 1100,
+          "maximum_temperature_drift_K": 0.35968403899914847,
+          "maximum_temperature_shape_difference_after_translation_K": 0.3947295627930316,
+          "marker_displacement_m": -6.931713886909607e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 8.685122697594696e-06,
+          "steps": 1150,
+          "maximum_temperature_drift_K": 0.38025768536272153,
+          "maximum_temperature_shape_difference_after_translation_K": 0.40766515401651304,
+          "marker_displacement_m": -5.420969974995193e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 9.077304806985278e-06,
+          "steps": 1200,
+          "maximum_temperature_drift_K": 0.40062841260544246,
+          "maximum_temperature_shape_difference_after_translation_K": 0.419764822407501,
+          "marker_displacement_m": -3.785023116112396e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 9.46948691637586e-06,
+          "steps": 1250,
+          "maximum_temperature_drift_K": 0.42076686804932706,
+          "maximum_temperature_shape_difference_after_translation_K": 0.43107676137810813,
+          "marker_displacement_m": -2.039211520130091e-09,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 9.861669025766442e-06,
+          "steps": 1300,
+          "maximum_temperature_drift_K": 0.4406528220426935,
+          "maximum_temperature_shape_difference_after_translation_K": 0.44158874639185797,
+          "marker_displacement_m": -1.8511815864930004e-10,
+          "excluded_columns": 1
+        },
+        {
+          "time_s": 1e-05,
+          "steps": 1318,
+          "maximum_temperature_drift_K": 0.44761178456815287,
+          "maximum_temperature_shape_difference_after_translation_K": 0.4452154617030146,
+          "marker_displacement_m": 4.949868275677671e-10,
+          "excluded_columns": 1
+        }
+      ],
+      "sample_count": 28,
+      "initial_species_residual": 0.00872282140155612,
+      "final_species_residual": 0.01171455234655316,
+      "initial_axial_momentum_flux_span_Pa": 0.486278088967083,
+      "hydrogen_consumption_initial_kg_per_m2_s": 0.038252813227631306,
+      "hydrogen_consumption_final_kg_per_m2_s": 0.03822313983044327,
+      "rhs_calls": 5886,
+      "elapsed_seconds_including_all_IO": 580.829922874982,
+      "budget_defects": {
+        "mass_budget_per_initial_mass": 4.270088425254668e-15,
+        "element_budget_per_initial_mass": 1.5447034352487466e-15,
+        "energy_budget_scaled": 1.8346839002382234e-16,
+        "momentum_budget_scaled": 6.822990669923705e-15
+      },
+      "marker_displacements_m": {
+        "600.0": 9.54404075128451e-08,
+        "1000.0": 8.243154015277754e-08,
+        "1500.0": -1.9027261469531376e-08,
+        "2000.0": -4.1782351585528676e-08
+      }
+    }
+  },
+  "fractional_reductions": {
+    "maximum_temperature_drift_K": -0.45281985668735536,
+    "maximum_temperature_shape_difference_after_translation_K": 0.21955084927611634,
+    "final_species_residual": -0.06012428622645194
+  },
+  "newly_evolved_frames": 28,
+  "reused_baseline_frames": 14,
+  "actual_new_run": {
+    "complete": true,
+    "qualified_flame": false,
+    "script_sha256": "b0b0f46415066f3b671b1531f250a4b6e6d1ce399a0d2fe5f9b2d435909123d0",
+    "reference_sha256": "2f79027c1baa5b630cd488c178d307309672dd8120eb0b1a6286949a6602fec6",
+    "probe": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/probe",
+    "probe_sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0",
+    "backend_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "native_source_manifest": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/build.json",
+    "native_source_manifest_sha256": "7cdf44a77ac93b21b9ee787ae996544271f5848d11dd918bc5629a111fe8c87d",
+    "baseline_report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/report.json",
+    "baseline_report_sha256": "acf3d50ba1e80ba461c991128fd746283494c577d41744be89b09a225ced5908",
+    "frozen_sha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/prepare_reacting_flame.py": "0b61bb1dc63b136cbaec754f4d572922f1cc2fa434d5efc1abb71c3210cc8638",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/prepare_reacting_flame_momentum.py": "9187e3e5096c9516f9647a1665241bbc357f1bb1d53de0a56d4116b07b170916",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/verify_reacting_flame.py": "8e7857430c0402846341e3c66e023e2f41745a7da09a715bfad3c2f251a8a24d"
+    },
+    "operations": [
+      {
+        "name": "initial-readback",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/chemistry-env/bin/python",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/verify_reacting_flame.py",
+          "--reference",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference",
+          "--probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/probe",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback",
+          "--evaluate-initial",
+          "--jobs",
+          "1"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "wall_seconds": 8.020854417001829,
+        "stdout_sha256": "5ddd88654ab75ca840e0b6e597ae1f448ea90be8b2459db76142e5717d64788b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "prepare-momentum",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/chemistry-env/bin/python",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/prepare_reacting_flame_momentum.py",
+          "--reference",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference",
+          "--source-run",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback",
+          "--grid",
+          "0",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "wall_seconds": 2.6013312080176547,
+        "stdout_sha256": "d8d089319e09f881cf3305441113f684066f39bbbe2c4361c373f7f9c6837338",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "native-10us",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/chemistry-env/bin/python",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/verify_reacting_flame.py",
+          "--reference",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input",
+          "--probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/probe",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us",
+          "--duration",
+          "1e-5",
+          "--jobs",
+          "1",
+          "--reflect-species",
+          "1",
+          "--sample-every",
+          "50",
+          "--max-samples",
+          "128"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "wall_seconds": 589.884606208012,
+        "stdout_sha256": "778da7f259ba292b4ed767849a5bddaa7d152396d2f1a8553228b3d4659b3a78",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "final_report_sha256": "edb2774985aaba08d4c9b1926511dc13511bfd340787ea57ee8d45b664a46bd5"
+  },
+  "all_saved_frames_passed_original_physical_audits": true,
+  "limits": [
+    "Only a single native grid and short endpoint, with a changed reference profile and inlet eigenvalue; this does not establish steady propagation or independent flame-speed accuracy.",
+    "Alignment is interpolation for diagnosis and does not change native states, equations or residuals.",
+    "Constant-pressure reference and compressible native flow retain different longitudinal kinetic/viscous terms.",
+    "The existing baseline is reused with verified hashes, not counted as a new run.",
+    "Reported process timing overlaps other reference calculations and is not exclusive-machine performance.",
+    "App, platform CI, experiments, turbulent/spray/radiation models and mature combustion qualification remain incomplete."
+  ],
+  "figure": {
+    "path": "artifacts/current/native-reacting-conservative-evolution.png",
+    "sha256": "c96da908968b95d54d87910d2fa80310dd6cbe25759229fa93ca54cf8675bc3b"
+  },
+  "raw_sha256": {
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/evaluation-progress.jsonl": "f68715a26a8f4b7296862d5083fe16a106324ae5fd66f69fb1b3ac2c47b5771b",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/field.json": "c14e1b9060a797469f72ddfbdf46063bbf9d11eb543ed070d468c282f0242945",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/steps.jsonl": "e3b31e34566d419ccef439d7b89c1d79b0e9d7bc717629b989505bbd881d5523",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/accepted-state.json": "2d1b9f3c78b6cfc544b37ae243a1e7134cc32784d0bd1d26f28775d35f1aa27f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/accepted.checkpoint": "ca145c4828aaa6aa0eed573f39f74116dbf4ff9b3b1cbdf30ad899771b11ecdb",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/samples.jsonl": "9d04bae2fa2c98c55702de95c4b3ae00e559ebff53242c377924010c087e7d3a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/report.json": "acf3d50ba1e80ba461c991128fd746283494c577d41744be89b09a225ced5908",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-10us/native-0/sample-audits.json": "f8e790a104a6ff6ae18d824d92313f9d8973dcc7ecb8d88b6ad3c09ed8d8dff5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/evaluation-progress.jsonl": "1ce175dd9de955e2ab6c89a9378ac1ecc0e298725f59223e2af5d8d74441384a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/field.json": "2670eddc627e2d485e4ad4b3d99196b7ea27ecc193ede3ced55fa0595623ccf7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/steps.jsonl": "a9220e90b3394d294b47d4eb01b532ae1924f538fd22946c51005ac23c89d8d9",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/accepted-state.json": "1d538bf6353ab2d83c625dc8cd4d21ad8756ad4a23fe1c95d62bf1a4e40a391f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/accepted.checkpoint": "1584f46988e42c30ab0f3444d0cbfb9c785b5a044c96967a1d6bec4abc6fb590",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/samples.jsonl": "5959850ca21fcfa46d53facdd11b7ab5b2f02138176b75f138bb8d9230f1a89d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/report.json": "edb2774985aaba08d4c9b1926511dc13511bfd340787ea57ee8d45b664a46bd5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us/native-0/sample-audits.json": "6b4c12e16d28db820ad3dfb49fa1b9005ad194a9edaa7d96a670913f4a9ba0d3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference/prepared-reference.npz": "df2ee3a40db12850ca4a7190a48f80a68a7979e329997e2ddbeea89cf41f51df",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference/reference.json": "2f79027c1baa5b630cd488c178d307309672dd8120eb0b1a6286949a6602fec6",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference/profile-conservative.json": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/reference/grid-0.fixture": "ec19842066409c4d810a6a9947e622ee3da0956d24a18428a8b81efacffcd86c",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input/preparation.json": "d8d089319e09f881cf3305441113f684066f39bbbe2c4361c373f7f9c6837338",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input/grid.fixture": "6b1c1e9d00a8e88e643d0a4e9e2fcd1ef273f5697023d18fe7b255c57e601aa3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input/reference.json": "82f9c6f63d6fdf1e19d0b482b8b1e8a52bfcea93976e12d31863a9545eefccc7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/momentum-input/profile-conservative.json": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/report.json": "6d45a0b642bfb57c0476ba01c7a18f7df2f026a2168c974913fce9a4e083b061",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/reacting-flame.png": "b242f0136caa8436310230f1adf89c555bfb262dd45def669b2ec620b48320dc",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/audit.json": "59a5958861ec2131ed3f741a65b640dcd94bd2cd3f9892ca2a561d0147b98e32",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/evaluation-progress.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/field.json": "9c092f4816facf7b9d1809e63c768dc5fe909f4d7e97cb3d351696caf171f854",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback/native-0/accepted-state.json": "db8c532cf80fea90e8220061e87e9724905b92d53549ae60d54eb6e5731517c8",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/prepare_reacting_flame.py": "0b61bb1dc63b136cbaec754f4d572922f1cc2fa434d5efc1abb71c3210cc8638",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/prepare_reacting_flame_momentum.py": "9187e3e5096c9516f9647a1665241bbc357f1bb1d53de0a56d4116b07b170916",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/frozen/verify_reacting_flame.py": "8e7857430c0402846341e3c66e023e2f41745a7da09a715bfad3c2f251a8a24d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/prepare-momentum.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/run.py": "b0b0f46415066f3b671b1531f250a4b6e6d1ce399a0d2fe5f9b2d435909123d0",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us.stdout": "778da7f259ba292b4ed767849a5bddaa7d152396d2f1a8553228b3d4659b3a78",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/native-10us.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/prepare-momentum.stdout": "d8d089319e09f881cf3305441113f684066f39bbbe2c4361c373f7f9c6837338",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback.stdout": "5ddd88654ab75ca840e0b6e597ae1f448ea90be8b2459db76142e5717d64788b",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/initial-readback.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/launcher.log": "deb0058241ec55d136d0307aa3eb1e1b7a52d4c37f0bc97d45592fc698c10fb8",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/runs.json": "26510e434a0475208d4f861e81c272b818b82dd14ed212046551a8bddfd99302",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-evolution-001/analyze.py": "efa37603336328ccb2cf27d27c503d0331ea3f9d2771380ac820c9c9b9ffd184",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference.json": "4e4d9fc73a23deaa41d76978893159d290c3fe5656653dbb3107aa05415a7f6b",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-closed.json": "5abdbcc13f529aa55d3c314d8139a0c6c3748e97a42c8caf457c5fe37dcb6a72",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/build.json": "7cdf44a77ac93b21b9ee787ae996544271f5848d11dd918bc5629a111fe8c87d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/native-reacting-conservative-reference.json": "5d250223b9840d8cceb7713ed4cc397dcb0777be66499e036978b87a2713c7f5"
+  }
+}

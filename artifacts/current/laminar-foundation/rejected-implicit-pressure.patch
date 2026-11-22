@@ -1,0 +1,172 @@
+diff --git a/apps/cartmesh2d_flow_cli.cpp b/apps/cartmesh2d_flow_cli.cpp
+index a0f0ba7..880787d 100644
+--- a/apps/cartmesh2d_flow_cli.cpp
++++ b/apps/cartmesh2d_flow_cli.cpp
+@@ -181,6 +181,7 @@ int main(int argc, char** argv) {
+             "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
+             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
+             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
++            "--pressure-correction deferred|implicit (implicit: steady laminar, full nonorthogonal operator).\n"
+             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
+             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
+             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
+@@ -232,6 +233,9 @@ int main(int argc, char** argv) {
+             } else if (a == "--linear-policy") {
+                 if(v!="strict" && v!="adaptive")throw std::invalid_argument("linear-policy must be strict or adaptive");
+                 controls.adaptiveLinear=v=="adaptive";
++            } else if (a == "--pressure-correction") {
++                if(v!="deferred" && v!="implicit")throw std::invalid_argument("pressure-correction must be deferred or implicit");
++                controls.implicitPressureCorrection=v=="implicit";
+             } else if (a == "--convergence") {
+                 if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
+                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
+diff --git a/include/cartmesh2d/fv/Incompressible2D.hpp b/include/cartmesh2d/fv/Incompressible2D.hpp
+index 1b70798..6c6a490 100644
+--- a/include/cartmesh2d/fv/Incompressible2D.hpp
++++ b/include/cartmesh2d/fv/Incompressible2D.hpp
+@@ -50,6 +50,9 @@ struct FlowControls2D {
+     std::size_t maxIterations = 1500;
+     double velocityRelaxation = .6;
+     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
++    // Optional steady laminar solve of the complete nonorthogonal pressure
++    // operator; avoids the potentially divergent deferred correction iteration.
++    bool implicitPressureCorrection = false;
+     double pressureRelaxation = .25;
+     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
+     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
+diff --git a/src/fv/Incompressible2D.cpp b/src/fv/Incompressible2D.cpp
+index b3004b1..fe15d30 100644
+--- a/src/fv/Incompressible2D.cpp
++++ b/src/fv/Incompressible2D.cpp
+@@ -7,6 +7,7 @@
+ #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
+ #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
+ #include "cartmesh2d/fv/detail/Anderson2D.hpp"
++#include "cartmesh2d/fv/detail/PressureCorrection2D.hpp"
+ #include <algorithm>
+ #include <chrono>
+ #include <cmath>
+@@ -482,6 +483,8 @@ static FlowResult2D solveFlow(
+     const FlowState2D* previous, double timeStep,
+     const detail::MaterialUpdate2D& material = {}, const FlowInitialGuess2D* guess = nullptr) {
+     auto c=input;
++    ensure(!c.implicitPressureCorrection || (!previous && !material),
++           "Implicit nonorthogonal pressure correction currently requires steady laminar flow");
+     using Clock = std::chrono::steady_clock;
+     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
+     validateFvMesh2D(m);
+@@ -952,7 +955,39 @@ static FlowResult2D solveFlow(
+         }
+         if (b.closed) ap.pin(0);
+         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
+-        for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
++        if(c.implicitPressureCorrection) {
++            const auto nonorthogonalFlux=[&](const Vec& pressure) {
++                const auto gradient=pressureGradientStencil.apply(pressure,zeros);
++                Vec flux(nf);
++                for(std::size_t id=0;id<nf;++id) {
++                    const auto& f=m.faces[id];
++                    if(f.neighbour || b.fixedP[id])
++                        flux[id]=-interpolate(f,ra)*dot(interpolateGradient(f,gradient),f.correction);
++                }
++                return flux;
++            };
++            Vec rhs(n);
++            for(std::size_t id=0;id<nf;++id) {
++                const auto& f=m.faces[id];rhs[f.owner]-=predicted[id];
++                if(f.neighbour)rhs[*f.neighbour]+=predicted[id];
++            }
++            if(b.closed)rhs[0]=0;
++            const auto apply=[&](const Vec& value,Vec& result) {
++                ap.apply(value,result);
++                const auto flux=nonorthogonalFlux(value);
++                for(std::size_t id=0;id<nf;++id) {
++                    const auto& f=m.faces[id];result[f.owner]+=flux[id];
++                    if(f.neighbour)result[*f.neighbour]-=flux[id];
++                }
++                if(b.closed)result[0]=value[0];
++            };
++            const auto precondition=[&](const Vec& value,Vec& result) {
++                ap.rhs=value;linearSolve(ap,result,true);
++            };
++            detail::solveCorrectedPressure2D(pc,rhs,apply,precondition,
++                1e-13+linearRelativeTolerance*detail::linearNorm(rhs));
++            correction=nonorthogonalFlux(pc);
++        } else for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
+             std::fill(ap.rhs.begin(),ap.rhs.end(),0.);
+             const auto gc=pressureGradientStencil.apply(pc,zeros);
+             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
+diff --git a/include/cartmesh2d/fv/detail/PressureCorrection2D.hpp b/include/cartmesh2d/fv/detail/PressureCorrection2D.hpp
+new file mode 100644
+--- /dev/null
++++ b/include/cartmesh2d/fv/detail/PressureCorrection2D.hpp
+@@ -0,0 +1,69 @@
++#pragma once
++
++#include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
++#include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
++
++namespace cartmesh2d::fv::detail {
++
++// Right-preconditioned restarted GMRES. Acceptance always uses the original
++// operator residual, not the preconditioned residual or the Hessenberg estimate.
++// The pressure operator includes least-squares nonorthogonal terms and is not
++// symmetric; PCG remains the solver for its orthogonal preconditioner only.
++template<class Apply, class Precondition>
++std::size_t solveCorrectedPressure2D(LinearVector2D& x,
++    const LinearVector2D& rhs, Apply apply, Precondition precondition, double stop) {
++    constexpr std::size_t restart=32, maximum=320;
++    const auto n=rhs.size();
++    LinearVector2D ax(n), residual(n);
++    std::size_t iterations=0;
++    while(iterations<maximum) {
++        apply(x,ax);
++        for(std::size_t i=0;i<n;++i)residual[i]=rhs[i]-ax[i];
++        const double beta=linearNorm(residual);
++        if(beta<=stop)return iterations;
++        std::vector<LinearVector2D> basis(1,residual), directions;
++        for(auto& value:basis[0])value/=beta;
++        double h[restart+1][restart]{}, cs[restart]{}, sn[restart]{}, g[restart+1]{};
++        g[0]=beta;
++        std::size_t count=0;
++        for(std::size_t j=0;j<restart && iterations<maximum;++j,++iterations) {
++            directions.emplace_back(n,0.);
++            precondition(basis[j],directions.back());
++            LinearVector2D w(n);apply(directions.back(),w);
++            // A second orthogonalization pass is needed for highly stretched
++            // cut cells and the nearly converged pressure correction.
++            for(int pass=0;pass<2;++pass)for(std::size_t k=0;k<=j;++k) {
++                const double projection=linearProduct(w,basis[k]);h[k][j]+=projection;
++                for(std::size_t i=0;i<n;++i)w[i]-=projection*basis[k][i];
++            }
++            h[j+1][j]=linearNorm(w);
++            const bool breakdown=h[j+1][j]==0;
++            if(!breakdown)for(auto& value:w)value/=h[j+1][j];
++            basis.push_back(std::move(w));
++            for(std::size_t k=0;k<j;++k) {
++                const double top=cs[k]*h[k][j]+sn[k]*h[k+1][j];
++                h[k+1][j]=-sn[k]*h[k][j]+cs[k]*h[k+1][j];h[k][j]=top;
++            }
++            const double length=std::hypot(h[j][j],h[j+1][j]);
++            linearEnsure(length>0 && std::isfinite(length),"Corrected pressure GMRES singular operator");
++            cs[j]=h[j][j]/length;sn[j]=h[j+1][j]/length;
++            h[j][j]=length;h[j+1][j]=0;
++            g[j+1]=-sn[j]*g[j];g[j]*=cs[j];count=j+1;
++            if(std::abs(g[j+1])<=stop || breakdown){++iterations;break;}
++        }
++        double y[restart]{};
++        for(std::size_t j=count;j-->0;) {
++            double value=g[j];
++            for(std::size_t k=j+1;k<count;++k)value-=h[j][k]*y[k];
++            y[j]=linearFinite(value/h[j][j]);
++        }
++        for(std::size_t j=0;j<count;++j)
++            for(std::size_t i=0;i<n;++i)x[i]+=y[j]*directions[j][i];
++    }
++    apply(x,ax);
++    for(std::size_t i=0;i<n;++i)residual[i]=rhs[i]-ax[i];
++    if(linearNorm(residual)<=stop)return iterations;
++    throw std::runtime_error("Corrected pressure GMRES iteration limit reached");
++}
++
++} // namespace cartmesh2d::fv::detail

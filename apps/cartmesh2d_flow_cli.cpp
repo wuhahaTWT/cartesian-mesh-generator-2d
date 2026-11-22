@@ -2,11 +2,13 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowAdaptiveSizing2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowTimeStep2D.hpp"
 #include "cartmesh2d/fv/FlowInitialization2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include "FlowCaseFile.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -87,6 +89,121 @@ fv::FlowInitialGuess2D initialGuessCsv(const std::string& path,const fv::FvMesh2
     return result;
 }
 
+fv::FlowInitialGuess2D flowFieldCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open flow cells CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    const bool eightCol=(line=="cell,x,y,area,u,v,p,speed");
+    const bool sixCol=(line=="cell,x,y,u,v,p");
+    if(!eightCol && !sixCol)
+        throw std::runtime_error("flow cells CSV header must be cell,x,y,area,u,v,p,speed or cell,x,y,u,v,p");
+    const std::size_t expectedCols=eightCol?8U:6U;
+    fv::FlowInitialGuess2D result;
+    result.u.reserve(mesh.cells.size());result.v.reserve(mesh.cells.size());result.p.reserve(mesh.cells.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        if(line.empty())continue;
+        std::istringstream row(line);std::string token;std::vector<double> values;
+        while(std::getline(row,token,',')) {
+            if(values.size()==expectedCols)throw std::runtime_error("flow cells CSV row has extra fields");
+            values.push_back(number(token));
+        }
+        const auto i=result.u.size();
+        if(values.size()!=expectedCols || line.back()==',' || i>=mesh.cells.size() || values[0]!=static_cast<double>(i))
+            throw std::runtime_error("flow cells CSV row or cell order invalid");
+        const auto centre=mesh.cells[i].centre;
+        const double scale=std::max({std::abs(centre.x),std::abs(centre.y),std::sqrt(mesh.cells[i].area)});
+        if(std::abs(values[1]-centre.x)>64*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(values[2]-centre.y)>64*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("flow cells CSV coordinates differ from target mesh");
+        const std::size_t uIdx=eightCol?4U:3U;
+        result.u.push_back(values[uIdx]);result.v.push_back(values[uIdx+1U]);result.p.push_back(values[uIdx+2U]);
+    }
+    if(!input.eof() || result.u.size()!=mesh.cells.size())throw std::runtime_error("flow cells CSV does not cover target mesh");
+    return result;
+}
+
+std::vector<double> scalarFieldCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open adaptive scalar CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    const bool transportHeader=(line=="cell,x,y,area,value,previous,sourceIntegral,temporalIntegral,exact");
+    const bool compactHeader=(line=="cell,x,y,area,value");
+    if(!transportHeader && !compactHeader)
+        throw std::runtime_error("adaptive scalar CSV header must match cartmesh2d_transport_cli .cells.csv");
+    const std::size_t expectedCols=transportHeader?9U:5U;
+    std::vector<double> scalar;scalar.reserve(mesh.cells.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        if(line.empty())continue;
+        std::istringstream row(line);std::string token;std::vector<std::string> fields;
+        while(std::getline(row,token,',')) {
+            if(fields.size()==expectedCols)throw std::runtime_error("adaptive scalar CSV row has extra fields");
+            fields.push_back(token);
+        }
+        const auto i=scalar.size();
+        if(fields.size()!=expectedCols || line.back()==',' || i>=mesh.cells.size() || number(fields[0])!=static_cast<double>(i))
+            throw std::runtime_error("adaptive scalar CSV row or cell order invalid");
+        const auto centre=mesh.cells[i].centre;
+        const double scale=std::max({std::abs(centre.x),std::abs(centre.y),std::sqrt(mesh.cells[i].area)});
+        if(std::abs(number(fields[1])-centre.x)>64*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(number(fields[2])-centre.y)>64*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("adaptive scalar CSV coordinates differ from target mesh");
+        scalar.push_back(number(fields[4]));
+    }
+    if(!input.eof() || scalar.size()!=mesh.cells.size())throw std::runtime_error("adaptive scalar CSV does not cover target mesh");
+    return scalar;
+}
+
+void writeAdaptiveSuggestionOutputs(
+    const TopologyMesh2D& topology,
+    const fv::FvMesh2D& mesh,
+    const std::vector<double>& u,
+    const std::vector<double>& v,
+    const std::vector<double>& p,
+    const std::vector<double>& scalar,
+    const fv::FlowAdaptivePolicy2D& policy,
+    const std::string& suggestPath,
+    const std::string& adaptVtkPath,
+    const std::string& adaptFieldsJsonPath,
+    bool printSummary) {
+    const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
+        topology, mesh, u, v, p, policy, {}, {}, {}, scalar);
+    if (!suggestion.valid()) {
+        throw std::runtime_error(suggestion.issues.front());
+    }
+    const auto ensureParent = [](const std::string& filePath) {
+        const auto pDir = std::filesystem::path(filePath).parent_path();
+        if (!pDir.empty()) std::filesystem::create_directories(pDir);
+    };
+    ensureParent(suggestPath);
+    std::ofstream suggestFile(suggestPath);
+    suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
+    suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
+    suggestFile.close();
+    if (!adaptFieldsJsonPath.empty()) {
+        ensureParent(adaptFieldsJsonPath);
+        std::ofstream fieldsFile(adaptFieldsJsonPath);
+        fieldsFile.exceptions(std::ios::badbit | std::ios::failbit);
+        fieldsFile << fv::flowAdaptiveFieldsToJson2D(suggestion);
+        fieldsFile.close();
+    }
+    if (!adaptVtkPath.empty()) {
+        ensureParent(adaptVtkPath);
+        std::string vtkErr;
+        if (!fv::writeFlowAdaptiveVtk2D(topology, suggestion, adaptVtkPath, &vtkErr)) {
+            throw std::runtime_error(vtkErr);
+        }
+    }
+    if (printSummary) {
+        std::cout << "adaptive_refinement_json=" << suggestPath
+                  << "\nadaptive_boxes=" << suggestion.boxes.size()
+                  << "\nadaptive_cell_targets=" << suggestion.cellTargets.size()
+                  << "\nadaptive_selected_cells=" << suggestion.selectedCellCount
+                  << "\nadaptive_indicator_max=" << std::setprecision(17) << suggestion.indicatorMax << '\n';
+        if (!adaptVtkPath.empty()) std::cout << "adaptive_vtk=" << adaptVtkPath << '\n';
+        if (!adaptFieldsJsonPath.empty()) std::cout << "adaptive_fields_json=" << adaptFieldsJsonPath << '\n';
+    }
+}
+
 std::vector<double> initialFluxCsv(const std::string& path,const fv::FvMesh2D& mesh) {
     std::ifstream input(path);if(!input)throw std::runtime_error("cannot open initial flux CSV");
     std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
@@ -148,6 +265,9 @@ int main(int argc, char** argv) {
     bool transientOutputStarted=false;
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
+        std::string suggestPath,suggestFromCsvPath,adaptScalarCsvPath,adaptVtkPath,adaptFieldsJsonPath;
+        fv::FlowAdaptivePolicy2D adaptPolicy;
+        bool adaptOptions=false;
         fv::FlowControls2D controls;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
@@ -158,19 +278,33 @@ int main(int argc, char** argv) {
         std::string restart;
         fv::FlowInitialVortex2D initialVortex;
         unsigned vortexOptions=0;
-        for (int i = 1; i < argc; ++i) {
-            std::string a = argv[i];
+        const auto arguments=cli::flowCaseArguments(argc,argv);
+        for (std::size_t i = 0; i < arguments.size(); ++i) {
+            std::string a = arguments[i];
             if (a == "--profile") {
                 controls.profile = true;
                 continue;
             }
             if (a == "--help") {
                 std::cout
-                    << "Native 2D incompressible laminar SIMPLE (experimental)\n"
+                    << "Native 2D incompressible laminar flow (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
+            "--case-file FILE.json: native flow case v1; relative paths use its directory, explicit CLI options override.\n"
+            "--coupling simple|simplec|simpler|pimple|simple-consistent|coupled (default simple).\n"
+            "  simpler predicts pressure before momentum (steady only); pimple adds neighbour momentum correctors (steady/transient).\n"
+            "--momentum-correctors 1..8 (PIMPLE only, default 2); independent of non-orthogonal pressure passes.\n"
+            "  coupled uses FGMRES and line search; strict convergence, constant viscosity and fixed boundary roles only.\n"
+            "  SIMPLE relaxation and pressure-correction-pass controls do not apply to coupled.\n"
+            "  simple-consistent uses the full momentum response and both SIMPLE relaxations; pressure passes do not apply.\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
+            "--suggest-refinement FILE.adaptive.json: emit flow-gradient adaptive refinement boxes JSON.\n"
+            "--suggest-refinement-from CELLS.csv: generate --suggest-refinement from an existing cells CSV without re-solving.\n"
+            "--adapt-scalar-csv CELLS.csv: optional passive scalar/temperature CSV to include thermal gradients in AMR.\n"
+            "--adapt-vtk FILE.adaptive.vtk --adapt-fields-json FILE.adaptive.fields.json: optional AMR indicator exports.\n"
+            "--adapt-fraction 0.15 --adapt-max-boxes 6 --adapt-pad-cells 1 --adapt-max-level N --adapt-wall-level N --adapt-scalar-weight 1: AMR controls.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
+            "--minimum-iterations 10: explicit steady-laminar stop delay; >=1, residual/flux gates unchanged.\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
@@ -179,10 +313,11 @@ int main(int argc, char** argv) {
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
             "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
-            "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
+            "--velocity-relaxation 0.6 --pressure-relaxation 0.25: inner relaxation in (0,1].\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
-            "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
+            "Engineering: residual < tolerance, 3-order reduction or <1e-5, 50-step field/monitor stability <1e-3, strict continuity and final linear step.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
+            "--anderson-history 4 --anderson-start 10: history capacity (1..32) and first history step (>=1).\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
@@ -193,6 +328,7 @@ int main(int argc, char** argv) {
             "--pressure-preconditioner ic0|jacobi|aggregation|cholesky (default ic0); cholesky requires macOS; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
+            "--momentum-inertia 0|1 (default 1); 0 opts into steady custom Stokes research.\n"
             "--outlet-backflow reject|normal-inlet (default reject).\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
@@ -206,10 +342,10 @@ int main(int argc, char** argv) {
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
             }
-            if (i + 1 >= argc) {
+            if (i + 1 >= arguments.size()) {
                 throw std::invalid_argument("missing option value");
             }
-            std::string v = argv[++i];
+            std::string v = arguments[++i];
             if (a == "--mesh") {
                 path = v;
             } else if (a == "--output") {
@@ -220,6 +356,43 @@ int main(int argc, char** argv) {
                 boundaryPath = v;
             } else if (a == "--export-boundaries") {
                 boundaryExportPath = v;
+            } else if (a == "--suggest-refinement") {
+                suggestPath = v;
+            } else if (a == "--suggest-refinement-from") {
+                suggestFromCsvPath = v;
+            } else if (a == "--adapt-scalar-csv") {
+                adaptOptions = true;
+                adaptScalarCsvPath = v;
+            } else if (a == "--adapt-vtk") {
+                adaptOptions = true;
+                adaptVtkPath = v;
+            } else if (a == "--adapt-fields-json") {
+                adaptOptions = true;
+                adaptFieldsJsonPath = v;
+            } else if (a == "--adapt-scalar-weight") {
+                adaptOptions = true;
+                adaptPolicy.scalarWeight = number(v);
+                if (adaptPolicy.scalarWeight < 0.0)
+                    throw std::invalid_argument("adapt-scalar-weight must be non-negative");
+            } else if (a == "--adapt-fraction") {
+                adaptOptions = true;
+                adaptPolicy.refineFraction = number(v);
+            } else if (a == "--adapt-max-boxes") {
+                adaptOptions = true;
+                const double n = number(v);
+                if (n < 1 || n > 32 || n != std::floor(n))
+                    throw std::invalid_argument("adapt-max-boxes must be an integer in [1, 32]");
+                adaptPolicy.maxBoxes = static_cast<std::size_t>(n);
+            } else if (a == "--adapt-pad-cells") {
+                adaptOptions = true;
+                adaptPolicy.padCells = number(v);
+            } else if (a == "--adapt-max-level" || a == "--adapt-wall-level") {
+                adaptOptions = true;
+                const double n = number(v);
+                if (n < 0 || n > 28 || n != std::floor(n))
+                    throw std::invalid_argument(a + " must be an integer in [0, 28]");
+                if (a == "--adapt-max-level") adaptPolicy.maxTargetLevel = static_cast<std::size_t>(n);
+                else adaptPolicy.wallLevel = static_cast<std::size_t>(n);
             } else if (a == "--nu") {
                 controls.nu = number(v);
             } else if (a == "--face-viscosity") {
@@ -228,12 +401,25 @@ int main(int argc, char** argv) {
                 controls.manufacturedViscositySlope=number(v);
             } else if (a == "--speed") {
                 controls.speed = number(v);
+            } else if (a == "--minimum-iterations") {
+                const double count=number(v);
+                if(count<1 || count>1000000 || std::floor(count)!=count)
+                    throw std::invalid_argument("minimum-iterations must be an integer in [1,1000000]");
+                controls.minimumIterations=static_cast<std::size_t>(count);
             } else if (a == "--linear-policy") {
                 if(v!="strict" && v!="adaptive")throw std::invalid_argument("linear-policy must be strict or adaptive");
                 controls.adaptiveLinear=v=="adaptive";
             } else if (a == "--convergence") {
                 if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
+            } else if (a == "--coupling") {
+                if(v!="simple" && v!="simplec" && v!="simpler" && v!="pimple" && v!="coupled" && v!="simple-consistent")throw std::invalid_argument("coupling must be simple, simplec, simpler, pimple, simple-consistent or coupled");
+                controls.coupling=v=="coupled"?fv::FlowCoupling2D::Coupled:v=="simple-consistent"?fv::FlowCoupling2D::SimpleConsistent:v=="simplec"?fv::FlowCoupling2D::SimpleC:v=="simpler"?fv::FlowCoupling2D::Simpler:v=="pimple"?fv::FlowCoupling2D::Pimple:fv::FlowCoupling2D::Simple;
+            } else if (a == "--momentum-correctors") {
+                const double count=number(v);
+                if(count<1 || count>8 || std::floor(count)!=count)
+                    throw std::invalid_argument("momentum-correctors must be an integer in [1,8]");
+                controls.momentumCorrectors=static_cast<std::size_t>(count);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
             } else if (a == "--initial-guess") {
@@ -245,6 +431,10 @@ int main(int argc, char** argv) {
                 if(passes<1 || passes>4 || std::floor(passes)!=passes)
                     throw std::invalid_argument("pressure-corrections must be an integer in [1,4]");
                 controls.pressureCorrectionPasses=static_cast<std::size_t>(passes);
+            } else if (a == "--pressure-relaxation") {
+                controls.pressureRelaxation=number(v);
+                if (!(controls.pressureRelaxation>0 && controls.pressureRelaxation<=1))
+                    throw std::invalid_argument("pressure-relaxation must be in (0,1]");
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
@@ -253,6 +443,13 @@ int main(int argc, char** argv) {
                 if(v=="none")controls.steadyAcceleration=fv::SteadyAcceleration2D::None;
                 else if(v=="anderson")controls.steadyAcceleration=fv::SteadyAcceleration2D::Anderson;
                 else throw std::invalid_argument("steady-acceleration must be none or anderson");
+            } else if (a == "--anderson-history" || a == "--anderson-start") {
+                const double value=number(v);
+                if(value<1 || value!=std::floor(value) || value>1000000 ||
+                   (a=="--anderson-history" && value>32))
+                    throw std::invalid_argument("invalid Anderson history/start value");
+                if(a=="--anderson-history")controls.andersonHistory=static_cast<std::size_t>(value);
+                else controls.andersonStart=static_cast<std::size_t>(value);
             } else if (a == "--time-step") {
                 timeStep=number(v);
                 if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
@@ -294,6 +491,10 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument("convection must be upwind, limited-linear or face-limited-linear");
                 controls.convection = v == "face-limited-linear" ? fv::ConvectionScheme2D::FaceLimitedLinearUpwind : v == "limited-linear"
                     ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
+            } else if (a == "--momentum-inertia") {
+                controls.momentumInertia = number(v);
+                if (controls.momentumInertia != 0 && controls.momentumInertia != 1)
+                    throw std::invalid_argument("momentum-inertia must be 0 or 1");
             } else if (a == "--outlet-backflow") {
                 if (v != "reject" && v != "normal-inlet")
                     throw std::invalid_argument("outlet-backflow must be reject or normal-inlet");
@@ -316,8 +517,17 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("unknown option " + a);
             }
         }
-        if (path.empty() || (prefix.empty() && boundaryExportPath.empty())) {
+        if (path.empty() || (prefix.empty() && boundaryExportPath.empty() && suggestFromCsvPath.empty())) {
             throw std::invalid_argument("--mesh and --output required");
+        }
+        if (adaptOptions && suggestPath.empty()) {
+            throw std::invalid_argument("adaptive sizing options require --suggest-refinement FILE");
+        }
+        if (!suggestFromCsvPath.empty()) {
+            if (suggestPath.empty())
+                throw std::invalid_argument("--suggest-refinement-from requires --suggest-refinement FILE");
+            if (!boundaryExportPath.empty() || timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty())
+                throw std::invalid_argument("--suggest-refinement-from cannot be combined with time stepping, restart, or boundary export");
         }
         if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty()))
             throw std::invalid_argument("boundary template export does not run time steps or restart");
@@ -337,6 +547,10 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("initial-guess requires an actual steady solve");
         if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
             throw std::invalid_argument("Engineering convergence requires steady laminar flow");
+        if((controls.coupling==fv::FlowCoupling2D::Coupled || controls.coupling==fv::FlowCoupling2D::SimpleConsistent) && timeStep>0)
+            throw std::invalid_argument("Coupled solving requires steady constant-property laminar flow");
+        if((controls.coupling==fv::FlowCoupling2D::SimpleC || controls.coupling==fv::FlowCoupling2D::Simpler) && timeStep>0)
+            throw std::invalid_argument("Selected coupling requires steady flow; only SIMPLE/PIMPLE support time stepping");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {
@@ -353,6 +567,15 @@ int main(int argc, char** argv) {
             throw std::runtime_error(read.error);
         }
         const auto mesh = fv::makeFvMesh2D(read.topology);
+        if (!suggestFromCsvPath.empty()) {
+            const auto field = flowFieldCsv(suggestFromCsvPath, mesh);
+            std::vector<double> scalar;
+            if (!adaptScalarCsvPath.empty()) scalar = scalarFieldCsv(adaptScalarCsvPath, mesh);
+            writeAdaptiveSuggestionOutputs(
+                read.topology, mesh, field.u, field.v, field.p, scalar,
+                adaptPolicy, suggestPath, adaptVtkPath, adaptFieldsJsonPath, true);
+            return 0;
+        }
         if (controls.scenario == "custom") {
             if (boundaryPath.empty()) throw std::invalid_argument("custom case requires --boundary FILE");
             std::ifstream input(boundaryPath);
@@ -517,6 +740,7 @@ int main(int argc, char** argv) {
             }
         }
         if (timeStep>0 && controls.profile) r.performance=totalPerformance;
+        if(r.history.empty())throw std::runtime_error("Flow solve returned no diagnostic state");
         const auto& last=r.history.back();
 
         auto cells = out(prefix, ".cells.csv");
@@ -573,11 +797,20 @@ int main(int argc, char** argv) {
             faces<<'\n';
         }
 
+        const bool consistent=controls.coupling==fv::FlowCoupling2D::SimpleConsistent;
+        const bool coupled=controls.coupling==fv::FlowCoupling2D::Coupled || consistent;
         auto history = out(prefix, ".residuals.csv");
-        history << "iteration,momentumResidual,continuity,velocityChange,pressureChange\n";
+        history << "iteration,momentumResidual,continuity,velocityChange,pressureChange";
+        if(coupled)
+            history << ",fluxConsistency,globalRelativeImbalance,linearRelativeTolerance,strictLinearStep,coupledLinearResidual,lineSearchWeight";
+        history << '\n';
         for (auto h : r.history) {
             history << h.iteration << ',' << h.momentumResidual << ',' << h.continuity << ','
-                    << h.velocityChange << ',' << h.pressureChange << '\n';
+                    << h.velocityChange << ',' << h.pressureChange;
+            if(coupled)
+                history << ',' << h.fluxConsistency << ',' << h.globalRelativeImbalance << ',' << h.linearRelativeTolerance
+                    << ',' << (h.strictLinearStep?1:0) << ',' << h.coupledLinearResidual << ',' << h.lineSearchWeight;
+            history << '\n';
         }
 
         auto summary = out(prefix, ".json");
@@ -591,24 +824,43 @@ int main(int argc, char** argv) {
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const bool counterflowCase=controls.scenario == "counterflow";
+        const char* coupling=consistent?"simple-consistent":coupled?"coupled":controls.coupling==fv::FlowCoupling2D::SimpleC?"simplec":controls.coupling==fv::FlowCoupling2D::Simpler?"simpler":controls.coupling==fv::FlowCoupling2D::Pimple?"pimple":"simple";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        summary << "\"momentumCorrectors\":" << (controls.coupling==fv::FlowCoupling2D::Pimple?std::to_string(controls.momentumCorrectors):"null") << ",\n";
+        if(timeStep>0)summary << "\"coupling\":" << std::quoted(coupling) << ",\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
-        if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
-                                << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
-                                << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
-                                << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
+        if (timeStep==0) {
+            summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
+                    << "\"coupling\":" << std::quoted(coupling) << ",\n";
+            if(consistent)summary << "\"pressureCorrectionPasses\":null,\n\"velocityRelaxation\":" << controls.velocityRelaxation
+                                 << ",\n\"pressureRelaxation\":" << controls.pressureRelaxation << ",\n";
+            else if(coupled)summary << "\"pressureCorrectionPasses\":null,\n\"velocityRelaxation\":null,\n\"pressureRelaxation\":null,\n";
+            else summary << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
+                         << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
+                         << "\"pressureRelaxation\":" << controls.pressureRelaxation << ",\n";
+            summary << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
+                                << "\"andersonHistory\":" << controls.andersonHistory << ",\n"
+                                << "\"andersonStart\":" << controls.andersonStart << ",\n"
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
                                 << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
-                                << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
+                                << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n"
+                                << "\"accelerationBacktracks\":" << r.performance.accelerationBacktracks << ",\n"
+                                << "\"accelerationDampedAccepted\":" << r.performance.accelerationDampedAccepted << ",\n";
+        }
         if(timeStep==0) {
             summary << "\"convergenceMode\":" << std::quoted(controls.convergence==fv::FlowConvergence2D::Engineering?"engineering":"strict")
                     << ",\n\"adaptiveLinear\":" << (controls.adaptiveLinear?"true":"false")
                     << ",\n\"strictLinearFinal\":" << (last.strictLinearStep?"true":"false")
-                    << ",\n\"adaptiveLinearSteps\":" << std::count_if(r.history.begin(),r.history.end(),[](const auto& h){return h.linearRelativeTolerance>1e-11;}) << ",\n";
+                    << ",\n\"adaptiveLinearSteps\":" << std::count_if(r.history.begin(),r.history.end(),[&](const auto& h){return coupled?h.iteration>0 && !h.strictLinearStep:h.linearRelativeTolerance>1e-11;}) << ",\n";
+            if(coupled)summary << "\"coupledLinearSolves\":" << r.performance.coupledSolves
+                << ",\n\"coupledKrylovIterations\":" << r.performance.coupledIterations
+                << ",\n\"fluxConsistency\":" << last.fluxConsistency
+                << ",\n\"coupledLinearResidual\":" << last.coupledLinearResidual
+                << ",\n\"lineSearchWeight\":" << last.lineSearchWeight << ",\n";
             if(controls.convergence==fv::FlowConvergence2D::Engineering) {
                 const auto w=fv::detail::engineeringWindow2D(r.history,r.convergenceReference,controls.tolerance);
-                summary << "\"engineeringConvergence\":{\"definition\":\"max-cell-reduction-monitor-window-v1\",\"windowLength\":50,\"stabilityTolerance\":0.001,\"residualRatioTolerance\":0.001,\"absoluteFallback\":0.00001,\"referenceResidual\":" << r.convergenceReference
+                summary << "\"engineeringConvergence\":{\"definition\":\"max-cell-reduction-monitor-window-v2\",\"windowLength\":50,\"stabilityTolerance\":0.001,\"residualRatioTolerance\":0.001,\"absoluteFallback\":0.00001,\"referenceResidual\":" << r.convergenceReference
                     << ",\"residualMax\":" << w.residualMax << ",\"velocityPath\":" << w.velocityPath
                     << ",\"pressurePath\":" << w.pressurePath << ",\"monitorRange\":" << w.monitorRange << ",\"monitorNames\":[";
                 for(std::size_t j=0;j<r.monitorNames.size();++j){if(j)summary<<',';summary<<std::quoted(r.monitorNames[j]);}
@@ -699,6 +951,7 @@ int main(int argc, char** argv) {
             else summary << ",\n\"requestedSteps\":" << requestedSteps;
             summary << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
                 << ",\n\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses
+                << ",\n\"pressureRelaxation\":" << controls.pressureRelaxation
                 << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         }
         if (manufactured && controls.manufacturedViscositySlope==0) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
@@ -708,9 +961,11 @@ int main(int argc, char** argv) {
         if(!controls.faceViscosity.empty()) summary<<"\"viscosityModel\":\"face-values\",\n\"viscosityFile\":"<<std::quoted(viscosityPath)
             <<",\n\"manufacturedViscositySlope\":"<<controls.manufacturedViscositySlope<<",\n";
         if (counterflowCase) summary << "\"counterflowDefinition\":\"u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0\",\n";
+        if(!r.failureReason.empty())summary << "\"failureReason\":" << std::quoted(r.failureReason)
+            << ",\n\"retainedState\":" << std::quoted(last.iteration==0?"initialization":"accepted-iterate") << ",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
-                << (r.converged ? "converged" : (timeStep>0?"time_step_not_converged":"iteration_limit"))
+                << (r.converged ? "converged" : !r.failureReason.empty()?"solve_failed":r.stopped?"stopped":timeStep>0?"time_step_not_converged":"iteration_limit")
                 << "\",\n\"converged\":" << (r.converged ? "true" : "false")
                 << ",\n\"cells\":" << mesh.cells.size()
                 << ",\n\"iterations\":" << last.iteration
@@ -730,6 +985,7 @@ int main(int argc, char** argv) {
                 << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
                 << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear-adaptive\""
                 << ",\n\"convection\":\"" << convection << '"'
+                << ",\n\"momentumInertia\":" << controls.momentumInertia
                 << ",\n\"viscousStress\":\"" << (symmetric?"symmetric":"laplacian") << '\"'
                 << ",\n\"outletBackflow\":\"" << (controls.outletBackflow == fv::OutletBackflow2D::NormalInlet ? "normal-inlet" : "reject") << '\"'
                 << ",\n\"outletBackflowFaces\":" << r.outletBackflowFaces
@@ -757,7 +1013,7 @@ int main(int argc, char** argv) {
                              : "explicit pressure outlet faces, prescribed kinematic pressure")
                                  : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
-                << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; "
+                << "\"method\":\"cell-centred FVM; " << (consistent?"SIMPLE full momentum response with consistent-field line search":coupled?"coupled FGMRES with consistent-field line search":controls.coupling==fv::FlowCoupling2D::Simpler?"SIMPLER":controls.coupling==fv::FlowCoupling2D::Pimple?"PIMPLE":controls.coupling==fv::FlowCoupling2D::SimpleC?"SIMPLEC":"SIMPLE") << "; Rhie-Chow; shared-face pressure; "
                 << convection << " momentum convection; corrected diffusion\",\n"
                 << "\"scope\":\"" << (timeStep>0 ? "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
                                                   : "steady constant-property laminar flow; no turbulence or accuracy certification") << "\"\n}\n";
@@ -787,13 +1043,29 @@ int main(int argc, char** argv) {
         history.close();
         summary.close();
         vtk.close();
+        if (!suggestPath.empty()) {
+            std::vector<double> scalar;
+            if (!adaptScalarCsvPath.empty()) scalar = scalarFieldCsv(adaptScalarCsvPath, mesh);
+            writeAdaptiveSuggestionOutputs(
+                read.topology, mesh, r.u, r.v, r.p, scalar,
+                adaptPolicy, suggestPath, adaptVtkPath, adaptFieldsJsonPath, false);
+        }
         if (controls.profile) {
             const auto& p = r.performance;
             auto performance = out(prefix, ".performance.json");
             performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
+                        << "\"minimumIterations\":" << controls.minimumIterations << ",\n"
                         << "\"cells\":" << mesh.cells.size()
                         << ",\n\"faces\":" << mesh.faces.size()
-                        << ",\n\"simpleIterations\":" << (timeStep>0?totalInnerIterations:last.iteration)
+                        << ",\n\"simpleIterations\":" << (coupled?0:timeStep>0?totalInnerIterations:last.iteration)
+                        << ",\n\"coupledOuterIterations\":" << (coupled?last.iteration:0)
+                        << ",\n\"coupling\":" << std::quoted(coupling)
+                        << ",\n\"coupledLinearSolves\":" << p.coupledSolves
+                        << ",\n\"coupledKrylovIterations\":" << p.coupledIterations
+                        << ",\n\"maxCoupledKrylovIterations\":" << p.maxCoupledIterations
+                        << ",\n\"coupledLinearSolveSeconds\":" << p.coupledLinearSolveSeconds
+                        << ",\n\"lineSearchTrials\":" << p.lineSearchTrials
+                        << ",\n\"lineSearchRejected\":" << p.lineSearchRejected
                         << ",\n\"converged\":" << (r.converged ? "true" : "false")
                         << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                         << ",\n\"readAndMeshSeconds\":" << readSeconds
@@ -803,7 +1075,7 @@ int main(int argc, char** argv) {
                         << ",\n\"momentumSolves\":" << p.momentumSolves
                         << ",\n\"momentumIterations\":" << p.momentumIterations
                         << ",\n\"maxMomentumIterations\":" << p.maxMomentumIterations
-                        << ",\n\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses
+                        << ",\n\"pressureCorrectionPasses\":" << (coupled?0:controls.pressureCorrectionPasses)
                         << ",\n\"pressureSolves\":" << p.pressureSolves
                         << ",\n\"pressureCorrectionPassesSkipped\":" << p.pressureCorrectionPassesSkipped
                         << ",\n\"pressureFactorizations\":" << p.pressureFactorizations
@@ -818,10 +1090,15 @@ int main(int argc, char** argv) {
                         << ",\n\"maxPressureCoarseCells\":" << p.maxPressureCoarseCells
                         << ",\n\"pressureIterations\":" << p.pressureIterations
                         << ",\n\"maxPressureIterations\":" << p.maxPressureIterations
-                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement\"\n}\n";
+                        << ",\n\"scope\":\"" << (coupled
+                            ? "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; coupled linear time includes matrix-free assembly and pressure preconditioning; pressure linear time is nested inside coupled linear time; exports excluded; no memory measurement"
+                            : "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement") << "\"\n}\n";
             performance.close();
         }
         if (timeStep==0) progress(last);
+        if(!r.failureReason.empty())std::cerr << (last.iteration==0
+            ? "Coupled solve retained initialization; no step was accepted: "
+            : "Coupled solve retained its last accepted iterate: ") << r.failureReason << '\n';
         return r.converged ? 0 : 2;
     } catch (const std::exception& e) {
         if (transientOutputStarted) {

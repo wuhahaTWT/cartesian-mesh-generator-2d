@@ -1,0 +1,1333 @@
+{
+  "schema_version": 1,
+  "scope": "Completed detailed-physics 100 us native cold-start evolution with the 3446-point reference and momentum-compatible initial state; all accepted sampled states independently audited.",
+  "mature_combustion_goal_complete": false,
+  "qualified_flame_speed": false,
+  "native_run_complete": true,
+  "branch": "codex/cfd-development",
+  "parent_commit": "beed0c9c9c5994b75268cb757c45942675113850",
+  "launch": {
+    "state": "completed",
+    "complete": true,
+    "qualified_flame": false,
+    "mature_combustion_goal_complete": false,
+    "launched_utc": "2026-09-30T06:53:42.625244+00:00",
+    "source_commit": "6eeeb3a197204ac60323c179607c879e62446e47",
+    "native_source_commit": "a61ee624a3745dd807aaf99efb0ed8944d3ee410",
+    "script_sha256": "26907f4a3ef17fc55bc148ae61e3ce3e2442391bb8fdf6a3562aeee49c0b6451",
+    "verifier_sha256": "dd56b2c1dfccf3bb3f124499084ed05b7a9a1ee8882ba4f7b5c90f014c745230",
+    "probe": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/probe",
+    "probe_sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0",
+    "backend_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "native_source_sha256": {
+      "include/cartmesh2d/chemistry/DetailedGas.hpp": "9d7da124229297cc4faf5f3422c75de12003ed6e1b3bd8b8ea7ed7ce8c8668f0",
+      "include/cartmesh2d/chemistry/SpeciesMassClosure.hpp": "26cdb499f66c64cfdaf228e8e3ff8f4b7b6bdb06e04055ed211b635a871c82d5",
+      "include/cartmesh2d/fv/Diffusion2D.hpp": "7527ac6cef08871412f2eff20f93299a8eb9c8e8b40d717846a98a1a7150fa9e",
+      "include/cartmesh2d/fv/Euler2D.hpp": "ae918e32c0a1f5878996b4e3e14b2eb4c1798995b38ae9d44b7b818b30db3aed",
+      "include/cartmesh2d/fv/EulerCheckpoint2D.hpp": "4c6d0d3709b2c5596795a34a55f3ad59aa9129527f98716761bd83d80e72b461",
+      "include/cartmesh2d/fv/FlowBoundaryIO2D.hpp": "ee49f083038c4fea231912b2fb3d2a197b90a5455e18fe11956d7077ddddd6f6",
+      "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "4a0a3ae1f0d2c5673b3957e36da0fc82920d858152e3273780c04bc93eec14db",
+      "include/cartmesh2d/fv/FlowInitialization2D.hpp": "c4c6e590043f9daf0b58350167941eed991f3d842510109a7f00811e5b6fa561",
+      "include/cartmesh2d/fv/FlowTimeStep2D.hpp": "5527a4da02f65405e6892bb703f8f7786e4947b04ddd49b07dde8c076cded95c",
+      "include/cartmesh2d/fv/FvMesh2D.hpp": "5aca21e36170d34a0d4967056dddb39b46639c5db882dc760dfbdff8e1686a0a",
+      "include/cartmesh2d/fv/HeatConduction2D.hpp": "9fbbd437a1221be411ad8616ae8f75719d31d116cbd38384b800af36d943e060",
+      "include/cartmesh2d/fv/Incompressible2D.hpp": "618607a5e7457090ca943944ba441498452772e1be05d1873f6695526d08c9e5",
+      "include/cartmesh2d/fv/ManufacturedFlow2D.hpp": "58c925fc70d6ec244894dca0a1d965b72bf58ed70e61604ad1e0f91324dabbf1",
+      "include/cartmesh2d/fv/ReactingDiffusion2D.hpp": "bbe1f28c264fd320704d8d14c2eb5fd9a75d9782800dc4cf8280b56d3e139acb",
+      "include/cartmesh2d/fv/ReactingFlow2D.hpp": "d779364521cfb577760b2bdf9df95c1c3172ba24818f15af62a723b695962196",
+      "include/cartmesh2d/fv/ReactingImplicit2D.hpp": "9e868502ab190ae0c669225b7d5d1988f0849be46ce17905cf10977e8b144656",
+      "include/cartmesh2d/fv/ScalarTransport2D.hpp": "9a3e198f85cec39ac97d4b63e0a3f75aa96f6577878573679fbe870b82594333",
+      "include/cartmesh2d/fv/Sst2003m2D.hpp": "216ff0ca774b78c9507b54a81a2d8d580a02209b1d6887a5df76f25d7d7eb337",
+      "include/cartmesh2d/fv/SstRans2D.hpp": "17f50894b57b85aaeb06bfa9cd5e44034afeff99d3105dddcc35dd5174a26eb4",
+      "include/cartmesh2d/fv/TaylorGreen2D.hpp": "7c7803df8603098479fdfcab8932a97de627a313a8cf42c432a00c6f7d877feb",
+      "include/cartmesh2d/fv/ThermalCheckpoint2D.hpp": "b8127a43e80359d4b79146e734d55df46ba1a101464b81a95fdc7a9fc2d3147d",
+      "include/cartmesh2d/fv/ThermalFlow2D.hpp": "2efa117cc22e479fe6cd4356ac4d15a0cb08c93807e3e82ba769239cd1385a7b",
+      "include/cartmesh2d/fv/ViscousStress2D.hpp": "496d9af1b24083373bd9eb4492112df0b9cdb2623912f5fe22a57c3f80a2c302",
+      "include/cartmesh2d/fv/WallDistance2D.hpp": "b3a76e7ba36630f8fdce4d9bc0981bd2b6a2181870bc12a6984e5fc1eacc2e1f",
+      "include/cartmesh2d/fv/WallGradient2D.hpp": "dd7cbcc04b3b3a0d254e2592311680a003f1f3f56def5ebaedf4424e2da9d8b5",
+      "include/cartmesh2d/fv/detail/Anderson2D.hpp": "e5f956464e119a5819f0ac878dd338dd887191746052c1a6e35454d32555a0f9",
+      "include/cartmesh2d/fv/detail/FlowAggregation2D.hpp": "a30c49845e253e9cdb70eb6d3ebc30782b136c905ff4e4b4cd81b8638f3261a3",
+      "include/cartmesh2d/fv/detail/FlowCholesky2D.hpp": "fffd27c04b26a2cb2b5e0f3c52c548409a64facb51fd1abcfd8ed217cbca1001",
+      "include/cartmesh2d/fv/detail/FlowConvergence2D.hpp": "b68822437239c134f8422cde86d84f6a7eb7a1da2200275d783fd7c923963b19",
+      "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp": "b1a9f447ab7e35eae89a3a6f262e66557a2e83cf34f91d5fcd753ff4c107598f",
+      "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "61080acf8e4da616845587cdd400ae8b1c48be51fa956f0f247a938eb3ea65c4",
+      "include/cartmesh2d/fv/detail/FlowMaterial2D.hpp": "5d973d86bb88af5643172bdc4d420319d756e82f4e9086373663c7aff0a22b39",
+      "src/chemistry/DetailedGas.cpp": "60eb593eafc36ff12da2c527f6e26f490c6add5176380f013b4f22fc95161886",
+      "src/chemistry/TraceStableMultiTransport.hpp": "5064f727788991da3affe00807779d2c813f30ed940d38f9c054425c6d775f3f",
+      "src/fv/Diffusion2D.cpp": "32bad4be572172f3481e8531a732b57ffebd8689c7a61bf3ab5c0f6693cb1046",
+      "src/fv/Euler2D.cpp": "edf68a010625e811762651eba6e21d93cd2a7e6396b1b29003b905fb720f4d39",
+      "src/fv/EulerFlux2D.cpp": "1385e566152fd849a76815d3349605a21ee761a011781bb89fbc0e3bab49e4e3",
+      "src/fv/FlowBoundaryIO2D.cpp": "c89dbaf7628a64bd2a50fba06b8ff822478d7802199742cc72eaaaa5be6ec5f4",
+      "src/fv/FvMesh2D.cpp": "ddd21eccb702139cb05ef719362ffff74ffd3551389ea8fac0abad7529c291c8",
+      "src/fv/HeatConduction2D.cpp": "6a0eb9c295eb38b5e1c47549128ab8f3c847eec4aeb91a227455d78dcbbc788c",
+      "src/fv/Incompressible2D.cpp": "e4448b26a9f67d79ca202fe9272e0bc3792e82ce7aee5e2592aebbad59ab80f9",
+      "src/fv/ReactingDiffusion2D.cpp": "52223032ee85518333f17930a637093b1fb4bc38033d732b1bf486072d8eb1c7",
+      "src/fv/ReactingFlow2D.cpp": "c251c8dcd358b2dc3f878dae9f206d9e0e76f356927906a235955416ca953758",
+      "src/fv/ReactingImplicit2D.cpp": "543805652c6c4228b48f3d3da1e1ded24ff1efd36783e1317b532fc6e745ef8e",
+      "src/fv/ScalarTransport2D.cpp": "34b9afaa9c95a34cac7ca3c79c4a1eff4ac75b99682d77077a574574ad34c772",
+      "src/fv/Sst2003m2D.cpp": "940b790908c940cd2d743d3ac67d17cfa83ec8b1d9961cd6c892765dff0ddaca",
+      "src/fv/SstRans2D.cpp": "21dc6da0b4fb22bdd37fd27c2def92646e82fa81eccd2019326aa063e9a10d7b",
+      "src/fv/ThermalFlow2D.cpp": "04d9c60f9212c2a414a3ca9e9af239dc46b8c16081d16a6db3747f6c10fdf776",
+      "src/fv/ViscousStress2D.cpp": "fe8e343d773854b38eba20311bdc1d65e92d05be33dcffafb1634b9a7c41ebde",
+      "src/fv/WallDistance2D.cpp": "d577fa050836e8b5588a83c08e9bbbd7f6c74123e22259175d2c6f8bf87a0660",
+      "src/fv/WallGradient2D.cpp": "af286bc7dfed4ab53cd522463244eb9d1268e7d981ba4ee7362460d7927ad7e4",
+      "tests/detailed_gas_probe.cpp": "fb6344b48b982651b07d6d4fc7f70b61514a15acfd24d7706cf1517e3621a7c2",
+      "tests/detailed_gas_test.cpp": "818f393f9691671be8c07ba1ae07bbb8e037e333bfcf78beb1316c328c65425b",
+      "tests/diffusive_flux_probe.cpp": "5a3e049c0983d55a7d451c0dfffb3bb3f43363dd1bc1e4debbfed590190805f9",
+      "tests/reacting_flame_probe.cpp": "a38d20745d067d176f95a6623563828a26a8ec6ffdaeedcdf43679be67f12503",
+      "tests/reacting_flow_probe.cpp": "f53907171d35e1589c6409c7b0bf18e16fd3017c99aa5636fec22d67eaeca13c"
+    },
+    "short_time_evidence": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/native-reacting-refined-state.json",
+      "sha256": "45a392ab149c8c104a8cada87a074dafc814981347ec294368fc21ae0504595a"
+    },
+    "input_sha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/grid.fixture": "dae4ffea1c289cfbb079c26f394e2511805ad9d02310aa814ed74d1332dfc8cf",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/profile-closed.json": "5abdbcc13f529aa55d3c314d8139a0c6c3748e97a42c8caf457c5fe37dcb6a72",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/reference.json": "709a28d75806e16526d61318e23d20174829a92d1e17f86de487d5ace43881d5",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4"
+    },
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/chemistry-env/bin/python",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/frozen-source/verify_reacting_flame.py",
+      "--probe",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/probe",
+      "--reference",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-refinement-001/fine-momentum-input",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution",
+      "--duration",
+      "1e-4",
+      "--grid",
+      "0",
+      "--jobs",
+      "1",
+      "--reflect-species",
+      "1",
+      "--sample-every",
+      "200",
+      "--max-samples",
+      "256"
+    ],
+    "requested_physical_duration_s": 0.0001,
+    "cold_start": true,
+    "controls_note": "Original relative/conserved/species tolerances and full physics. Duration-derived maximumStep becomes 100 us; sampling every 200 accepted steps, maximum 256, versus 50/128 in 10 us comparisons. No restart or state changes.",
+    "no_long_time_qualification_before_completed_independent_audit": true,
+    "returncode": 0,
+    "native_report": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/report.json",
+      "sha256": "6c0ef1222d8016e2ba043884f0e228e7b64015e94b926e1f8466d78dd24dbb4e"
+    },
+    "total_wall_seconds_including_audits": 3064.0706115420326,
+    "finished_utc": "2026-09-30T07:44:46.692736+00:00"
+  },
+  "completed_native_case": {
+    "fixture_index": 0,
+    "returncode": 0,
+    "elapsed_seconds_including_all_IO": 3053.6762288330356,
+    "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0",
+    "raw_sha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/evaluation-progress.jsonl": "6a445492b90864eb39b216d052506af0b63f21d4d606f5f87ae313683b2c5049",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/field.json": "ea2ccee693ad0dca1784bfd24cde74eb52fa908ae155ccc480740f37e703a733",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/steps.jsonl": "ce28b6d30c58e69b679bea6050122cb1abbdf72aa5673235a640054bf699d32f",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/accepted-state.json": "27af38947b58e9d51b83fb6215990efddb9145f2a56c318a5ee89101d9141816",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/accepted.checkpoint": "c4b238b29770103f06e5acb44a4dafc464deb25ffd91e03469f8462f09cb55aa",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/samples.jsonl": "8e1d4ae35790ce7e5c276b9ba1a9715c70fb857135d5b2acbc417ee8e1d346e5"
+    },
+    "numerical_checks_passed": true,
+    "physical_endpoint_reached": true,
+    "qualified_flame": false,
+    "cells": 890,
+    "spacing_m": 1e-05,
+    "time_s": 0.0001,
+    "accepted_steps": 7553,
+    "rejections": null,
+    "failure": "",
+    "initial_time_s": 0,
+    "initial_accepted_steps": 0,
+    "total_accepted_steps": 7553,
+    "restarted": false,
+    "thermo_relative_error": 1.354179345996174e-14,
+    "source_error_over_gross_activity": 2.157481284476419e-15,
+    "face_assembly_relative_error": 8.649384381456618e-17,
+    "species_sum_absolute_error": 4.440892098500626e-16,
+    "mass_budget_per_initial_mass": 1.2152678179518566e-13,
+    "energy_budget_scaled": 1.4670008017054287e-14,
+    "momentum_budget_scaled": 5.704706671949325e-14,
+    "element_budget_per_initial_mass": 9.07468477249272e-14,
+    "initial_residual": {
+      "species_residual_L1_over_chemical_activity": 0.008295195464060098,
+      "maximum_temperature_derivative_K_per_s": 55766.64042427159,
+      "hydrogen_consumption_kg_per_m2_s": 0.038141668242764104,
+      "pressure_max_relative_to_reference": 0.00016128997765418873
+    },
+    "final_residual": {
+      "species_residual_L1_over_chemical_activity": 0.0035828838228137137,
+      "maximum_temperature_derivative_K_per_s": 4006.976183792687,
+      "hydrogen_consumption_kg_per_m2_s": 0.03810554055677836,
+      "pressure_max_relative_to_reference": 0.00015136105753343898
+    },
+    "maximum_temperature_drift_K": 1.4161059258611886,
+    "integration": {
+      "method": "CVODES-BDF",
+      "errorControlCorrection": "fullPredictorCorrection",
+      "maximumOrder": 5,
+      "maximumNonlinearIterations": 3,
+      "continueDampedNewton": false,
+      "reflectSpeciesNewton": true,
+      "relativeTolerance": 1e-07,
+      "spatialOrder": 2,
+      "jacobianAdvectionOrder": 1,
+      "absoluteConservedTolerance": 1e-12,
+      "absoluteSpeciesFraction": 1e-18,
+      "maximumStep": 0.0001,
+      "maximumResidualEvaluations": 100000,
+      "rhsCalls": 37775,
+      "rejectedRhsCalls": 0,
+      "errorTestFailures": 4,
+      "linearSetups": 389,
+      "jacobianEvaluations": 127,
+      "nonlinearIterations": 13705,
+      "nonlinearConvergenceFailures": 0,
+      "dampedNewtonUpdates": 0,
+      "continuedDampedNewtonUpdates": 0,
+      "reflectedNewtonUpdates": 2133,
+      "reflectionAttempts": 2133,
+      "maximumReflectedSpeciesScaledChange": 5.788703432679767e-23,
+      "maximumLocalErrorNorm": 0.9936665613536829,
+      "minimumNewtonFraction": 1,
+      "bandHalfWidth": 64,
+      "bandBytes": 17864080,
+      "sampleEveryAcceptedSteps": 200,
+      "sampleResidualEvaluations": 39,
+      "maximumSamples": 256,
+      "samplingFailure": "",
+      "acceptedByBdfOrder": [
+        0,
+        2,
+        13,
+        1985,
+        5553,
+        0
+      ],
+      "lastDampedTrialFailure": "implicit reacting flow: trial cell 34 species H density=-1.2009077199835397e-30"
+    },
+    "bdf_species_quadrature_defect_per_mass": 9.073930429700737e-14,
+    "constraint_change_per_initial_mass": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -7.543427919835272e-18
+    ],
+    "field_sha256": "ea2ccee693ad0dca1784bfd24cde74eb52fa908ae155ccc480740f37e703a733",
+    "accepted_state_samples": {
+      "all_samples_passed": true,
+      "sampling_complete": true,
+      "sampling_failure": "",
+      "sample_count": 39,
+      "sample_audits": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/sample-audits.json",
+      "sample_audits_sha256": "9e91b5689074a03d1d302d19ea0fb9d9a2d3b123213e2ddc13385a8472ceaecd",
+      "samples_sha256": "8e1d4ae35790ce7e5c276b9ba1a9715c70fb857135d5b2acbc417ee8e1d346e5"
+    }
+  },
+  "final_frame": {
+    "time_s": 0.0001,
+    "total_accepted_steps": 7553,
+    "markers": [
+      {
+        "temperature_K": 600.0,
+        "crossings_m": [
+          0.013948284211868799
+        ],
+        "plateaus_m": [],
+        "unique_position_m": 0.013948284211868799
+      },
+      {
+        "temperature_K": 1000.0,
+        "crossings_m": [
+          0.014027610890526943
+        ],
+        "plateaus_m": [],
+        "unique_position_m": 0.014027610890526943
+      },
+      {
+        "temperature_K": 1317.2218244563126,
+        "crossings_m": [
+          0.01410128357515541
+        ],
+        "plateaus_m": [],
+        "unique_position_m": 0.01410128357515541
+      },
+      {
+        "temperature_K": 1500.0,
+        "crossings_m": [
+          0.014166531595103525
+        ],
+        "plateaus_m": [],
+        "unique_position_m": 0.014166531595103525
+      },
+      {
+        "temperature_K": 2000.0,
+        "crossings_m": [
+          0.014987844824257746
+        ],
+        "plateaus_m": [],
+        "unique_position_m": 0.014987844824257746
+      }
+    ],
+    "alignment_displacement_m": 1.587338446414066e-07,
+    "maximum_temperature_drift_K": 1.4161059258611886,
+    "row_mean_shape_after_translation": {
+      "maximum_K": 0.5958699160053129,
+      "width_weighted_RMS_K": 0.1087233547572782,
+      "evaluated_columns": 444,
+      "excluded_columns": 1,
+      "evaluated_width_fraction": 0.9987616868810358,
+      "first_evaluated_centre_m": 0.00017453252475856443,
+      "last_evaluated_centre_m": 0.039916444675120726
+    },
+    "maximum_temperature_spread_across_rows_K": 4.4430180423660204e-07,
+    "stations": [
+      {
+        "requested_x_m": 0.005,
+        "actual_x_m": 0.004924532524758567,
+        "velocity_m_per_s": 2.487435437002122,
+        "density_kg_per_m3": 0.6733139424763573,
+        "temperature_K": 400.00078185431823,
+        "temperature_difference_from_inlet_K": 0.0007818543182338544,
+        "pressure_Pa": 101325.70115103632,
+        "maximum_mass_fraction_difference_from_inlet": 1.654482106872024e-12,
+        "left_of_all_unique_markers": true
+      },
+      {
+        "requested_x_m": 0.01,
+        "actual_x_m": 0.009924532524758571,
+        "velocity_m_per_s": 2.4869060594571493,
+        "density_kg_per_m3": 0.6733147204986536,
+        "temperature_K": 400.00096380367074,
+        "temperature_difference_from_inlet_K": 0.000963803670742891,
+        "pressure_Pa": 101325.8643214032,
+        "maximum_mass_fraction_difference_from_inlet": 1.2648770919554408e-12,
+        "left_of_all_unique_markers": true
+      },
+      {
+        "requested_x_m": 0.0125,
+        "actual_x_m": 0.012437933969533795,
+        "velocity_m_per_s": 2.4866330716657665,
+        "density_kg_per_m3": 0.6733151477020674,
+        "temperature_K": 400.00105766581817,
+        "temperature_difference_from_inlet_K": 0.0010576658181662424,
+        "pressure_Pa": 101325.9484926085,
+        "maximum_mass_fraction_difference_from_inlet": 3.769437595391167e-09,
+        "left_of_all_unique_markers": true
+      }
+    ],
+    "inlet_mass_flux_kg_per_m2_s": 1.6751581264295057,
+    "outlet_mass_flux_kg_per_m2_s": 1.6755344116282902,
+    "native_residual": {
+      "species_residual_L1_over_chemical_activity": 0.0035828838228137137,
+      "maximum_temperature_derivative_K_per_s": 4006.976183792687,
+      "hydrogen_consumption_kg_per_m2_s": 0.03810554055677836,
+      "pressure_max_relative_to_reference": 0.00015136105753343898
+    }
+  },
+  "late_window": {
+    "requested_duration_s": 2e-05,
+    "actual_first_s": 8.013398082878825e-05,
+    "actual_last_s": 0.0001,
+    "samples": 11,
+    "marker_motion": [
+      {
+        "temperature_K": 600.0,
+        "available": true,
+        "samples": 11,
+        "first_time_s": 8.013398082878825e-05,
+        "last_time_s": 0.0001,
+        "lab_velocity_m_per_s": 0.00020121578123357924,
+        "endpoint_secant_velocity_m_per_s": 0.0002070614406538358,
+        "maximum_linear_fit_position_deviation_m": 1.999646931477183e-09,
+        "interval_lab_velocity_min_m_per_s": -0.0004103226993739611,
+        "interval_lab_velocity_max_m_per_s": 0.0007967569105048781,
+        "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+        "relative_to_stations": [
+          {
+            "requested_station_m": 0.005,
+            "actual_station_m": 0.004924532524758567,
+            "time_mean_station_velocity_m_per_s": 2.4878819059587336,
+            "station_relative_marker_speed_m_per_s": 2.4876806901775,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0007818543182338544,
+            "maximum_station_mass_fraction_difference_from_inlet": 1.654482106872024e-12
+          },
+          {
+            "requested_station_m": 0.01,
+            "actual_station_m": 0.009924532524758571,
+            "time_mean_station_velocity_m_per_s": 2.487382126685774,
+            "station_relative_marker_speed_m_per_s": 2.4871809109045406,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.000963803670742891,
+            "maximum_station_mass_fraction_difference_from_inlet": 2.266527243666161e-12
+          },
+          {
+            "requested_station_m": 0.0125,
+            "actual_station_m": 0.012437933969533795,
+            "time_mean_station_velocity_m_per_s": 2.4871187003826174,
+            "station_relative_marker_speed_m_per_s": 2.486917484601384,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0010576658181662424,
+            "maximum_station_mass_fraction_difference_from_inlet": 4.356349815604066e-09
+          }
+        ]
+      },
+      {
+        "temperature_K": 1000.0,
+        "available": true,
+        "samples": 11,
+        "first_time_s": 8.013398082878825e-05,
+        "last_time_s": 0.0001,
+        "lab_velocity_m_per_s": 0.00019952993008877644,
+        "endpoint_secant_velocity_m_per_s": 0.00020732360771197615,
+        "maximum_linear_fit_position_deviation_m": 2.2516845782551448e-09,
+        "interval_lab_velocity_min_m_per_s": -0.0004774398127266143,
+        "interval_lab_velocity_max_m_per_s": 0.0008743410708850524,
+        "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+        "relative_to_stations": [
+          {
+            "requested_station_m": 0.005,
+            "actual_station_m": 0.004924532524758567,
+            "time_mean_station_velocity_m_per_s": 2.4878819059587336,
+            "station_relative_marker_speed_m_per_s": 2.4876823760286446,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0007818543182338544,
+            "maximum_station_mass_fraction_difference_from_inlet": 1.654482106872024e-12
+          },
+          {
+            "requested_station_m": 0.01,
+            "actual_station_m": 0.009924532524758571,
+            "time_mean_station_velocity_m_per_s": 2.487382126685774,
+            "station_relative_marker_speed_m_per_s": 2.487182596755685,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.000963803670742891,
+            "maximum_station_mass_fraction_difference_from_inlet": 2.266527243666161e-12
+          },
+          {
+            "requested_station_m": 0.0125,
+            "actual_station_m": 0.012437933969533795,
+            "time_mean_station_velocity_m_per_s": 2.4871187003826174,
+            "station_relative_marker_speed_m_per_s": 2.4869191704525284,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0010576658181662424,
+            "maximum_station_mass_fraction_difference_from_inlet": 4.356349815604066e-09
+          }
+        ]
+      },
+      {
+        "temperature_K": 1317.2218244563126,
+        "available": true,
+        "samples": 11,
+        "first_time_s": 8.013398082878825e-05,
+        "last_time_s": 0.0001,
+        "lab_velocity_m_per_s": 0.00011353456993211768,
+        "endpoint_secant_velocity_m_per_s": 0.00012244180048547656,
+        "maximum_linear_fit_position_deviation_m": 2.36708528076396e-09,
+        "interval_lab_velocity_min_m_per_s": -0.0005912167555519901,
+        "interval_lab_velocity_max_m_per_s": 0.0008253623642073203,
+        "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+        "relative_to_stations": [
+          {
+            "requested_station_m": 0.005,
+            "actual_station_m": 0.004924532524758567,
+            "time_mean_station_velocity_m_per_s": 2.4878819059587336,
+            "station_relative_marker_speed_m_per_s": 2.4877683713888015,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0007818543182338544,
+            "maximum_station_mass_fraction_difference_from_inlet": 1.654482106872024e-12
+          },
+          {
+            "requested_station_m": 0.01,
+            "actual_station_m": 0.009924532524758571,
+            "time_mean_station_velocity_m_per_s": 2.487382126685774,
+            "station_relative_marker_speed_m_per_s": 2.487268592115842,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.000963803670742891,
+            "maximum_station_mass_fraction_difference_from_inlet": 2.266527243666161e-12
+          },
+          {
+            "requested_station_m": 0.0125,
+            "actual_station_m": 0.012437933969533795,
+            "time_mean_station_velocity_m_per_s": 2.4871187003826174,
+            "station_relative_marker_speed_m_per_s": 2.4870051658126853,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0010576658181662424,
+            "maximum_station_mass_fraction_difference_from_inlet": 4.356349815604066e-09
+          }
+        ]
+      },
+      {
+        "temperature_K": 1500.0,
+        "available": true,
+        "samples": 11,
+        "first_time_s": 8.013398082878825e-05,
+        "last_time_s": 0.0001,
+        "lab_velocity_m_per_s": 3.025167375091202e-05,
+        "endpoint_secant_velocity_m_per_s": 4.07142369683483e-05,
+        "maximum_linear_fit_position_deviation_m": 2.6261933962890956e-09,
+        "interval_lab_velocity_min_m_per_s": -0.000745936787230047,
+        "interval_lab_velocity_max_m_per_s": 0.0008218822681242652,
+        "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+        "relative_to_stations": [
+          {
+            "requested_station_m": 0.005,
+            "actual_station_m": 0.004924532524758567,
+            "time_mean_station_velocity_m_per_s": 2.4878819059587336,
+            "station_relative_marker_speed_m_per_s": 2.4878516542849827,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0007818543182338544,
+            "maximum_station_mass_fraction_difference_from_inlet": 1.654482106872024e-12
+          },
+          {
+            "requested_station_m": 0.01,
+            "actual_station_m": 0.009924532524758571,
+            "time_mean_station_velocity_m_per_s": 2.487382126685774,
+            "station_relative_marker_speed_m_per_s": 2.487351875012023,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.000963803670742891,
+            "maximum_station_mass_fraction_difference_from_inlet": 2.266527243666161e-12
+          },
+          {
+            "requested_station_m": 0.0125,
+            "actual_station_m": 0.012437933969533795,
+            "time_mean_station_velocity_m_per_s": 2.4871187003826174,
+            "station_relative_marker_speed_m_per_s": 2.4870884487088665,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0010576658181662424,
+            "maximum_station_mass_fraction_difference_from_inlet": 4.356349815604066e-09
+          }
+        ]
+      },
+      {
+        "temperature_K": 2000.0,
+        "available": true,
+        "samples": 11,
+        "first_time_s": 8.013398082878825e-05,
+        "last_time_s": 0.0001,
+        "lab_velocity_m_per_s": -0.007958367386927427,
+        "endpoint_secant_velocity_m_per_s": -0.008078146194931943,
+        "maximum_linear_fit_position_deviation_m": 1.1840512874532783e-08,
+        "interval_lab_velocity_min_m_per_s": -0.011755540456666587,
+        "interval_lab_velocity_max_m_per_s": -0.005179233760409448,
+        "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+        "relative_to_stations": [
+          {
+            "requested_station_m": 0.005,
+            "actual_station_m": 0.004924532524758567,
+            "time_mean_station_velocity_m_per_s": 2.4878819059587336,
+            "station_relative_marker_speed_m_per_s": 2.495840273345661,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0007818543182338544,
+            "maximum_station_mass_fraction_difference_from_inlet": 1.654482106872024e-12
+          },
+          {
+            "requested_station_m": 0.01,
+            "actual_station_m": 0.009924532524758571,
+            "time_mean_station_velocity_m_per_s": 2.487382126685774,
+            "station_relative_marker_speed_m_per_s": 2.4953404940727015,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.000963803670742891,
+            "maximum_station_mass_fraction_difference_from_inlet": 2.266527243666161e-12
+          },
+          {
+            "requested_station_m": 0.0125,
+            "actual_station_m": 0.012437933969533795,
+            "time_mean_station_velocity_m_per_s": 2.4871187003826174,
+            "station_relative_marker_speed_m_per_s": 2.495077067769545,
+            "station_left_of_all_unique_markers_in_window": true,
+            "maximum_station_temperature_difference_from_inlet_K": 0.0010576658181662424,
+            "maximum_station_mass_fraction_difference_from_inlet": 4.356349815604066e-09
+          }
+        ]
+      }
+    ]
+  },
+  "late_species_residual_first_to_last": [
+    0.0032968557527127654,
+    0.0035828838228137137
+  ],
+  "inlet_mass_flux_initial_to_final_fraction": -0.0007091271733844495,
+  "comparison_with_previous_100us": {
+    "scope": "Observed outcome comparison only: different reference/initial pressure preparation and frozen native executable. No single-factor causal or performance claim.",
+    "old_native_probe_sha256": "87f6250de802c8e0da63fe7344fb75c3b5aba59993423d3a3e1f047f1548aaae",
+    "new_native_probe_sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0",
+    "old_final_frame": {
+      "time_s": 0.0001,
+      "total_accepted_steps": 10443,
+      "markers": [
+        {
+          "temperature_K": 600.0,
+          "crossings_m": [
+            0.013942709244711646
+          ],
+          "plateaus_m": [],
+          "unique_position_m": 0.013942709244711646
+        },
+        {
+          "temperature_K": 1000.0,
+          "crossings_m": [
+            0.01402208615577106
+          ],
+          "plateaus_m": [],
+          "unique_position_m": 0.01402208615577106
+        },
+        {
+          "temperature_K": 1317.2218244563126,
+          "crossings_m": [
+            0.014095892745320856
+          ],
+          "plateaus_m": [],
+          "unique_position_m": 0.014095892745320856
+        },
+        {
+          "temperature_K": 1500.0,
+          "crossings_m": [
+            0.014161257882260466
+          ],
+          "plateaus_m": [],
+          "unique_position_m": 0.014161257882260466
+        },
+        {
+          "temperature_K": 2000.0,
+          "crossings_m": [
+            0.014990789122884702
+          ],
+          "plateaus_m": [],
+          "unique_position_m": 0.014990789122884702
+        }
+      ],
+      "alignment_displacement_m": -5.986392517889211e-06,
+      "maximum_temperature_drift_K": 27.31710666097024,
+      "row_mean_shape_after_translation": {
+        "maximum_K": 5.211134505948621,
+        "width_weighted_RMS_K": 0.773187197636742,
+        "evaluated_columns": 444,
+        "excluded_columns": 1,
+        "evaluated_width_fraction": 0.9958222337560363,
+        "first_evaluated_centre_m": 2.4766262379282214e-05,
+        "last_evaluated_centre_m": 0.03970788935024145
+      },
+      "maximum_temperature_spread_across_rows_K": 3.152019849039789e-05,
+      "stations": [
+        {
+          "requested_x_m": 0.005,
+          "actual_x_m": 0.004924532524758567,
+          "velocity_m_per_s": 2.420238536125438,
+          "density_kg_per_m3": 0.6734031039581825,
+          "temperature_K": 400.0216331320913,
+          "temperature_difference_from_inlet_K": 0.021633132091324114,
+          "pressure_Pa": 101344.40151237155,
+          "maximum_mass_fraction_difference_from_inlet": 1.0305242770236589e-11,
+          "left_of_all_unique_markers": true
+        },
+        {
+          "requested_x_m": 0.01,
+          "actual_x_m": 0.009924532524758571,
+          "velocity_m_per_s": 2.4177868312845785,
+          "density_kg_per_m3": 0.6734067038980525,
+          "temperature_K": 400.0224749818859,
+          "temperature_difference_from_inlet_K": 0.022474981885920897,
+          "pressure_Pa": 101345.15656514817,
+          "maximum_mass_fraction_difference_from_inlet": 5.561887755911599e-12,
+          "left_of_all_unique_markers": true
+        },
+        {
+          "requested_x_m": 0.0125,
+          "actual_x_m": 0.012437933969533795,
+          "velocity_m_per_s": 2.416513366879143,
+          "density_kg_per_m3": 0.6734086203867128,
+          "temperature_K": 400.02291233952735,
+          "temperature_difference_from_inlet_K": 0.022912339527351833,
+          "pressure_Pa": 101345.54881346459,
+          "maximum_mass_fraction_difference_from_inlet": 6.747033567261473e-09,
+          "left_of_all_unique_markers": true
+        }
+      ],
+      "inlet_mass_flux_kg_per_m2_s": 1.6314239200284681,
+      "outlet_mass_flux_kg_per_m2_s": 1.6664766127235542,
+      "native_residual": {
+        "species_residual_L1_over_chemical_activity": 0.0667647567933091,
+        "maximum_temperature_derivative_K_per_s": 318693.11793014716,
+        "hydrogen_consumption_kg_per_m2_s": 0.03791085951849403,
+        "pressure_max_relative_to_reference": 0.0002052534230805314
+      }
+    },
+    "old_late_window": {
+      "requested_duration_s": 2e-05,
+      "actual_first_s": 8.045500185507747e-05,
+      "actual_last_s": 0.0001,
+      "samples": 12,
+      "marker_motion": [
+        {
+          "temperature_K": 600.0,
+          "available": true,
+          "samples": 12,
+          "first_time_s": 8.045500185507747e-05,
+          "last_time_s": 0.0001,
+          "lab_velocity_m_per_s": -0.06035364047580023,
+          "endpoint_secant_velocity_m_per_s": -0.060260565024615916,
+          "maximum_linear_fit_position_deviation_m": 8.01652668473318e-09,
+          "interval_lab_velocity_min_m_per_s": -0.06279786527403196,
+          "interval_lab_velocity_max_m_per_s": -0.05799381285161219,
+          "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+          "relative_to_stations": [
+            {
+              "requested_station_m": 0.005,
+              "actual_station_m": 0.004924532524758567,
+              "time_mean_station_velocity_m_per_s": 2.422248601799408,
+              "station_relative_marker_speed_m_per_s": 2.482602242275208,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.021633132091324114,
+              "maximum_station_mass_fraction_difference_from_inlet": 1.0305242770236589e-11
+            },
+            {
+              "requested_station_m": 0.01,
+              "actual_station_m": 0.009924532524758571,
+              "time_mean_station_velocity_m_per_s": 2.4199527488497097,
+              "station_relative_marker_speed_m_per_s": 2.4803063893255097,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022474981885920897,
+              "maximum_station_mass_fraction_difference_from_inlet": 5.561887755911599e-12
+            },
+            {
+              "requested_station_m": 0.0125,
+              "actual_station_m": 0.012437933969533795,
+              "time_mean_station_velocity_m_per_s": 2.418732769939687,
+              "station_relative_marker_speed_m_per_s": 2.479086410415487,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022912339527351833,
+              "maximum_station_mass_fraction_difference_from_inlet": 7.73661655920077e-09
+            }
+          ]
+        },
+        {
+          "temperature_K": 1000.0,
+          "available": true,
+          "samples": 12,
+          "first_time_s": 8.045500185507747e-05,
+          "last_time_s": 0.0001,
+          "lab_velocity_m_per_s": -0.05831576005112202,
+          "endpoint_secant_velocity_m_per_s": -0.0582134728005563,
+          "maximum_linear_fit_position_deviation_m": 8.993849647755542e-09,
+          "interval_lab_velocity_min_m_per_s": -0.06108766138193207,
+          "interval_lab_velocity_max_m_per_s": -0.05567545112469011,
+          "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+          "relative_to_stations": [
+            {
+              "requested_station_m": 0.005,
+              "actual_station_m": 0.004924532524758567,
+              "time_mean_station_velocity_m_per_s": 2.422248601799408,
+              "station_relative_marker_speed_m_per_s": 2.4805643618505298,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.021633132091324114,
+              "maximum_station_mass_fraction_difference_from_inlet": 1.0305242770236589e-11
+            },
+            {
+              "requested_station_m": 0.01,
+              "actual_station_m": 0.009924532524758571,
+              "time_mean_station_velocity_m_per_s": 2.4199527488497097,
+              "station_relative_marker_speed_m_per_s": 2.4782685089008316,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022474981885920897,
+              "maximum_station_mass_fraction_difference_from_inlet": 5.561887755911599e-12
+            },
+            {
+              "requested_station_m": 0.0125,
+              "actual_station_m": 0.012437933969533795,
+              "time_mean_station_velocity_m_per_s": 2.418732769939687,
+              "station_relative_marker_speed_m_per_s": 2.477048529990809,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022912339527351833,
+              "maximum_station_mass_fraction_difference_from_inlet": 7.73661655920077e-09
+            }
+          ]
+        },
+        {
+          "temperature_K": 1317.2218244563126,
+          "available": true,
+          "samples": 12,
+          "first_time_s": 8.045500185507747e-05,
+          "last_time_s": 0.0001,
+          "lab_velocity_m_per_s": -0.06048148456949992,
+          "endpoint_secant_velocity_m_per_s": -0.060369410608255514,
+          "maximum_linear_fit_position_deviation_m": 9.886983879988446e-09,
+          "interval_lab_velocity_min_m_per_s": -0.06353378488286548,
+          "interval_lab_velocity_max_m_per_s": -0.057580920822392405,
+          "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+          "relative_to_stations": [
+            {
+              "requested_station_m": 0.005,
+              "actual_station_m": 0.004924532524758567,
+              "time_mean_station_velocity_m_per_s": 2.422248601799408,
+              "station_relative_marker_speed_m_per_s": 2.4827300863689077,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.021633132091324114,
+              "maximum_station_mass_fraction_difference_from_inlet": 1.0305242770236589e-11
+            },
+            {
+              "requested_station_m": 0.01,
+              "actual_station_m": 0.009924532524758571,
+              "time_mean_station_velocity_m_per_s": 2.4199527488497097,
+              "station_relative_marker_speed_m_per_s": 2.4804342334192095,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022474981885920897,
+              "maximum_station_mass_fraction_difference_from_inlet": 5.561887755911599e-12
+            },
+            {
+              "requested_station_m": 0.0125,
+              "actual_station_m": 0.012437933969533795,
+              "time_mean_station_velocity_m_per_s": 2.418732769939687,
+              "station_relative_marker_speed_m_per_s": 2.479214254509187,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022912339527351833,
+              "maximum_station_mass_fraction_difference_from_inlet": 7.73661655920077e-09
+            }
+          ]
+        },
+        {
+          "temperature_K": 1500.0,
+          "available": true,
+          "samples": 12,
+          "first_time_s": 8.045500185507747e-05,
+          "last_time_s": 0.0001,
+          "lab_velocity_m_per_s": -0.05895814245253326,
+          "endpoint_secant_velocity_m_per_s": -0.058848125730386815,
+          "maximum_linear_fit_position_deviation_m": 9.749362773933906e-09,
+          "interval_lab_velocity_min_m_per_s": -0.06197282373961229,
+          "interval_lab_velocity_max_m_per_s": -0.056100833304122306,
+          "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+          "relative_to_stations": [
+            {
+              "requested_station_m": 0.005,
+              "actual_station_m": 0.004924532524758567,
+              "time_mean_station_velocity_m_per_s": 2.422248601799408,
+              "station_relative_marker_speed_m_per_s": 2.481206744251941,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.021633132091324114,
+              "maximum_station_mass_fraction_difference_from_inlet": 1.0305242770236589e-11
+            },
+            {
+              "requested_station_m": 0.01,
+              "actual_station_m": 0.009924532524758571,
+              "time_mean_station_velocity_m_per_s": 2.4199527488497097,
+              "station_relative_marker_speed_m_per_s": 2.478910891302243,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022474981885920897,
+              "maximum_station_mass_fraction_difference_from_inlet": 5.561887755911599e-12
+            },
+            {
+              "requested_station_m": 0.0125,
+              "actual_station_m": 0.012437933969533795,
+              "time_mean_station_velocity_m_per_s": 2.418732769939687,
+              "station_relative_marker_speed_m_per_s": 2.4776909123922204,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022912339527351833,
+              "maximum_station_mass_fraction_difference_from_inlet": 7.73661655920077e-09
+            }
+          ]
+        },
+        {
+          "temperature_K": 2000.0,
+          "available": true,
+          "samples": 12,
+          "first_time_s": 8.045500185507747e-05,
+          "last_time_s": 0.0001,
+          "lab_velocity_m_per_s": -0.13712492128524517,
+          "endpoint_secant_velocity_m_per_s": -0.13811472032860717,
+          "maximum_linear_fit_position_deviation_m": 6.076501868413808e-08,
+          "interval_lab_velocity_min_m_per_s": -0.15620524158152954,
+          "interval_lab_velocity_max_m_per_s": -0.12221519956656884,
+          "method": "Unweighted least-squares line through actual saved positions and times; endpoint secant and interval range also retained.",
+          "relative_to_stations": [
+            {
+              "requested_station_m": 0.005,
+              "actual_station_m": 0.004924532524758567,
+              "time_mean_station_velocity_m_per_s": 2.422248601799408,
+              "station_relative_marker_speed_m_per_s": 2.559373523084653,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.021633132091324114,
+              "maximum_station_mass_fraction_difference_from_inlet": 1.0305242770236589e-11
+            },
+            {
+              "requested_station_m": 0.01,
+              "actual_station_m": 0.009924532524758571,
+              "time_mean_station_velocity_m_per_s": 2.4199527488497097,
+              "station_relative_marker_speed_m_per_s": 2.5570776701349547,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022474981885920897,
+              "maximum_station_mass_fraction_difference_from_inlet": 5.561887755911599e-12
+            },
+            {
+              "requested_station_m": 0.0125,
+              "actual_station_m": 0.012437933969533795,
+              "time_mean_station_velocity_m_per_s": 2.418732769939687,
+              "station_relative_marker_speed_m_per_s": 2.555857691224932,
+              "station_left_of_all_unique_markers_in_window": true,
+              "maximum_station_temperature_difference_from_inlet_K": 0.022912339527351833,
+              "maximum_station_mass_fraction_difference_from_inlet": 7.73661655920077e-09
+            }
+          ]
+        }
+      ]
+    },
+    "temperature_drift_old_new_K": [
+      27.31710666097024,
+      1.4161059258611886
+    ],
+    "aligned_shape_maximum_old_new_K": [
+      5.211134505948621,
+      0.5958699160053129
+    ]
+  },
+  "preserved_partial_evidence": "artifacts/current/native-reacting-history-analysis.json",
+  "figure": {
+    "path": "artifacts/current/native-reacting-refined-evolution.png",
+    "sha256": "fe969481aa8c7b99b292466e60e54023db2494df21a5c29ddbb49134ff2f4bcb",
+    "data": "outputs/combustion-foundation/refined-evolution-100us-001/history-complete/analysis.json"
+  },
+  "verified_raw_file_count": 102,
+  "raw_files": [
+    {
+      "path": "build/deps/cantera/lib/libcantera_shared.3.2.0.dylib",
+      "sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/h2o2.yaml",
+      "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4"
+    },
+    {
+      "path": "include/cartmesh2d/chemistry/DetailedGas.hpp",
+      "sha256": "9d7da124229297cc4faf5f3422c75de12003ed6e1b3bd8b8ea7ed7ce8c8668f0"
+    },
+    {
+      "path": "include/cartmesh2d/chemistry/SpeciesMassClosure.hpp",
+      "sha256": "26cdb499f66c64cfdaf228e8e3ff8f4b7b6bdb06e04055ed211b635a871c82d5"
+    },
+    {
+      "path": "include/cartmesh2d/fv/Diffusion2D.hpp",
+      "sha256": "7527ac6cef08871412f2eff20f93299a8eb9c8e8b40d717846a98a1a7150fa9e"
+    },
+    {
+      "path": "include/cartmesh2d/fv/Euler2D.hpp",
+      "sha256": "ae918e32c0a1f5878996b4e3e14b2eb4c1798995b38ae9d44b7b818b30db3aed"
+    },
+    {
+      "path": "include/cartmesh2d/fv/EulerCheckpoint2D.hpp",
+      "sha256": "4c6d0d3709b2c5596795a34a55f3ad59aa9129527f98716761bd83d80e72b461"
+    },
+    {
+      "path": "include/cartmesh2d/fv/FlowBoundaryIO2D.hpp",
+      "sha256": "ee49f083038c4fea231912b2fb3d2a197b90a5455e18fe11956d7077ddddd6f6"
+    },
+    {
+      "path": "include/cartmesh2d/fv/FlowCheckpoint2D.hpp",
+      "sha256": "4a0a3ae1f0d2c5673b3957e36da0fc82920d858152e3273780c04bc93eec14db"
+    },
+    {
+      "path": "include/cartmesh2d/fv/FlowInitialization2D.hpp",
+      "sha256": "c4c6e590043f9daf0b58350167941eed991f3d842510109a7f00811e5b6fa561"
+    },
+    {
+      "path": "include/cartmesh2d/fv/FlowTimeStep2D.hpp",
+      "sha256": "5527a4da02f65405e6892bb703f8f7786e4947b04ddd49b07dde8c076cded95c"
+    },
+    {
+      "path": "include/cartmesh2d/fv/FvMesh2D.hpp",
+      "sha256": "5aca21e36170d34a0d4967056dddb39b46639c5db882dc760dfbdff8e1686a0a"
+    },
+    {
+      "path": "include/cartmesh2d/fv/HeatConduction2D.hpp",
+      "sha256": "9fbbd437a1221be411ad8616ae8f75719d31d116cbd38384b800af36d943e060"
+    },
+    {
+      "path": "include/cartmesh2d/fv/Incompressible2D.hpp",
+      "sha256": "618607a5e7457090ca943944ba441498452772e1be05d1873f6695526d08c9e5"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ManufacturedFlow2D.hpp",
+      "sha256": "58c925fc70d6ec244894dca0a1d965b72bf58ed70e61604ad1e0f91324dabbf1"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ReactingDiffusion2D.hpp",
+      "sha256": "bbe1f28c264fd320704d8d14c2eb5fd9a75d9782800dc4cf8280b56d3e139acb"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ReactingFlow2D.hpp",
+      "sha256": "d779364521cfb577760b2bdf9df95c1c3172ba24818f15af62a723b695962196"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ReactingImplicit2D.hpp",
+      "sha256": "9e868502ab190ae0c669225b7d5d1988f0849be46ce17905cf10977e8b144656"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ScalarTransport2D.hpp",
+      "sha256": "9a3e198f85cec39ac97d4b63e0a3f75aa96f6577878573679fbe870b82594333"
+    },
+    {
+      "path": "include/cartmesh2d/fv/Sst2003m2D.hpp",
+      "sha256": "216ff0ca774b78c9507b54a81a2d8d580a02209b1d6887a5df76f25d7d7eb337"
+    },
+    {
+      "path": "include/cartmesh2d/fv/SstRans2D.hpp",
+      "sha256": "17f50894b57b85aaeb06bfa9cd5e44034afeff99d3105dddcc35dd5174a26eb4"
+    },
+    {
+      "path": "include/cartmesh2d/fv/TaylorGreen2D.hpp",
+      "sha256": "7c7803df8603098479fdfcab8932a97de627a313a8cf42c432a00c6f7d877feb"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ThermalCheckpoint2D.hpp",
+      "sha256": "b8127a43e80359d4b79146e734d55df46ba1a101464b81a95fdc7a9fc2d3147d"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ThermalFlow2D.hpp",
+      "sha256": "2efa117cc22e479fe6cd4356ac4d15a0cb08c93807e3e82ba769239cd1385a7b"
+    },
+    {
+      "path": "include/cartmesh2d/fv/ViscousStress2D.hpp",
+      "sha256": "496d9af1b24083373bd9eb4492112df0b9cdb2623912f5fe22a57c3f80a2c302"
+    },
+    {
+      "path": "include/cartmesh2d/fv/WallDistance2D.hpp",
+      "sha256": "b3a76e7ba36630f8fdce4d9bc0981bd2b6a2181870bc12a6984e5fc1eacc2e1f"
+    },
+    {
+      "path": "include/cartmesh2d/fv/WallGradient2D.hpp",
+      "sha256": "dd7cbcc04b3b3a0d254e2592311680a003f1f3f56def5ebaedf4424e2da9d8b5"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/Anderson2D.hpp",
+      "sha256": "e5f956464e119a5819f0ac878dd338dd887191746052c1a6e35454d32555a0f9"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowAggregation2D.hpp",
+      "sha256": "a30c49845e253e9cdb70eb6d3ebc30782b136c905ff4e4b4cd81b8638f3261a3"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowCholesky2D.hpp",
+      "sha256": "fffd27c04b26a2cb2b5e0f3c52c548409a64facb51fd1abcfd8ed217cbca1001"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowConvergence2D.hpp",
+      "sha256": "b68822437239c134f8422cde86d84f6a7eb7a1da2200275d783fd7c923963b19"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp",
+      "sha256": "b1a9f447ab7e35eae89a3a6f262e66557a2e83cf34f91d5fcd753ff4c107598f"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp",
+      "sha256": "61080acf8e4da616845587cdd400ae8b1c48be51fa956f0f247a938eb3ea65c4"
+    },
+    {
+      "path": "include/cartmesh2d/fv/detail/FlowMaterial2D.hpp",
+      "sha256": "5d973d86bb88af5643172bdc4d420319d756e82f4e9086373663c7aff0a22b39"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-motion-001/probe",
+      "sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/grid-0.fixture",
+      "sha256": "24178de475747c79ee16813b1047d2f1e418e173b3ae8b560f6af01dfe69db5b"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/grid-1.fixture",
+      "sha256": "e896bb23d9d51e2d19a386324b5fcfec4b51f0946cf2ae2f619a18071c0dd789"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/grid-2.fixture",
+      "sha256": "2a37090a7e421fa1a42ab7ca0412035fc4f5a1379b8770c804dbf77d64a07202"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/prepared-reference.npz",
+      "sha256": "931885699e5941f5144a2d34e9e7a9d05764a35eff8ff8eb821df73ae8af4e8f"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/profile-0.json",
+      "sha256": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/profile-1.json",
+      "sha256": "9d55a9d5f05bb99382dd028357fe7fecb6098b4bb49412313da4914c7f8e2a57"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/profile-2.json",
+      "sha256": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/reference-0.yaml",
+      "sha256": "99b352edfae9aafebd8b38c7643c82bde1e47c6845d9a55d607846068a532ed3"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/reference-1.yaml",
+      "sha256": "f4148e43809ee08caed76426f84acc3249d8d63afc48afecc46d407aa8348191"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/reference-2.yaml",
+      "sha256": "d237dc172803f0a80a055c084734c96e7849d841e9aabf3db3305c401836d6dc"
+    },
+    {
+      "path": "outputs/combustion-foundation/flame-reference-001/reference.json",
+      "sha256": "775283dc08994c484d9529e07ade25dcd7185381ac64ca0ac8f0342856425af6"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/accepted-state.json",
+      "sha256": "e978e0edaa25ce15282b7e9cd0aac9b5cd9a467e1db50c752df96f0588754727"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/accepted.checkpoint",
+      "sha256": "0fa8ded36780151f9cd740fed1037f493b402f1b10c5ed9aa96da82b444c2816"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/evaluation-progress.jsonl",
+      "sha256": "87007f6790e2b193bc5587204355bda66b578d77c9d89e688e421719936a1435"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/field.json",
+      "sha256": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/resolved-mechanism.yaml",
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/sample-audits.json",
+      "sha256": "5bccfd2b28272048e4f35eb4d74a8134e5cf99734f588d094a1815dea24fa987"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/samples.jsonl",
+      "sha256": "427b00549e1b3667f167091481d00c72182e7b875fd1196233861ce83bfde1da"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/steps.jsonl",
+      "sha256": "4a3fb60ac94bf3a0ff5704e3e5cebcff2afbc066ebfe2424b822265a13de9eae"
+    },
+    {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/report.json",
+      "sha256": "7ba2b275498f58859fb00c661ef20cf76fbef0dbd6ad7883a9e7162b91204f39"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/grid.fixture",
+      "sha256": "dae4ffea1c289cfbb079c26f394e2511805ad9d02310aa814ed74d1332dfc8cf"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/profile-closed.json",
+      "sha256": "5abdbcc13f529aa55d3c314d8139a0c6c3748e97a42c8caf457c5fe37dcb6a72"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/fine-momentum-input/reference.json",
+      "sha256": "709a28d75806e16526d61318e23d20174829a92d1e17f86de487d5ace43881d5"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution.log",
+      "sha256": "a24e78865cb09056e36bf9a4cf90deb207c8f334972603baec884d606433ad2c"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/accepted-state.json",
+      "sha256": "27af38947b58e9d51b83fb6215990efddb9145f2a56c318a5ee89101d9141816"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/accepted.checkpoint",
+      "sha256": "c4b238b29770103f06e5acb44a4dafc464deb25ffd91e03469f8462f09cb55aa"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/evaluation-progress.jsonl",
+      "sha256": "6a445492b90864eb39b216d052506af0b63f21d4d606f5f87ae313683b2c5049"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/field.json",
+      "sha256": "ea2ccee693ad0dca1784bfd24cde74eb52fa908ae155ccc480740f37e703a733"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/resolved-mechanism.yaml",
+      "sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/sample-audits.json",
+      "sha256": "9e91b5689074a03d1d302d19ea0fb9d9a2d3b123213e2ddc13385a8472ceaecd"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/samples.jsonl",
+      "sha256": "8e1d4ae35790ce7e5c276b9ba1a9715c70fb857135d5b2acbc417ee8e1d346e5"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/native-0/steps.jsonl",
+      "sha256": "ce28b6d30c58e69b679bea6050122cb1abbdf72aa5673235a640054bf699d32f"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/evolution/report.json",
+      "sha256": "6c0ef1222d8016e2ba043884f0e228e7b64015e94b926e1f8466d78dd24dbb4e"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/frozen-source/verify_reacting_flame.py",
+      "sha256": "dd56b2c1dfccf3bb3f124499084ed05b7a9a1ee8882ba4f7b5c90f014c745230"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/history-complete.log",
+      "sha256": "f279aa8a290bb970c9ca30c464b7d447f29962fb561f4791b89d3076aa24d000"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/history-complete/analysis.json",
+      "sha256": "18a9281b67459f82ab68c8e86f50d307c44f9089e933451caabc26162801f586"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/history-complete/history.png",
+      "sha256": "fc0adf148146ae5c3b6578d51de2849aeac649925bfc26f1c8694b4e6a449c76"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/history-old-100us-002/analysis.json",
+      "sha256": "938559fa2dab402e5df601c721d588583efd16a8987622021bba86da223d42ee"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/history-tool-source-002/analyze_reacting_flame_history.py",
+      "sha256": "a4cfc7246cf29d1f586fa97872bb752a3d19fa3a6c2721646f386fba29f694ed"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/launcher.log",
+      "sha256": "17c7e64c194383e5e80df6c52279a8dfe17240d8cfa1a99b6a71b7c2c7736e1a"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/run.json",
+      "sha256": "17c7e64c194383e5e80df6c52279a8dfe17240d8cfa1a99b6a71b7c2c7736e1a"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/run.py",
+      "sha256": "26907f4a3ef17fc55bc148ae61e3ce3e2442391bb8fdf6a3562aeee49c0b6451"
+    },
+    {
+      "path": "outputs/combustion-foundation/refined-evolution-100us-001/write_complete_artifact.py",
+      "sha256": "55a3742e43178576cb103722d87e66726fb7a129a956ed9b8c1ffc08a413e0b6"
+    },
+    {
+      "path": "src/chemistry/DetailedGas.cpp",
+      "sha256": "60eb593eafc36ff12da2c527f6e26f490c6add5176380f013b4f22fc95161886"
+    },
+    {
+      "path": "src/chemistry/TraceStableMultiTransport.hpp",
+      "sha256": "5064f727788991da3affe00807779d2c813f30ed940d38f9c054425c6d775f3f"
+    },
+    {
+      "path": "src/fv/Diffusion2D.cpp",
+      "sha256": "32bad4be572172f3481e8531a732b57ffebd8689c7a61bf3ab5c0f6693cb1046"
+    },
+    {
+      "path": "src/fv/Euler2D.cpp",
+      "sha256": "edf68a010625e811762651eba6e21d93cd2a7e6396b1b29003b905fb720f4d39"
+    },
+    {
+      "path": "src/fv/EulerFlux2D.cpp",
+      "sha256": "1385e566152fd849a76815d3349605a21ee761a011781bb89fbc0e3bab49e4e3"
+    },
+    {
+      "path": "src/fv/FlowBoundaryIO2D.cpp",
+      "sha256": "c89dbaf7628a64bd2a50fba06b8ff822478d7802199742cc72eaaaa5be6ec5f4"
+    },
+    {
+      "path": "src/fv/FvMesh2D.cpp",
+      "sha256": "ddd21eccb702139cb05ef719362ffff74ffd3551389ea8fac0abad7529c291c8"
+    },
+    {
+      "path": "src/fv/HeatConduction2D.cpp",
+      "sha256": "6a0eb9c295eb38b5e1c47549128ab8f3c847eec4aeb91a227455d78dcbbc788c"
+    },
+    {
+      "path": "src/fv/Incompressible2D.cpp",
+      "sha256": "e4448b26a9f67d79ca202fe9272e0bc3792e82ce7aee5e2592aebbad59ab80f9"
+    },
+    {
+      "path": "src/fv/ReactingDiffusion2D.cpp",
+      "sha256": "52223032ee85518333f17930a637093b1fb4bc38033d732b1bf486072d8eb1c7"
+    },
+    {
+      "path": "src/fv/ReactingFlow2D.cpp",
+      "sha256": "c251c8dcd358b2dc3f878dae9f206d9e0e76f356927906a235955416ca953758"
+    },
+    {
+      "path": "src/fv/ReactingImplicit2D.cpp",
+      "sha256": "543805652c6c4228b48f3d3da1e1ded24ff1efd36783e1317b532fc6e745ef8e"
+    },
+    {
+      "path": "src/fv/ScalarTransport2D.cpp",
+      "sha256": "34b9afaa9c95a34cac7ca3c79c4a1eff4ac75b99682d77077a574574ad34c772"
+    },
+    {
+      "path": "src/fv/Sst2003m2D.cpp",
+      "sha256": "940b790908c940cd2d743d3ac67d17cfa83ec8b1d9961cd6c892765dff0ddaca"
+    },
+    {
+      "path": "src/fv/SstRans2D.cpp",
+      "sha256": "21dc6da0b4fb22bdd37fd27c2def92646e82fa81eccd2019326aa063e9a10d7b"
+    },
+    {
+      "path": "src/fv/ThermalFlow2D.cpp",
+      "sha256": "04d9c60f9212c2a414a3ca9e9af239dc46b8c16081d16a6db3747f6c10fdf776"
+    },
+    {
+      "path": "src/fv/ViscousStress2D.cpp",
+      "sha256": "fe8e343d773854b38eba20311bdc1d65e92d05be33dcffafb1634b9a7c41ebde"
+    },
+    {
+      "path": "src/fv/WallDistance2D.cpp",
+      "sha256": "d577fa050836e8b5588a83c08e9bbbd7f6c74123e22259175d2c6f8bf87a0660"
+    },
+    {
+      "path": "src/fv/WallGradient2D.cpp",
+      "sha256": "af286bc7dfed4ab53cd522463244eb9d1268e7d981ba4ee7362460d7927ad7e4"
+    },
+    {
+      "path": "tests/detailed_gas_probe.cpp",
+      "sha256": "fb6344b48b982651b07d6d4fc7f70b61514a15acfd24d7706cf1517e3621a7c2"
+    },
+    {
+      "path": "tests/detailed_gas_test.cpp",
+      "sha256": "818f393f9691671be8c07ba1ae07bbb8e037e333bfcf78beb1316c328c65425b"
+    },
+    {
+      "path": "tests/diffusive_flux_probe.cpp",
+      "sha256": "5a3e049c0983d55a7d451c0dfffb3bb3f43363dd1bc1e4debbfed590190805f9"
+    },
+    {
+      "path": "tests/reacting_flame_probe.cpp",
+      "sha256": "a38d20745d067d176f95a6623563828a26a8ec6ffdaeedcdf43679be67f12503"
+    },
+    {
+      "path": "tests/reacting_flow_probe.cpp",
+      "sha256": "f53907171d35e1589c6409c7b0bf18e16fd3017c99aa5636fec22d67eaeca13c"
+    }
+  ],
+  "validation_scope": {
+    "native_equations_changed": false,
+    "default_controls_changed": false,
+    "physical_audit_gates_changed": false,
+    "full_CTest_rerun": false,
+    "frontend_rerun": false,
+    "App_tested": false,
+    "platform_CI_rerun": false
+  },
+  "limits": [
+    "100 us completes this requested run, not long-time/mesh/time/domain qualification.",
+    "Markers remain unequal in speed and the last-window species residual increases slightly; steady flame speed is not established.",
+    "New native run uses the existing 3446-point input, not the later independent reference domain or global-bisection experiments.",
+    "About 51 minutes includes I/O and overlapping diagnostic work, not exclusive-machine or general performance.",
+    "Reference/native share chemistry/transport backend; experimental, combustor, turbulence, spray, radiation and user-facing product qualification remain incomplete."
+  ]
+}

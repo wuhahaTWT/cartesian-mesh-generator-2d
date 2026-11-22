@@ -463,4 +463,46 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     return id;
 }
 
+std::vector<Segment2D> IntersectionRegistry2D::canonicalWallBoundarySegments() const {
+    std::vector<std::vector<std::pair<double, std::size_t>>> perSupport(supports_.size());
+    for (std::size_t sIdx = 0; sIdx < supports_.size(); ++sIdx) {
+        const auto& s = supports_[sIdx];
+        if (s.source != IntersectionSource2D::WallCartesian) continue;
+        perSupport[sIdx].push_back({0.0, s.a});
+        perSupport[sIdx].push_back({1.0, s.b});
+    }
+    for (const auto& event : events_) {
+        if (event.supportId >= supports_.size()) continue;
+        const auto& s = supports_[event.supportId];
+        if (s.source != IntersectionSource2D::WallCartesian) continue;
+        const auto d = s.segment.b - s.segment.a;
+        const double denom = squaredNorm(d);
+        const double t = denom > 0.0
+            ? std::clamp(dot(event.originalPoint - s.segment.a, d) / denom, 0.0, 1.0)
+            : 0.0;
+        perSupport[event.supportId].push_back({t, event.canonicalVertex});
+    }
+    std::vector<Segment2D> segments;
+    for (std::size_t sIdx = 0; sIdx < supports_.size(); ++sIdx) {
+        auto& chain = perSupport[sIdx];
+        if (chain.size() < 2U) continue;
+        std::sort(chain.begin(), chain.end(), [](const auto& lhs, const auto& rhs) {
+            if (lhs.first != rhs.first) return lhs.first < rhs.first;
+            return lhs.second < rhs.second;
+        });
+        std::size_t prevId = chain.front().second;
+        for (std::size_t k = 1U; k < chain.size(); ++k) {
+            const std::size_t curId = chain[k].second;
+            if (curId == prevId) continue;
+            const auto& p0 = vertices_[prevId].point;
+            const auto& p1 = vertices_[curId].point;
+            if (p0.x != p1.x || p0.y != p1.y) {
+                segments.push_back({p0, p1});
+            }
+            prevId = curId;
+        }
+    }
+    return segments;
+}
+
 } // namespace cartmesh2d

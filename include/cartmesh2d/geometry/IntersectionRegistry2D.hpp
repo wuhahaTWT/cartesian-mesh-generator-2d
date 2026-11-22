@@ -181,6 +181,11 @@ public:
         double localH, IntersectionSource2D source);
     [[nodiscard]] std::size_t intersectGridLine(std::size_t support,
         GridLineIdentity2D line, double localH);
+    // Returns consecutive non-degenerate segments along every registered
+    // WallCartesian support after bounded grid-corner canonicalization.
+    // TransitionEnvelopeCartesian supports are intentionally excluded so
+    // two-owner hybrid interfaces cannot be misclassified as walls.
+    [[nodiscard]] std::vector<Segment2D> canonicalWallBoundarySegments() const;
     [[nodiscard]] const std::vector<SharedIntersectionEvent2D>& events() const { return events_; }
     [[nodiscard]] const std::vector<ConstructionRecoveryRequest2D>& recoveryRequests() const {
         return recoveryRequests_;

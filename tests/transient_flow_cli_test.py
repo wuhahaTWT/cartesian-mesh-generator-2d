@@ -115,6 +115,20 @@ def main(cli):
         for suffix in ('.cells.csv', '.faces.csv', '.fields.json', '.checkpoint'):
             assert split.with_suffix(suffix).read_bytes() == continuous.with_suffix(suffix).read_bytes(), suffix
 
+        # PIMPLE keeps the same backward-Euler problem and accepted-state
+        # restart contract, including old-time conservative face flux.
+        pimple_args = ('--coupling', 'pimple', '--momentum-correctors', '3', '--pressure-relaxation', '.6')
+        pfirst, psplit, pfull = (root / label for label in ('pimple-first','pimple-split','pimple-full'))
+        assert invoke(cli, mesh, pfirst, .04, 2, pimple_args).returncode == 0
+        assert invoke(cli, mesh, psplit, .04, 3, pimple_args, restart=pfirst.with_suffix('.checkpoint')).returncode == 0
+        assert invoke(cli, mesh, pfull, .04, 5, pimple_args).returncode == 0
+        for suffix in ('.cells.csv', '.faces.csv', '.fields.json', '.checkpoint'):
+            assert psplit.with_suffix(suffix).read_bytes() == pfull.with_suffix(suffix).read_bytes(), suffix
+        psummary = json.loads(pfull.with_suffix('.json').read_text())
+        assert psummary['coupling'] == 'pimple' and psummary['momentumCorrectors'] == 3
+        assert psummary['pressureRelaxation'] == .6 and psummary['strictLinearFinal']
+        assert solution_distance(pfull, continuous) < 2e-6
+
         failed = root / 'failed'
         result = invoke(cli, mesh, failed, .04, 1, ('--max-iterations', '1'))
         assert result.returncode == 2, result.stderr

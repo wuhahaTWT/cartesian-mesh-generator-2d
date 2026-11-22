@@ -21,6 +21,10 @@ class ViscousStressOperator2D {
 public:
     ViscousStressOperator2D(const FvMesh2D&,const std::vector<ViscousBoundary2D>&,double dynamicViscosity,WallGradient2D = WallGradient2D::Linear);
     [[nodiscard]] ViscousStressResult2D evaluate(const std::vector<Vector2D>& velocity,const std::vector<double>& density) const;
+    // Absolute face viscosities in Pa s. The rate bounds the frozen-coefficient
+    // Jacobian by summing absolute per-face contributions before cancellation.
+    [[nodiscard]] ViscousStressResult2D evaluate(const std::vector<Vector2D>& velocity,
+        const std::vector<double>& density,const std::vector<double>& faceViscosity) const;
     [[nodiscard]] std::size_t quadraticWalls() const { return quadraticWalls_; }
 private:
     std::vector<std::optional<WallGradientStencil2D>> wallGradients_;
@@ -36,6 +40,7 @@ private:
     std::vector<Face> faces_;
     std::vector<std::vector<Sample>> gradients_;
     std::vector<double> areas_,rowNorm_;
+    std::vector<std::array<double,2>> faceRowNorm_;
     double viscosity_=0;
 };
 } // namespace cartmesh2d::fv

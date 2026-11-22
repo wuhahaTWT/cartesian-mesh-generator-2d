@@ -1,0 +1,637 @@
+{
+  "format": "cartmesh2d-incompressible-shared-equation-refactor-v1",
+  "baselineCommit": "2e9419866fd43f93a241634659ffd28aaeb0761a",
+  "branch": "codex/laminar-core-refactor",
+  "parallelDiagnosticParent": "ca31d5de69eafaab5e1f7e2aeb4fab31b0017ac6",
+  "sourceSha256": {
+    "CMakeLists.txt": "b1ae8f1dfeec7b63abab8682c9793806d19c0d283a874ccac3a7747b1a34cfa3",
+    "src/fv/FlowEquation2D.cpp": "eac16e6ac149a7f2f43d5458cb1dcd12fa54efbeeb6448061e2a478ad9b650eb",
+    "src/fv/FlowEquation2D.hpp": "c8780fbe2c5ee54a74058bf6f9ac7cfeba1bdaaf33ef3888e2ae52ea08bef4cf",
+    "src/fv/FlowKrylov2D.hpp": "904a3956409b48722e9c8ba589239736a688de4281b1be6a94628302282ea4c3",
+    "src/fv/FlowCoupled2D.cpp": "c53f619089f8661ec19dfdc39f221f269b3ec7fd091bff1c43c4eb84157514de",
+    "src/fv/FlowFlux2D.cpp": "f2832f2d0029c4bb04f991def6537ab8d1e4b09caa7cf473adb646014f867674",
+    "src/fv/FlowPressure2D.hpp": "749b1ba0d59653b42558ee7f07dc7bccdbfcfdfd1e63bff75d0eae813d658edd",
+    "src/fv/FlowSolverDetail2D.hpp": "853a9d71bef00fd98ec4533a05708aa9aef590f262be2afc78ccaabceceabe7b",
+    "src/fv/Incompressible2D.cpp": "8e628c80f28ae1dbff04cf9ff6f22f80a22963d1f897f2cf112519edea3eb613",
+    "tests/flow_equation_test.cpp": "37323d168ce3cd4dd97c453a76f87fb61ca15e461e6a084612074c27108f5434",
+    "tools/benchmarks/momentum_terms_probe.cpp": "c247af8730b865e769de4c5c779d94a194119c623a525f15e83fca38a6e7e393"
+  },
+  "compiler": "/usr/bin/c++ GCC 14.2.0, Release -O3 -DNDEBUG -std=c++20",
+  "chemistryBuild": "disabled; existing available native tests only",
+  "binarySha256": {
+    "baselineFlowCLI": "1cb07e2b929b489e8b24187f1ffd5b676aab6f2184b88691800dae8703f971b1",
+    "finalFlowCLI": "fcb0f68cdecd782c65c41434d7372f7e160d9295bb9c20e98b05c7078ead62dc",
+    "finalRuntimeFlowCLI": "fcb0f68cdecd782c65c41434d7372f7e160d9295bb9c20e98b05c7078ead62dc"
+  },
+  "changes": [
+    "Solver-owned shared reconstruction and momentum assembly for SIMPLE/coupled/native probe",
+    "Shared physical frozen residual and orthogonal pressure block",
+    "FGMRES extracted without algorithm changes",
+    "Steady Rhie-Chow uses explicit relaxation=1 without copying boundary conditions",
+    "Coupled-only scratch allocated on first use"
+  ],
+  "controls": "No defaults, quality gates, discretization formula or acceptance thresholds changed.",
+  "basicPaths": [
+    {
+      "name": "channel-simple",
+      "converged": true,
+      "iterations": 42,
+      "failureReason": "",
+      "beforeSha256": "d9874e21d3498abf20fbb1eb24d2dcc6f98ef2e57d683d865a9cda8bb200d90c",
+      "afterSha256": "d9874e21d3498abf20fbb1eb24d2dcc6f98ef2e57d683d865a9cda8bb200d90c",
+      "exactFields": true
+    },
+    {
+      "name": "channel-coupled",
+      "converged": true,
+      "iterations": 10,
+      "failureReason": "",
+      "beforeSha256": "26ce6b1d0accbbb65856030f6b16b491c2ec4acf48b6d9bb2d0c34dfe7d5c103",
+      "afterSha256": "26ce6b1d0accbbb65856030f6b16b491c2ec4acf48b6d9bb2d0c34dfe7d5c103",
+      "exactFields": true
+    },
+    {
+      "name": "warped-channel-simple",
+      "converged": true,
+      "iterations": 43,
+      "failureReason": "",
+      "beforeSha256": "67bf217cddbb8fcaef7f20a8ce60029a04d1977113a131241ac7104e56aeff95",
+      "afterSha256": "67bf217cddbb8fcaef7f20a8ce60029a04d1977113a131241ac7104e56aeff95",
+      "exactFields": true
+    },
+    {
+      "name": "warped-channel-coupled",
+      "converged": true,
+      "iterations": 10,
+      "failureReason": "",
+      "beforeSha256": "a9d86187ff2c11368e8d128112604e7ff0e24260b35dbfffef30d5537cd7d312",
+      "afterSha256": "a9d86187ff2c11368e8d128112604e7ff0e24260b35dbfffef30d5537cd7d312",
+      "exactFields": true
+    },
+    {
+      "name": "cavity-simple",
+      "converged": true,
+      "iterations": 94,
+      "failureReason": "",
+      "beforeSha256": "15bc33e1c066e11b24e5536b67dafc03b3ee34a2f2818b36f546e80f3b195074",
+      "afterSha256": "15bc33e1c066e11b24e5536b67dafc03b3ee34a2f2818b36f546e80f3b195074",
+      "exactFields": true
+    },
+    {
+      "name": "cavity-coupled",
+      "converged": true,
+      "iterations": 10,
+      "failureReason": "",
+      "beforeSha256": "0fe8f20d0ed8579a8a5d03eaa929745eb17c4149471ff66e5a160f55bb3dc65d",
+      "afterSha256": "0fe8f20d0ed8579a8a5d03eaa929745eb17c4149471ff66e5a160f55bb3dc65d",
+      "exactFields": true
+    },
+    {
+      "name": "manufactured-simple",
+      "converged": true,
+      "iterations": 124,
+      "failureReason": "",
+      "beforeSha256": "db7bdec8d7c6c1843b79532b48d8c372bc9f8e78167ecaa15d783a95a3a3bf74",
+      "afterSha256": "db7bdec8d7c6c1843b79532b48d8c372bc9f8e78167ecaa15d783a95a3a3bf74",
+      "exactFields": true
+    },
+    {
+      "name": "manufactured-coupled",
+      "converged": true,
+      "iterations": 10,
+      "failureReason": "",
+      "beforeSha256": "d48f13a80647f4aea6ddac08b7fc5f30179b079d36255c2b9a51538d58e60567",
+      "afterSha256": "d48f13a80647f4aea6ddac08b7fc5f30179b079d36255c2b9a51538d58e60567",
+      "exactFields": true
+    },
+    {
+      "name": "transient",
+      "converged": true,
+      "iterations": 46,
+      "failureReason": "",
+      "beforeSha256": "68b193af97e4f52c2c587cda8b9783c90b13ce22571130f62680f977912a67dc",
+      "afterSha256": "68b193af97e4f52c2c587cda8b9783c90b13ce22571130f62680f977912a67dc",
+      "exactFields": true
+    }
+  ],
+  "bitPatternLayout": "Native compare.cpp writes IEEE uint64 hex values in u/v/p/face-flux order; exact equality includes every cell and face.",
+  "nativeFieldCompileCommand": "c++ -O2 -DNDEBUG -std=c++20 -Iinclude -Itests outputs/laminar-refactor/compare.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/laminar-refactor/compare; run with field output directory. Rebuild each version with matching headers and libraries.",
+  "retainedMeshComparisons": [
+    {
+      "before": {
+        "name": "annulus-l5-simple",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/baseline/flow-cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "simple",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/baseline/failures/annulus-l5-simple",
+          "--profile"
+        ],
+        "returnCode": 0,
+        "seconds": 1.6582282580000083,
+        "converged": true,
+        "iterations": 180,
+        "fieldHashes": {
+          ".cells.csv": "c3d2c2ad667d6528dc20e7e0e42ab9383432ac3ebe37d546ce01759be00a559f",
+          ".faces.csv": "d903b290d8f7d4be1b088f3891980ac27b20c5d340bab080a53ea23d98fc2282"
+        }
+      },
+      "after": {
+        "name": "annulus-l5-simple",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l5.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "simple",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/final/failures/annulus-l5-simple",
+          "--profile"
+        ],
+        "returnCode": 0,
+        "seconds": 2.2158833670000604,
+        "converged": true,
+        "iterations": 180,
+        "fieldHashes": {
+          ".cells.csv": "c3d2c2ad667d6528dc20e7e0e42ab9383432ac3ebe37d546ce01759be00a559f",
+          ".faces.csv": "d903b290d8f7d4be1b088f3891980ac27b20c5d340bab080a53ea23d98fc2282"
+        }
+      },
+      "exactFieldsAndOutcome": true
+    },
+    {
+      "before": {
+        "name": "annulus-l7-prefix",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/baseline/flow-cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "simple",
+          "--max-iterations",
+          "10",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/baseline/failures/annulus-l7-prefix",
+          "--profile"
+        ],
+        "returnCode": 2,
+        "seconds": 6.7488084389999585,
+        "converged": false,
+        "iterations": 10,
+        "fieldHashes": {
+          ".cells.csv": "ed298b058f8f143963f906adbe4f5dde707c16c013b15f546bb23d4ca4bea9bd",
+          ".faces.csv": "fdf188895db9b58d6ffde4632fe97aa97789337a23e0f1f351038cfcbebe3088"
+        }
+      },
+      "after": {
+        "name": "annulus-l7-prefix",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "simple",
+          "--max-iterations",
+          "10",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/final/failures/annulus-l7-prefix",
+          "--profile"
+        ],
+        "returnCode": 2,
+        "seconds": 8.41742159100022,
+        "converged": false,
+        "iterations": 10,
+        "fieldHashes": {
+          ".cells.csv": "ed298b058f8f143963f906adbe4f5dde707c16c013b15f546bb23d4ca4bea9bd",
+          ".faces.csv": "fdf188895db9b58d6ffde4632fe97aa97789337a23e0f1f351038cfcbebe3088"
+        }
+      },
+      "exactFieldsAndOutcome": true
+    },
+    {
+      "before": {
+        "name": "annulus-l7-coupled",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/baseline/flow-cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "coupled",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/baseline/failures/annulus-l7-coupled",
+          "--profile",
+          "--linear-policy",
+          "adaptive"
+        ],
+        "returnCode": 0,
+        "seconds": 37.70358816400005,
+        "converged": true,
+        "iterations": 10,
+        "fieldHashes": {
+          ".cells.csv": "7f134f513660348d0e0c1e80c6333600424460526b1d89ae86e5af032a00ab46",
+          ".faces.csv": "6e8e4b9381b0ab677f6f3407e2f3001107deab65251b33289e4ca748fb12ac05"
+        }
+      },
+      "after": {
+        "name": "annulus-l7-coupled",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/annulus-l7.boundaries",
+          "--nu",
+          "0.1",
+          "--speed",
+          "0.5",
+          "--coupling",
+          "coupled",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/final/failures/annulus-l7-coupled",
+          "--profile",
+          "--linear-policy",
+          "adaptive"
+        ],
+        "returnCode": 0,
+        "seconds": 25.131465815999945,
+        "converged": true,
+        "iterations": 10,
+        "fieldHashes": {
+          ".cells.csv": "7f134f513660348d0e0c1e80c6333600424460526b1d89ae86e5af032a00ab46",
+          ".faces.csv": "6e8e4b9381b0ab677f6f3407e2f3001107deab65251b33289e4ca748fb12ac05"
+        }
+      },
+      "exactFieldsAndOutcome": true
+    },
+    {
+      "before": {
+        "name": "dfg20-l7-coupled",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/baseline/flow-cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/dfg20-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/dfg20-l7.boundaries",
+          "--nu",
+          "0.001",
+          "--speed",
+          "0.3",
+          "--coupling",
+          "coupled",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/baseline/failures/dfg20-l7-coupled",
+          "--profile",
+          "--linear-policy",
+          "adaptive"
+        ],
+        "returnCode": 2,
+        "seconds": 140.26573869800006,
+        "converged": false,
+        "iterations": 28,
+        "fieldHashes": {
+          ".cells.csv": "a820580e6d8decadcda0872bb0bda82653e297322ce077e5106281ec21f8c3a9",
+          ".faces.csv": "e20a06265a0df2bac0cbe364377590e6e5f33d3c0364f1dfc9d3e79308e2a5f6"
+        }
+      },
+      "after": {
+        "name": "dfg20-l7-coupled",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/dfg20-l7.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-refactor/inputs/dfg20-l7.boundaries",
+          "--nu",
+          "0.001",
+          "--speed",
+          "0.3",
+          "--coupling",
+          "coupled",
+          "--max-iterations",
+          "12000",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "ic0",
+          "--output",
+          "outputs/laminar-refactor/final/failures/dfg20-l7-coupled",
+          "--profile",
+          "--linear-policy",
+          "adaptive"
+        ],
+        "returnCode": 2,
+        "seconds": 155.4098283010003,
+        "converged": false,
+        "iterations": 28,
+        "fieldHashes": {
+          ".cells.csv": "a820580e6d8decadcda0872bb0bda82653e297322ce077e5106281ec21f8c3a9",
+          ".faces.csv": "e20a06265a0df2bac0cbe364377590e6e5f33d3c0364f1dfc9d3e79308e2a5f6"
+        }
+      },
+      "exactFieldsAndOutcome": true
+    }
+  ],
+  "nativeEquationProperty": {
+    "maximumScaledAffineError": 5.55416e-17,
+    "tolerance": "4096*machine epsilon; arithmetic consistency, not spatial accuracy",
+    "checks": [
+      "frozen affine residual with nonzero traces/sources",
+      "global shared-face divergence",
+      "pressure block boundaries",
+      "live values after boundary mask restore"
+    ]
+  },
+  "validation": {
+    "fullNative": {
+      "uniqueTestsPassed": 105,
+      "initial": "103 pass, Euler core and flow boundary timeout under parallel load",
+      "retry": "Both passed serially with unchanged commands/thresholds; ctest-retry.log",
+      "snapshot": "shared kernel before final allocation-only scratch optimization"
+    },
+    "finalNative": {
+      "testsPassed": 4,
+      "log": "ctest-lazy-scratch.log",
+      "tests": [
+        "flow_coupled",
+        "flow_equation",
+        "flow_boundary",
+        "flow_checkpoint"
+      ]
+    },
+    "frontend": {
+      "passed": 191,
+      "log": "frontend-permitted.log",
+      "initialFailure": "Default sandbox stalled Node child cancellation; interrupted first run, one file failed. Isolated process tests then full suite passed with permitted process execution."
+    },
+    "realApp": {
+      "cells": 1300,
+      "summary": {
+        "steadyFaceInterpolation": "iteration-flux-defect-skew-corrected-v1",
+        "coupling": "simple",
+        "pressureCorrectionPasses": 4,
+        "velocityRelaxation": 0.6,
+        "pressureRelaxation": 0.25,
+        "steadyAcceleration": "none",
+        "andersonHistory": 4,
+        "andersonStart": 10,
+        "accelerationCandidates": 0,
+        "accelerationAccepted": 0,
+        "accelerationRejected": 0,
+        "convergenceMode": "strict",
+        "adaptiveLinear": false,
+        "strictLinearFinal": true,
+        "adaptiveLinearSteps": 0,
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 1300,
+        "iterations": 168,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 4.620748228489902e-13,
+        "globalImbalance": -5.099177915850184e-13,
+        "momentumResidual": 3.1879017932963793e-09,
+        "velocityChange": 9.917549988071297e-09,
+        "pressureChange": 6.124261419962725e-09,
+        "forceX": 1.5856870152325222,
+        "forceY": 3.3766649957904515e-14,
+        "pressureForceX": 0,
+        "pressureForceY": 5.54778120144539e-14,
+        "discreteForceX": 1.5856870152325222,
+        "discreteForceY": 3.3766649957904515e-14,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+        "convection": "upwind",
+        "momentumInertia": 1,
+        "viscousStress": "symmetric",
+        "outletBackflow": "reject",
+        "outletBackflowFaces": 0,
+        "outletInflow": 0,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 1.573314583983942,
+        "reconstructedForceY": 1.6298757048865964e-14,
+        "wallForceX": 1.5856870152325222,
+        "wallForceY": 3.3766649957904515e-14,
+        "wallViscousForceX": 1.5856870152325222,
+        "wallViscousForceY": -2.16906723295553e-14,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 7.646695815872264e-13,
+        "domainHeight": 1,
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "convectionInferred": false,
+        "pressurePreconditionerInferred": false,
+        "outletBackflowInferred": false,
+        "pressureDiscretizationInferred": false,
+        "viscousStressInferred": false,
+        "linearPolicy": "strict"
+      },
+      "screenshot": "outputs/laminar-refactor/final/app.png",
+      "command": "xvfb-run -a desktop/node_modules/.bin/electron desktop --no-sandbox --smoke=rectangle --target-cells=1000 --flow=channel --flow-max-iterations=12000 --flow-tolerance=1e-8 --flow-nu=.1 --flow-speed=1 --flow-pressure-preconditioner=ic0"
+    },
+    "platformCI": "not run",
+    "externalSolver": "no new external solve"
+  },
+  "parallelDiagnosticCompatibility": {
+    "diagnosticCommit": "ca31d5d",
+    "refactoredArchiveSha256": {
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "ab89a620cab63f377fc96b1de6f80de5c8c6889d89890384c08df9e37deff254",
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+    },
+    "wrappedUnwrappedByteEqual": {
+      "input-modal-cells.csv": true,
+      "input-modal-faces.csv": true,
+      "output-modal-cells.csv": true,
+      "output-modal-faces.csv": true,
+      "output-base-cells.csv": true,
+      "output-base-faces.csv": true,
+      "output-delta-cells.csv": true,
+      "output-delta-faces.csv": true,
+      "power.csv": true
+    },
+    "sourceReplayByteEqual": {
+      "replayed-modal-cells.csv": true,
+      "replayed-modal-faces.csv": true,
+      "replayed-base-cells.csv": true,
+      "replayed-base-faces.csv": true
+    },
+    "powerSteps": 1,
+    "fieldSha256": {
+      "outputs/laminar-refactor/final/cell-step/plain/output-delta-cells.csv": "73ec2d98e2ce0726fe35719d854f893c2e56c9398a973d72982063c1dbe7bbcc",
+      "outputs/laminar-refactor/final/cell-step/plain/input-modal-cells.csv": "6da64f731d21c9c6c4009bdbff0c4e96bd4a1e48c9e2c4ff8c1e63f586cf6441",
+      "outputs/laminar-refactor/final/cell-step/plain/input-modal-faces.csv": "5986602a451c5881f6993193afa8b7e3c116cea3a03cd072ad2f318b5dcf3643",
+      "outputs/laminar-refactor/final/cell-step/plain/output-delta-faces.csv": "0422fab584a99eaa2540097f2741940d6a2d21b15ef6fc26778847d9b8a6d2dd",
+      "outputs/laminar-refactor/final/cell-step/plain/output-modal-faces.csv": "3d48dbed9fd9beca1ecd1a1286d3de99ece496651ef5f3b6ab93e181f92ea8b4",
+      "outputs/laminar-refactor/final/cell-step/plain/output-base-cells.csv": "72ae60c049069a8a3e28441716690095b7648553cd346b4fa82234230ca021d6",
+      "outputs/laminar-refactor/final/cell-step/plain/output-base-faces.csv": "1487566a62250d2504d31baff5c78300c0c2d45766b02aa77baced6741a7a7da",
+      "outputs/laminar-refactor/final/cell-step/plain/output-modal-cells.csv": "53f5c0c92d8c945c8418cbe129d46746d0c72b294194f90240fa438adb0d7ec9",
+      "outputs/laminar-refactor/final/cell-step/response/replayed-modal-faces.csv": "3d48dbed9fd9beca1ecd1a1286d3de99ece496651ef5f3b6ab93e181f92ea8b4",
+      "outputs/laminar-refactor/final/cell-step/response/replayed-base-cells.csv": "72ae60c049069a8a3e28441716690095b7648553cd346b4fa82234230ca021d6",
+      "outputs/laminar-refactor/final/cell-step/response/replayed-base-faces.csv": "1487566a62250d2504d31baff5c78300c0c2d45766b02aa77baced6741a7a7da",
+      "outputs/laminar-refactor/final/cell-step/response/replayed-modal-cells.csv": "53f5c0c92d8c945c8418cbe129d46746d0c72b294194f90240fa438adb0d7ec9",
+      "outputs/laminar-refactor/final/cell-step/trace/output-delta-cells.csv": "73ec2d98e2ce0726fe35719d854f893c2e56c9398a973d72982063c1dbe7bbcc",
+      "outputs/laminar-refactor/final/cell-step/trace/input-modal-cells.csv": "6da64f731d21c9c6c4009bdbff0c4e96bd4a1e48c9e2c4ff8c1e63f586cf6441",
+      "outputs/laminar-refactor/final/cell-step/trace/input-modal-faces.csv": "5986602a451c5881f6993193afa8b7e3c116cea3a03cd072ad2f318b5dcf3643",
+      "outputs/laminar-refactor/final/cell-step/trace/output-delta-faces.csv": "0422fab584a99eaa2540097f2741940d6a2d21b15ef6fc26778847d9b8a6d2dd",
+      "outputs/laminar-refactor/final/cell-step/trace/output-modal-faces.csv": "3d48dbed9fd9beca1ecd1a1286d3de99ece496651ef5f3b6ab93e181f92ea8b4",
+      "outputs/laminar-refactor/final/cell-step/trace/output-base-cells.csv": "72ae60c049069a8a3e28441716690095b7648553cd346b4fa82234230ca021d6",
+      "outputs/laminar-refactor/final/cell-step/trace/output-base-faces.csv": "1487566a62250d2504d31baff5c78300c0c2d45766b02aa77baced6741a7a7da",
+      "outputs/laminar-refactor/final/cell-step/trace/output-modal-cells.csv": "53f5c0c92d8c945c8418cbe129d46746d0c72b294194f90240fa438adb0d7ec9"
+    },
+    "scope": "Build/capture/replay compatibility only; one iteration does not recover the asymptotic mode.",
+    "result": "outputs/laminar-refactor/final/cell-step/result.json",
+    "sourceHeadNote": "Tool records ca31d5d parent HEAD while refactor is uncommitted; final source hashes are listed above."
+  },
+  "annulusAccuracy": {
+    "velocityL2": 0.0011436711406240172,
+    "pressureL2": 0.027757945734317783,
+    "housingTorque": 0.41819895450451516,
+    "housingTorqueError": 0.0016235379211563556,
+    "rotorTorque": -0.41967692323534006,
+    "rotorTorqueError": 0.001904852517534203
+  },
+  "limitations": [
+    "Pure refactor retains default SIMPLE instability and spatial error; no root-cause closure claimed.",
+    "Final DFG face-limited-linear fails at Krylov limit in 28 rounds, unlike historical limited-linear success in 44 rounds.",
+    "Local compact implicit and quadratic wall variants rejected; research artifacts preserve failures.",
+    "Timing includes concurrent work; no isolated speedup or high-density qualification."
+  ],
+  "archives": [
+    {
+      "file": "core-refactor-fields.tar.gz",
+      "sha256": "6855c771623c95deb7b18ccbe3d464e54ea72ac45b39f784ed5af75ed38c0544",
+      "bytes": 7691123
+    },
+    {
+      "file": "wall-refactor-experiments.tar.gz",
+      "sha256": "9500d613aa0ca0fcbb3df99ee48e2a7559aa94562505bed24afdf2eb3481a2cf",
+      "bytes": 480664
+    },
+    {
+      "file": "momentum-splitting-traces.tar.gz",
+      "sha256": "11ad43e044cab6e0b84cc9b5072bde276eeff83de7d933e44e8eb605558630dd"
+    }
+  ],
+  "consumers": {
+    "continuation": "Use shared equation/probe and retained native failures for pressure/velocity or vector-stress repair.",
+    "inputs": "Reuse tracked failure-inputs.tar.gz; no duplicated mesh archive.",
+    "fields": "Native bit patterns, successful and rejected fields/logs for same-input future comparison.",
+    "compatibilityTrace": "New full captured matrices remain in outputs/laminar-refactor/final/cell-step; compact summary/hash evidence is archived. Original mode matrices are tracked in cell-step-diagnosis-traces.tar.gz. Re-run the recorded command to rebuild the new capture.",
+    "temporary": "Frozen libraries, objects, binaries and downloaded reference sources remain rebuildable outputs; excluded from archives."
+  }
+}

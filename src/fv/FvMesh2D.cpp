@@ -96,7 +96,7 @@ FvMesh2D makeFvMesh2D(const TopologyMesh2D& topology, const TolerancePolicy& tol
         require(std::isfinite(f.transmissibility) && std::isfinite(f.correction.x) && std::isfinite(f.correction.y),"nonfinite face coefficient");
     }
     const auto quality=evaluateSolverQuality2D(topology,{},tol);
-    require(quality.valid(), "existing Solver quality gate failed ("+std::to_string(quality.issues.size())+" issues)");
+    require(quality.nativeFvCompatible(), "mesh geometry is incompatible with the current finite-volume operator");
     return mesh;
 }
 

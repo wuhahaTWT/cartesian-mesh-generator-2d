@@ -59,6 +59,57 @@ std::string readText(const std::filesystem::path& path) {
     return text.str();
 }
 
+void reversedCentreConnectorRegression() {
+    // Actual DFG hybrid cells 1522/1526 at face 4591. Absolute dot products
+    // formerly called the reversed connector a passing 65.9567 degree face.
+    const std::vector<Point2D> first{{.30078125,.15855468749999999},
+        {.30078125,.16015625},{.299485576390371,.15879172499860394},
+        {.29938050489359086,.15855468749999999}};
+    const std::vector<Point2D> second{{.299485576390371,.15879172499860394},
+        {.30078125,.16015625},{.309375,.16015625},{.309375,.1617578125},
+        {.3006297225949436,.1617578125},{.3004366561321941,.16125730651587722},
+        {.2999611162612826,.16015625}};
+    for (const double scale:{.001,1.,1000.}) {
+        const auto transform=[&](const std::vector<Point2D>& original) {
+            auto points=original;
+            for (auto& p:points) p={(p.x-.3)*scale,(p.y-.16)*scale};
+            return points;
+        };
+        const auto a=polygonCell(0,transform(first)),b=polygonCell(1,transform(second));
+        const auto& av=a.fluidPolygon.vertices;const auto& bv=b.fluidPolygon.vertices;
+        const auto face=evaluateSolverFaceGeometry2D(av[1],av[2],*a.centroid,*b.centroid);
+        check(!face.valid && face.normalCentreDistance<0 && face.ownerNormalDistance>0 &&
+              face.neighbourNormalDistance<0,"signed DFG connector fails at every physical scale");
+        const auto unsignedMetrics=evaluateSolverInternalFaceMetrics2D(
+            av[1],av[2],*a.centroid,*b.centroid,a.area,b.area);
+        check(unsignedMetrics.orientationValid && unsignedMetrics.nonOrthogonalityDeg<70,
+              "retained failure passes the old unsigned nonorthogonality formula");
+        const BoundaryLoop outline({av[0],av[1],bv[2],bv[3],bv[4],bv[5],bv[6],av[2],av[3]});
+        auto topology=buildGlobalTopology({a,b},Domain2D{Polygon2D{outline.vertices()}.bounds()},outline);
+        check(topology.valid(),"reversed-connector fixture preserves valid polygon topology");
+        const auto hasGeometryFailure=[&](const SolverQualityReport2D& report) {
+            return std::any_of(report.issues.begin(),report.issues.end(),[&](const auto& issue) {
+                return issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry &&
+                       topology.edges[issue.edgeId].neighbour.has_value();
+            });
+        };
+        check(hasGeometryFailure(evaluateSolverQuality2D(topology)),
+              "global solver gate rejects the actual reversed internal connector");
+        // Canonical endpoint order must never choose the physical normal.
+        for (auto& edge:topology.edges) std::swap(edge.v0,edge.v1);
+        check(hasGeometryFailure(evaluateSolverQuality2D(topology)),
+              "reversing stored edge endpoints does not hide bad owner geometry");
+        const auto incidence=buildEdgeIncidenceStore2D(topology,0);
+        const auto scope=buildPatchLocalScope2D(topology,incidence,{0,1},{scale,scale},{true,true});
+        check(scope.valid() && !evaluatePatchLocalQuality2D(scope.cells,.01).valid(),
+              "patch-local gate cannot introduce the same inadmissible face");
+    }
+    check(!evaluateSolverFaceGeometry2D({0,0},{0,1},{.2,.5}).valid,
+          "boundary face rejects a centroid on the outward side");
+    check(evaluateSolverFaceGeometry2D({0,0},{0,1},{-.2,.5},Point2D{.2,.5}).valid,
+          "healthy centres straddle an outward oriented face");
+}
+
 // Ten-cell one-ring reduction of nozzle r01 at original cell pair 2906/8437.
 // The separate rectangle represents the unchanged global compactness minimum.
 // It is explicitly part of the measured baseline, not an acceptance override.
@@ -314,6 +365,7 @@ void directionalRepairRegression() {
 } // namespace
 
 int main() {
+    reversedCentreConnectorRegression();
     targetNonorthogonalityRegression();
     extrudedDeterminantRegression();
     directionalRepairRegression();

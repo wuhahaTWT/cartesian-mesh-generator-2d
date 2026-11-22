@@ -1,0 +1,592 @@
+{
+  "schema": "cartmesh2d-topology-fidelity-review-v1",
+  "reviewStatus": "completed-with-unresolved-numerical-ranking",
+  "physicalAccuracyQualified": false,
+  "branch": "codex/cfd-development",
+  "head": "570cd70420818fe3a1affb929410b55b1c12a984",
+  "originalArtifactPreserved": true,
+  "originalEquationsAndAcceptanceGatesUnchanged": true,
+  "tests": {
+    "python": [
+      {
+        "test": "flow_topology_test",
+        "returncode": 0,
+        "seconds": 1.291832708986476
+      },
+      {
+        "test": "navier_stokes_topology_test",
+        "returncode": 0,
+        "seconds": 1.320145042031072
+      },
+      {
+        "test": "topology_fidelity_test",
+        "returncode": 0,
+        "seconds": 0.7574925420340151
+      }
+    ],
+    "pythonCount": 35,
+    "nativeCTestPassed": 2,
+    "nativeCTestAttempted": 2,
+    "fullNativeCTest": "not-run",
+    "frontendAppAndPlatformCI": "not-run",
+    "externalCheckMesh": "not-found-on-current-PATH"
+  },
+  "nativeReconstruction": {
+    "grids": 259,
+    "components": 384,
+    "maxRelativeDifference": 8.746002766906767e-16
+  },
+  "porousReplay": {
+    "candidates": 66,
+    "maximumRelativeDifference": 9.34672516291904e-16
+  },
+  "gciArithmetic": {
+    "checked": 36,
+    "maximumOrderDifference": 3.1663560662309465e-13,
+    "maximumRelativeUncertaintyDifference": 3.7694989395704573e-13,
+    "interpretation": "Formula arithmetic agrees; asymptotic validity is a separate unresolved question."
+  },
+  "originalPairAudit": {
+    "claimedConditionalPairs": 18,
+    "crossAlphaPairs": 17,
+    "sameAlphaPairs": 1,
+    "onlySameAlphaPair": {
+      "a": "four-terminal-re-50-da-0.0001",
+      "b": "four-terminal-re-50-variant-3",
+      "porousDifference": -4.145813593222719,
+      "nativeDifference": 0.40651247811734237,
+      "originalSameAlpha": true,
+      "nativeConditionalGciSum": 0.0027174288667786094,
+      "passesOriginalGciRule": true,
+      "nativeLastGridChangeSum": 1.1225573962604116,
+      "exceedsLastGridChanges": false,
+      "commonNativeLevels": [
+        {
+          "level": 3,
+          "difference": -2.3194809221379984,
+          "reversed": false
+        },
+        {
+          "level": 4,
+          "difference": -0.38309438416963815,
+          "reversed": false
+        }
+      ]
+    },
+    "interpretation": "Mixed-alpha comparisons are prediction errors of different optimization recipes, not ranking by one fixed model."
+  },
+  "commonModelEvaluations": {
+    "count": 198,
+    "failed": 0,
+    "field": "saved physical rho; no filtering, projection or reoptimization",
+    "groups": [
+      {
+        "case": "double-pipe",
+        "reynolds": 0,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 5,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 5
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 6,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 6
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 6,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 6
+          }
+        ]
+      },
+      {
+        "case": "double-pipe",
+        "reynolds": 50,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "diffuser",
+        "reynolds": 0,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "diffuser",
+        "reynolds": 50,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "elbow",
+        "reynolds": 0,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "elbow",
+        "reynolds": 50,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "four-terminal",
+        "reynolds": 0,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 0,
+            "originalPairsRetained": 0,
+            "pairsBeyondObservedNativeGridChanges": 0
+          }
+        ]
+      },
+      {
+        "case": "four-terminal",
+        "reynolds": 50,
+        "commonModels": [
+          {
+            "darcyPort": 0.001,
+            "conditionalGciPairs": 10,
+            "originalPairsRetained": 9,
+            "pairsBeyondObservedNativeGridChanges": 7
+          },
+          {
+            "darcyPort": 0.0001,
+            "conditionalGciPairs": 7,
+            "originalPairsRetained": 6,
+            "pairsBeyondObservedNativeGridChanges": 4
+          },
+          {
+            "darcyPort": 1e-05,
+            "conditionalGciPairs": 6,
+            "originalPairsRetained": 5,
+            "pairsBeyondObservedNativeGridChanges": 4
+          }
+        ]
+      }
+    ],
+    "interpretation": "Counts retain the old conditional native GCI and possibly duplicate sharp geometries. They are descriptive, not independently certified reversals."
+  },
+  "elbowCounterexample": {
+    "ids": [
+      "elbow-re-0-da-1e-05",
+      "elbow-re-0-variant-3"
+    ],
+    "originalObjectives": [
+      47.09122893487275,
+      41.45351970764162
+    ],
+    "nativeObjectives": [
+      27.4747101819882,
+      30.017138027264888
+    ],
+    "commonModels": [
+      {
+        "alphaMax": 24999.999999999993,
+        "darcyPort": 0.001,
+        "objectives": [
+          22.830206428542628,
+          24.190260143078557
+        ]
+      },
+      {
+        "alphaMax": 249999.99999999997,
+        "darcyPort": 0.0001,
+        "objectives": [
+          31.23712019241187,
+          41.45351970764164
+        ]
+      },
+      {
+        "alphaMax": 2499999.9999999995,
+        "darcyPort": 1e-05,
+        "objectives": [
+          47.09122893487277,
+          84.25310529994762
+        ]
+      }
+    ],
+    "reversalAtEachCommonAlpha": false
+  },
+  "fixedFieldRefinement": {
+    "mapping": "Split each original cell into n*n identical-rho children, preserving physical piecewise-constant material and mean rho; do not reapply passive masks or the design filter.",
+    "samples": [
+      {
+        "id": "four-terminal-re-50-da-0.0001",
+        "alphaMax": 249999.99999999997,
+        "scale": 1,
+        "nx": 21,
+        "ny": 30,
+        "q": 0.1,
+        "meanRho": 0.4,
+        "objective": 27.417597639130488,
+        "residual": 4.150526076675583e-15,
+        "continuity": 2.780003023162885e-17,
+        "seconds": 0.04444908304139972,
+        "source": "outputs/topology-fidelity/b/four-terminal-re-50/final.npz",
+        "sourceSha256": "43d9ebd2ecee3cd2e7e89e9140aece69150f62af204dc27ef5dcdac5e8ee3283"
+      },
+      {
+        "id": "four-terminal-re-50-da-0.0001",
+        "alphaMax": 249999.99999999997,
+        "scale": 2,
+        "nx": 42,
+        "ny": 60,
+        "q": 0.1,
+        "meanRho": 0.4,
+        "objective": 31.69523390312555,
+        "residual": 2.577377563709244e-15,
+        "continuity": 1.0185312901725185e-16,
+        "seconds": 0.24031995795667171,
+        "source": "outputs/topology-fidelity/b/four-terminal-re-50/final.npz",
+        "sourceSha256": "43d9ebd2ecee3cd2e7e89e9140aece69150f62af204dc27ef5dcdac5e8ee3283"
+      },
+      {
+        "id": "four-terminal-re-50-da-0.0001",
+        "alphaMax": 249999.99999999997,
+        "scale": 4,
+        "nx": 84,
+        "ny": 120,
+        "q": 0.1,
+        "meanRho": 0.4,
+        "objective": 33.70288252830623,
+        "residual": 1.6222522165506014e-15,
+        "continuity": 5.4024737099251133e-17,
+        "seconds": 1.949041625019163,
+        "source": "outputs/topology-fidelity/b/four-terminal-re-50/final.npz",
+        "sourceSha256": "43d9ebd2ecee3cd2e7e89e9140aece69150f62af204dc27ef5dcdac5e8ee3283"
+      },
+      {
+        "id": "four-terminal-re-50-variant-3",
+        "alphaMax": 249999.99999999997,
+        "scale": 1,
+        "nx": 21,
+        "ny": 30,
+        "q": 0.1,
+        "meanRho": 0.4,
+        "objective": 31.56341123235321,
+        "residual": 3.919941294638051e-15,
+        "continuity": 6.637505520034988e-17,
+        "seconds": 0.04601408296730369,
+        "source": "outputs/topology-fidelity/d-ranking/analysis/four-terminal-re-50-variant-3/final.npz",
+        "sourceSha256": "d263c0a0460948528b8f68353244f97e76730dcd0999219eb59215f925a18434"
+      },
+      {
+        "id": "four-terminal-re-50-variant-3",
+        "alphaMax": 249999.99999999997,
+        "scale": 2,
+        "nx": 42,
+        "ny": 60,
+        "q": 0.1,
+        "meanRho": 0.4000000000000001,
+        "objective": 35.49930127987576,
+        "residual": 2.129137987411984e-15,
+        "continuity": 5.033258630032403e-17,
+        "seconds": 0.24111550010275096,
+        "source": "outputs/topology-fidelity/d-ranking/analysis/four-terminal-re-50-variant-3/final.npz",
+        "sourceSha256": "d263c0a0460948528b8f68353244f97e76730dcd0999219eb59215f925a18434"
+      },
+      {
+        "id": "four-terminal-re-50-variant-3",
+        "alphaMax": 249999.99999999997,
+        "scale": 4,
+        "nx": 84,
+        "ny": 120,
+        "q": 0.1,
+        "meanRho": 0.4000000000000001,
+        "objective": 37.27583025888435,
+        "residual": 1.4327286456995665e-15,
+        "continuity": 4.3261714755319936e-17,
+        "seconds": 1.897874749964103,
+        "source": "outputs/topology-fidelity/d-ranking/analysis/four-terminal-re-50-variant-3/final.npz",
+        "sourceSha256": "d263c0a0460948528b8f68353244f97e76730dcd0999219eb59215f925a18434"
+      }
+    ],
+    "relativeChanges": {
+      "four-terminal-re-50-variant-3": 0.18098230842285434,
+      "four-terminal-re-50-da-0.0001": 0.22924272840758908
+    },
+    "interpretation": "Both sides retain their ordering in this probe; individual objectives are spatially sensitive. Not a completed MAC convergence study."
+  },
+  "nativeFollowup": {
+    "candidate": "four-terminal-re-50-variant-3",
+    "level": 7,
+    "completeDesignAccepted": false,
+    "convergedComponent": {
+      "component": 1,
+      "originalSamples": [
+        {
+          "level": 3,
+          "objective": 20.578373215038695,
+          "area": 0.13999999992939613,
+          "cells": 73
+        },
+        {
+          "level": 4,
+          "objective": 15.818551857183925,
+          "area": 0.13999999992939613,
+          "cells": 200
+        },
+        {
+          "level": 6,
+          "objective": 15.367065625623681,
+          "area": 0.13999999992939613,
+          "cells": 2685
+        }
+      ],
+      "originalFit": {
+        "observedOrder": 4.850605425390944,
+        "uncertainty": 0.001039489522537338
+      },
+      "newLevel": 7,
+      "newObjective": 15.449354229487808,
+      "freshBoundaryWorkRelativeDifference": 4.59917434221234e-16,
+      "change": 0.08228860386412684,
+      "changeOverOldComponentGci": 79.1625139840417,
+      "note": "Observed refinement sensitivity challenges the earlier fit; it is not an exact error bound or a new full-design objective."
+    },
+    "failedComponent": {
+      "component": 0,
+      "status": "iteration_limit",
+      "cumulativeIterations": 8000,
+      "momentumResidual": 1.7901605096003306e-07,
+      "velocityChange": 8.980694633936298e-08
+    },
+    "newFullDesignObjective": null
+  },
+  "decision": {
+    "recommendation": "Resolve design-ranking reliability under fixed evaluation controls before calibrating the porous model or adding a thermal application.",
+    "nextResearchHypothesis": "Can verification effort targeted at ambiguous candidate comparisons reduce total cost while retaining the correct design choice?",
+    "comparisonBaselines": [
+      "one coarse evaluation for all candidates",
+      "uniform native refinement of all candidates",
+      "native reanalysis of only the porous winner"
+    ],
+    "successMeasures": [
+      "wrong-choice rate or reference-objective regret",
+      "unresolved comparisons explicitly reported",
+      "complete cost including failures and reanalysis"
+    ],
+    "qualification": "Research hypothesis only; reference rankings, independent solver comparisons, and novelty relative to prior work remain to be established.",
+    "alternatives": [
+      {
+        "route": "adaptive Brinkman penalization",
+        "assessment": "Known prior work; still potentially useful as a baseline, not an established new contribution."
+      },
+      {
+        "route": "direct Cut-cell adjoint optimization",
+        "assessment": "Known 2021 method; substantial solver/adjoint implementation beyond this review."
+      },
+      {
+        "route": "thermal engineering application",
+        "assessment": "Useful eventual application, but adds physics before the present comparison is reliable."
+      }
+    ]
+  },
+  "literature": [
+    {
+      "title": "Topology optimization in fluid mechanics using continuous adjoint and the cut-cell method",
+      "url": "https://doi.org/10.1016/j.camwa.2021.06.002",
+      "access": "publisher-indexed abstract; direct publisher page returned 403",
+      "relevance": "Cut-cell optimization with an adjoint and fair re-evaluation of porous designs already reported."
+    },
+    {
+      "title": "Towards improved porous models for solid/fluid topology optimization",
+      "url": "https://doi.org/10.1007/s00158-023-03570-4",
+      "access": "open-access publisher full text",
+      "relevance": "Flow leakage, penalization bounds, mesh dependence and model comparison already investigated."
+    },
+    {
+      "title": "Multifidelity Topology Design for Thermal-Fluid Devices via SEMDOT Algorithm",
+      "url": "https://doi.org/10.3390/computation14010019",
+      "access": "publisher-indexed abstract and article excerpts; direct page returned 429",
+      "relevance": "Darcy candidate generation and common-operating-condition Navier-Stokes/thermal re-evaluation already reported; this does not establish equivalence to an adaptive closed-loop algorithm."
+    },
+    {
+      "title": "NASA Examining Spatial (Grid) Convergence",
+      "url": "https://www.grc.nasa.gov/www/wind/valid/tutorial/spatconv.html",
+      "access": "official full text",
+      "relevance": "GCI interpretation depends on the convergence behavior of the chosen grid sequence."
+    }
+  ],
+  "sources": [
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/review.py",
+      "sha256": "a2c7ed9113937fd8f5e536718dafcf25069ff73cc1921715b09cb11ebade2d9a",
+      "bytes": 13640
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/finalize.py",
+      "sha256": "92e2d5afdae4b7efc9407774f650862f3e8a434086f9581c8a220dad75628724",
+      "bytes": 16341
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/summary.json",
+      "sha256": "c7d62c6ec54e8ff6f23a60ab91fadd5501d6dd504109c176411b8e1ffd0b0121",
+      "bytes": 561840
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/native-reconstruction.json",
+      "sha256": "fa44d3ea4b95571f250eb63c17fe339c3c84518d4f4e377ba166e78e44e9f91c",
+      "bytes": 126990
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/gci-reconstruction.json",
+      "sha256": "468bf7f6a69ab7821005407f034f2e208c7a06d530ba8b88b0fe61fe4644e34e",
+      "bytes": 8779
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/before.json",
+      "sha256": "1085270e30dfdab6d89d01d3bc300a99aefe6579e44d89cc570bc8276e2276bd",
+      "bytes": 5864
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/python-tests.json",
+      "sha256": "fbafdab0208ca3f64942926132eee4d8b2cdf16abdf8e26c38de4ce09bd16ed6",
+      "bytes": 308
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/build.log",
+      "sha256": "6ebeba19a88d2d6037fded33b0d98c3d36f2e1bf75499fa0a1ecd4c8de33e4fe",
+      "bytes": 339
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/ctest.log",
+      "sha256": "474a6cfa437e26a057bc3d6ee26297171c65ee3a36ebded088774cbcb49241f7",
+      "bytes": 354
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/native-variant-3-level-7/summary.json",
+      "sha256": "978744b0436f5c6026f2d4a4ac3fed9f9be0fb9124a9996536e3fd62e1d7e0b8",
+      "bytes": 221056
+    },
+    {
+      "path": "outputs/topology-fidelity/independent-review-001/native-variant-3-level-7-continue/summary.json",
+      "sha256": "8e3b835777bf7c3f1e94c9e657847df8c52844c313b3326f8e35a61214f9f88c",
+      "bytes": 99167
+    },
+    {
+      "path": "artifacts/current/native-topology-fidelity.json",
+      "sha256": "9f4cf112409bfed7ae80cbc9198248f31519e57b8ccc85d168fcc1697db71834",
+      "bytes": 1709155
+    },
+    {
+      "path": "outputs/topology-fidelity/d-uncertainty/summary.json",
+      "sha256": "a81692d2cd67355cad681f6f1b8dbf3c12061058a2329dc7213ba025c03e3245",
+      "bytes": 1193910
+    }
+  ],
+  "figure": {
+    "path": "artifacts/current/native-topology-fidelity-review.png",
+    "sha256": "df26b1b73b27f0ba12ebcf744846119acb7ab7d7aab05a0c36681b2bc6211478",
+    "bytes": 234810
+  }
+}

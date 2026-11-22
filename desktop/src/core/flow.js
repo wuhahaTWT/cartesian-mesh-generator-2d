@@ -118,13 +118,26 @@ function validateFlowRequest(request = {}) {
   if (!Number.isInteger(pressureCorrectionPasses) || pressureCorrectionPasses<1 || pressureCorrectionPasses>4) throw new Error('压力校正次数须为1到4的整数。');
   const velocityRelaxation=finite(request.velocityRelaxation ?? .6,'速度松弛系数');
   if (!(velocityRelaxation>0 && velocityRelaxation<=1)) throw new Error('速度松弛系数须大于0且不大于1。');
+  const coupling=request.coupling ?? 'simple';
+  if (!['simple','simplec','simpler','pimple'].includes(coupling)) throw new Error('未知压力—速度耦合算法。');
+  if (['simplec','simpler'].includes(coupling) && mode!=='steady') throw new Error('SIMPLEC/SIMPLER 仅支持稳态。');
+  if (coupling!=='simple' && outletBackflow!=='reject') throw new Error('扩展耦合算法请选择检测到出口回流时停止。');
+  const pressureRelaxation=finite(request.pressureRelaxation ?? .25,'压力松弛系数');
+  if (!(pressureRelaxation>0 && pressureRelaxation<=1)) throw new Error('压力松弛系数须大于0且不大于1。');
+  const momentumCorrectors=finite(request.momentumCorrectors ?? 2,'动量校正次数');
+  if (!Number.isInteger(momentumCorrectors) || momentumCorrectors<1 || momentumCorrectors>8)
+    throw new Error('动量校正次数须为1到8的整数。');
+  if (coupling!=='pimple' && momentumCorrectors!==2) throw new Error('动量校正次数仅用于 PIMPLE。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, tolerance, convection,
-    pressurePreconditioner, outletBackflow, viscousStress, steadyAcceleration, linearPolicy, velocityRelaxation, pressureCorrectionPasses, mode, resume: Boolean(request.resume) };
+    pressurePreconditioner, outletBackflow, viscousStress, steadyAcceleration, linearPolicy, velocityRelaxation, pressureCorrectionPasses,
+    coupling, pressureRelaxation, momentumCorrectors, mode, resume: Boolean(request.resume) };
   if (flowCase.id === 'custom') {
     if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
     normalized.boundaryDefinition = normalizeBoundaryDefinition(request.boundaryDefinition);
+    if (['simpler','pimple'].includes(coupling) && normalized.boundaryDefinition.records.some(row=>row.type==='pressure-opening'))
+      throw new Error('SIMPLER/PIMPLE 暂不支持定压开口。');
   }
   if (mode !== 'steady') {
     normalized.dt = finite(request.dt, '时间步长');
@@ -168,6 +181,9 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
   if (validated.linearPolicy!=='strict') temporalArgs.push('--linear-policy',validated.linearPolicy);
   if (validated.velocityRelaxation!==.6) temporalArgs.push('--velocity-relaxation',String(validated.velocityRelaxation));
   if (validated.pressureCorrectionPasses!==4) temporalArgs.push('--pressure-corrections',String(validated.pressureCorrectionPasses));
+  if (validated.coupling!=='simple') temporalArgs.push('--coupling',validated.coupling);
+  if (validated.pressureRelaxation!==.25) temporalArgs.push('--pressure-relaxation',String(validated.pressureRelaxation));
+  if (validated.coupling==='pimple') temporalArgs.push('--momentum-correctors',String(validated.momentumCorrectors));
   if (validated.initialVortex) {
     const v=validated.initialVortex;
     temporalArgs.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
@@ -432,6 +448,17 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   const pressureCorrectionPasses=summary.pressureCorrectionPasses===undefined?4:summary.pressureCorrectionPasses;
   if (!Number.isInteger(pressureCorrectionPasses) || pressureCorrectionPasses<1 || pressureCorrectionPasses>4) throw new Error('原生压力校正次数无效。');
   normalizedSummary.pressureCorrectionPasses=pressureCorrectionPasses;
+  const coupling=summary.coupling ?? 'simple';
+  if (!['simple','simplec','simpler','pimple'].includes(coupling) || (transient && ['simplec','simpler'].includes(coupling)))
+    throw new Error('原生压力—速度耦合算法无效。');
+  const pressureRelaxation=summary.pressureRelaxation===undefined?.25:finite(summary.pressureRelaxation,'压力松弛系数');
+  if (!(pressureRelaxation>0 && pressureRelaxation<=1)) throw new Error('原生压力松弛系数无效。');
+  const momentumCorrectors=coupling==='pimple'?summary.momentumCorrectors:2;
+  if (!Number.isInteger(momentumCorrectors) || momentumCorrectors<1 || momentumCorrectors>8)
+    throw new Error('原生动量校正次数无效。');
+  normalizedSummary.coupling=coupling;
+  normalizedSummary.pressureRelaxation=pressureRelaxation;
+  normalizedSummary.momentumCorrectors=momentumCorrectors;
 
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
@@ -457,6 +484,9 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         || normalizedSummary.linearPolicy !== request.linearPolicy
         || normalizedSummary.velocityRelaxation !== request.velocityRelaxation
         || normalizedSummary.pressureCorrectionPasses !== request.pressureCorrectionPasses
+        || normalizedSummary.coupling !== request.coupling
+        || normalizedSummary.pressureRelaxation !== request.pressureRelaxation
+        || normalizedSummary.momentumCorrectors !== request.momentumCorrectors
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }

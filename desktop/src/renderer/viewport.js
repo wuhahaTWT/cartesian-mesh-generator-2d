@@ -18,6 +18,7 @@ const RAMP = ['#1b3a4b', '#1d4f5e', '#216b66', '#3d8560', '#7d9a4e', '#b8a344', 
 const SPEED_RAMP = ['#172a52', '#185b83', '#188ca1', '#2bb6a8', '#73cf8d', '#cadd62', '#f4c84d', '#ef7538'];
 const PRESSURE_RAMP = ['#3156a3', '#5686c4', '#91b5d6', '#d5e2e8', '#f0ded1', '#d99578', '#b64143', '#741f36'];
 const TEMPERATURE_RAMP = ['#263b80', '#326fa5', '#4eaaa5', '#a0cf91', '#e9db77', '#f6ad55', '#e86e42', '#b72e37'];
+const ADAPTIVE_RAMP = ['#14142b', '#2b1b59', '#5a1e78', '#96287c', '#c94364', '#eb7242', '#f7b238', '#fcf285'];
 function levelColour(level, minLevel, maxLevel) {
   if (!(maxLevel > minLevel)) return RAMP[RAMP.length - 1];
   const t = (level - minLevel) / (maxLevel - minLevel);
@@ -54,7 +55,7 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
-    this.eulerFields = null;
+    this.adaptiveFields = null;
     this.fieldRange = null;
     this.pendingDraw = null;
     this.attachInput();
@@ -64,7 +65,10 @@ class Viewport {
 
   theme() { return THEMES[this.mode] || THEMES.level; }
 
-  fieldPalette() { return this.mode.endsWith('temperature') ? TEMPERATURE_RAMP : ['pressure','euler-p'].includes(this.mode) ? PRESSURE_RAMP : SPEED_RAMP; }
+  fieldPalette() {
+    if (this.mode === 'adaptive') return ADAPTIVE_RAMP;
+    return this.mode === 'temperature' ? TEMPERATURE_RAMP : this.mode === 'pressure' ? PRESSURE_RAMP : SPEED_RAMP;
+  }
 
   attachInput() {
     this.canvas.addEventListener('wheel', event => {
@@ -134,23 +138,13 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
-    this.eulerFields = null;
+    this.adaptiveFields = null;
     this.fieldRange = null;
     this.fitTo(mesh.bounds);
   }
 
   setFlowFields(cells) {
     this.flowFields = cells || null;
-    this.fieldRange = null;
-    if (this.meshCache) this.meshCache.field = null;
-    this.draw();
-  }
-
-  setEulerFields(cells) {
-    if (cells && (!this.mesh || cells.length !== this.mesh.cells.length ||
-        cells.some((cell,index)=>cell.id!==index || ['rho','u','v','p','rhoE','temperature','mach'].some(k=>!Number.isFinite(cell[k])))))
-      throw new Error('可压场与当前最终网格不匹配');
-    this.eulerFields = cells ? cells.map(cell=>({...cell,speed:Math.hypot(cell.u,cell.v)})) : null;
     this.fieldRange = null;
     if (this.meshCache) this.meshCache.field = null;
     this.draw();
@@ -167,6 +161,17 @@ class Viewport {
     this.draw();
   }
 
+  setAdaptiveFields(cells) {
+    if (cells && (!this.mesh || cells.length !== this.mesh.cells.length ||
+        cells.some((cell, index) => cell.id !== index || !Number.isFinite(cell.indicator)))) {
+      throw new Error('自适应梯度场与当前最终网格不匹配');
+    }
+    this.adaptiveFields = cells || null;
+    this.fieldRange = null;
+    if (this.meshCache) this.meshCache.field = null;
+    this.draw();
+  }
+
   // Before a mesh exists the chosen geometry is still worth drawing: it is how the
   // user confirms the importer read the file they meant.
   setOutline(loops) {
@@ -175,7 +180,7 @@ class Viewport {
     this.outline = loops;
     this.flowFields = null;
     this.thermalFields = null;
-    this.eulerFields = null;
+    this.adaptiveFields = null;
     this.fieldRange = null;
     const points = loops.flat();
     if (!points.length) return;
@@ -191,7 +196,7 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
-    this.eulerFields = null;
+    this.adaptiveFields = null;
     this.fieldRange = null;
     this.draw();
   }
@@ -267,7 +272,9 @@ class Viewport {
     ctx.transform(this.scale, 0, 0, -this.scale,
                   -this.offset.x * this.scale,
                   height + this.offset.y * this.scale);
-    if ((['speed', 'pressure'].includes(this.mode) && this.flowFields) || (this.mode === 'temperature' && this.thermalFields) || (this.mode.startsWith('euler-') && this.eulerFields)) {
+    if ((['speed', 'pressure'].includes(this.mode) && this.flowFields) ||
+        (this.mode === 'temperature' && this.thermalFields) ||
+        (this.mode === 'adaptive' && this.adaptiveFields)) {
       const field = this.cachedFieldPaths(mesh, this.mode);
       const palette = this.fieldPalette();
       field.bins.forEach((chunks, index) => {
@@ -353,9 +360,9 @@ class Viewport {
 
   cachedFieldPaths(mesh, mode) {
     const cache = this.cachedMeshPaths(mesh);
-    const cells = mode.startsWith('euler-') ? this.eulerFields : mode === 'temperature' ? this.thermalFields : this.flowFields;
+    const cells = mode === 'adaptive' ? this.adaptiveFields : mode === 'temperature' ? this.thermalFields : this.flowFields;
     if (cache.field?.cells === cells && cache.field.mode === mode) return cache.field;
-    const key = mode.startsWith('euler-') ? mode.slice(6) : mode === 'temperature' ? 'theta' : mode === 'pressure' ? 'p' : 'speed';
+    const key = mode === 'adaptive' ? 'indicator' : mode === 'temperature' ? 'theta' : mode === 'pressure' ? 'p' : 'speed';
     const values = cells.map(cell => cell[key]);
     let min = Infinity, max = -Infinity;
     for (const value of values) { if (value < min) min = value; if (value > max) max = value; }
@@ -476,6 +483,6 @@ class Viewport {
 
 // The renderer runs with contextIsolation on and cannot require(), so the one export
 // is a namespace on window.
-window.MeshView = { Viewport, levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP, TEMPERATURE_RAMP };
+window.MeshView = { Viewport, levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP, TEMPERATURE_RAMP, ADAPTIVE_RAMP };
 
 })();

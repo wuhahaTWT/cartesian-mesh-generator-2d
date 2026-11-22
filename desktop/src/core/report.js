@@ -22,25 +22,28 @@ function parseKeyValues(text) {
 }
 
 const SOLVER_METRIC_LABELS = [
-  ['max_non_orthogonality_deg', '最大非正交角', '°', 70, 'max'],
-  ['max_internal_skewness', '最大内部歪斜', '', 4, 'max'],
-  ['max_boundary_skewness', '最大边界歪斜', '', 4, 'max'],
-  ['min_face_weight', '最小面权重', '', 0.05, 'min'],
-  ['min_volume_ratio', '最小体积比', '', 0.01, 'min'],
-  ['max_cell_aspect', '最大单元长宽比', '', 1000, 'max']
+  ['max_non_orthogonality_deg', '最大非正交角', '°', 'max'],
+  ['max_internal_skewness', '最大内部歪斜', '', 'max'],
+  ['max_boundary_skewness', '最大边界歪斜', '', 'max'],
+  ['min_face_weight', '最小面权重', '', 'min'],
+  ['min_volume_ratio', '最小邻接面积比', '', 'min'],
+  ['max_cell_aspect', '最大原生形状比', '', 'max']
 ];
 
-function summarizeSolverQuality(metrics, valid) {
+function summarizeSolverQuality(metrics, valid, report = {}) {
   if (!metrics) return null;
+  const policy = report.policy || {};
   return {
-    valid: Boolean(valid),
+    valid: Boolean(valid), advisory: true,
+    nativeFvCompatible: report.native_fv_compatible ?? null,
     rows: SOLVER_METRIC_LABELS
-      .filter(([key]) => Number.isFinite(Number(metrics[key])))
-      .map(([key, label, unit, limit, direction]) => ({
-        key, label, unit, limit, direction,
-        value: Number(metrics[key]),
-        pass: direction === 'max' ? Number(metrics[key]) <= limit : Number(metrics[key]) >= limit
-      }))
+      .filter(([key]) => metrics[key] !== null && Number.isFinite(Number(metrics[key])))
+      .map(([key, label, unit, direction]) => {
+        const limit = Number.isFinite(policy[key]) ? policy[key] : null;
+        const value = Number(metrics[key]);
+        return { key, label, unit, limit, direction, value,
+          pass: limit === null ? null : direction === 'max' ? value <= limit : value >= limit };
+      })
   };
 }
 
@@ -77,8 +80,9 @@ function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = fa
       // Both CLIs return EXIT_FAILURE when the topology audit fails, so reaching a
       // zero exit *is* the internal audit passing. Partial runs remain unconfirmed.
       topology: { pass: incomplete ? null : true, label: '拓扑不变量' },
-      solver: summarizeSolverQuality(solverMetrics, solverValid)
+      solver: summarizeSolverQuality(solverMetrics, solverValid, reports.solverQuality || {})
     },
+    externalCheck: reports.externalCheck || null,
     sizeField: reports.sizeField || null,
     resolution: reports.resolution || null,
     sizing: reports.sizing || null,

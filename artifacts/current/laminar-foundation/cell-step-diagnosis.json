@@ -1,0 +1,4035 @@
+{
+  "schemaVersion": 1,
+  "sourceHead": "2e9419866fd43f93a241634659ffd28aaeb0761a",
+  "branch": "codex/cfd-development",
+  "scope": "Production Stokes SIMPLE one-step trace and native source-response attribution of original 6208-cell annulus; no product discretization/default changes.",
+  "indexing": "All cell0/face0/owner0/neighbour0 are zero-based; cell1 is one-based. User cell 3711 is target cell0=3710; adjacent cell0=3711 is also reported.",
+  "controls": {
+    "nu": ".1 m2/s",
+    "speed": ".5 m/s",
+    "momentumInertia": "0 (Stokes)",
+    "alphaU": ".6 (production default)",
+    "alphaP": ".25 (production default)",
+    "pressureCorrectionPasses": 4,
+    "pressurePreconditioner": "production IC0 on Linux",
+    "viscousStress": "Symmetric",
+    "convection": "FaceLimitedLinearUpwind",
+    "maxIterationsPerProductionSolve": 1,
+    "powerIterationSteps": 180
+  },
+  "inputs": [
+    {
+      "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+      "sha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+    },
+    {
+      "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+      "sha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+    }
+  ],
+  "nativeStep": {
+    "summary": [
+      {
+        "cells": "6208",
+        "faces": "12910",
+        "target0": "3710",
+        "target1": "3711",
+        "powerSteps": "180",
+        "alphaU": "0.59999999999999998",
+        "alphaP": "0.25",
+        "rayleigh180": "-2.6731413494112513",
+        "residual180": "1.3717130734956747e-10",
+        "momentumCalls": "4",
+        "rcCalls": "1",
+        "output_u_hash": "11219184222434127596",
+        "output_v_hash": "10205654063353201972",
+        "output_p_hash": "4415656969559182000",
+        "output_phi_hash": "17733474313467727250"
+      }
+    ],
+    "stageProjections": [
+      {
+        "stage": "input",
+        "velocity_projection_dimensionless": "1",
+        "velocity_norm_ratio_dimensionless": "1",
+        "pressure_projection_dimensionless": "1",
+        "pressure_norm_ratio_dimensionless": "1",
+        "flux_projection_dimensionless": "1",
+        "flux_norm_ratio_dimensionless": "1"
+      },
+      {
+        "stage": "momentum_predictor_and_rc",
+        "velocity_projection_dimensionless": "0.27992802790715937",
+        "velocity_norm_ratio_dimensionless": "0.43152184121696724",
+        "pressure_projection_dimensionless": "1",
+        "pressure_norm_ratio_dimensionless": "1",
+        "flux_projection_dimensionless": "0.36284420259879158",
+        "flux_norm_ratio_dimensionless": "3.3162295370621169"
+      },
+      {
+        "stage": "pressure_correction_increment",
+        "velocity_projection_dimensionless": "-2.9530693772496646",
+        "velocity_norm_ratio_dimensionless": "2.9712741619529495",
+        "pressure_projection_dimensionless": "-3.6731413492758507",
+        "pressure_norm_ratio_dimensionless": "3.6731413492758511",
+        "flux_projection_dimensionless": "-3.0359855519413177",
+        "flux_norm_ratio_dimensionless": "4.4813982972670852"
+      },
+      {
+        "stage": "final",
+        "velocity_projection_dimensionless": "-2.6731413493425049",
+        "velocity_norm_ratio_dimensionless": "2.6731413493425054",
+        "pressure_projection_dimensionless": "-2.6731413492758511",
+        "pressure_norm_ratio_dimensionless": "2.6731413492758511",
+        "flux_projection_dimensionless": "-2.6731413493425262",
+        "flux_norm_ratio_dimensionless": "2.6731413493425262"
+      }
+    ],
+    "targetStageResponses": [
+      {
+        "stage": "input",
+        "cell0": "3710",
+        "cell1": "3711",
+        "u_delta_m_s": "-5.1519300933682697",
+        "v_delta_m_s": "0.76591958195754861",
+        "p_delta_m2_s2": "-0.21747919691812667"
+      },
+      {
+        "stage": "input",
+        "cell0": "3711",
+        "cell1": "3712",
+        "u_delta_m_s": "-1.0876673157108521",
+        "v_delta_m_s": "-0.38689214117106507",
+        "p_delta_m2_s2": "43.317188919188858"
+      },
+      {
+        "stage": "momentum_predictor_and_rc",
+        "cell0": "3710",
+        "cell1": "3711",
+        "u_delta_m_s": "-1.5071307125670879",
+        "v_delta_m_s": "-0.23175034544438883",
+        "p_delta_m2_s2": "-0.21747919691812667"
+      },
+      {
+        "stage": "momentum_predictor_and_rc",
+        "cell0": "3711",
+        "cell1": "3712",
+        "u_delta_m_s": "-0.95692216212166903",
+        "v_delta_m_s": "-0.31404348620822287",
+        "p_delta_m2_s2": "43.317188919188858"
+      },
+      {
+        "stage": "pressure_correction_increment",
+        "cell0": "3710",
+        "cell1": "3711",
+        "u_delta_m_s": "15.278968074071521",
+        "v_delta_m_s": "-1.8156609593570747",
+        "p_delta_m2_s2": "0.79883183119006673"
+      },
+      {
+        "stage": "pressure_correction_increment",
+        "cell0": "3711",
+        "cell1": "3712",
+        "u_delta_m_s": "3.8644106380777719",
+        "v_delta_m_s": "1.3482608665099622",
+        "p_delta_m2_s2": "-159.11015775591869"
+      },
+      {
+        "stage": "final",
+        "cell0": "3710",
+        "cell1": "3711",
+        "u_delta_m_s": "13.771837361504433",
+        "v_delta_m_s": "-2.0474113048014635",
+        "p_delta_m2_s2": "0.58135263427194006"
+      },
+      {
+        "stage": "final",
+        "cell0": "3711",
+        "cell1": "3712",
+        "u_delta_m_s": "2.9074884759561028",
+        "v_delta_m_s": "1.0342173803017394",
+        "p_delta_m2_s2": "-115.79296883672984"
+      }
+    ],
+    "alignmentAllCells": [
+      {
+        "quantity": "momentum_rhs",
+        "max_abs_difference": "8.8817841970012523e-16",
+        "units": "m3/s2"
+      },
+      {
+        "quantity": "pressure_face_vs_actual_force",
+        "max_abs_difference": "5.5511151231257827e-16",
+        "units": "m3/s2"
+      },
+      {
+        "quantity": "compact_diagonal",
+        "max_abs_difference": "0",
+        "units": "m2/s"
+      },
+      {
+        "quantity": "compact_offdiag_sum",
+        "max_abs_difference": "1.1102230246251565e-16",
+        "units": "m2/s"
+      },
+      {
+        "quantity": "rc_predicted",
+        "max_abs_difference": "6.9388939039072284e-18",
+        "units": "m2/s"
+      }
+    ],
+    "unwrappedByteComparison": {
+      "input-modal-cells.csv": true,
+      "input-modal-faces.csv": true,
+      "output-modal-cells.csv": true,
+      "output-modal-faces.csv": true,
+      "output-base-cells.csv": true,
+      "output-base-faces.csv": true,
+      "output-delta-cells.csv": true,
+      "output-delta-faces.csv": true,
+      "power.csv": true
+    },
+    "traceEnabledVsDisabled": [
+      {
+        "field": "u",
+        "trace_enabled_hash": "11219184222434127596",
+        "trace_disabled_hash": "11219184222434127596",
+        "max_abs_difference": "0",
+        "bitwise_equal": "true"
+      },
+      {
+        "field": "v",
+        "trace_enabled_hash": "10205654063353201972",
+        "trace_disabled_hash": "10205654063353201972",
+        "max_abs_difference": "0",
+        "bitwise_equal": "true"
+      },
+      {
+        "field": "p",
+        "trace_enabled_hash": "4415656969559182000",
+        "trace_disabled_hash": "4415656969559182000",
+        "max_abs_difference": "0",
+        "bitwise_equal": "true"
+      },
+      {
+        "field": "phi",
+        "trace_enabled_hash": "17733474313467727250",
+        "trace_disabled_hash": "17733474313467727250",
+        "max_abs_difference": "0",
+        "bitwise_equal": "true"
+      }
+    ],
+    "sourceFilesUnchanged": true,
+    "productionLibrariesUnchanged": true,
+    "runs": [
+      {
+        "name": "trace",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-agent/cell_step",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-agent/trace",
+          "3710",
+          "180"
+        ],
+        "cwd": "/workspace/cartesian-mesh-generator-2d",
+        "startedUnixSeconds": 1791475398.8457801,
+        "elapsedWallSeconds": 18.048939607000648,
+        "returnCode": 0,
+        "binarySha256": "e34d9e32a1a03a0156f91c564d3473f4d94803e426935a317004f7067cca48f3",
+        "stdout": "rayleigh=-2.6731413494112513 residual=1.3717130734956747e-10 target0=3710 target1=3711 calls=4/1 outputHashes=11219184222434127596,10205654063353201972,4415656969559182000,17733474313467727250\n",
+        "stderr": ""
+      },
+      {
+        "name": "plain",
+        "command": [
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-agent/cell_step_plain",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-agent/plain",
+          "3710",
+          "180"
+        ],
+        "cwd": "/workspace/cartesian-mesh-generator-2d",
+        "startedUnixSeconds": 1791475416.895701,
+        "elapsedWallSeconds": 18.49282869200033,
+        "returnCode": 0,
+        "binarySha256": "2dcbc79e5e268e2c92b79ac3c3b83ea4bd377f0456a7281e07073c5b1c078019",
+        "stdout": "rayleigh=-2.6731413494112513 residual=1.3717130734956747e-10 target0=3710 target1=3711 calls=0/0 outputHashes=11219184222434127596,10205654063353201972,4415656969559182000,17733474313467727250\n",
+        "stderr": ""
+      }
+    ],
+    "targetCompleteViscousActions": [
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "wall_compact_m3_s2": "0.74700283291934277",
+        "wall_nonorth_m3_s2": "-0.053331704910347846",
+        "wall_stress_m3_s2": "0.60031256387490695",
+        "wall_complete_m3_s2": "1.2939836918839018",
+        "internal_compact_m3_s2": "3.4654690367088863",
+        "internal_nonorth_m3_s2": "-0.14083494718944489",
+        "internal_stress_m3_s2": "2.635507686436279",
+        "internal_complete_m3_s2": "5.9601417759557203",
+        "pressure_m3_s2": "-1.5322237452080738",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "5.7219017226315483",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "5.7219017226315483",
+        "alignment_m3_s2": "0"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "wall_compact_m3_s2": "0.41044220962371003",
+        "wall_nonorth_m3_s2": "0.52285114776993291",
+        "wall_stress_m3_s2": "0.81911169793323735",
+        "wall_complete_m3_s2": "1.7524050553268804",
+        "internal_compact_m3_s2": "0.033989037504550623",
+        "internal_nonorth_m3_s2": "-0.36219738735474938",
+        "internal_stress_m3_s2": "-0.34900071825384793",
+        "internal_complete_m3_s2": "-0.67720906810404669",
+        "pressure_m3_s2": "-0.84979244392349018",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "0.22540354329934342",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "0.22540354329934331",
+        "alignment_m3_s2": "1.1102230246251565e-16"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "wall_compact_m3_s2": "-0.11105432083544184",
+        "wall_nonorth_m3_s2": "-0.0054655637814146219",
+        "wall_stress_m3_s2": "-0.32034455411945911",
+        "wall_complete_m3_s2": "-0.43686443873631559",
+        "internal_compact_m3_s2": "-0.73918008402472468",
+        "internal_nonorth_m3_s2": "0.1468050013980543",
+        "internal_stress_m3_s2": "-0.78988241856560737",
+        "internal_complete_m3_s2": "-1.3822575011922777",
+        "pressure_m3_s2": "0.18208028328139964",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "-1.6370416566471937",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "-1.6370416566471935",
+        "alignment_m3_s2": "-2.2204460492503131e-16"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "wall_compact_m3_s2": "0.14599764377815985",
+        "wall_nonorth_m3_s2": "-0.10564644136037757",
+        "wall_stress_m3_s2": "-0.19359394778808861",
+        "wall_complete_m3_s2": "-0.15324274537030633",
+        "internal_compact_m3_s2": "0.81494001812265604",
+        "internal_nonorth_m3_s2": "-0.062191236600645822",
+        "internal_stress_m3_s2": "0.33072100749263517",
+        "internal_complete_m3_s2": "1.0834697890146454",
+        "pressure_m3_s2": "-0.29648554568930002",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "0.63374149795503909",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "0.63374149795503887",
+        "alignment_m3_s2": "2.2204460492503131e-16"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "wall_compact_m3_s2": "-1.996844160752645",
+        "wall_nonorth_m3_s2": "0.14256318562692133",
+        "wall_stress_m3_s2": "-1.6047203370236036",
+        "wall_complete_m3_s2": "-3.4590013121493275",
+        "internal_compact_m3_s2": "-9.2636885768923918",
+        "internal_nonorth_m3_s2": "0.37647172076455415",
+        "internal_stress_m3_s2": "-7.0450845731220939",
+        "internal_complete_m3_s2": "-15.932301429249932",
+        "pressure_m3_s2": "4.0958506497587015",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "-15.295452091640556",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "-15.295452091640554",
+        "alignment_m3_s2": "-1.7763568394002505e-15"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "wall_compact_m3_s2": "-1.0971700420610417",
+        "wall_nonorth_m3_s2": "-1.397655022654998",
+        "wall_stress_m3_s2": "-2.1896013494757178",
+        "wall_complete_m3_s2": "-4.6844264141917575",
+        "internal_compact_m3_s2": "-0.090857501579887145",
+        "internal_nonorth_m3_s2": "0.96820481276258119",
+        "internal_stress_m3_s2": "0.93292825091324039",
+        "internal_complete_m3_s2": "1.8102755620959345",
+        "pressure_m3_s2": "2.2716153202115636",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "-0.60253553188425935",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "-0.6025355318842589",
+        "alignment_m3_s2": "-4.4408920985006262e-16"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "wall_compact_m3_s2": "0.29686389704831256",
+        "wall_nonorth_m3_s2": "0.014610224541551841",
+        "wall_stress_m3_s2": "0.85632627365344116",
+        "wall_complete_m3_s2": "1.1678003952433056",
+        "internal_compact_m3_s2": "1.9759328472175037",
+        "internal_nonorth_m3_s2": "-0.39243051952820962",
+        "internal_stress_m3_s2": "2.1114673541862903",
+        "internal_complete_m3_s2": "3.6949696818755844",
+        "pressure_m3_s2": "-0.48672633413928218",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "4.3760437429796077",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "4.3760437429796077",
+        "alignment_m3_s2": "0"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "wall_compact_m3_s2": "-0.39027233849062093",
+        "wall_nonorth_m3_s2": "0.28240787081166807",
+        "wall_stress_m3_s2": "0.517503986814845",
+        "wall_complete_m3_s2": "0.40963951913589214",
+        "internal_compact_m3_s2": "-2.1784498596785027",
+        "internal_nonorth_m3_s2": "0.16624596612369139",
+        "internal_stress_m3_s2": "-0.88406400022504505",
+        "internal_complete_m3_s2": "-2.8962678937798563",
+        "pressure_m3_s2": "0.79254777166462875",
+        "source_m3_s2": "0",
+        "sum_unrelaxed_defect_m3_s2": "-1.6940806029793356",
+        "actual_rhs_minus_matrix_oldfield_m3_s2": "-1.6940806029793356",
+        "alignment_m3_s2": "0"
+      }
+    ],
+    "targetMomentumRows": [
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "pressure_face_sum_m3_s2": "-1.5322237452080738",
+        "pressure_actual_m3_s2": "-1.5322237452080738",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "-0.19416665209979272",
+        "stress_rhs_m3_s2": "3.2358202503111859",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "1.5094298530033194",
+        "actual_rhs_m3_s2": "1.5094298530033197",
+        "rhs_difference_m3_s2": "-2.2204460492503131e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "-3.0363773995810774",
+        "common_diagonal_rhs_m3_s2": "-0",
+        "relaxed_rhs_m3_s2": "-1.5269475465777578",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "-2.2206326322943926",
+        "offdiag_times_evaluated_u_m3_s2": "0.6936850857169502",
+        "row_residual_m3_s2": "-3.1541436129600697e-13"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "pressure_face_sum_m3_s2": "-0.84979244392349007",
+        "pressure_actual_m3_s2": "-0.84979244392349018",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "0.16065376041518348",
+        "stress_rhs_m3_s2": "0.47011097967938942",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "-0.21902770382891723",
+        "actual_rhs_m3_s2": "-0.2190277038289174",
+        "rhs_difference_m3_s2": "1.6653345369377348e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "-1.4056697476620328",
+        "common_diagonal_rhs_m3_s2": "-0",
+        "relaxed_rhs_m3_s2": "-1.6246974514909502",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "-3.0917462415487398",
+        "offdiag_times_evaluated_u_m3_s2": "1.4670487900577072",
+        "row_residual_m3_s2": "8.2378548427186615e-14"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "pressure_face_sum_m3_s2": "0.18208028328139964",
+        "pressure_actual_m3_s2": "0.18208028328139964",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "0.1413394376166397",
+        "stress_rhs_m3_s2": "-1.1102269726850664",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "-0.78680725178702704",
+        "actual_rhs_m3_s2": "-0.78680725178702715",
+        "rhs_difference_m3_s2": "1.1102230246251565e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "0.45140769894104377",
+        "common_diagonal_rhs_m3_s2": "0",
+        "relaxed_rhs_m3_s2": "-0.33539955284598338",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "-0.34146499394384788",
+        "offdiag_times_evaluated_u_m3_s2": "0.0060654410986194646",
+        "row_residual_m3_s2": "-7.5496553453291426e-13"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "pressure_face_sum_m3_s2": "-0.29648554568930002",
+        "pressure_actual_m3_s2": "-0.29648554568930002",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "-0.16783767796102336",
+        "stress_rhs_m3_s2": "0.13712705970454653",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "-0.32719616394577689",
+        "actual_rhs_m3_s2": "-0.32719616394577677",
+        "rhs_difference_m3_s2": "-1.1102230246251565e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "-0.50000820158590753",
+        "common_diagonal_rhs_m3_s2": "-0",
+        "relaxed_rhs_m3_s2": "-0.8272043655316843",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "-1.0146517727360198",
+        "offdiag_times_evaluated_u_m3_s2": "0.18744740720630138",
+        "row_residual_m3_s2": "-1.9658719097037647e-12"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "pressure_face_sum_m3_s2": "4.0958506497587015",
+        "pressure_actual_m3_s2": "4.0958506497587015",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "0.51903490639147543",
+        "stress_rhs_m3_s2": "-8.6498049101456971",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "-4.0349193539955204",
+        "actual_rhs_m3_s2": "-4.0349193539955213",
+        "rhs_difference_m3_s2": "8.8817841970012523e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "0",
+        "common_diagonal_rhs_m3_s2": "0",
+        "relaxed_rhs_m3_s2": "-4.0349193539955213",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "12.174998968543623",
+        "offdiag_times_evaluated_u_m3_s2": "-0.9144662308985877",
+        "row_residual_m3_s2": "-15.295452091640557"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "pressure_face_sum_m3_s2": "2.2716153202115636",
+        "pressure_actual_m3_s2": "2.2716153202115636",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "-0.42945020989241667",
+        "stress_rhs_m3_s2": "-1.2566730985624772",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "0.58549201175666976",
+        "actual_rhs_m3_s2": "0.58549201175666998",
+        "rhs_difference_m3_s2": "-2.2204460492503131e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "0",
+        "common_diagonal_rhs_m3_s2": "0",
+        "relaxed_rhs_m3_s2": "0.58549201175666998",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "5.6363308889948822",
+        "offdiag_times_evaluated_u_m3_s2": "-4.4483033453539527",
+        "row_residual_m3_s2": "-0.60253553188425979"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "pressure_face_sum_m3_s2": "-0.48672633413928218",
+        "pressure_actual_m3_s2": "-0.48672633413928218",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "-0.37782029498665776",
+        "stress_rhs_m3_s2": "2.9677936278397317",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "2.1032469987137916",
+        "actual_rhs_m3_s2": "2.1032469987137921",
+        "rhs_difference_m3_s2": "-4.4408920985006262e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "0",
+        "common_diagonal_rhs_m3_s2": "0",
+        "relaxed_rhs_m3_s2": "2.1032469987137921",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "-1.8100148781759446",
+        "offdiag_times_evaluated_u_m3_s2": "-0.46278186608987149",
+        "row_residual_m3_s2": "4.3760437429796077"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "pressure_face_sum_m3_s2": "0.79254777166462875",
+        "pressure_actual_m3_s2": "0.79254777166462875",
+        "wall_rhs_m3_s2": "0",
+        "nonorth_rhs_m3_s2": "0.44865383693535943",
+        "stress_rhs_m3_s2": "-0.36656001341019995",
+        "source_rhs_m3_s2": "0",
+        "reconstructed_rhs_m3_s2": "0.87464159518978823",
+        "actual_rhs_m3_s2": "0.87464159518978835",
+        "rhs_difference_m3_s2": "-1.1102230246251565e-16",
+        "compact_diagonal_m2_s": "0",
+        "actual_diagonal_m2_s": "0",
+        "compact_diagonal_difference_m2_s": "0",
+        "actual_offdiagonal_sum_m2_s": "0",
+        "reconstructed_offdiagonal_sum_m2_s": "0",
+        "offdiag_difference_m2_s": "0",
+        "relaxation_rhs_m3_s2": "0",
+        "common_diagonal_rhs_m3_s2": "0",
+        "relaxed_rhs_m3_s2": "0.87464159518978835",
+        "relaxed_diagonal_m2_s": "0",
+        "diagonal_times_evaluated_u_m3_s2": "2.0048888980078181",
+        "offdiag_times_evaluated_u_m3_s2": "0.56383330016130595",
+        "row_residual_m3_s2": "-1.6940806029793358"
+      }
+    ],
+    "targetFaceMomentumTerms": [
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3611",
+        "owner0": "3708",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0.036396305979602528",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.040256543768797601",
+        "symmetric_stress_rhs_m3_s2": "0.55587932182295718",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.59613586559175491",
+        "complete_viscous_oldfield_action_m3_s2": "1.1117586436459144"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3612",
+        "owner0": "3705",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.009925456710703667",
+        "symmetric_stress_rhs_m3_s2": "-0.00061664233049622125",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.22936828946979937",
+        "complete_viscous_oldfield_action_m3_s2": "0.21882619042859949"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3614",
+        "owner0": "3709",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0.10056558087243286",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.069952687312376208",
+        "symmetric_stress_rhs_m3_s2": "0.54097890350543054",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "1.0940137573301005",
+        "complete_viscous_oldfield_action_m3_s2": "1.565039973523155"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3690",
+        "owner0": "3710",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.040677533773537763",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.053331704910347846",
+        "symmetric_stress_rhs_m3_s2": "0.60031256387490695",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.74700283291934277",
+        "complete_viscous_oldfield_action_m3_s2": "1.2939836918839018"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-1.6370705538744419",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.020700259397567408",
+        "symmetric_stress_rhs_m3_s2": "1.5392661034383874",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "1.5459511243172317",
+        "complete_viscous_oldfield_action_m3_s2": "3.0645169683580518"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3692",
+        "owner0": "3711",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.14189896484863185",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.52285114776993291",
+        "symmetric_stress_rhs_m3_s2": "0.81911169793323735",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.41044220962371003",
+        "complete_viscous_oldfield_action_m3_s2": "1.7524050553268804"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "1.6370705538744419",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.020700259397567408",
+        "symmetric_stress_rhs_m3_s2": "-1.5392661034383874",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-1.5459511243172317",
+        "complete_viscous_oldfield_action_m3_s2": "-3.0645169683580518"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3697",
+        "owner0": "3711",
+        "neighbour0": "3713",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.048224733878470913",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.020101913598090285",
+        "symmetric_stress_rhs_m3_s2": "0.089361638405083918",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.11028380990507262",
+        "complete_viscous_oldfield_action_m3_s2": "0.17954353471206624"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3699",
+        "owner0": "3711",
+        "neighbour0": "3712",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-2.580537228768093",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.36279573315422647",
+        "symmetric_stress_rhs_m3_s2": "1.1009037467794556",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "1.4696563519167096",
+        "complete_viscous_oldfield_action_m3_s2": "2.207764365541939"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3611",
+        "owner0": "3708",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.0040988798370819313",
+        "symmetric_stress_rhs_m3_s2": "0.11505711317553999",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.092565800033514944",
+        "complete_viscous_oldfield_action_m3_s2": "0.026590192979106975"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3612",
+        "owner0": "3705",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0.021646693316931583",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.00032535833045940158",
+        "symmetric_stress_rhs_m3_s2": "-0.039926582611186624",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.040251940941646025",
+        "complete_viscous_oldfield_action_m3_s2": "-0.079853165222373249"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3614",
+        "owner0": "3709",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0.10056558087243286",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.0072314065663212235",
+        "symmetric_stress_rhs_m3_s2": "-0.64371030999355527",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.16785955004758307",
+        "complete_viscous_oldfield_action_m3_s2": "-0.80433845347481714"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3690",
+        "owner0": "3710",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.018631680624728614",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.0054655637814146219",
+        "symmetric_stress_rhs_m3_s2": "-0.32034455411945911",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.11105432083544184",
+        "complete_viscous_oldfield_action_m3_s2": "-0.43686443873631559"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.27963085146162953",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.13514935666419176",
+        "symmetric_stress_rhs_m3_s2": "-0.22130263913640547",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.43850279300198064",
+        "complete_viscous_oldfield_action_m3_s2": "-0.52465607547419435"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3692",
+        "owner0": "3711",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.069256658100724164",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.10564644136037757",
+        "symmetric_stress_rhs_m3_s2": "-0.19359394778808861",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.14599764377815985",
+        "complete_viscous_oldfield_action_m3_s2": "-0.15324274537030633"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0.27963085146162953",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.13514935666419176",
+        "symmetric_stress_rhs_m3_s2": "0.22130263913640547",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.43850279300198064",
+        "complete_viscous_oldfield_action_m3_s2": "0.52465607547419435"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3697",
+        "owner0": "3711",
+        "neighbour0": "3713",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.00096131593441882109",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.0098731958399171857",
+        "symmetric_stress_rhs_m3_s2": "-0.01547081761786746",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.035550888939992954",
+        "complete_viscous_oldfield_action_m3_s2": "0.010206875482208309"
+      },
+      {
+        "run": "delta",
+        "phase": "pre",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3699",
+        "owner0": "3711",
+        "neighbour0": "3712",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.051440647938634836",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.082831315903463126",
+        "symmetric_stress_rhs_m3_s2": "0.12488918597409714",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.34088633618068237",
+        "complete_viscous_oldfield_action_m3_s2": "0.54860683805824262"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3611",
+        "owner0": "3708",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0.097292470484788146",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.1076114317301039",
+        "symmetric_stress_rhs_m3_s2": "-1.4859440004092193",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-1.5935554321393233",
+        "complete_viscous_oldfield_action_m3_s2": "-2.9718880008184385"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3612",
+        "owner0": "3705",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.026532148744586433",
+        "symmetric_stress_rhs_m3_s2": "0.0016483721114685761",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.61313385881003646",
+        "complete_viscous_oldfield_action_m3_s2": "-0.58495333795398141"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3614",
+        "owner0": "3709",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0.26882601254307714",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.1869934209523639",
+        "symmetric_stress_rhs_m3_s2": "-1.4461130760821594",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-2.9244534114686123",
+        "complete_viscous_oldfield_action_m3_s2": "-4.1835730665984077"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3690",
+        "owner0": "3710",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.10873679752328078",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.14256318562692133",
+        "symmetric_stress_rhs_m3_s2": "-1.6047203370236036",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-1.996844160752645",
+        "complete_viscous_oldfield_action_m3_s2": "-3.4590013121493275"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "4.3761209893402713",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.055334719337499866",
+        "symmetric_stress_rhs_m3_s2": "-4.1146758687421841",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-4.1325458744744195",
+        "complete_viscous_oldfield_action_m3_s2": "-8.1918870238791044"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3692",
+        "owner0": "3711",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.37931599037024732",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-1.397655022654998",
+        "symmetric_stress_rhs_m3_s2": "-2.1896013494757178",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-1.0971700420610417",
+        "complete_viscous_oldfield_action_m3_s2": "-4.6844264141917575"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-4.3761209893402713",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.055334719337499866",
+        "symmetric_stress_rhs_m3_s2": "4.1146758687421841",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "4.1325458744744195",
+        "complete_viscous_oldfield_action_m3_s2": "8.1918870238791044"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3697",
+        "owner0": "3711",
+        "neighbour0": "3713",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.12891153019091964",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.053735256439985772",
+        "symmetric_stress_rhs_m3_s2": "-0.23887629066571114",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.29480421242038857",
+        "complete_viscous_oldfield_action_m3_s2": "-0.47994524664611393"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "u",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3699",
+        "owner0": "3711",
+        "neighbour0": "3712",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "6.8981407697311621",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.96980427566009531",
+        "symmetric_stress_rhs_m3_s2": "-2.9428713271632323",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-3.9285991636339181",
+        "complete_viscous_oldfield_action_m3_s2": "-5.9016662151370554"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3611",
+        "owner0": "3708",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.010956885178564125",
+        "symmetric_stress_rhs_m3_s2": "-0.3075639267658441",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.2474414676044692",
+        "complete_viscous_oldfield_action_m3_s2": "-0.071079344339939038"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3612",
+        "owner0": "3705",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "-0.057864670978086528",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.00086972880653794077",
+        "symmetric_stress_rhs_m3_s2": "0.10672939891607583",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.10759912772261375",
+        "complete_viscous_oldfield_action_m3_s2": "0.21345879783215163"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3614",
+        "owner0": "3709",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0.26882601254307714",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.019330571906418986",
+        "symmetric_stress_rhs_m3_s2": "1.7207286466418161",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.44871230411414631",
+        "complete_viscous_oldfield_action_m3_s2": "2.1501103788495435"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3690",
+        "owner0": "3710",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.049805115887519798",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.014610224541551841",
+        "symmetric_stress_rhs_m3_s2": "0.85632627365344116",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "0.29686389704831256",
+        "complete_viscous_oldfield_action_m3_s2": "1.1678003952433056"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3710",
+        "cell1": "3711",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.7474927915917926",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.36127333363668857",
+        "symmetric_stress_rhs_m3_s2": "0.59157323539424256",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "1.1721799477762744",
+        "complete_viscous_oldfield_action_m3_s2": "1.4024798495338284"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3692",
+        "owner0": "3711",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "0.18513283648850445",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.28240787081166807",
+        "symmetric_stress_rhs_m3_s2": "0.517503986814845",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.39027233849062093",
+        "complete_viscous_oldfield_action_m3_s2": "0.40963951913589214"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "orientation": "-1",
+        "pressure_rhs_m3_s2": "0.7474927915917926",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.36127333363668857",
+        "symmetric_stress_rhs_m3_s2": "-0.59157323539424256",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-1.1721799477762744",
+        "complete_viscous_oldfield_action_m3_s2": "-1.4024798495338284"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3697",
+        "owner0": "3711",
+        "neighbour0": "3713",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.0025697333740636358",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "0.026392448049896496",
+        "symmetric_stress_rhs_m3_s2": "0.041355682282472918",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.095032551231525986",
+        "complete_viscous_oldfield_action_m3_s2": "-0.027284420899156579"
+      },
+      {
+        "run": "delta",
+        "phase": "post",
+        "component": "v",
+        "cell0": "3711",
+        "cell1": "3712",
+        "face0": "3699",
+        "owner0": "3711",
+        "neighbour0": "3712",
+        "kind": "internal",
+        "orientation": "1",
+        "pressure_rhs_m3_s2": "-0.13750812304160459",
+        "wall_dirichlet_rhs_m3_s2": "0",
+        "viscous_nonorth_rhs_m3_s2": "-0.22141981556289367",
+        "symmetric_stress_rhs_m3_s2": "-0.33384644711327532",
+        "compact_diagonal_m2_s": "0",
+        "compact_offdiagonal_m2_s": "0",
+        "compact_oldfield_action_m3_s2": "-0.91123736067070238",
+        "complete_viscous_oldfield_action_m3_s2": "-1.4665036233468713"
+      }
+    ],
+    "targetFaceRcTerms": [
+      {
+        "run": "delta",
+        "face0": "3611",
+        "owner0": "3708",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.023982930379769909",
+        "predictor_skew_m2_s": "0.002330965182191972",
+        "rag_gauss_m2_s": "0.010720260762801069",
+        "compact_pressure_m2_s": "1.4683945805849606e-05",
+        "nonorth_pressure_m2_s": "0.0014019211008743991",
+        "relaxation_defect_m2_s": "0.019481268102987483",
+        "sum_m2_s": "0.0099661687148908627",
+        "actual_predicted_m2_s": "0.0099661687148908645",
+        "sum_difference_m2_s": "-1.7347234759768071e-18",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3612",
+        "owner0": "3705",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.0011071416612040944",
+        "predictor_skew_m2_s": "-8.3882959081458749e-06",
+        "rag_gauss_m2_s": "-0.000122731979887388",
+        "compact_pressure_m2_s": "-9.6402705701174407e-05",
+        "nonorth_pressure_m2_s": "0.00094105711075686399",
+        "relaxation_defect_m2_s": "0.0010206470936242374",
+        "sum_m2_s": "0.00062703956168029876",
+        "actual_predicted_m2_s": "0.00062703956168029908",
+        "sum_difference_m2_s": "-3.2526065174565133e-19",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3614",
+        "owner0": "3709",
+        "neighbour0": "3710",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.032811274364579368",
+        "predictor_skew_m2_s": "-0.0012502143277764704",
+        "rag_gauss_m2_s": "0.0096765102184785019",
+        "compact_pressure_m2_s": "0.0024978660179858459",
+        "nonorth_pressure_m2_s": "-0.0043078441793980727",
+        "relaxation_defect_m2_s": "0.014510220903689825",
+        "sum_m2_s": "-0.011684735731599737",
+        "actual_predicted_m2_s": "-0.011684735731599732",
+        "sum_difference_m2_s": "-5.2041704279304213e-18",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3690",
+        "owner0": "3710",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "interpolation_m2_s": "0",
+        "predictor_skew_m2_s": "0",
+        "rag_gauss_m2_s": "0",
+        "compact_pressure_m2_s": "0",
+        "nonorth_pressure_m2_s": "0",
+        "relaxation_defect_m2_s": "0",
+        "sum_m2_s": "0",
+        "actual_predicted_m2_s": "0",
+        "sum_difference_m2_s": "0",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3692",
+        "owner0": "3711",
+        "neighbour0": "-1",
+        "kind": "wall",
+        "interpolation_m2_s": "0",
+        "predictor_skew_m2_s": "0",
+        "rag_gauss_m2_s": "0",
+        "compact_pressure_m2_s": "0",
+        "nonorth_pressure_m2_s": "0",
+        "relaxation_defect_m2_s": "0",
+        "sum_m2_s": "0",
+        "actual_predicted_m2_s": "0",
+        "sum_difference_m2_s": "0",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3693",
+        "owner0": "3710",
+        "neighbour0": "3711",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.029203977778104795",
+        "predictor_skew_m2_s": "-0.0067429449926266274",
+        "rag_gauss_m2_s": "0.010485646518438793",
+        "compact_pressure_m2_s": "-0.0085932983110610268",
+        "nonorth_pressure_m2_s": "0.010364047106815575",
+        "relaxation_defect_m2_s": "0.020037602486001647",
+        "sum_m2_s": "-0.0036529249705364378",
+        "actual_predicted_m2_s": "-0.0036529249705364343",
+        "sum_difference_m2_s": "-3.4694469519536142e-18",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3697",
+        "owner0": "3711",
+        "neighbour0": "3713",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.00041686850947557521",
+        "predictor_skew_m2_s": "0.0001053602485859214",
+        "rag_gauss_m2_s": "5.7634038888882116e-05",
+        "compact_pressure_m2_s": "2.3964818131338249e-05",
+        "nonorth_pressure_m2_s": "-4.7804773039646556e-05",
+        "relaxation_defect_m2_s": "3.6040575112913124e-05",
+        "sum_m2_s": "-0.00024167360179616686",
+        "actual_predicted_m2_s": "-0.00024167360179616691",
+        "sum_difference_m2_s": "5.4210108624275222e-20",
+        "df_s": "0"
+      },
+      {
+        "run": "delta",
+        "face0": "3699",
+        "owner0": "3711",
+        "neighbour0": "3712",
+        "kind": "internal",
+        "interpolation_m2_s": "-0.015416251005400179",
+        "predictor_skew_m2_s": "-0.0077037953188481131",
+        "rag_gauss_m2_s": "0.00070037143225042738",
+        "compact_pressure_m2_s": "-0.0022866445822061505",
+        "nonorth_pressure_m2_s": "0.0016569925130165597",
+        "relaxation_defect_m2_s": "-0.00116339251424722",
+        "sum_m2_s": "-0.024212719475434675",
+        "actual_predicted_m2_s": "-0.024212719475434671",
+        "sum_difference_m2_s": "-3.4694469519536142e-18",
+        "df_s": "0"
+      }
+    ]
+  },
+  "nativeSourceResponse": {
+    "scope": "Native source attribution of the same retained Stokes mode. All terms retained. Only fixed-viscosity, closed fixed-velocity walls, identical modal/base matrices and zero volume sources are supported.",
+    "sourceHead": "2e9419866fd43f93a241634659ffd28aaeb0761a",
+    "command": [
+      "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-analysis/source_response",
+      "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+      "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+      "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-agent/trace",
+      "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-analysis/response"
+    ],
+    "cwd": "/workspace/cartesian-mesh-generator-2d",
+    "elapsedWallSecondsIncludingIO": 1.1480543550023867,
+    "returnCode": 0,
+    "stdout": "source_sum_velocity_projection=-2.6731413493415341 pressure=-2.6731413493202991 flux=-2.6731413493369267 max_final_errors=9.7388971886935849e-12,1.0013062590446403e-11,5.1569859493838521e-10,2.0010940604206495e-13\n",
+    "buildCommand": [
+      "/usr/bin/c++",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++20",
+      "-I/workspace/cartesian-mesh-generator-2d/include",
+      "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+      "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-analysis/source_response.cpp",
+      "-DDIAG_WRAP",
+      "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+      "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_",
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+      "-o",
+      "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-analysis/source_response"
+    ],
+    "sourceSha256": "2817fdde7026bad9b768441ba1f7007ea6e29614dd7377d16c6e042285d3a4b6",
+    "binarySha256": "98a3a0aafa200bdd47f935123c14ddd3ae9e7d566fb8b2caa678cc2a37f8afd7",
+    "productionLibrariesSha256Before": {
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+    },
+    "productionLibrariesSha256After": {
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+      "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+    },
+    "productionLibrariesUnchanged": true,
+    "replayedProductionFieldsByteEqual": {
+      "replayed-modal-cells.csv": true,
+      "replayed-modal-faces.csv": true,
+      "replayed-base-cells.csv": true,
+      "replayed-base-faces.csv": true
+    },
+    "projection": "Separate cell-area velocity/pressure and face-length flux weighted inner products, divided by corresponding modal input squared norms; identical to the native step trace.",
+    "linearControls": "Production Jacobi momentum solve: relative 1e-11 and row stop .01*tolerance*speed*alphaU; IC(0) pressure relative 1e-11, four native pressure passes and their final lagged correction. Separate Krylov solves have finite stopping error; closure is numerical, not bitwise.",
+    "method": "Actual captured compact diagonal/offdiagonal retained in every momentum solve. Native sources separately propagated through native velocity gradient, Rhie-Chow interpolation and solvePressureCorrection. Pressure direct RC terms, retained face-flux relaxation and old pressure carry added separately. No source deletion or changed discretization.",
+    "sourceProjections": [
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "-0.0024835882844287719",
+        "velocity_norm_ratio_dimensionless": "0.013534258989989799",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0.24745593240998437",
+        "flux_norm_ratio_dimensionless": "0.51248501893903486"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0.12612918004549767",
+        "velocity_norm_ratio_dimensionless": "0.12756617639402015",
+        "pressure_projection_dimensionless": "0.11928369755106639",
+        "pressure_norm_ratio_dimensionless": "0.12368171954102089",
+        "flux_projection_dimensionless": "-0.0074739555201900299",
+        "flux_norm_ratio_dimensionless": "0.46343721050228759"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0.1236455917610689",
+        "velocity_norm_ratio_dimensionless": "0.12540638795664197",
+        "pressure_projection_dimensionless": "0.11928369755106639",
+        "pressure_norm_ratio_dimensionless": "0.12368171954102089",
+        "flux_projection_dimensionless": "0.23998197688979434",
+        "flux_norm_ratio_dimensionless": "0.24688877870313"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "-0.10538544822805122",
+        "velocity_norm_ratio_dimensionless": "0.12018564452012347",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0.39015590721885302",
+        "flux_norm_ratio_dimensionless": "1.472101191694674"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0.49709446388090783",
+        "velocity_norm_ratio_dimensionless": "0.5047622361740528",
+        "pressure_projection_dimensionless": "0.46554921364641128",
+        "pressure_norm_ratio_dimensionless": "0.47070520493149626",
+        "flux_projection_dimensionless": "0.21497810981843318",
+        "flux_norm_ratio_dimensionless": "1.4278973640374215"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0.3917090156528566",
+        "velocity_norm_ratio_dimensionless": "0.39790499163533122",
+        "pressure_projection_dimensionless": "0.46554921364641128",
+        "pressure_norm_ratio_dimensionless": "0.47070520493149626",
+        "flux_projection_dimensionless": "0.6051340170372862",
+        "flux_norm_ratio_dimensionless": "0.6245261030457"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0.023601501027973992",
+        "velocity_norm_ratio_dimensionless": "0.042499075895915603",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "-0.099126712560741362",
+        "flux_norm_ratio_dimensionless": "0.37013579238622407"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "-0.095123645844625196",
+        "velocity_norm_ratio_dimensionless": "0.099370564928923738",
+        "pressure_projection_dimensionless": "-0.047621691855350708",
+        "pressure_norm_ratio_dimensionless": "0.063819149886795365",
+        "flux_projection_dimensionless": "0.16330404626968198",
+        "flux_norm_ratio_dimensionless": "0.4191462618606196"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "final",
+        "velocity_projection_dimensionless": "-0.071522144816651201",
+        "velocity_norm_ratio_dimensionless": "0.083948745621148457",
+        "pressure_projection_dimensionless": "-0.047621691855350708",
+        "pressure_norm_ratio_dimensionless": "0.063819149886795365",
+        "flux_projection_dimensionless": "0.064177333708940631",
+        "flux_norm_ratio_dimensionless": "0.21484857959017864"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "-0.33295028472188964",
+        "velocity_norm_ratio_dimensionless": "0.36959993126649682",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "-0.70484321242246772",
+        "flux_norm_ratio_dimensionless": "1.8962352335610702"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "-1.5034195277516369",
+        "velocity_norm_ratio_dimensionless": "1.5085624574336913",
+        "pressure_projection_dimensionless": "-1.8695352644851251",
+        "pressure_norm_ratio_dimensionless": "1.8727743358573117",
+        "flux_projection_dimensionless": "-1.5874107525532002",
+        "flux_norm_ratio_dimensionless": "2.3433464836581881"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "final",
+        "velocity_projection_dimensionless": "-1.8363698124735266",
+        "velocity_norm_ratio_dimensionless": "1.8381196778208546",
+        "pressure_projection_dimensionless": "-1.8695352644851251",
+        "pressure_norm_ratio_dimensionless": "1.8727743358573117",
+        "flux_projection_dimensionless": "-2.2922539649756679",
+        "flux_norm_ratio_dimensionless": "2.3255921821544749"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0.23920621933068228",
+        "velocity_norm_ratio_dimensionless": "0.26124200410996185",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "-0.034813062956342081",
+        "flux_norm_ratio_dimensionless": "2.5337678979195157"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "-0.99925872763637169",
+        "velocity_norm_ratio_dimensionless": "1.0185431889660079",
+        "pressure_projection_dimensionless": "-1.0818122389032609",
+        "pressure_norm_ratio_dimensionless": "1.0934587509061693",
+        "flux_projection_dimensionless": "-0.67088389575526242",
+        "flux_norm_ratio_dimensionless": "2.7589846267504172"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "final",
+        "velocity_projection_dimensionless": "-0.76005250830568938",
+        "velocity_norm_ratio_dimensionless": "0.76801687293189624",
+        "pressure_projection_dimensionless": "-1.0818122389032609",
+        "pressure_norm_ratio_dimensionless": "1.0934587509061693",
+        "flux_projection_dimensionless": "-0.70569695871160454",
+        "flux_norm_ratio_dimensionless": "0.83921456196780142"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0.45793962878238248",
+        "velocity_norm_ratio_dimensionless": "0.47890515473647816",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "-0.0093580085228066063",
+        "flux_norm_ratio_dimensionless": "4.1802968460573373"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "-1.3196606193348661",
+        "velocity_norm_ratio_dimensionless": "1.3529540155510456",
+        "pressure_projection_dimensionless": "-1.3438089805177738",
+        "pressure_norm_ratio_dimensionless": "1.3681079595612073",
+        "flux_projection_dimensionless": "-0.70869065295393319",
+        "flux_norm_ratio_dimensionless": "4.4584421752776926"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "final",
+        "velocity_projection_dimensionless": "-0.86172099055248341",
+        "velocity_norm_ratio_dimensionless": "0.88172693738754304",
+        "pressure_projection_dimensionless": "-1.3438089805177738",
+        "pressure_norm_ratio_dimensionless": "1.3681079595612073",
+        "flux_projection_dimensionless": "-0.71804866147673974",
+        "flux_norm_ratio_dimensionless": "1.0458696121091331"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0.03369811160665126",
+        "flux_norm_ratio_dimensionless": "1.3930459657214216"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0.25815661116076682",
+        "velocity_norm_ratio_dimensionless": "0.27201747935609993",
+        "pressure_projection_dimensionless": "0.23051239002071933",
+        "pressure_norm_ratio_dimensionless": "0.24588733366769028",
+        "flux_projection_dimensionless": "0.027022376912731169",
+        "flux_norm_ratio_dimensionless": "1.4723678527648985"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0.25815661116076682",
+        "velocity_norm_ratio_dimensionless": "0.27201747935609993",
+        "pressure_projection_dimensionless": "0.23051239002071933",
+        "pressure_norm_ratio_dimensionless": "0.24588733366769028",
+        "flux_projection_dimensionless": "0.060720488519382429",
+        "flux_norm_ratio_dimensionless": "0.33648723284725879"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "-0.12598077592793558",
+        "flux_norm_ratio_dimensionless": "0.83980375208618485"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "-0.59536153635302214",
+        "velocity_norm_ratio_dimensionless": "0.59847250973847177",
+        "pressure_projection_dimensionless": "-0.55433109728684959",
+        "pressure_norm_ratio_dimensionless": "0.56020136068462678",
+        "flux_projection_dimensionless": "-0.36372141011845593",
+        "flux_norm_ratio_dimensionless": "0.97408597709686251"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "final",
+        "velocity_projection_dimensionless": "-0.59536153635302214",
+        "velocity_norm_ratio_dimensionless": "0.59847250973847177",
+        "pressure_projection_dimensionless": "-0.55433109728684959",
+        "pressure_norm_ratio_dimensionless": "0.56020136068462678",
+        "flux_projection_dimensionless": "-0.48970218604639149",
+        "flux_norm_ratio_dimensionless": "0.60233907469617076"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0.38203512022829422",
+        "flux_norm_ratio_dimensionless": "0.94984007492212186"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0.44980063881466381",
+        "velocity_norm_ratio_dimensionless": "0.45315849271446002",
+        "pressure_projection_dimensionless": "0.34720336743245034",
+        "pressure_norm_ratio_dimensionless": "0.35941784033292662",
+        "flux_projection_dimensionless": "0.18111346958058891",
+        "flux_norm_ratio_dimensionless": "0.92667610252159871"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0.44980063881466381",
+        "velocity_norm_ratio_dimensionless": "0.45315849271446002",
+        "pressure_projection_dimensionless": "0.34720336743245034",
+        "pressure_norm_ratio_dimensionless": "0.35941784033292662",
+        "flux_projection_dimensionless": "0.56314858980888316",
+        "flux_norm_ratio_dimensionless": "0.69324481689568362"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0.28362090352808411",
+        "flux_norm_ratio_dimensionless": "2.3990821770305781"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0.22857378577048218",
+        "velocity_norm_ratio_dimensionless": "0.26335204374090637",
+        "pressure_projection_dimensionless": "0.061419255077413512",
+        "pressure_norm_ratio_dimensionless": "0.16306200032970081",
+        "flux_projection_dimensionless": "-0.28422288761889403",
+        "flux_norm_ratio_dimensionless": "2.556457136688596"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0.22857378577048218",
+        "velocity_norm_ratio_dimensionless": "0.26335204374090637",
+        "pressure_projection_dimensionless": "0.061419255077413512",
+        "pressure_norm_ratio_dimensionless": "0.16306200032970081",
+        "flux_projection_dimensionless": "-0.00060198409080990817",
+        "flux_norm_ratio_dimensionless": "0.62874421423484184"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "predictor",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "1",
+        "pressure_norm_ratio_dimensionless": "1",
+        "flux_projection_dimensionless": "0",
+        "flux_norm_ratio_dimensionless": "0"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "increment",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "0",
+        "pressure_norm_ratio_dimensionless": "0",
+        "flux_projection_dimensionless": "0",
+        "flux_norm_ratio_dimensionless": "0"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "final",
+        "velocity_projection_dimensionless": "0",
+        "velocity_norm_ratio_dimensionless": "0",
+        "pressure_projection_dimensionless": "1",
+        "pressure_norm_ratio_dimensionless": "1",
+        "flux_projection_dimensionless": "0",
+        "flux_norm_ratio_dimensionless": "0"
+      }
+    ],
+    "sourceTargets": [
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0.011256967404265617",
+        "v_m_s": "-0.011958232437668321",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0.18041500235052466",
+        "v_m_s": "-0.029295580916565242",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "-0.65601918502977807",
+        "v_m_s": "0.078614339781226408",
+        "p_m2_s2": "-0.46173865860532948"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "-0.18604779247598216",
+        "v_m_s": "-0.0079919848224451959",
+        "p_m2_s2": "8.4983576671312644"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "-0.64476221762551245",
+        "v_m_s": "0.066656107343558091",
+        "p_m2_s2": "-0.46173865860532948"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "-0.0056327901254575041",
+        "v_m_s": "-0.037287565739010438",
+        "p_m2_s2": "8.4983576671312644"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0.53104197726951463",
+        "v_m_s": "-0.2615887536903988",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0.35957334488650616",
+        "v_m_s": "-0.11173660706218029",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "-2.5935995307037367",
+        "v_m_s": "0.38260132204695874",
+        "p_m2_s2": "1.9412932045822744"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "-0.51574476862856811",
+        "v_m_s": "-0.098143135662316014",
+        "p_m2_s2": "31.733554442390702"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "-2.062557553434222",
+        "v_m_s": "0.12101256835655994",
+        "p_m2_s2": "1.9412932045822744"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "-0.15617142374206194",
+        "v_m_s": "-0.2098797427244963",
+        "p_m2_s2": "31.733554442390702"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "-0.098612680331402566",
+        "v_m_s": "0.094945060820231367",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "-0.11410471887773231",
+        "v_m_s": "-0.022683256079744207",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "0.5044481712612684",
+        "v_m_s": "-0.074649176161032005",
+        "p_m2_s2": "0.28622687377041667"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "0.10678840310497616",
+        "v_m_s": "0.0042911364932700004",
+        "p_m2_s2": "-6.5605774889435207"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "0.40583549092986582",
+        "v_m_s": "0.020295884659199362",
+        "p_m2_s2": "0.28622687377041667"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "-0.0073163157727561545",
+        "v_m_s": "-0.018392119586474208",
+        "p_m2_s2": "-6.5605774889435207"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "1.6799109720509224",
+        "v_m_s": "-0.44517789859366547",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "-0.11217677779331577",
+        "v_m_s": "0.056652441380033447",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "7.7680298822191318",
+        "v_m_s": "-0.89686593689115213",
+        "p_m2_s2": "4.5527577784012312"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "2.0744305134446628",
+        "v_m_s": "0.74951396675124948",
+        "p_m2_s2": "-77.38299521158919"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "9.4479408542700547",
+        "v_m_s": "-1.3420438354848176",
+        "p_m2_s2": "4.5527577784012312"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "1.962253735651347",
+        "v_m_s": "0.80616640813128293",
+        "p_m2_s2": "-77.38299521158919"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "-1.2473704990697505",
+        "v_m_s": "0.11124558825813628",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "-0.48077668598471546",
+        "v_m_s": "-0.082899682942170108",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "5.2030866848195361",
+        "v_m_s": "-0.69623551817895601",
+        "p_m2_s2": "-6.2862715695169795"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "1.0697325371581869",
+        "v_m_s": "0.24751123268992226",
+        "p_m2_s2": "-63.16544907200813"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "3.9557161857497856",
+        "v_m_s": "-0.58498992992081977",
+        "p_m2_s2": "-6.2862715695169795"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "0.58895585117347149",
+        "v_m_s": "0.16461154974775216",
+        "p_m2_s2": "-63.16544907200813"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "-2.3833574498879142",
+        "v_m_s": "0.28078389019865696",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "-0.78985232670231875",
+        "v_m_s": "-0.12408080058840587",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "6.8886792075173799",
+        "v_m_s": "-0.96281150561240547",
+        "p_m2_s2": "-10.926777480770497"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "1.3176821309196958",
+        "v_m_s": "0.24115596324150546",
+        "p_m2_s2": "-86.987295423766881"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "4.5053217576294653",
+        "v_m_s": "-0.68202761541374857",
+        "p_m2_s2": "-10.926777480770497"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "0.52782980421737702",
+        "v_m_s": "0.11707516265309958",
+        "p_m2_s2": "-86.987295423766881"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "-1.3554280598172097",
+        "v_m_s": "0.20837788647642816",
+        "p_m2_s2": "4.2582051385488366"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "-0.23793518312924308",
+        "v_m_s": "0.0097166056686630135",
+        "p_m2_s2": "19.470960951798425"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "-1.3554280598172097",
+        "v_m_s": "0.20837788647642816",
+        "p_m2_s2": "4.2582051385488366"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "-0.23793518312924308",
+        "v_m_s": "0.0097166056686630135",
+        "p_m2_s2": "19.470960951798425"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "3.1087547407434264",
+        "v_m_s": "-0.35628074160227496",
+        "p_m2_s2": "1.0823651267826648"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "0.51030155012752088",
+        "v_m_s": "0.20938284079563668",
+        "p_m2_s2": "-34.786147975624658"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "3.1087547407434264",
+        "v_m_s": "-0.35628074160227496",
+        "p_m2_s2": "1.0823651267826648"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "0.51030155012752088",
+        "v_m_s": "0.20938284079563668",
+        "p_m2_s2": "-34.786147975624658"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "-2.3595119453190172",
+        "v_m_s": "0.26412789266414499",
+        "p_m2_s2": "-1.1789620444958442"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "-0.28022119215780661",
+        "v_m_s": "-0.135229552425843",
+        "p_m2_s2": "27.293020788633179"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "-2.3595119453190172",
+        "v_m_s": "0.26412789266414499",
+        "p_m2_s2": "-1.1789620444958442"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "-0.28022119215780661",
+        "v_m_s": "-0.135229552425843",
+        "p_m2_s2": "27.293020788633179"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "-1.2294718916268308",
+        "v_m_s": "0.23746047812086271",
+        "p_m2_s2": "7.5317334621009087"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "0.0054244397106847685",
+        "v_m_s": "0.12805379377933779",
+        "p_m2_s2": "22.776413565725026"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "-1.2294718916268308",
+        "v_m_s": "0.23746047812086271",
+        "p_m2_s2": "7.5317334621009087"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "0.0054244397106847685",
+        "v_m_s": "0.12805379377933779",
+        "p_m2_s2": "22.776413565725026"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "predictor",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "-0.21747919691812667"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "predictor",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "43.317188919188858"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "increment",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "increment",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "0"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "final",
+        "cell0": "3710",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "-0.21747919691812667"
+      },
+      {
+        "source": "old_pressure_carry",
+        "stage": "final",
+        "cell0": "3711",
+        "u_m_s": "0",
+        "v_m_s": "0",
+        "p_m2_s2": "43.317188919188858"
+      }
+    ],
+    "pressurePassResponses": [
+      {
+        "source": "wall_nonorth_viscosity",
+        "pass": "1",
+        "pressure_projection_dimensionless": "0.32202211663510594",
+        "pressure_norm_ratio_dimensionless": "0.32910294899600451",
+        "iterations": "172"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "pass": "2",
+        "pressure_projection_dimensionless": "0.41941190578147564",
+        "pressure_norm_ratio_dimensionless": "0.43158594928368232",
+        "iterations": "171"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "pass": "3",
+        "pressure_projection_dimensionless": "0.45684561766334847",
+        "pressure_norm_ratio_dimensionless": "0.47299943428517943",
+        "iterations": "166"
+      },
+      {
+        "source": "wall_nonorth_viscosity",
+        "pass": "4",
+        "pressure_projection_dimensionless": "0.47713479020426558",
+        "pressure_norm_ratio_dimensionless": "0.49472687816408356",
+        "iterations": "164"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "pass": "1",
+        "pressure_projection_dimensionless": "1.1236618629635162",
+        "pressure_norm_ratio_dimensionless": "1.1772147413684024",
+        "iterations": "174"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "pass": "2",
+        "pressure_projection_dimensionless": "1.5195445023035432",
+        "pressure_norm_ratio_dimensionless": "1.5428792254632977",
+        "iterations": "173"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "pass": "3",
+        "pressure_projection_dimensionless": "1.7271453478810468",
+        "pressure_norm_ratio_dimensionless": "1.7475939861386085",
+        "iterations": "171"
+      },
+      {
+        "source": "wall_symmetric_stress",
+        "pass": "4",
+        "pressure_projection_dimensionless": "1.8621968545856451",
+        "pressure_norm_ratio_dimensionless": "1.882820819725985",
+        "iterations": "167"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "pass": "1",
+        "pressure_projection_dimensionless": "-0.055252871956782974",
+        "pressure_norm_ratio_dimensionless": "0.20574457697842971",
+        "iterations": "174"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "pass": "2",
+        "pressure_projection_dimensionless": "-0.1351201121451025",
+        "pressure_norm_ratio_dimensionless": "0.22037332196095921",
+        "iterations": "168"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "pass": "3",
+        "pressure_projection_dimensionless": "-0.17080142174332638",
+        "pressure_norm_ratio_dimensionless": "0.24247023738081497",
+        "iterations": "165"
+      },
+      {
+        "source": "internal_nonorth_viscosity",
+        "pass": "4",
+        "pressure_projection_dimensionless": "-0.19048676742140283",
+        "pressure_norm_ratio_dimensionless": "0.25527659954718146",
+        "iterations": "164"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "pass": "1",
+        "pressure_projection_dimensionless": "-3.2541411045544484",
+        "pressure_norm_ratio_dimensionless": "3.4478087953272314",
+        "iterations": "172"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "pass": "2",
+        "pressure_projection_dimensionless": "-5.4025728676593276",
+        "pressure_norm_ratio_dimensionless": "5.4868613739464047",
+        "iterations": "172"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "pass": "3",
+        "pressure_projection_dimensionless": "-6.6466624836927686",
+        "pressure_norm_ratio_dimensionless": "6.6743974748423485",
+        "iterations": "172"
+      },
+      {
+        "source": "internal_symmetric_stress",
+        "pass": "4",
+        "pressure_projection_dimensionless": "-7.4781410579405003",
+        "pressure_norm_ratio_dimensionless": "7.4910973434292467",
+        "iterations": "170"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "pass": "1",
+        "pressure_projection_dimensionless": "-2.6533670003604617",
+        "pressure_norm_ratio_dimensionless": "2.7195948144790205",
+        "iterations": "177"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "pass": "2",
+        "pressure_projection_dimensionless": "-3.5550787222564724",
+        "pressure_norm_ratio_dimensionless": "3.5938381346235411",
+        "iterations": "173"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "pass": "3",
+        "pressure_projection_dimensionless": "-4.0217365939520109",
+        "pressure_norm_ratio_dimensionless": "4.064159044222162",
+        "iterations": "172"
+      },
+      {
+        "source": "momentum_gauss_pressure",
+        "pass": "4",
+        "pressure_projection_dimensionless": "-4.3272489556130438",
+        "pressure_norm_ratio_dimensionless": "4.3738350036246771",
+        "iterations": "169"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "pass": "1",
+        "pressure_projection_dimensionless": "-3.5402865210495609",
+        "pressure_norm_ratio_dimensionless": "3.6721046981056555",
+        "iterations": "177"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "pass": "2",
+        "pressure_projection_dimensionless": "-4.5548467502501708",
+        "pressure_norm_ratio_dimensionless": "4.6430471684422816",
+        "iterations": "173"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "pass": "3",
+        "pressure_projection_dimensionless": "-5.053199620348118",
+        "pressure_norm_ratio_dimensionless": "5.1464510131903145",
+        "iterations": "171"
+      },
+      {
+        "source": "momentum_underrelaxation",
+        "pass": "4",
+        "pressure_projection_dimensionless": "-5.375235922071095",
+        "pressure_norm_ratio_dimensionless": "5.4724318382448294",
+        "iterations": "168"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "pass": "1",
+        "pressure_projection_dimensionless": "0.79466392010490305",
+        "pressure_norm_ratio_dimensionless": "0.86565176771630548",
+        "iterations": "175"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "pass": "2",
+        "pressure_projection_dimensionless": "0.89406740436614418",
+        "pressure_norm_ratio_dimensionless": "0.95301914736250548",
+        "iterations": "171"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "pass": "3",
+        "pressure_projection_dimensionless": "0.91425636554955569",
+        "pressure_norm_ratio_dimensionless": "0.97551554421338138",
+        "iterations": "166"
+      },
+      {
+        "source": "rc_direct_gauss_pressure",
+        "pass": "4",
+        "pressure_projection_dimensionless": "0.92204956008287731",
+        "pressure_norm_ratio_dimensionless": "0.98354933467076111",
+        "iterations": "162"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "pass": "1",
+        "pressure_projection_dimensionless": "-0.99999999999998535",
+        "pressure_norm_ratio_dimensionless": "0.99999999999998535",
+        "iterations": "174"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "pass": "2",
+        "pressure_projection_dimensionless": "-1.5935800418997992",
+        "pressure_norm_ratio_dimensionless": "1.599818890047181",
+        "iterations": "172"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "pass": "3",
+        "pressure_projection_dimensionless": "-1.9657833795102948",
+        "pressure_norm_ratio_dimensionless": "1.9818700148660358",
+        "iterations": "171"
+      },
+      {
+        "source": "rc_compact_pressure",
+        "pass": "4",
+        "pressure_projection_dimensionless": "-2.2173243891473984",
+        "pressure_norm_ratio_dimensionless": "2.2408054427385071",
+        "iterations": "168"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "pass": "1",
+        "pressure_projection_dimensionless": "0.59358004189908986",
+        "pressure_norm_ratio_dimensionless": "0.61013145890974607",
+        "iterations": "173"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "pass": "2",
+        "pressure_projection_dimensionless": "0.9657833795099724",
+        "pressure_norm_ratio_dimensionless": "0.99811922975384981",
+        "iterations": "172"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "pass": "3",
+        "pressure_projection_dimensionless": "1.2173243891457879",
+        "pressure_norm_ratio_dimensionless": "1.259587334768395",
+        "iterations": "170"
+      },
+      {
+        "source": "rc_nonorth_pressure",
+        "pass": "4",
+        "pressure_projection_dimensionless": "1.3888134697298014",
+        "pressure_norm_ratio_dimensionless": "1.4376713613317065",
+        "iterations": "167"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "pass": "1",
+        "pressure_projection_dimensionless": "0.67535435838299762",
+        "pressure_norm_ratio_dimensionless": "0.96493034750843498",
+        "iterations": "175"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "pass": "2",
+        "pressure_projection_dimensionless": "0.49959269321782585",
+        "pressure_norm_ratio_dimensionless": "0.80239181250906222",
+        "iterations": "170"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "pass": "3",
+        "pressure_projection_dimensionless": "0.35133789397643272",
+        "pressure_norm_ratio_dimensionless": "0.70982951520890403",
+        "iterations": "165"
+      },
+      {
+        "source": "rc_flux_underrelaxation",
+        "pass": "4",
+        "pressure_projection_dimensionless": "0.24567702030965405",
+        "pressure_norm_ratio_dimensionless": "0.65224800131880323",
+        "iterations": "165"
+      }
+    ],
+    "closure": [
+      {
+        "quantity": "relaxed_rhs_u",
+        "max_abs_difference": "4.7363371905029261e-16",
+        "units": "m3/s2"
+      },
+      {
+        "quantity": "relaxed_rhs_v",
+        "max_abs_difference": "3.4782899759229491e-16",
+        "units": "m3/s2"
+      },
+      {
+        "quantity": "predictor_u",
+        "max_abs_difference": "1.0529622312960285e-11",
+        "units": "m/s"
+      },
+      {
+        "quantity": "predictor_v",
+        "max_abs_difference": "7.5381198678947658e-12",
+        "units": "m/s"
+      },
+      {
+        "quantity": "predicted_phi",
+        "max_abs_difference": "1.6913250314165573e-13",
+        "units": "m2/s"
+      },
+      {
+        "quantity": "final_u",
+        "max_abs_difference": "9.7388971886935849e-12",
+        "units": "m/s"
+      },
+      {
+        "quantity": "final_v",
+        "max_abs_difference": "1.0013062590446403e-11",
+        "units": "m/s"
+      },
+      {
+        "quantity": "final_p",
+        "max_abs_difference": "5.1569859493838521e-10",
+        "units": "m2/s2"
+      },
+      {
+        "quantity": "final_phi",
+        "max_abs_difference": "2.0010940604206495e-13",
+        "units": "m2/s"
+      }
+    ],
+    "limitations": "This decomposes one linear map response at its retained observed mode. A large source contribution is not proof of a unique instability cause. It is not a spectrum bound, a physical field, an accuracy repair, or a term-deletion counterfactual.",
+    "consumer": "Focused native coupling/stress investigation. Complete modal input and output plus native matrix/gradient traces permit replay; rebuilt binaries and repeated full CSV views remain temporary."
+  },
+  "validation": {
+    "relatedNativeTests": "4/4 passed: flow_coupled, flow_linear, flow_face, flow_boundary; 18.78 s",
+    "crossPlatform": "GNU ld --wrap research probe validated on current Linux only; no platform CI run for this read-only diagnostic",
+    "productState": "src/ and include/ and production archives unchanged; pre-existing benchmark tool edits not part of this result"
+  },
+  "observations": [
+    "Observed mode is -2.6731413494112513. At this retained mode, velocity predictor projection +0.27992802790715937 and pressure increment -2.9530693772496646 reproduce final -2.6731413493425049.",
+    "Native source sums reproduce final response to about 1e-11 m/s for velocity and 5.16e-10 m2/s2 for pressure. Internal explicit symmetric source propagated through full correction contributes -1.8363698124735266 to the velocity mode projection.",
+    "RC pressure nonorthogonal source contributes +0.44980063881466381 at this mode. This is not a complete-map counterfactual or a claim about all modes.",
+    "Amplification stage and source pathways are localized; a unique faulty coefficient and a generic stability/accuracy repair are not established. The current coupled option can solve the existing discrete fixed point, whose pressure accuracy remains unqualified."
+  ],
+  "archive": {
+    "path": "cell-step-diagnosis-traces.tar.gz",
+    "sha256": "9cb2ca0177de5179505419b6b1a9f6b7db1b1ebbf2403051dd2f33a617b520ab",
+    "bytes": 3734423,
+    "entries": 50,
+    "filteredNativeCsvViews": {
+      "momentum-old-field-action.csv": {
+        "originalSha256": "bd4778e7b23d25b7a9a2663e61ba48a63515c0113042014e8f756458058d7b0e",
+        "archivedSha256": "f56510b616ad6b4b3d74651277b5dc7dd573ea9db027cb401e397fd4d3f57916",
+        "selection": "Only cell0 3705,3708,3709,3710,3711; exact native CSV row values unchanged",
+        "rows": 60
+      },
+      "momentum-rows.csv": {
+        "originalSha256": "a9b626d0a16802c7e619d63ed92ab79dc0368e792c79f293ed0a6cc1a7c87f99",
+        "archivedSha256": "983be96a368002172290de599bb251d6993a5bb088cbf81532c1266d7b0c72e7",
+        "selection": "Only cell0 3705,3708,3709,3710,3711; exact native CSV row values unchanged",
+        "rows": 60
+      },
+      "momentum-actual-cells.csv": {
+        "originalSha256": "db04c99c05120354742ce7ef864bd4ece4613934de8b69658ead3de1de93ad7e",
+        "archivedSha256": "a132a46b9ac86f2fe3294c03cb0d93340a48a61c5ba0a24283a27e8a51c0e226",
+        "selection": "All modal call=0 rows (complete actual shared diagonal/RHS/gradient); exact native rows for target and neighbours cell0 3705,3708,3709,3710,3711 in all other calls/runs.",
+        "rows": 6263
+      },
+      "momentum-actual-offdiagonal.csv": {
+        "originalSha256": "88ddf7a73065d777e1741f9b510e9107da540e0a436ee3e2a1d1072cfc2705ed",
+        "archivedSha256": "8d842c783b31f0e525eea18c7c460737a1600c5e3922c86355bc730d0cb8edab",
+        "selection": "One complete actual shared compact matrix: run=modal, call=0. Repeated Stokes U/V and modal/base matrices are identical; source-response tool verifies modal/base equality.",
+        "rows": 23852
+      },
+      "rc-actual-cells.csv": {
+        "originalSha256": "7684b7c7e7a4058410427066ff155a167bceb656da8dc06441874fe89f1f9ef0",
+        "archivedSha256": "cb8acbdf3929352c4df22d1fb1f6bf008158a52e23578e08790cc1478cb661fe",
+        "selection": "Exact native rows for cell0 3705,3708,3709,3710,3711",
+        "rows": 15
+      },
+      "rc-face-terms.csv": {
+        "originalSha256": "e4aa90f71f3fc34b7887576ee9c27347e50f0c93aa7d05300c265aff964bb12f",
+        "archivedSha256": "7b0bb89a8009ad30a3be718be29ec6159af5420ac19170749cdc7036bdd4b827",
+        "selection": "Exact native RC rows incident to cell0 3705,3708,3709,3710,3711",
+        "rows": 48
+      }
+    }
+  },
+  "consumer": "Replay the captured modal input, inspect actual row/face terms and pursue focused stress-pressure coupling repair. Failure geometry remains in failure-inputs.tar.gz. Binaries, full duplicate CSV views and plain outputs are rebuildable temporary products.",
+  "nativeBenchmarkEntry": {
+    "path": "tools/benchmarks/cell_step.py",
+    "result": {
+      "scope": "Read-only native Stokes SIMPLE trace; closed fixed-velocity walls, constant viscosity. No product discretization/default change.",
+      "sourceHead": "2e9419866fd43f93a241634659ffd28aaeb0761a",
+      "inputs": [
+        {
+          "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "sha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+        },
+        {
+          "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+          "sha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+        }
+      ],
+      "buildCommands": [
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step.cpp",
+          "-DDIAG_WRAP",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step"
+        ],
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step.cpp",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step_plain"
+        ],
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step_response.cpp",
+          "-DDIAG_WRAP",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step_response"
+        ]
+      ],
+      "wrappedSymbols": {
+        "momentum": "_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+        "rhieChowFlux": "_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_"
+      },
+      "runs": [
+        {
+          "name": "trace",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/trace",
+            "3710",
+            "180"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 18.114530712002306,
+          "stdout": "rayleigh=-2.6731413494112513 residual=1.3717130734956747e-10 target0=3710 target1=3711 calls=4/1 outputHashes=11219184222434127596,10205654063353201972,4415656969559182000,17733474313467727250\n",
+          "stderr": ""
+        },
+        {
+          "name": "plain",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step_plain",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/plain",
+            "3710",
+            "180"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 16.782090744000016,
+          "stdout": "rayleigh=-2.6731413494112513 residual=1.3717130734956747e-10 target0=3710 target1=3711 calls=0/0 outputHashes=11219184222434127596,10205654063353201972,4415656969559182000,17733474313467727250\n",
+          "stderr": ""
+        },
+        {
+          "name": "response",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/cell_step_response",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry/response"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 1.069436701000086,
+          "stdout": "source_sum_velocity_projection=-2.6731413493415341 pressure=-2.6731413493202991 flux=-2.6731413493369267 max_final_errors=9.7388971886935849e-12,1.0013062590446403e-11,5.1569859493838521e-10,2.0010940604206495e-13\n",
+          "stderr": ""
+        }
+      ],
+      "productionLibrariesSha256Before": {
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+      },
+      "productionLibrariesSha256After": {
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+      },
+      "wrappedUnwrappedByteEqual": {
+        "input-modal-cells.csv": true,
+        "input-modal-faces.csv": true,
+        "output-modal-cells.csv": true,
+        "output-modal-faces.csv": true,
+        "output-base-cells.csv": true,
+        "output-base-faces.csv": true,
+        "output-delta-cells.csv": true,
+        "output-delta-faces.csv": true,
+        "power.csv": true
+      },
+      "sourceReplayByteEqual": {
+        "replayed-modal-cells.csv": true,
+        "replayed-modal-faces.csv": true,
+        "replayed-base-cells.csv": true,
+        "replayed-base-faces.csv": true
+      },
+      "traceSummary": [
+        {
+          "cells": "6208",
+          "faces": "12910",
+          "target0": "3710",
+          "target1": "3711",
+          "powerSteps": "180",
+          "alphaU": "0.59999999999999998",
+          "alphaP": "0.25",
+          "rayleigh180": "-2.6731413494112513",
+          "residual180": "1.3717130734956747e-10",
+          "momentumCalls": "4",
+          "rcCalls": "1",
+          "output_u_hash": "11219184222434127596",
+          "output_v_hash": "10205654063353201972",
+          "output_p_hash": "4415656969559182000",
+          "output_phi_hash": "17733474313467727250"
+        }
+      ],
+      "stageProjections": [
+        {
+          "stage": "input",
+          "velocity_projection_dimensionless": "1",
+          "velocity_norm_ratio_dimensionless": "1",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "1",
+          "flux_norm_ratio_dimensionless": "1"
+        },
+        {
+          "stage": "momentum_predictor_and_rc",
+          "velocity_projection_dimensionless": "0.27992802790715937",
+          "velocity_norm_ratio_dimensionless": "0.43152184121696724",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "0.36284420259879158",
+          "flux_norm_ratio_dimensionless": "3.3162295370621169"
+        },
+        {
+          "stage": "pressure_correction_increment",
+          "velocity_projection_dimensionless": "-2.9530693772496646",
+          "velocity_norm_ratio_dimensionless": "2.9712741619529495",
+          "pressure_projection_dimensionless": "-3.6731413492758507",
+          "pressure_norm_ratio_dimensionless": "3.6731413492758511",
+          "flux_projection_dimensionless": "-3.0359855519413177",
+          "flux_norm_ratio_dimensionless": "4.4813982972670852"
+        },
+        {
+          "stage": "final",
+          "velocity_projection_dimensionless": "-2.6731413493425049",
+          "velocity_norm_ratio_dimensionless": "2.6731413493425054",
+          "pressure_projection_dimensionless": "-2.6731413492758511",
+          "pressure_norm_ratio_dimensionless": "2.6731413492758511",
+          "flux_projection_dimensionless": "-2.6731413493425262",
+          "flux_norm_ratio_dimensionless": "2.6731413493425262"
+        }
+      ],
+      "traceAlignment": [
+        {
+          "quantity": "momentum_rhs",
+          "max_abs_difference": "8.8817841970012523e-16",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "pressure_face_vs_actual_force",
+          "max_abs_difference": "5.5511151231257827e-16",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "compact_diagonal",
+          "max_abs_difference": "0",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "compact_offdiag_sum",
+          "max_abs_difference": "1.1102230246251565e-16",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "rc_predicted",
+          "max_abs_difference": "6.9388939039072284e-18",
+          "units": "m2/s"
+        }
+      ],
+      "sourceProjections": [
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "-0.0024835882844287719",
+          "velocity_norm_ratio_dimensionless": "0.013534258989989799",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.24745593240998437",
+          "flux_norm_ratio_dimensionless": "0.51248501893903486"
+        },
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.12612918004549767",
+          "velocity_norm_ratio_dimensionless": "0.12756617639402015",
+          "pressure_projection_dimensionless": "0.11928369755106639",
+          "pressure_norm_ratio_dimensionless": "0.12368171954102089",
+          "flux_projection_dimensionless": "-0.0074739555201900299",
+          "flux_norm_ratio_dimensionless": "0.46343721050228759"
+        },
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.1236455917610689",
+          "velocity_norm_ratio_dimensionless": "0.12540638795664197",
+          "pressure_projection_dimensionless": "0.11928369755106639",
+          "pressure_norm_ratio_dimensionless": "0.12368171954102089",
+          "flux_projection_dimensionless": "0.23998197688979434",
+          "flux_norm_ratio_dimensionless": "0.24688877870313"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "-0.10538544822805122",
+          "velocity_norm_ratio_dimensionless": "0.12018564452012347",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.39015590721885302",
+          "flux_norm_ratio_dimensionless": "1.472101191694674"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.49709446388090783",
+          "velocity_norm_ratio_dimensionless": "0.5047622361740528",
+          "pressure_projection_dimensionless": "0.46554921364641128",
+          "pressure_norm_ratio_dimensionless": "0.47070520493149626",
+          "flux_projection_dimensionless": "0.21497810981843318",
+          "flux_norm_ratio_dimensionless": "1.4278973640374215"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.3917090156528566",
+          "velocity_norm_ratio_dimensionless": "0.39790499163533122",
+          "pressure_projection_dimensionless": "0.46554921364641128",
+          "pressure_norm_ratio_dimensionless": "0.47070520493149626",
+          "flux_projection_dimensionless": "0.6051340170372862",
+          "flux_norm_ratio_dimensionless": "0.6245261030457"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.023601501027973992",
+          "velocity_norm_ratio_dimensionless": "0.042499075895915603",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.099126712560741362",
+          "flux_norm_ratio_dimensionless": "0.37013579238622407"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.095123645844625196",
+          "velocity_norm_ratio_dimensionless": "0.099370564928923738",
+          "pressure_projection_dimensionless": "-0.047621691855350708",
+          "pressure_norm_ratio_dimensionless": "0.063819149886795365",
+          "flux_projection_dimensionless": "0.16330404626968198",
+          "flux_norm_ratio_dimensionless": "0.4191462618606196"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.071522144816651201",
+          "velocity_norm_ratio_dimensionless": "0.083948745621148457",
+          "pressure_projection_dimensionless": "-0.047621691855350708",
+          "pressure_norm_ratio_dimensionless": "0.063819149886795365",
+          "flux_projection_dimensionless": "0.064177333708940631",
+          "flux_norm_ratio_dimensionless": "0.21484857959017864"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "-0.33295028472188964",
+          "velocity_norm_ratio_dimensionless": "0.36959993126649682",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.70484321242246772",
+          "flux_norm_ratio_dimensionless": "1.8962352335610702"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-1.5034195277516369",
+          "velocity_norm_ratio_dimensionless": "1.5085624574336913",
+          "pressure_projection_dimensionless": "-1.8695352644851251",
+          "pressure_norm_ratio_dimensionless": "1.8727743358573117",
+          "flux_projection_dimensionless": "-1.5874107525532002",
+          "flux_norm_ratio_dimensionless": "2.3433464836581881"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-1.8363698124735266",
+          "velocity_norm_ratio_dimensionless": "1.8381196778208546",
+          "pressure_projection_dimensionless": "-1.8695352644851251",
+          "pressure_norm_ratio_dimensionless": "1.8727743358573117",
+          "flux_projection_dimensionless": "-2.2922539649756679",
+          "flux_norm_ratio_dimensionless": "2.3255921821544749"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.23920621933068228",
+          "velocity_norm_ratio_dimensionless": "0.26124200410996185",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.034813062956342081",
+          "flux_norm_ratio_dimensionless": "2.5337678979195157"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.99925872763637169",
+          "velocity_norm_ratio_dimensionless": "1.0185431889660079",
+          "pressure_projection_dimensionless": "-1.0818122389032609",
+          "pressure_norm_ratio_dimensionless": "1.0934587509061693",
+          "flux_projection_dimensionless": "-0.67088389575526242",
+          "flux_norm_ratio_dimensionless": "2.7589846267504172"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.76005250830568938",
+          "velocity_norm_ratio_dimensionless": "0.76801687293189624",
+          "pressure_projection_dimensionless": "-1.0818122389032609",
+          "pressure_norm_ratio_dimensionless": "1.0934587509061693",
+          "flux_projection_dimensionless": "-0.70569695871160454",
+          "flux_norm_ratio_dimensionless": "0.83921456196780142"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.45793962878238248",
+          "velocity_norm_ratio_dimensionless": "0.47890515473647816",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.0093580085228066063",
+          "flux_norm_ratio_dimensionless": "4.1802968460573373"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-1.3196606193348661",
+          "velocity_norm_ratio_dimensionless": "1.3529540155510456",
+          "pressure_projection_dimensionless": "-1.3438089805177738",
+          "pressure_norm_ratio_dimensionless": "1.3681079595612073",
+          "flux_projection_dimensionless": "-0.70869065295393319",
+          "flux_norm_ratio_dimensionless": "4.4584421752776926"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.86172099055248341",
+          "velocity_norm_ratio_dimensionless": "0.88172693738754304",
+          "pressure_projection_dimensionless": "-1.3438089805177738",
+          "pressure_norm_ratio_dimensionless": "1.3681079595612073",
+          "flux_projection_dimensionless": "-0.71804866147673974",
+          "flux_norm_ratio_dimensionless": "1.0458696121091331"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.03369811160665126",
+          "flux_norm_ratio_dimensionless": "1.3930459657214216"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.25815661116076682",
+          "velocity_norm_ratio_dimensionless": "0.27201747935609993",
+          "pressure_projection_dimensionless": "0.23051239002071933",
+          "pressure_norm_ratio_dimensionless": "0.24588733366769028",
+          "flux_projection_dimensionless": "0.027022376912731169",
+          "flux_norm_ratio_dimensionless": "1.4723678527648985"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.25815661116076682",
+          "velocity_norm_ratio_dimensionless": "0.27201747935609993",
+          "pressure_projection_dimensionless": "0.23051239002071933",
+          "pressure_norm_ratio_dimensionless": "0.24588733366769028",
+          "flux_projection_dimensionless": "0.060720488519382429",
+          "flux_norm_ratio_dimensionless": "0.33648723284725879"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.12598077592793558",
+          "flux_norm_ratio_dimensionless": "0.83980375208618485"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.59536153635302214",
+          "velocity_norm_ratio_dimensionless": "0.59847250973847177",
+          "pressure_projection_dimensionless": "-0.55433109728684959",
+          "pressure_norm_ratio_dimensionless": "0.56020136068462678",
+          "flux_projection_dimensionless": "-0.36372141011845593",
+          "flux_norm_ratio_dimensionless": "0.97408597709686251"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.59536153635302214",
+          "velocity_norm_ratio_dimensionless": "0.59847250973847177",
+          "pressure_projection_dimensionless": "-0.55433109728684959",
+          "pressure_norm_ratio_dimensionless": "0.56020136068462678",
+          "flux_projection_dimensionless": "-0.48970218604639149",
+          "flux_norm_ratio_dimensionless": "0.60233907469617076"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.38203512022829422",
+          "flux_norm_ratio_dimensionless": "0.94984007492212186"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.44980063881466381",
+          "velocity_norm_ratio_dimensionless": "0.45315849271446002",
+          "pressure_projection_dimensionless": "0.34720336743245034",
+          "pressure_norm_ratio_dimensionless": "0.35941784033292662",
+          "flux_projection_dimensionless": "0.18111346958058891",
+          "flux_norm_ratio_dimensionless": "0.92667610252159871"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.44980063881466381",
+          "velocity_norm_ratio_dimensionless": "0.45315849271446002",
+          "pressure_projection_dimensionless": "0.34720336743245034",
+          "pressure_norm_ratio_dimensionless": "0.35941784033292662",
+          "flux_projection_dimensionless": "0.56314858980888316",
+          "flux_norm_ratio_dimensionless": "0.69324481689568362"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.28362090352808411",
+          "flux_norm_ratio_dimensionless": "2.3990821770305781"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.22857378577048218",
+          "velocity_norm_ratio_dimensionless": "0.26335204374090637",
+          "pressure_projection_dimensionless": "0.061419255077413512",
+          "pressure_norm_ratio_dimensionless": "0.16306200032970081",
+          "flux_projection_dimensionless": "-0.28422288761889403",
+          "flux_norm_ratio_dimensionless": "2.556457136688596"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.22857378577048218",
+          "velocity_norm_ratio_dimensionless": "0.26335204374090637",
+          "pressure_projection_dimensionless": "0.061419255077413512",
+          "pressure_norm_ratio_dimensionless": "0.16306200032970081",
+          "flux_projection_dimensionless": "-0.00060198409080990817",
+          "flux_norm_ratio_dimensionless": "0.62874421423484184"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        }
+      ],
+      "sourceClosure": [
+        {
+          "quantity": "relaxed_rhs_u",
+          "max_abs_difference": "4.7363371905029261e-16",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "relaxed_rhs_v",
+          "max_abs_difference": "3.4782899759229491e-16",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "predictor_u",
+          "max_abs_difference": "1.0529622312960285e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "predictor_v",
+          "max_abs_difference": "7.5381198678947658e-12",
+          "units": "m/s"
+        },
+        {
+          "quantity": "predicted_phi",
+          "max_abs_difference": "1.6913250314165573e-13",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "final_u",
+          "max_abs_difference": "9.7388971886935849e-12",
+          "units": "m/s"
+        },
+        {
+          "quantity": "final_v",
+          "max_abs_difference": "1.0013062590446403e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "final_p",
+          "max_abs_difference": "5.1569859493838521e-10",
+          "units": "m2/s2"
+        },
+        {
+          "quantity": "final_phi",
+          "max_abs_difference": "2.0010940604206495e-13",
+          "units": "m2/s"
+        }
+      ],
+      "projectionWeights": "Cell area separately for velocity and pressure; face length for flux; each divided by its corresponding input squared norm.",
+      "limitations": "Each source is propagated through the same actual compact matrix and native RC/pressure correction. Their sum is numerical with finite Krylov stopping error. Large contribution is not proof of a unique instability cause or an ablation result. Mode fields have arbitrary normalization and are not physical solution fields."
+    },
+    "traceMatchesInitialNativeCapture": true,
+    "nondefaultTargetSmoke": {
+      "status": "diagnostic_complete",
+      "scope": "Read-only native Stokes SIMPLE trace; closed fixed-velocity walls, constant viscosity. No product discretization/default change.",
+      "sourceHead": "2e9419866fd43f93a241634659ffd28aaeb0761a",
+      "inputs": [
+        {
+          "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+          "sha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+        },
+        {
+          "path": "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+          "sha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+        }
+      ],
+      "diagnosticSourceSha256": {
+        "tools/benchmarks/cell_step.py": "e71a8502576a05a9cc5caed05f29d4d52797b2b9161b0e3b51af7ac9f583e1da",
+        "tools/benchmarks/cell_step.cpp": "c06a37806a805c5d0e7bfd6d3b3d7c77bc852160faa3e7d9f290da4c6d39817f",
+        "tools/benchmarks/cell_step_response.cpp": "2c71b0cc41f8be5e4a8aa220b3dfff3cc054cc4867545c6ef0589930ff797784"
+      },
+      "buildCommands": [
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step.cpp",
+          "-DDIAG_WRAP",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step"
+        ],
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step.cpp",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step_plain"
+        ],
+        [
+          "/usr/bin/c++",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++20",
+          "-I/workspace/cartesian-mesh-generator-2d/include",
+          "-I/workspace/cartesian-mesh-generator-2d/src/fv",
+          "-I/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short",
+          "/workspace/cartesian-mesh-generator-2d/tools/benchmarks/cell_step_response.cpp",
+          "-DDIAG_WRAP",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+          "-Wl,--wrap=_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a",
+          "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a",
+          "-o",
+          "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step_response"
+        ]
+      ],
+      "wrappedSymbols": {
+        "momentum": "_ZN10cartmesh2d2fv13solver_detail8momentumERNS0_6detail14SparseSystem2DERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKSt6vectorIdSaIdEESI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_bPSH_d",
+        "rhieChowFlux": "_ZN10cartmesh2d2fv13solver_detail12rhieChowFluxERKNS0_8FvMesh2DERKNS0_14FlowControls2DERKNS1_8BoundaryERKNS0_12FlowResult2DERKSt6vectorIdSaIdEESI_SI_RKSE_INS_8Vector2DESaISJ_EESN_SN_SN_SN_SN_SI_bdRSG_"
+      },
+      "runs": [
+        {
+          "name": "trace",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/trace",
+            "0",
+            "2"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 1.705932811000821,
+          "stdout": "rayleigh=-0.079734699768618342 residual=0.99677696799620386 target0=0 target1=1 calls=4/1 outputHashes=14563423989961743733,7016422797174761746,691560509273097187,1487246167915096994\n",
+          "stderr": ""
+        },
+        {
+          "name": "plain",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step_plain",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/plain",
+            "0",
+            "2"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 0.6605808509993949,
+          "stdout": "rayleigh=-0.079734699768618342 residual=0.99677696799620386 target0=0 target1=1 calls=0/0 outputHashes=14563423989961743733,7016422797174761746,691560509273097187,1487246167915096994\n",
+          "stderr": ""
+        },
+        {
+          "name": "response",
+          "command": [
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/cell_step_response",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.solver.cm2d",
+            "/workspace/cartesian-mesh-generator-2d/outputs/laminar-inputs/annulus-l7.boundaries",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/trace",
+            "/workspace/cartesian-mesh-generator-2d/outputs/cell-step-native-entry-short/response"
+          ],
+          "returnCode": 0,
+          "elapsedWallSecondsIncludingIO": 1.0543812609976158,
+          "stdout": "source_sum_velocity_projection=-2.156041331693991 pressure=-1.5152643768887901 flux=-1.0877181073028575 max_final_errors=2.5274005110986764e-11,1.3379519714362686e-11,1.9089441138930852e-09,3.0296734088511301e-13\n",
+          "stderr": ""
+        }
+      ],
+      "productionLibrariesSha256Before": {
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+      },
+      "productionLibrariesSha256After": {
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d_fv.a": "b1c7ab20422a053b502612e28f1c2fe32f77c610f0dcecfc3764f2924f5325e9",
+        "/workspace/cartesian-mesh-generator-2d/build/libcartmesh2d.a": "4639d689dfe0c83955e44e42f38a7da37cbabd01555785fbc1dd072a6f6b8ea0"
+      },
+      "wrappedUnwrappedByteEqual": {
+        "input-modal-cells.csv": true,
+        "input-modal-faces.csv": true,
+        "output-modal-cells.csv": true,
+        "output-modal-faces.csv": true,
+        "output-base-cells.csv": true,
+        "output-base-faces.csv": true,
+        "output-delta-cells.csv": true,
+        "output-delta-faces.csv": true,
+        "power.csv": true
+      },
+      "sourceReplayByteEqual": {
+        "replayed-modal-cells.csv": true,
+        "replayed-modal-faces.csv": true,
+        "replayed-base-cells.csv": true,
+        "replayed-base-faces.csv": true
+      },
+      "traceSummary": [
+        {
+          "cells": "6208",
+          "faces": "12910",
+          "target0": "0",
+          "target1": "1",
+          "powerSteps": "2",
+          "alphaU": "0.59999999999999998",
+          "alphaP": "0.25",
+          "rayleigh180": "-0.079734699768618342",
+          "residual180": "0.99677696799620386",
+          "momentumCalls": "4",
+          "rcCalls": "1",
+          "output_u_hash": "14563423989961743733",
+          "output_v_hash": "7016422797174761746",
+          "output_p_hash": "691560509273097187",
+          "output_phi_hash": "1487246167915096994"
+        }
+      ],
+      "stageProjections": [
+        {
+          "stage": "input",
+          "velocity_projection_dimensionless": "1",
+          "velocity_norm_ratio_dimensionless": "1",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "1",
+          "flux_norm_ratio_dimensionless": "1"
+        },
+        {
+          "stage": "momentum_predictor_and_rc",
+          "velocity_projection_dimensionless": "0.32325923001718132",
+          "velocity_norm_ratio_dimensionless": "0.46284085902634858",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "-0.11596829976481007",
+          "flux_norm_ratio_dimensionless": "3.0030722651448323"
+        },
+        {
+          "stage": "pressure_correction_increment",
+          "velocity_projection_dimensionless": "-2.4793005617109687",
+          "velocity_norm_ratio_dimensionless": "2.530593584072824",
+          "pressure_projection_dimensionless": "-2.5152643769258805",
+          "pressure_norm_ratio_dimensionless": "2.964641170792647",
+          "flux_projection_dimensionless": "-0.97174980754045526",
+          "flux_norm_ratio_dimensionless": "3.3464863787050665"
+        },
+        {
+          "stage": "final",
+          "velocity_projection_dimensionless": "-2.1560413316937876",
+          "velocity_norm_ratio_dimensionless": "2.1837389278730175",
+          "pressure_projection_dimensionless": "-1.5152643769258807",
+          "pressure_norm_ratio_dimensionless": "2.1814143388423566",
+          "flux_projection_dimensionless": "-1.0877181073052653",
+          "flux_norm_ratio_dimensionless": "1.6466014080310329"
+        }
+      ],
+      "traceAlignment": [
+        {
+          "quantity": "momentum_rhs",
+          "max_abs_difference": "3.5527136788005009e-15",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "pressure_face_vs_actual_force",
+          "max_abs_difference": "8.8817841970012523e-16",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "compact_diagonal",
+          "max_abs_difference": "0",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "compact_offdiag_sum",
+          "max_abs_difference": "1.1102230246251565e-16",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "rc_predicted",
+          "max_abs_difference": "1.3877787807814457e-17",
+          "units": "m2/s"
+        }
+      ],
+      "sourceProjections": [
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.0089845676171845437",
+          "velocity_norm_ratio_dimensionless": "0.013984318435059139",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.0093353360734557272",
+          "flux_norm_ratio_dimensionless": "0.5525896894288701"
+        },
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.59415898468598016",
+          "velocity_norm_ratio_dimensionless": "0.61718123282856074",
+          "pressure_projection_dimensionless": "-0.23935445008329234",
+          "pressure_norm_ratio_dimensionless": "0.44902299747743574",
+          "flux_projection_dimensionless": "-0.25110786870559454",
+          "flux_norm_ratio_dimensionless": "0.67560811855280822"
+        },
+        {
+          "source": "wall_nonorth_viscosity",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.58517441706879569",
+          "velocity_norm_ratio_dimensionless": "0.60794318951620363",
+          "pressure_projection_dimensionless": "-0.23935445008329234",
+          "pressure_norm_ratio_dimensionless": "0.44902299747743574",
+          "flux_projection_dimensionless": "-0.26044320477905025",
+          "flux_norm_ratio_dimensionless": "0.40112086486060072"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.0053481610143677116",
+          "velocity_norm_ratio_dimensionless": "0.045459433467198294",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.02007458768348671",
+          "flux_norm_ratio_dimensionless": "1.0475165573391043"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-1.0569557686894253",
+          "velocity_norm_ratio_dimensionless": "1.1062475572061961",
+          "pressure_projection_dimensionless": "-0.38404432824130086",
+          "pressure_norm_ratio_dimensionless": "0.82950072920116236",
+          "flux_projection_dimensionless": "-0.41295966628680175",
+          "flux_norm_ratio_dimensionless": "1.2090107008456421"
+        },
+        {
+          "source": "wall_symmetric_stress",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-1.0516076076750576",
+          "velocity_norm_ratio_dimensionless": "1.0963776814892123",
+          "pressure_projection_dimensionless": "-0.38404432824130086",
+          "pressure_norm_ratio_dimensionless": "0.82950072920116236",
+          "flux_projection_dimensionless": "-0.43303425397028844",
+          "flux_norm_ratio_dimensionless": "0.73538399941497257"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "-0.013388733418618633",
+          "velocity_norm_ratio_dimensionless": "0.030733292453407585",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.03979671276947612",
+          "flux_norm_ratio_dimensionless": "0.19368368238591371"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.017908180022769591",
+          "velocity_norm_ratio_dimensionless": "0.025509337633341338",
+          "pressure_projection_dimensionless": "-0.021066788408013265",
+          "pressure_norm_ratio_dimensionless": "0.061651805240093581",
+          "flux_projection_dimensionless": "-0.011395079571567063",
+          "flux_norm_ratio_dimensionless": "0.15728781271431527"
+        },
+        {
+          "source": "internal_nonorth_viscosity",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.03129691344138822",
+          "velocity_norm_ratio_dimensionless": "0.041632498231502071",
+          "pressure_projection_dimensionless": "-0.021066788408013265",
+          "pressure_norm_ratio_dimensionless": "0.061651805240093581",
+          "flux_projection_dimensionless": "-0.051191792341043187",
+          "flux_norm_ratio_dimensionless": "0.13068794219041394"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "-0.29680620165684224",
+          "velocity_norm_ratio_dimensionless": "0.34907256397347919",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.27600609821504757",
+          "flux_norm_ratio_dimensionless": "1.214350757233208"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.36979456719681664",
+          "velocity_norm_ratio_dimensionless": "0.42730577738965247",
+          "pressure_projection_dimensionless": "-0.64526746164996285",
+          "pressure_norm_ratio_dimensionless": "1.1090080987278825",
+          "flux_projection_dimensionless": "-0.079999777068787498",
+          "flux_norm_ratio_dimensionless": "1.0632252154832709"
+        },
+        {
+          "source": "internal_symmetric_stress",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.66660076885365893",
+          "velocity_norm_ratio_dimensionless": "0.70942976603957031",
+          "pressure_projection_dimensionless": "-0.64526746164996285",
+          "pressure_norm_ratio_dimensionless": "1.1090080987278825",
+          "flux_projection_dimensionless": "-0.35600587528383509",
+          "flux_norm_ratio_dimensionless": "0.87391528056754619"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.18957671638436041",
+          "velocity_norm_ratio_dimensionless": "0.22816233384616696",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.27241169456610909",
+          "flux_norm_ratio_dimensionless": "1.2677949163709836"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.17924019095029814",
+          "velocity_norm_ratio_dimensionless": "0.26360002565516993",
+          "pressure_projection_dimensionless": "-0.64588494276980912",
+          "pressure_norm_ratio_dimensionless": "0.8387368995066794",
+          "flux_projection_dimensionless": "0.11923552714056458",
+          "flux_norm_ratio_dimensionless": "1.2212419798985168"
+        },
+        {
+          "source": "momentum_gauss_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.010336525434062263",
+          "velocity_norm_ratio_dimensionless": "0.15524018222267225",
+          "pressure_projection_dimensionless": "-0.64588494276980912",
+          "pressure_norm_ratio_dimensionless": "0.8387368995066794",
+          "flux_projection_dimensionless": "-0.15317616742554449",
+          "flux_norm_ratio_dimensionless": "0.36673181608796435"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0.42954472007719235",
+          "velocity_norm_ratio_dimensionless": "0.46002024844175127",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.20445900739724276",
+          "flux_norm_ratio_dimensionless": "2.1107857913650485"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.037542324006096424",
+          "velocity_norm_ratio_dimensionless": "0.26256503239490631",
+          "pressure_projection_dimensionless": "-0.55000490682698655",
+          "pressure_norm_ratio_dimensionless": "0.8478918764610347",
+          "flux_projection_dimensionless": "0.37227085221448553",
+          "flux_norm_ratio_dimensionless": "2.0122366957796887"
+        },
+        {
+          "source": "momentum_underrelaxation",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.46708704408328877",
+          "velocity_norm_ratio_dimensionless": "0.52126236634743461",
+          "pressure_projection_dimensionless": "-0.55000490682698655",
+          "pressure_norm_ratio_dimensionless": "0.8478918764610347",
+          "flux_projection_dimensionless": "0.16781184481724279",
+          "flux_norm_ratio_dimensionless": "0.79860698406417285"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.12207685740697218",
+          "flux_norm_ratio_dimensionless": "0.65484320921475203"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0.13701329929556286",
+          "velocity_norm_ratio_dimensionless": "0.15484371475780728",
+          "pressure_projection_dimensionless": "0.24769039817380409",
+          "pressure_norm_ratio_dimensionless": "0.31535990142425363",
+          "flux_projection_dimensionless": "-0.14079352417387578",
+          "flux_norm_ratio_dimensionless": "0.67440729888632001"
+        },
+        {
+          "source": "rc_direct_gauss_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0.13701329929556286",
+          "velocity_norm_ratio_dimensionless": "0.15484371475780728",
+          "pressure_projection_dimensionless": "0.24769039817380409",
+          "pressure_norm_ratio_dimensionless": "0.31535990142425363",
+          "flux_projection_dimensionless": "-0.018716666766903586",
+          "flux_norm_ratio_dimensionless": "0.18847637711539544"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "-0.022761667989566876",
+          "flux_norm_ratio_dimensionless": "0.47694625588189488"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.16291690105471082",
+          "velocity_norm_ratio_dimensionless": "0.17902847261349736",
+          "pressure_projection_dimensionless": "-0.3246301884776906",
+          "pressure_norm_ratio_dimensionless": "0.34562168235084018",
+          "flux_projection_dimensionless": "-0.054052171379952559",
+          "flux_norm_ratio_dimensionless": "0.49693940538555165"
+        },
+        {
+          "source": "rc_compact_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.16291690105471082",
+          "velocity_norm_ratio_dimensionless": "0.17902847261349736",
+          "pressure_projection_dimensionless": "-0.3246301884776906",
+          "pressure_norm_ratio_dimensionless": "0.34562168235084018",
+          "flux_projection_dimensionless": "-0.076813839369519438",
+          "flux_norm_ratio_dimensionless": "0.17351976222885709"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.087507975813431949",
+          "flux_norm_ratio_dimensionless": "0.28025349276707018"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.00067480602689585264",
+          "velocity_norm_ratio_dimensionless": "0.058469924593124549",
+          "pressure_projection_dimensionless": "0.082387118131789533",
+          "pressure_norm_ratio_dimensionless": "0.15410409054245802",
+          "flux_projection_dimensionless": "-0.012431864023529958",
+          "flux_norm_ratio_dimensionless": "0.24171221651106797"
+        },
+        {
+          "source": "rc_nonorth_pressure",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.00067480602689585264",
+          "velocity_norm_ratio_dimensionless": "0.058469924593124549",
+          "pressure_projection_dimensionless": "0.082387118131789533",
+          "pressure_norm_ratio_dimensionless": "0.15410409054245802",
+          "flux_projection_dimensionless": "0.075076111789901992",
+          "flux_norm_ratio_dimensionless": "0.17532292718730086"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0.51929197171136654",
+          "flux_norm_ratio_dimensionless": "1.3508487058112566"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "-0.27220678638639761",
+          "velocity_norm_ratio_dimensionless": "0.29316475577613271",
+          "pressure_projection_dimensionless": "-0.035088826737328167",
+          "pressure_norm_ratio_dimensionless": "0.34243025869989774",
+          "flux_projection_dimensionless": "-0.50051623568518433",
+          "flux_norm_ratio_dimensionless": "1.323188303465312"
+        },
+        {
+          "source": "rc_flux_underrelaxation",
+          "stage": "final",
+          "velocity_projection_dimensionless": "-0.27220678638639761",
+          "velocity_norm_ratio_dimensionless": "0.29316475577613271",
+          "pressure_projection_dimensionless": "-0.035088826737328167",
+          "pressure_norm_ratio_dimensionless": "0.34243025869989774",
+          "flux_projection_dimensionless": "0.018775736026182228",
+          "flux_norm_ratio_dimensionless": "0.4396100373026508"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "predictor",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "increment",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "0",
+          "pressure_norm_ratio_dimensionless": "0",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        },
+        {
+          "source": "old_pressure_carry",
+          "stage": "final",
+          "velocity_projection_dimensionless": "0",
+          "velocity_norm_ratio_dimensionless": "0",
+          "pressure_projection_dimensionless": "1",
+          "pressure_norm_ratio_dimensionless": "1",
+          "flux_projection_dimensionless": "0",
+          "flux_norm_ratio_dimensionless": "0"
+        }
+      ],
+      "sourceClosure": [
+        {
+          "quantity": "relaxed_rhs_u",
+          "max_abs_difference": "1.3322676295501878e-15",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "relaxed_rhs_v",
+          "max_abs_difference": "3.5527136788005009e-15",
+          "units": "m3/s2"
+        },
+        {
+          "quantity": "predictor_u",
+          "max_abs_difference": "2.3785490937955345e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "predictor_v",
+          "max_abs_difference": "1.0452102724989309e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "predicted_phi",
+          "max_abs_difference": "3.4482011972321314e-13",
+          "units": "m2/s"
+        },
+        {
+          "quantity": "final_u",
+          "max_abs_difference": "2.5274005110986764e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "final_v",
+          "max_abs_difference": "1.3379519714362686e-11",
+          "units": "m/s"
+        },
+        {
+          "quantity": "final_p",
+          "max_abs_difference": "1.9089441138930852e-09",
+          "units": "m2/s2"
+        },
+        {
+          "quantity": "final_phi",
+          "max_abs_difference": "3.0296734088511301e-13",
+          "units": "m2/s"
+        }
+      ],
+      "projectionWeights": "Cell area separately for velocity and pressure; face length for flux; each divided by its corresponding input squared norm.",
+      "limitations": "Each source is propagated through the same actual compact matrix and native RC/pressure correction. Their sum is numerical with finite Krylov stopping error. Large contribution is not proof of a unique instability cause or an ablation result. Mode fields have arbitrary normalization and are not physical solution fields."
+    }
+  },
+  "archiveMatrixCompaction": {
+    "allModalBasePrePostUVNumericDiagonalsIdentical": true,
+    "allModalBasePrePostUVNumericOffdiagonalsIdentical": true,
+    "fullMatrixCells": 6208,
+    "fullMatrixOffdiagonalEntries": 23852
+  }
+}

@@ -1,0 +1,389 @@
+{
+  "schema": "cartmesh2d-detailed-chemistry-foundation-v1",
+  "goal": "mature combustion simulation",
+  "goal_complete": false,
+  "qualified_reacting_flow": false,
+  "scope": "native C++ detailed gas thermochemistry and homogeneous conservative source integration",
+  "source_base": "761202ef5ac4c7f1ddd10e6944b7ec198b006f3c",
+  "branch": "codex/cfd-development",
+  "source_sha256": {
+    "CMakeLists.txt": "3ca3328cc486453e52aae7c0625c81b55812058ea4ef6920abe2f6c7b58bd643",
+    "include/cartmesh2d/chemistry/DetailedGas.hpp": "8b8bb6454e8c60e7490e51c44dc8c1a868e45f80b7c722c3c61d23cd58b77b60",
+    "src/chemistry/DetailedGas.cpp": "7967eb488441621f9d76782ffe005623e49f46695f69da0e837fdcafed71ae40",
+    "tests/detailed_gas_test.cpp": "4415ff467eadd24d8ea0fc1f288aa317def5b21516c5c9938373e85ae73b1ea9",
+    "tests/detailed_gas_probe.cpp": "fb6344b48b982651b07d6d4fc7f70b61514a15acfd24d7706cf1517e3621a7c2",
+    "tools/verification/verify_detailed_gas.py": "58eba0f65497eef2b294b9f8cb10ad12db1b381187e78055fa10c838df37d78a"
+  },
+  "dependencies": {
+    "cantera_version": "3.2.0",
+    "cantera_commit": "4a8358eb80cfeb50474386b5f9ec0b3a83519889",
+    "submodules": [
+      "-b9e0731611bc6e8d33b021332c7ade094bec1196 data/example_data",
+      "-5513f28dcced33872a3e40a63e28d49272da20fc ext/HighFive",
+      "-df83fbf22cfff76b875c13d324baf584c74e96d0 ext/doxygen-awesome-css",
+      " 3147391d946bb4b6c68edd901f2add6ac1f31f8c ext/eigen (3147391)",
+      " a33701196adfad74917046096bf5a2aa0ab0bb50 ext/fmt (a337011)",
+      "-e2239ee6043f73722e7aa812a459f54a28552929 ext/googletest",
+      " 887af4374af2271db9310d31eaa9b5aeff49e829 ext/sundials (887af43)",
+      " 0579ae3d976091d7d664aa9d2527e0d0cff25763 ext/yaml-cpp (0579ae3)"
+    ],
+    "boost_version": "1.88.0",
+    "boost_archive_sha256": "46d9d2c06637b219270877c9e16155cbd015b6dc84349af064c088e9b5b12f7b",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "cantera_library_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "cantera_build_config": "CC = '/usr/bin/clang'\nCXX = '/usr/bin/clang++'\nprefix = '/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera'\npython_package = 'n'\nf90_interface = 'n'\nclib_legacy = True\nexample_data = False\nsystem_eigen = 'n'\nsystem_fmt = 'n'\nhdf_support = 'n'\nsystem_yamlcpp = 'n'\nsystem_sundials = 'n'\ngoogletest = 'none'\ndebug = False\nboost_inc_dir = '/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/boost_1_88_0'\n",
+    "python_reference": {
+      "cantera": "3.2.0",
+      "numpy": "2.5.3",
+      "platform": "macOS-27.0-arm64-arm-64bit-Mach-O"
+    }
+  },
+  "verification": {
+    "native_module_ctest": {
+      "passed": true,
+      "test": "cartmesh2d_detailed_gas",
+      "log": "outputs/combustion-foundation/native-test-pass.log"
+    },
+    "existing_core_ctest": {
+      "passed": true,
+      "tests": [
+        "cartmesh2d_euler_core",
+        "cartmesh2d_thermal_flow"
+      ],
+      "log": "outputs/combustion-foundation/existing-core-tests-pass.log"
+    },
+    "interface_and_nasa7": {
+      "schema": "cartmesh2d-detailed-gas-verification-v1",
+      "qualified_reacting_flow": false,
+      "scope": "native thermochemistry source module only; no spatial flow or experimental validation",
+      "reference": {
+        "cantera": "3.2.0",
+        "numpy": "2.5.3",
+        "platform": "macOS-27.0-arm64-arm-64bit-Mach-O"
+      },
+      "probe_sha256": "2b894c14656a045695f9ba50cf80e72a1091319e9666f9f6cc85cc836f909567",
+      "cases": [
+        {
+          "name": "hydrogen-ignition",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_detailed_gas_probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "1100.0",
+            "101325.0",
+            "0.001",
+            "H2=2",
+            "O2=1",
+            "N2=3.76"
+          ],
+          "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "species": 10,
+          "reactions": 29,
+          "initial_interface_errors": {
+            "temperature": 2.0670334131202914e-16,
+            "pressure": 2.872324742830861e-16,
+            "density": 0.0,
+            "internalEnergyDensity": 0.0,
+            "cp": 4.3535059872340686e-16,
+            "cv": 5.8339255967003825e-16,
+            "molecularWeight": 0.0,
+            "viscosity": 2.0328790734103208e-20,
+            "conductivity": 5.551115123125783e-17,
+            "Y": 1.1102230246251565e-16,
+            "speciesEnthalpies": 2.400293766672718e-17,
+            "massProductionRates": 8.756356047953231e-29,
+            "massRateActivities": 8.756356047953231e-29,
+            "multicomponentDiffusion": 1.3877787807814457e-17,
+            "thermalDiffusion": 9.51521848973936e-22,
+            "enthalpyReleaseRate": 0.0
+          },
+          "independent_nasa7_errors": {
+            "cp": 0.0,
+            "internalEnergy": 3.135335512521778e-16
+          },
+          "initial_temperature_K": 1100.0,
+          "final_temperature_K": 2928.3702328671725,
+          "reference_temperature_K": 2928.370232827016,
+          "temperature_relative_difference": 1.371290568722337e-11,
+          "maximum_species_absolute_difference": 2.387007258519702e-12,
+          "element_mass_fraction_drift": 1.6653345369377348e-16,
+          "normalized_energy_drift": 1.367436783391486e-15,
+          "time_s": 0.001,
+          "native_internal_steps": 1164
+        },
+        {
+          "name": "methane-reaction",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_detailed_gas_probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/gri30.yaml",
+            "1400.0",
+            "101325.0",
+            "0.002",
+            "CH4=1",
+            "O2=2",
+            "N2=7.52"
+          ],
+          "mechanism_sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "species": 53,
+          "reactions": 325,
+          "initial_interface_errors": {
+            "temperature": 0.0,
+            "pressure": 0.0,
+            "density": 0.0,
+            "internalEnergyDensity": 0.0,
+            "cp": 1.5753704748168128e-16,
+            "cv": 1.9902821633851424e-16,
+            "molecularWeight": 0.0,
+            "viscosity": 0.0,
+            "conductivity": 1.3877787807814457e-17,
+            "Y": 0.0,
+            "speciesEnthalpies": 9.74233654029452e-19,
+            "massProductionRates": 0.0,
+            "massRateActivities": 0.0,
+            "multicomponentDiffusion": 5.204170427930421e-18,
+            "thermalDiffusion": 7.040902003114446e-22,
+            "enthalpyReleaseRate": 0.0
+          },
+          "independent_nasa7_errors": {
+            "cp": 1.5753704748168128e-16,
+            "internalEnergy": 3.211849611829312e-16
+          },
+          "initial_temperature_K": 1400.0,
+          "final_temperature_K": 1411.2476633610395,
+          "reference_temperature_K": 1411.247663368916,
+          "temperature_relative_difference": 5.581197188469682e-12,
+          "maximum_species_absolute_difference": 9.66587920814277e-13,
+          "element_mass_fraction_drift": 4.440892098500626e-16,
+          "normalized_energy_drift": 2.2694873267250855e-16,
+          "time_s": 0.002,
+          "native_internal_steps": 395
+        },
+        {
+          "name": "methane-high-pressure-thermo",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_detailed_gas_probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/gri30.yaml",
+            "800.0",
+            "1013250.0",
+            "0.0",
+            "CH4=1",
+            "O2=2",
+            "N2=7.52"
+          ],
+          "mechanism_sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "species": 53,
+          "reactions": 325,
+          "initial_interface_errors": {
+            "temperature": 8.668621376273222e-15,
+            "pressure": 8.73186721820582e-15,
+            "density": 0.0,
+            "internalEnergyDensity": 6.395648039264685e-16,
+            "cp": 2.3376556860489702e-15,
+            "cv": 3.067609942794239e-15,
+            "molecularWeight": 0.0,
+            "viscosity": 6.776263578034403e-20,
+            "conductivity": 4.440892098500626e-16,
+            "Y": 0.0,
+            "speciesEnthalpies": 6.575517561999966e-16,
+            "massProductionRates": 1.4246035381633264e-19,
+            "massRateActivities": 1.4246035381633264e-19,
+            "multicomponentDiffusion": 6.071532165918825e-18,
+            "thermalDiffusion": 3.937379715752412e-21,
+            "enthalpyReleaseRate": 3.2016722370893893e-13
+          },
+          "independent_nasa7_errors": {
+            "cp": 1.798196681576127e-16,
+            "internalEnergy": 7.62238536678004e-14
+          }
+        },
+        {
+          "name": "water-negative-formation-energy",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_detailed_gas_probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "800.0",
+            "101325.0",
+            "0.0",
+            "H2O=1"
+          ],
+          "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "species": 10,
+          "reactions": 29,
+          "initial_interface_errors": {
+            "temperature": 0.0,
+            "pressure": 0.0,
+            "density": 0.0,
+            "internalEnergyDensity": 0.0,
+            "cp": 0.0,
+            "cv": 0.0,
+            "molecularWeight": 0.0,
+            "viscosity": 0.0,
+            "conductivity": 0.0,
+            "Y": 0.0,
+            "speciesEnthalpies": 0.0,
+            "massProductionRates": 0.0,
+            "massRateActivities": 0.0,
+            "multicomponentDiffusion": 0.0,
+            "thermalDiffusion": 0.0,
+            "enthalpyReleaseRate": 1.0097419586828951e-28
+          },
+          "independent_nasa7_errors": {
+            "cp": 0.0,
+            "internalEnergy": 1.4559446029945044e-16
+          }
+        }
+      ],
+      "tolerances": {
+        "state_and_transport_interface_normalized": 5e-10,
+        "independent_nasa7_normalized": 5e-11,
+        "integrated_temperature_normalized": 2e-06,
+        "integrated_mass_fraction_absolute": 2e-06,
+        "basis": "floating point interface and local integration error allowances, not physical accuracy"
+      },
+      "passed": true,
+      "elapsed_seconds": 51.07672516599996
+    },
+    "runtime_dependencies": "Native executable links Cantera, libc++ and libSystem; Cantera adds system Accelerate; no mesasdk libraries",
+    "upstream_cantera_complete_tests": "not-run",
+    "frontend_and_app": "not-run",
+    "cross_platform": "not-run",
+    "spatial_reacting_flow": "not-implemented",
+    "experimental_validation": "not-run"
+  },
+  "failure_retained": {
+    "path": "outputs/combustion-foundation/first-native-test-failure.log",
+    "cause": "Elemental source roundoff was normalized by a cancelled net source instead of gross creation plus destruction",
+    "methane_nitrogen_mass_source_imbalance_kg_per_m3_s": 3.9244012519414547e-19,
+    "gross_normalized_roundoff": 5.083627033677387e-17,
+    "fix": "Retain the 1024-epsilon arithmetic allowance and normalize by the actual gross reaction activity; physical source and integrator unchanged"
+  },
+  "pending": [
+    "Choose target fuel, geometry dimension and physical regime",
+    "Mechanism identity and restart binding",
+    "Conservative species/enthalpy face fluxes and spatial coupling",
+    "Required turbulence, spray, radiation and wall models",
+    "Grid/time/coupling refinement and independent experimental benchmarks",
+    "Product workflow, packaging and platform qualification"
+  ],
+  "records": [
+    {
+      "path": "outputs/combustion-foundation/first-native-test-failure.log",
+      "bytes": 999,
+      "sha256": "49991fb81e3e0a6f49abec0ef34ce7f3db25e6513cb46accec3123069456cfb9"
+    },
+    {
+      "path": "outputs/combustion-foundation/native-test-pass.log",
+      "bytes": 1069,
+      "sha256": "1e1ef14b3a836036953be84f39cf85ed193799e2ded6efde438ea83f19763330"
+    },
+    {
+      "path": "outputs/combustion-foundation/existing-core-tests-pass.log",
+      "bytes": 4262,
+      "sha256": "5d26a283d65ecfa20b883df8a819d55d0ba1b3cf86ac1d840d931740db5d1d7e"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-only.json",
+      "bytes": 3131,
+      "sha256": "086fcfed2ad166ac19b17dcda82dae53fb88b35595e523db573d8f41917fa9de"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/summary.json",
+      "bytes": 6913,
+      "sha256": "b1ef6ff9a60e9a45aa571b106963eddaa1a89b681d3a9c4aa0121d80348631d6"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/methane-reaction.stdout",
+      "bytes": 135756,
+      "sha256": "24feef5bc64584fe8cd13e8b69234e8196ecea3ebf1df290df626d2e2a6585b4"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/water-negative-formation-energy.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/water-negative-formation-energy.stdout",
+      "bytes": 3141,
+      "sha256": "5cc84cfa8c8cfffcf0f6b11089a0dd3eebead13ad16e0cb5a6353b13e1dad2a6"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/methane-reaction.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/methane-high-pressure-thermo.stdout",
+      "bytes": 66595,
+      "sha256": "5c76eb09c4f384b0622674fc746ec9e8a20f4b0f4ee2e70e2f689de4d86b130a"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/hydrogen-ignition.stdout",
+      "bytes": 6863,
+      "sha256": "e0728fe7a1863926bc0260ecbdd816079b47c6704081ffe7138b09a8949ae883"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/hydrogen-ignition.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-002/methane-high-pressure-thermo.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/summary.json",
+      "bytes": 6736,
+      "sha256": "5653072f21062da9ca3acb800b5cf90f013808b57abbd56006d276a1acb25280"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/methane-reaction.stdout",
+      "bytes": 134283,
+      "sha256": "ad5588dd73916ca726e4e858f7402d22a7f14a4104fe85b2c77b24cb96285294"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/water-negative-formation-energy.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/water-negative-formation-energy.stdout",
+      "bytes": 3036,
+      "sha256": "4b23292dc707c55b9d026041b587867790f9feb74291c0a7405b6c2ceb96f0c4"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/methane-reaction.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/methane-high-pressure-thermo.stdout",
+      "bytes": 66279,
+      "sha256": "9d6776af1583f2c8450d47c9322a35c2cfec2aa7de2dfcbfc119173184bc3b38"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/hydrogen-ignition.stdout",
+      "bytes": 6536,
+      "sha256": "fdc087654459f17cb8c2f18c00599f7f4da4fba553c26da56ed39a362d1e70f7"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/hydrogen-ignition.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/interface-001/methane-high-pressure-thermo.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/h2o2.yaml",
+      "bytes": 10033,
+      "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/gri30.yaml",
+      "bytes": 67813,
+      "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345"
+    }
+  ]
+}

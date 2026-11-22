@@ -84,7 +84,7 @@ bool canonicalizeTransitionEnvelope2D(
     // refinement/front deformation experiments failed the unchanged solver
     // gate; retain those sources and let the downstream repair inspect them. Q2 is partial
     // until that route is safely resolved (see the Q2 validation document).
-    if (localTermination) return true;
+    if (localTermination || transitionPolygons.empty()) return true;
     const TransitionCanonicalizationPolicy2D canonicalPolicy;
     const double minimumFaceFraction=canonicalPolicy.minimumFaceFraction;
     // Align only smooth outer transition samples that would otherwise land

@@ -1,0 +1,616 @@
+{
+  "snapshot_utc": "2026-09-30T04:07:14.790148+00:00",
+  "source_base_commit": "2fe0d6512efb7c3f6af6b82a75db5eb472a0ba3f",
+  "scope": "Explicit optional ideal-gas two-region NASA7 data preparation; complete mechanisms retained. Numerical consistency and specified thermochemical-data sensitivities only.",
+  "mature_combustion_goal_complete": false,
+  "qualified_mechanism": false,
+  "solver_code_or_defaults_changed": false,
+  "original_source_files_modified": false,
+  "method": "Retain low-temperature h/s anchors, temperature ranges, all cp coefficients, species and transport data. Change only high-temperature h/s integration constants using 60-digit arithmetic, then reload and compare. Forward definitions match the resolved source; equilibrium and reverse rates change.",
+  "formula_reference": "https://cantera.org/stable/reference/thermo/species-thermo.html#the-nasa-7-coefficient-polynomial-parameterization",
+  "native_build": {
+    "path": "outputs/combustion-foundation/thermo-continuity-002/build.json",
+    "sha256": "ef30a189dcca2b539b9e7948362026b3a35927fbc4dc5505662866f9902ec717"
+  },
+  "native_probe": {
+    "path": "outputs/combustion-foundation/thermo-continuity-002/native-probe",
+    "sha256": "8f5a12362b351f1ab7da48aff8d82a5f446ed50637af41a06cbe382e399ccd2f"
+  },
+  "tools": [
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-004/tools/prepare_continuous_nasa7.py",
+      "sha256": "b6b882be8de41bfa05b6dfd7e577524380c3e4017d840ee5374043f780460ce0"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-004/tools/verify_continuous_nasa7.py",
+      "sha256": "43f7185d0fd5810ef9aae903737058bb2cbc03d925d19ba38798ce901c7d93d0"
+    }
+  ],
+  "cases": [
+    {
+      "name": "hydrogen",
+      "species": 10,
+      "reactions": 29,
+      "preparation_report": {
+        "path": "outputs/combustion-foundation/thermo-continuity-004/hydrogen/report.json",
+        "sha256": "51ff7731e8ab45f8599505ffa9ac70f4b01d280495caf5df21e0cbbe6b24a9f9"
+      },
+      "prepared_files": [
+        {
+          "path": "outputs/combustion-foundation/thermo-continuity-004/hydrogen/original-resolved.yaml",
+          "sha256": "8275abbe0c4ff2daadda5eeed66fb217b2a257068fcef595dce4e51a77f9fc86"
+        },
+        {
+          "path": "outputs/combustion-foundation/thermo-continuity-004/hydrogen/continuous.yaml",
+          "sha256": "55ea95d20b7e314a1cb49268a78522a41634d563b8ca601aefcaff2a58d1c9a7"
+        }
+      ],
+      "source": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+        "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+        "phase": "ohmech"
+      },
+      "source_expansion_rounding": {
+        "reaction_definitions_compared_to": "original-resolved.yaml",
+        "input_to_resolved_numeric_round_trip_reaction_indices": [
+          15,
+          18,
+          19,
+          20,
+          26,
+          28
+        ],
+        "note": "Cantera source expansion can round activation-energy unit conversions; both exported variants share identical forward definitions. Original-source sensitivity must include this round trip."
+      },
+      "all_original_cp_coefficients_and_forward_definitions_preserved_against_resolved_source": true,
+      "maximum_join_defect_over_existing_native_roundoff_allowance": 0.026241054495849986,
+      "largest_high_region_offsets": {
+        "high_enthalpy_offset_J_per_kg": 0.18555729389759495,
+        "high_entropy_offset_J_per_kg_K": 0.000535675490245616
+      },
+      "independent_integral_maximum_errors": {
+        "original": {
+          "enthalpy_integral_scaled_error": 1.5866579320458738e-07,
+          "entropy_integral_scaled_error": 6.579205126664422e-08
+        },
+        "continuous": {
+          "enthalpy_integral_scaled_error": 2.4700939629434843e-16,
+          "entropy_integral_scaled_error": 6.005920754470192e-16
+        }
+      },
+      "near_join_native_maximum_temperature_round_trip_error_K": {
+        "original": 0.00012841746763569972,
+        "continuous": 4.547473508864641e-13
+      },
+      "native_case_count": 8,
+      "native_report": {
+        "path": "outputs/combustion-foundation/thermo-continuity-002/hydrogen-audit/report.json",
+        "sha256": "b6f292559df2c828cf701ce8f1a1e3fae4dd5805dde791130ec2fddc6353c25b"
+      },
+      "reactor_sensitivity": {
+        "duration_s": 0.001,
+        "initial_temperature_K": 1100.0,
+        "final_temperature_change_K": -1.0952444426948205e-06,
+        "maximum_final_mass_fraction_change": 7.679631340573589e-10
+      },
+      "maximum_reactor_interface_errors": {
+        "reactor_temperature_relative_error": 3.245136407791877e-11,
+        "reactor_mass_fraction_absolute_error": 5.249384260608281e-12,
+        "element_drift": 7.771561172376096e-16,
+        "energy_drift": 5.827648177786419e-16
+      },
+      "fixed_state_sensitivity": [
+        {
+          "temperature_K": 400.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 2.6009299538352256e-18,
+          "reverse_rate_normalized_change": 6.95446613350116e-29,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 400.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 2.6009299538352256e-18,
+          "reverse_rate_normalized_change": 6.95446613350116e-29,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 999.9999,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395136477130555e-17,
+          "reverse_rate_normalized_change": 9.526011332204954e-21,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 999.9999,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395136477130555e-17,
+          "reverse_rate_normalized_change": 8.930635623942129e-21,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395135665643113e-17,
+          "reverse_rate_normalized_change": 2.9071080652458366e-25,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395135665643113e-17,
+          "reverse_rate_normalized_change": 1.4535540326229208e-25,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0001,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395134854155856e-17,
+          "reverse_rate_normalized_change": 8.128664198016078e-08,
+          "internal_energy_change_J_per_kg": 0.14019673422444612
+        },
+        {
+          "temperature_K": 1000.0001,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 2.5395134854155856e-17,
+          "reverse_rate_normalized_change": 8.128664198016078e-08,
+          "internal_energy_change_J_per_kg": 0.14019673422444612
+        },
+        {
+          "temperature_K": 1800.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 8.352207059132568e-17,
+          "reverse_rate_normalized_change": 6.377178673046786e-08,
+          "internal_energy_change_J_per_kg": 0.14019673434086144
+        },
+        {
+          "temperature_K": 1800.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 8.352207059132568e-17,
+          "reverse_rate_normalized_change": 6.377178673046786e-08,
+          "internal_energy_change_J_per_kg": 0.14019673434086144
+        },
+        {
+          "temperature_K": 3000.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 1.2460779339164627e-17,
+          "reverse_rate_normalized_change": 3.0965717497043235e-08,
+          "internal_energy_change_J_per_kg": 0.1401967341080308
+        },
+        {
+          "temperature_K": 3000.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 1.2460779339164627e-17,
+          "reverse_rate_normalized_change": 3.096572724342332e-08,
+          "internal_energy_change_J_per_kg": 0.1401967341080308
+        }
+      ]
+    },
+    {
+      "name": "methane",
+      "species": 53,
+      "reactions": 325,
+      "preparation_report": {
+        "path": "outputs/combustion-foundation/thermo-continuity-004/methane/report.json",
+        "sha256": "ed36e7243314a5c4b2c092f2f6d3e3ebe2a4d9bd2b1f504f48aeba8fe0a85c2a"
+      },
+      "prepared_files": [
+        {
+          "path": "outputs/combustion-foundation/thermo-continuity-004/methane/original-resolved.yaml",
+          "sha256": "84006b1b30bbe2253a661175ddabcaaf1751e113ba0e14dc55e72a48e03ebcd9"
+        },
+        {
+          "path": "outputs/combustion-foundation/thermo-continuity-004/methane/continuous.yaml",
+          "sha256": "c8f8c29d622bb76f2a2bc1b9b680060ac5021276ac90d73355098db4c1cf4129"
+        }
+      ],
+      "source": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/gri30.yaml",
+        "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+        "phase": "gri30"
+      },
+      "source_expansion_rounding": {
+        "reaction_definitions_compared_to": "original-resolved.yaml",
+        "input_to_resolved_numeric_round_trip_reaction_indices": [
+          10,
+          18,
+          20,
+          21,
+          22,
+          26,
+          29,
+          31,
+          43,
+          46,
+          47,
+          53,
+          55,
+          56,
+          63,
+          69,
+          71,
+          73,
+          77,
+          80,
+          83,
+          97,
+          100,
+          103,
+          108,
+          111,
+          114,
+          119,
+          125,
+          130,
+          131,
+          139,
+          146,
+          154,
+          157,
+          168,
+          169,
+          171,
+          173,
+          174,
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          185,
+          187,
+          188,
+          193,
+          196,
+          214,
+          215,
+          218,
+          225,
+          229,
+          232,
+          236,
+          239,
+          250,
+          253,
+          254,
+          255,
+          264,
+          265,
+          266,
+          267,
+          270,
+          274,
+          275,
+          276,
+          286,
+          288,
+          292,
+          293,
+          294,
+          295,
+          296,
+          303,
+          311,
+          312,
+          317,
+          320
+        ],
+        "note": "Cantera source expansion can round activation-energy unit conversions; both exported variants share identical forward definitions. Original-source sensitivity must include this round trip."
+      },
+      "all_original_cp_coefficients_and_forward_definitions_preserved_against_resolved_source": true,
+      "maximum_join_defect_over_existing_native_roundoff_allowance": 0.02908359842141683,
+      "largest_high_region_offsets": {
+        "high_enthalpy_offset_J_per_kg": 3.6273561320959153,
+        "high_entropy_offset_J_per_kg_K": 0.0033785633798086756
+      },
+      "independent_integral_maximum_errors": {
+        "original": {
+          "enthalpy_integral_scaled_error": 8.375342189915007e-07,
+          "entropy_integral_scaled_error": 3.5708231873177215e-07
+        },
+        "continuous": {
+          "enthalpy_integral_scaled_error": 5.281633221355537e-16,
+          "entropy_integral_scaled_error": 7.594457168796972e-16
+        }
+      },
+      "near_join_native_maximum_temperature_round_trip_error_K": {
+        "original": 0.0001311531882493,
+        "continuous": 2.2737367544323206e-13
+      },
+      "native_case_count": 8,
+      "native_report": {
+        "path": "outputs/combustion-foundation/thermo-continuity-002/methane-audit/report.json",
+        "sha256": "4c7282917377029537175b01edeb07105ba46bae9cffbab0990cf268c74726be"
+      },
+      "reactor_sensitivity": {
+        "duration_s": 0.002,
+        "initial_temperature_K": 1400.0,
+        "final_temperature_change_K": 6.710727802783367e-06,
+        "maximum_final_mass_fraction_change": 8.761989467309661e-10
+      },
+      "maximum_reactor_interface_errors": {
+        "reactor_temperature_relative_error": 6.308069105103907e-11,
+        "reactor_mass_fraction_absolute_error": 1.1517564679763836e-11,
+        "element_drift": 1.6653345369377348e-16,
+        "energy_drift": 2.269487326725086e-16
+      },
+      "fixed_state_sensitivity": [
+        {
+          "temperature_K": 400.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 2.03689746755808e-17,
+          "reverse_rate_normalized_change": 2.820476698834718e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 400.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 1.4459563982863355e-17,
+          "reverse_rate_normalized_change": 2.8204766988346378e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 999.9999,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 7.513797644412878e-17,
+          "reverse_rate_normalized_change": 1.431816408256254e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 999.9999,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 9.247750946969695e-17,
+          "reverse_rate_normalized_change": 1.431816408256254e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 9.247750946969695e-17,
+          "reverse_rate_normalized_change": 1.4318167640303558e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 9.247750946969695e-17,
+          "reverse_rate_normalized_change": 1.4139190544799662e-14,
+          "internal_energy_change_J_per_kg": 0.0
+        },
+        {
+          "temperature_K": 1000.0001,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 6.935813210227271e-17,
+          "reverse_rate_normalized_change": 6.709935979378565e-07,
+          "internal_energy_change_J_per_kg": 0.1363776027574204
+        },
+        {
+          "temperature_K": 1000.0001,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 6.935813210227271e-17,
+          "reverse_rate_normalized_change": 6.709935979378565e-07,
+          "internal_energy_change_J_per_kg": 0.13637760269921273
+        },
+        {
+          "temperature_K": 1800.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 8.352207059132568e-17,
+          "reverse_rate_normalized_change": 1.0664018977683672e-06,
+          "internal_energy_change_J_per_kg": 0.1363776025827974
+        },
+        {
+          "temperature_K": 1800.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 8.352207059132568e-17,
+          "reverse_rate_normalized_change": 1.0664018989305997e-06,
+          "internal_energy_change_J_per_kg": 0.1363776025827974
+        },
+        {
+          "temperature_K": 3000.0,
+          "pressure_Pa": 101325.0,
+          "source_expansion_forward_rate_normalized_change": 1.2460779339164627e-17,
+          "reverse_rate_normalized_change": 9.619981041397975e-07,
+          "internal_energy_change_J_per_kg": 0.13637760281562805
+        },
+        {
+          "temperature_K": 3000.0,
+          "pressure_Pa": 1013250.0,
+          "source_expansion_forward_rate_normalized_change": 1.2460779339164627e-17,
+          "reverse_rate_normalized_change": 9.619981068569227e-07,
+          "internal_energy_change_J_per_kg": 0.13637760281562805
+        }
+      ]
+    }
+  ],
+  "data_identity_chain": {
+    "original_native_audit": "thermo-continuity-002; probe explicitly selects multicomponent transport",
+    "transport_metadata_repair": {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/transport-preservation.json",
+      "sha256": "97a853e8f8a1715b545a5e3414499886a3ec9b967c3149b1c28112c96a2fcfd2"
+    },
+    "repair_check_script": {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/check_transport_preservation.py",
+      "sha256": "65a63b734c3aacdc606f89a87886d64b4fdd8c816e54b161eaf37068a34548f9"
+    },
+    "final_preparation_checks": {
+      "path": "outputs/combustion-foundation/thermo-continuity-004/preparation-checks.json",
+      "sha256": "90dcc7247a76a8b860c13d3d251ef91ab8ead808a5274f6c79c9b07969d91bf5"
+    },
+    "preparation_check_script": {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/check_preparation.py",
+      "sha256": "f28d1448946e4b31438456488e19c73d6b0a3109ce0cffa29b8135c2c706795a"
+    },
+    "statement": "003 restores original configured transport, otherwise exact YAML tree equality with 002. Repeated native full-property output bytes match. Final 004 mechanism files exactly match 003, including the BVP input."
+  },
+  "flame_sensitivity": {
+    "completed": true,
+    "qualified_flame_or_mechanism": false,
+    "scope": "Fixed-grid BVP thermochemical-data sensitivity; both solutions recomputed at the same controls from the preserved reference. No native transient or experimental qualification.",
+    "cases": [
+      {
+        "name": "original",
+        "mechanism": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+        "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+        "grid_points": 459,
+        "boundary": {
+          "temperature": 400.0,
+          "mass_fractions": [
+            0.02294882105554332,
+            0.0,
+            0.0,
+            0.22765264637130306,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.7493985325731536
+          ],
+          "pressure": 101325.0
+        },
+        "restored_boundary_before_explicit_inputs": {
+          "pressure_Pa": 101324.99999999997,
+          "inlet_temperature_K": 400.0,
+          "inlet_Y": [
+            0.02294882105554332,
+            0.0,
+            0.0,
+            0.2276526463713031,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.7493985325731536
+          ]
+        },
+        "speed_m_per_s": 2.4830659425693886,
+        "peak_temperature_K": 2234.443648989221,
+        "minimum_raw_mass_fraction": -5.571391759876147e-16,
+        "maximum_raw_species_sum_error": 1.9761969838327786e-13,
+        "elapsed_seconds_including_restore_solve_save": 48.5562539579696
+      },
+      {
+        "name": "continuous",
+        "mechanism": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/thermo-continuity-003/hydrogen/continuous.yaml",
+        "mechanism_sha256": "55ea95d20b7e314a1cb49268a78522a41634d563b8ca601aefcaff2a58d1c9a7",
+        "grid_points": 459,
+        "boundary": {
+          "temperature": 400.0,
+          "mass_fractions": [
+            0.02294882105554332,
+            0.0,
+            0.0,
+            0.22765264637130306,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.7493985325731536
+          ],
+          "pressure": 101325.0
+        },
+        "restored_boundary_before_explicit_inputs": {
+          "pressure_Pa": 101324.99999999997,
+          "inlet_temperature_K": 400.0,
+          "inlet_Y": [
+            0.02294882105554332,
+            0.0,
+            0.0,
+            0.2276526463713031,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.7493985325731536
+          ]
+        },
+        "speed_m_per_s": 2.483065914939599,
+        "peak_temperature_K": 2234.4436472813745,
+        "minimum_raw_mass_fraction": -5.540697390498844e-16,
+        "maximum_raw_species_sum_error": 1.9695356456850277e-13,
+        "elapsed_seconds_including_restore_solve_save": 2.252873792022001
+      }
+    ],
+    "speed_change_m_per_s": -2.7629789567384933e-08,
+    "relative_speed_change": -1.1127287868895053e-08,
+    "maximum_temperature_difference_K": 2.238213482996798e-06,
+    "maximum_mass_fraction_difference": 9.971956316245922e-10,
+    "original_reference_report_sha256": "775283dc08994c484d9529e07ade25dcd7185381ac64ca0ac8f0342856425af6",
+    "raw_sha256": {
+      "original.json": "597af12945b01cebc394e326bed347ed8622fea3d85cab072e66fc194e0fcde2",
+      "original.yaml": "eced310d56e8781f4b4cf77c1dbc20dcf00e0715ecb87a8628a1e09a2c8cadaf",
+      "continuous.json": "08cf3f99334130cd440305d64ce4454d89866733456a87807b6e7183696a0a8f",
+      "continuous.yaml": "2b33af326e27a23fa645f4eb5dedbedbb4190b510fb579f679bb4959c70713cf"
+    },
+    "reference_saved_grid_speed_change_on_resolve_m_per_s": 1.5725820645684507e-10,
+    "report": {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/flame-002/comparison.json",
+      "sha256": "cced33ea1df1b16fd0a6fc5a536045309e63f72b7734ccb905ca8bf7a2c760ad"
+    },
+    "script": {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/compare_flame_2.py",
+      "sha256": "843ec9b0d4256c12b008d0179a51c36bcbdfb5e4bddf63aa9ea6bf0fd0ed4528"
+    },
+    "timing_limit": "Reported wall times include startup/cache/restore while native evolution runs; not a performance comparison."
+  },
+  "existing_numeric_gates": {
+    "independent_h_s_integrals": "32-point piecewise Gauss quadrature of cp and cp/T from the low-temperature anchor; scaled h error / max(abs(h),abs(cp*T),1), s error / max(abs(s),1), each <5e-11, reused formula gate.",
+    "native_interface": "normalized property error <5e-10; near-join temperature differences reported also in K",
+    "native_join_allowance": "64*double_epsilon*max(abs(e),abs(cv*T),1) J/kg; existing EOS inversion roundoff allowance",
+    "reactor_interface": "temperature relative and mass-fraction absolute differences each <2e-6; original element/energy 1e-8 budgets retained",
+    "physical_sensitivity": "reactor/BVP changes reported without introducing or claiming a physical qualification threshold"
+  },
+  "retained_failures": [
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-001/original-native-round-trip.json",
+      "sha256": "4a8fa7c1bc9bf7098a0adb07126e4bd5aadf0fa4face6f834a5590ac6708d77a"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-001/export-differences.json",
+      "sha256": "a3a5a3eed976a13bc284ccc592cba05b2b65660a372d545c0c99f430d34982e4"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-001/hydrogen-retry.log",
+      "sha256": "62789baf14842433949d3166fddbe1f898f38af65c13dd2e8640043f815fe635"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/compare_flame.log",
+      "sha256": "4ca30a5acd129bed8d96baca748a6b6a623cabde6230da731b13b83a14a73442"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-003/restored-boundary-roundoff.json",
+      "sha256": "ed527df92e63d2d1a82997ee6b2bcace18786f5532946fe23bf7ec46ac5988ba"
+    },
+    {
+      "path": "outputs/combustion-foundation/thermo-continuity-004/unsupported.yaml",
+      "sha256": "464feae94375b24d720101b027fb89bcc390db0e98f9fab997e48662bfb17fa2"
+    }
+  ],
+  "preview": {
+    "path": "artifacts/current/native-reacting-thermo-continuity.png",
+    "sha256": "a14313dadc185fb720b5cb066c0b4bce726c5b3437657545b694439cf738f49f"
+  },
+  "plot_data": {
+    "path": "outputs/combustion-foundation/thermo-continuity-004/plot-data.json",
+    "sha256": "65ea7b666894071aee7ca93d93a9f720d72b103a9bf8bb30a670b3ef35da7cbe"
+  },
+  "generator": {
+    "path": "outputs/combustion-foundation/write_thermo_continuity_evidence.py",
+    "sha256": "35606960d09efb97b93f6202e380576aaac2956059039e142b5ea7570e312236"
+  },
+  "not_qualified": [
+    "original cp joins/derivatives remain unchanged",
+    "only NASA7 two-region ideal-gas preparation; unsupported model rejected",
+    "no reduction of 10/29 H2 or 53/325 CH4 mechanism",
+    "no independent experimental mechanism validation",
+    "no spatial/time-refined native transient flame using the derived data",
+    "no general high-pressure, turbulent, spray, radiative or 3D combustor qualification",
+    "no App or platform integration; full native/frontend regression not rerun because solver code unchanged",
+    "ongoing 100 microsecond native evolution still uses original data; original checkpoints cannot be relabeled as derived-mechanism states"
+  ]
+}

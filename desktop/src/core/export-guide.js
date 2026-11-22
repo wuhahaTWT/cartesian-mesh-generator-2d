@@ -1,6 +1,6 @@
 'use strict';
 
-function exportGuide({ result, rasterImport, flow, thermal, euler, background }) {
+function exportGuide({ result, rasterImport, flow, thermal, background }) {
   if(background) return `# 完整笛卡尔背景网格
 
 本次 ${result.counts.cells} 个完整单元，保留物体内部。分类为外部、内部、相交；相交单元没有被裁切。
@@ -46,6 +46,7 @@ function exportGuide({ result, rasterImport, flow, thermal, euler, background })
 | --- | --- |
 | mesh-preview.png | 本次真实网格的图片，可查看、汇报；不是仿真输入文件。 |
 | *-openfoam 文件夹 | OpenFOAM 算例。网格在 constant/polyMesh；计算前设置边界条件、物性和求解器，再运行 checkMesh。 |
+| *.msh | 原生二维 ANSYS Fluent ASCII 网格（保留精确多边形与 2D 边界区）；导入 Fluent 2D 后先运行 Mesh Check。 |
 | *.cm2d | CartMesh2D 原生网格。混合模式以 *.hybrid.solver.cm2d 为最终求解网格。 |
 | *.vtk | 用 ParaView 查看。混合模式以 *.hybrid.solver.vtk 为最终网格，其余可能是中间过程。 |
 | result.json / selection.json | 本次参数、检查结果和自动选参记录。 |
@@ -60,7 +61,7 @@ ${flow?.summary?.namedWallLoads ? '命名壁面载荷在摘要 namedWallLoads �
 ${flow?.summary?.timeStepControl === 'adaptive-cfl-retry' ? '自动步长仅控制 CFL 与失败重试，不是时间误差估计；需独立做步长细化。续算目标为绝对物理时间。\n' : ''}
 ${flow?.summary?.initialVortex ? `初始局部涡 compact-cubic-v1：中心 (${flow.summary.initialVortex.centre.join(', ')}) m，支撑半径 ${flow.summary.initialVortex.radius} m，带符号峰值速度 ${flow.summary.initialVortex.peakSpeed} m/s（正值逆时针）。仅在零时刻施加，整个支撑圆盘须位于流体内；不是持续源项。*.flow.initial.checkpoint 保存真实初始场，可用于独立复核或从零重算；*.flow.checkpoint 继续最后接受的状态，续算不再施加扰动。\n` : ''}
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，最后一步 dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；流动停止容差 ${flow.summary.tolerance ?? "未记录"}（动量残差与速度/压力变化），连续性门 1e-8；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
-${flow ? `线性迭代精度：${flow.summary.linearPolicy==='adaptive' || flow.summary.adaptiveLinear===true ? '自适应（最终仍须严格复核）' : '固定精度'}；速度松弛系数：${flow.summary.velocityRelaxation ?? '旧结果未记录'}；压力校正次数：${flow.summary.pressureCorrectionPasses ?? 4}。这些是数值迭代设置，不改变物理时间步或最终停止容差。\n` : ''}
+${flow ? `压力—速度耦合：${(flow.summary.coupling ?? 'simple').toUpperCase()}；压力松弛系数：${flow.summary.pressureRelaxation ?? '旧结果未记录'}${flow.summary.coupling==='pimple'?`；动量校正次数：${flow.summary.momentumCorrectors}`:''}。\n线性迭代精度：${flow.summary.linearPolicy==='adaptive' || flow.summary.adaptiveLinear===true ? '自适应（最终仍须严格复核）' : '固定精度'}；速度松弛系数：${flow.summary.velocityRelaxation ?? '旧结果未记录'}；压力校正次数：${flow.summary.pressureCorrectionPasses ?? 4}。这些是数值迭代设置，不改变物理时间步或最终停止容差。\n` : ''}
 ${thermal ? `## 温度结果
 
 最后完整温度场：t=${thermal.summary.acceptedTime} s，${thermal.summary.minValue.toPrecision(6)}–${thermal.summary.maxValue.toPrecision(6)} K。先看 **temperature-preview.png**。
@@ -75,21 +76,7 @@ ${thermal ? `## 温度结果
 
 D=k/(rho cp)，源项为 Q/(rho cp)，通量为向外 q/(rho cp)。这是单向恒物性热输运，没有浮力、温度反馈、辐射或共轭传热。
 ` : ''}
-${euler ? `## 可压 Euler 结果
-
-最后完整可压场：t=${euler.summary.time} s，本次${euler.summary.acceptedSteps}个接受步。先看 **euler-preview.png**。
-
-当前完整结果清单：${euler.manifest}
-
-- euler.cells.csv / euler.fields.json / euler.vtk：密度kg/m³、绝对压力Pa、速度m/s、温度K、Mach数；rhoE为总能量密度J/m³。
-- euler.faces.csv：实际面上质量、两分量动量和总能量通量，按owner外向、每单位厚度；heatFlux 为 Fourier 导热 W/m，convectiveEnergy 为对流能量，两者之和为总能量通量。
-- euler.history.csv：每个已接受时间步的物理时间、声学/导热组合 CFL、密度/压力下限、质量、能量与向外净热量率 boundaryHeat（W/m）。
-- desktop-state.json + euler.checkpoint：恢复相同网格后可在App中载入的续算清单与状态；两文件需要保留在同一目录。
-- euler-run-* 各自独立；只有 desktop-state.json 中 complete 是到达目标时间的完整结果。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
-
-本次格式：${euler.summary.method}。理想气体层流模型，动力黏度 μ=${euler.summary.dynamicViscosity??0} Pa·s，壁面模型 ${euler.summary.wallModel??'slip'}。HLLC 使用多维压力感知的 HLLE 混合保护；正性回退和退阶计数保存在摘要与历史中。本次导热系数 k=${euler.summary.thermalConductivity??0} W/(m·K)，热壁为 ${euler.summary.wallThermal??'insulated'}，边界值 ${euler.summary.wallValue??0}（定温 K，向外热流 W/m²，负值加热）。导热进入总能量并反馈压力与流动；开边界默认零 Fourier 通量，仍可通过对流携带能量。黏性采用 Stokes 假设的 Newtonian 应力，同时计入总能量机械功。开边界取零黏性牵引；未包含湍流、变物性或固体共轭导热。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
-` : ''}
-**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体无黏工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
+**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }
 

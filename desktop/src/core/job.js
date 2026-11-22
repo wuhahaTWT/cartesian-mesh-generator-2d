@@ -103,6 +103,11 @@ function validateJob(request) {
     return {job, method};
   }
 
+  if (method.id === 'cutcell') {
+    job.cutcellStrategy = request.cutcellStrategy ?? 'legacy';
+    if (!['legacy', 'shape'].includes(job.cutcellStrategy)) throw new Error('未知 Cut-cell 处理策略。');
+  }
+
   if (request.sizingMode === 'relative') {
     job.relativeSizing = true;
     const { field, budget } = validateSizeField(request, method.safeWallLevel);
@@ -204,6 +209,11 @@ function buildInvocation(job, paths, options = {}) {
   }
 
   if (job.method === 'cutcell') {
+    const adaptiveArgs = options.dryRun
+      ? []
+      : (paths.refineFieldJsonPath
+          ? ['--refine-field-json', paths.refineFieldJsonPath]
+          : refineBoxArgs(job.sizeField, paths.frame));
     return {
       executable: 'cartmesh2d_cli',
       args: [paths.xyPath, paths.prefix,
@@ -212,19 +222,28 @@ function buildInvocation(job, paths, options = {}) {
         options.dryRun ? '-' : paths.casePath,
         '0', '0',
         ...sizeFieldArgs(job.sizeField, options),
-        ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame))],
+        ...adaptiveArgs,
+        ...(!options.dryRun && job.cutcellStrategy === 'shape' ? ['--shape-agglomeration'] : []),
+        ...(!options.dryRun && paths.fluentMshPath ? ['--fluent-msh', paths.fluentMshPath] : [])],
       cm2dCandidates: [`${paths.prefix}.solver.cm2d`]
     };
   }
   if (job.relativeSizing) {
     const reference = job.sizeField.referenceLength ?? paths.frame?.bodySpan;
     if (!(reference > 0)) throw new Error('缺少导入几何的参考长度。');
+    const adaptiveArgs = options.dryRun
+      ? []
+      : (paths.refineFieldJsonPath
+          ? ['--refine-field-json', paths.refineFieldJsonPath]
+          : refineBoxArgs(job.sizeField, paths.frame));
     return {
       executable: 'cartmesh2d_hybrid_cli',
       args: [paths.xyPath, paths.prefix, '6', '0', '6', String(job.nLayers), '0.01',
         String(job.growthRatio), '1', paths.casePath, String(job.extrusionRelativeSize*reference),
         `--fluid-region=${job.fluidRegion}`, `--small-alpha=${job.remainderSmallAlpha}`,
-        ...sizeFieldArgs(job.sizeField, options), '--first-layer-relative-size', String(job.firstLayerRelativeSize)],
+        ...sizeFieldArgs(job.sizeField, options), '--first-layer-relative-size', String(job.firstLayerRelativeSize),
+        ...adaptiveArgs,
+        ...(!options.dryRun && paths.fluentMshPath ? ['--fluent-msh', paths.fluentMshPath] : [])],
       cm2dCandidates: [`${paths.prefix}.hybrid.solver.cm2d`, `${paths.prefix}.fallback.solver.cm2d`]
     };
   }
@@ -233,7 +252,8 @@ function buildInvocation(job, paths, options = {}) {
     args: [paths.xyPath, paths.prefix, String(job.maxLevel), String(job.minimumLevel),
       String(job.boundaryLevel), String(job.nLayers), String(job.firstThickness),
       String(job.growthRatio), String(job.domainPadding),
-      paths.casePath, String(job.extrusionThickness), `--fluid-region=${job.fluidRegion}`, `--small-alpha=${job.remainderSmallAlpha}`],
+      paths.casePath, String(job.extrusionThickness), `--fluid-region=${job.fluidRegion}`, `--small-alpha=${job.remainderSmallAlpha}`,
+      ...(!options.dryRun && paths.fluentMshPath ? ['--fluent-msh', paths.fluentMshPath] : [])],
     cm2dCandidates: [`${paths.prefix}.hybrid.solver.cm2d`,
       `${paths.prefix}.fallback.solver.cm2d`]
   };

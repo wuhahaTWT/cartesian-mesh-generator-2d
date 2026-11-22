@@ -1,0 +1,703 @@
+{
+  "snapshot_utc": "2026-09-30T05:46:31.543253+00:00",
+  "source_base_commit": "a61ee624a3745dd807aaf99efb0ed8944d3ee410",
+  "scope": "Moving-frame diagnosis of the completed 100-microsecond flame and a controlled 10-microsecond initial-pressure compatibility comparison.",
+  "mature_combustion_goal_complete": false,
+  "qualified_flame": false,
+  "native_solver_or_default_controls_changed": false,
+  "method_reference": "https://www.cantera.org/3.2/reference/onedim/governing-equations.html",
+  "interpretation": "The reservoir face is an exterior Riemann state, not an exact subsonic mass-flow constraint. Initial constant-pressure BVP data do not satisfy the native axial momentum balance. Relative marker motion must be separated from lab-frame motion and profile-shape evolution.",
+  "existing_100us_diagnosis": {
+    "report": {
+      "path": "outputs/combustion-foundation/flame-motion-001/report.json",
+      "sha256": "cf9caacdaf9f6d4af16cc0ca864b6da95c1ba2a49c0592179d73a235ca693e95"
+    },
+    "script": {
+      "path": "outputs/combustion-foundation/flame-motion-001/analyze.py",
+      "sha256": "ebe18159c4be9b56330a8c69b07089002e567ca9e7938700e2b54c00ae3c368f"
+    },
+    "original_report": {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/report.json",
+      "sha256": "7ba2b275498f58859fb00c661ef20cf76fbef0dbd6ad7883a9e7162b91204f39"
+    },
+    "original_field": {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/field.json",
+      "sha256": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26"
+    },
+    "original_samples": {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/samples.jsonl",
+      "sha256": "427b00549e1b3667f167091481d00c72182e7b875fd1196233861ce83bfde1da"
+    },
+    "initial_to_final_inlet_mass_flux_change_fraction": -0.024194815523303048,
+    "late_window": {
+      "first_s": 8.045500185507747e-05,
+      "last_s": 0.0001,
+      "samples": 12,
+      "selection": "Last 20 microseconds only for diagnosis; not an acceptance threshold.",
+      "marker_motion": [
+        {
+          "temperature_K": 600.0,
+          "lab_marker_velocity_m_per_s": -0.06035364047576411,
+          "relative_to_fresh_gas": [
+            {
+              "station_x_m": 0.004924532524758567,
+              "time_mean_fresh_velocity_m_per_s": 2.422248601799408,
+              "fresh_relative_marker_speed_m_per_s": 2.482602242275172,
+              "difference_from_bvp_speed_fraction": -0.00018674499498316788
+            },
+            {
+              "station_x_m": 0.009924532524758571,
+              "time_mean_fresh_velocity_m_per_s": 2.4199527488497097,
+              "fresh_relative_marker_speed_m_per_s": 2.4803063893254738,
+              "difference_from_bvp_speed_fraction": -0.001111349094489178
+            },
+            {
+              "station_x_m": 0.012437933969533795,
+              "time_mean_fresh_velocity_m_per_s": 2.418732769939687,
+              "fresh_relative_marker_speed_m_per_s": 2.479086410415451,
+              "difference_from_bvp_speed_fraction": -0.0016026686721067884
+            }
+          ]
+        },
+        {
+          "temperature_K": 1000.0,
+          "lab_marker_velocity_m_per_s": -0.05831576005136513,
+          "relative_to_fresh_gas": [
+            {
+              "station_x_m": 0.004924532524758567,
+              "time_mean_fresh_velocity_m_per_s": 2.422248601799408,
+              "fresh_relative_marker_speed_m_per_s": 2.480564361850773,
+              "difference_from_bvp_speed_fraction": -0.0010074563541100368
+            },
+            {
+              "station_x_m": 0.009924532524758571,
+              "time_mean_fresh_velocity_m_per_s": 2.4199527488497097,
+              "fresh_relative_marker_speed_m_per_s": 2.478268508901075,
+              "difference_from_bvp_speed_fraction": -0.0019320604536160468
+            },
+            {
+              "station_x_m": 0.012437933969533795,
+              "time_mean_fresh_velocity_m_per_s": 2.418732769939687,
+              "fresh_relative_marker_speed_m_per_s": 2.4770485299910523,
+              "difference_from_bvp_speed_fraction": -0.0024233800312337683
+            }
+          ]
+        },
+        {
+          "temperature_K": 1317.2218244563126,
+          "lab_marker_velocity_m_per_s": -0.060481484569574674,
+          "relative_to_fresh_gas": [
+            {
+              "station_x_m": 0.004924532524758567,
+              "time_mean_fresh_velocity_m_per_s": 2.422248601799408,
+              "fresh_relative_marker_speed_m_per_s": 2.4827300863689823,
+              "difference_from_bvp_speed_fraction": -0.00013525860808261125
+            },
+            {
+              "station_x_m": 0.009924532524758571,
+              "time_mean_fresh_velocity_m_per_s": 2.4199527488497097,
+              "fresh_relative_marker_speed_m_per_s": 2.480434233419284,
+              "difference_from_bvp_speed_fraction": -0.0010598627075887324
+            },
+            {
+              "station_x_m": 0.012437933969533795,
+              "time_mean_fresh_velocity_m_per_s": 2.418732769939687,
+              "fresh_relative_marker_speed_m_per_s": 2.4792142545092615,
+              "difference_from_bvp_speed_fraction": -0.0015511822852063428
+            }
+          ]
+        },
+        {
+          "temperature_K": 1500.0,
+          "lab_marker_velocity_m_per_s": -0.05895814245265564,
+          "relative_to_fresh_gas": [
+            {
+              "station_x_m": 0.004924532524758567,
+              "time_mean_fresh_velocity_m_per_s": 2.422248601799408,
+              "fresh_relative_marker_speed_m_per_s": 2.4812067442520633,
+              "difference_from_bvp_speed_fraction": -0.0007487510211915405
+            },
+            {
+              "station_x_m": 0.009924532524758571,
+              "time_mean_fresh_velocity_m_per_s": 2.4199527488497097,
+              "fresh_relative_marker_speed_m_per_s": 2.478910891302365,
+              "difference_from_bvp_speed_fraction": -0.0016733551206976616
+            },
+            {
+              "station_x_m": 0.012437933969533795,
+              "time_mean_fresh_velocity_m_per_s": 2.418732769939687,
+              "fresh_relative_marker_speed_m_per_s": 2.4776909123923425,
+              "difference_from_bvp_speed_fraction": -0.002164674698315272
+            }
+          ]
+        },
+        {
+          "temperature_K": 2000.0,
+          "lab_marker_velocity_m_per_s": -0.13712492128507264,
+          "relative_to_fresh_gas": [
+            {
+              "station_x_m": 0.004924532524758567,
+              "time_mean_fresh_velocity_m_per_s": 2.422248601799408,
+              "fresh_relative_marker_speed_m_per_s": 2.5593735230844805,
+              "difference_from_bvp_speed_fraction": 0.030731193791101008
+            },
+            {
+              "station_x_m": 0.009924532524758571,
+              "time_mean_fresh_velocity_m_per_s": 2.4199527488497097,
+              "fresh_relative_marker_speed_m_per_s": 2.5570776701347824,
+              "difference_from_bvp_speed_fraction": 0.029806589691594887
+            },
+            {
+              "station_x_m": 0.012437933969533795,
+              "time_mean_fresh_velocity_m_per_s": 2.418732769939687,
+              "fresh_relative_marker_speed_m_per_s": 2.5558576912247597,
+              "difference_from_bvp_speed_fraction": 0.029315270113977387
+            }
+          ]
+        }
+      ]
+    },
+    "moving_frame_diagnostic": {
+      "formula": "R_moving = R_native + c_marker * dU/dx; dU/dx uses a nonuniform second-order finite difference of actual cell means.",
+      "lab_marker_velocity_m_per_s": -0.060481484569574674,
+      "regions": [
+        {
+          "region": "whole_domain",
+          "species_L1_lab_frame": 0.0667647567933091,
+          "species_L1_moving_frame": 0.018157205512083486
+        },
+        {
+          "region": "upstream_x_below_12mm",
+          "species_L1_lab_frame": 0.005381646214366476,
+          "species_L1_moving_frame": 0.005385138987609737
+        },
+        {
+          "region": "flame_x_12_to_18mm",
+          "species_L1_lab_frame": 0.058247318491019294,
+          "species_L1_moving_frame": 0.009817039960639064
+        },
+        {
+          "region": "downstream_x_above_18mm",
+          "species_L1_lab_frame": 0.003135792087923331,
+          "species_L1_moving_frame": 0.0029550265638346833
+        }
+      ],
+      "normalization": "Every regional L1 is divided by the same whole-domain integrated L1 of net chemical source.",
+      "limit": "Separate postprocessing approximation; neither the solver residual nor its audit gates are changed. A reduced moving-frame residual does not establish a traveling wave."
+    },
+    "initial_density_and_composition_rates": {
+      "L1_species_density_residual_over_net_chemical_source_L1": 0.0257931870731371,
+      "L1_Y_times_density_rate_over_net_chemical_source_L1": 0.007955455393451445,
+      "L1_rho_times_composition_rate_over_net_chemical_source_L1": 0.020893688678219655
+    },
+    "final_density_and_composition_rates": {
+      "L1_species_density_residual_over_net_chemical_source_L1": 0.0667647567933091,
+      "L1_Y_times_density_rate_over_net_chemical_source_L1": 0.05962238370112848,
+      "L1_rho_times_composition_rate_over_net_chemical_source_L1": 0.0148909179882448
+    }
+  },
+  "controlled_initial_condition_comparison": {
+    "report": {
+      "path": "outputs/combustion-foundation/flame-motion-001/field-comparison.json",
+      "sha256": "9399b963615f0616bd60138085874cfefc944a5ba70636944e30301b1d20be99"
+    },
+    "script": {
+      "path": "outputs/combustion-foundation/flame-motion-001/compare_fields.py",
+      "sha256": "9c3669b2d639129a24f52016602132751d73cc3dcd057bafcafb630f4d2b9ed2"
+    },
+    "same_mesh_boundary_and_physics_binding_bytes": true,
+    "same_numerical_controls": {
+      "method": "CVODES-BDF",
+      "errorControlCorrection": "fullPredictorCorrection",
+      "maximumOrder": 5,
+      "maximumNonlinearIterations": 3,
+      "continueDampedNewton": false,
+      "reflectSpeciesNewton": true,
+      "relativeTolerance": 1e-07,
+      "spatialOrder": 2,
+      "jacobianAdvectionOrder": 1,
+      "absoluteConservedTolerance": 1e-12,
+      "absoluteSpeciesFraction": 1e-18,
+      "maximumStep": 1e-05,
+      "maximumResidualEvaluations": 100000,
+      "sampleEveryAcceptedSteps": 50,
+      "maximumSamples": 128
+    },
+    "initial_temperature_maximum_difference_K": 3.1377567211166024e-11,
+    "initial_mass_fraction_maximum_difference": 1.1102230246251565e-16,
+    "initial_momentum_maximum_difference_kg_per_m2_s": 2.0392576516314875e-12,
+    "temperature_drift_reduction_fraction": 0.41357771934468934,
+    "metrics": {
+      "original": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/report.json",
+        "field_sha256": "02a7040c7d9022c92251f4cd785d707e7f0e7a35df467321c2d8500641150435",
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 105136.58945058679,
+        "initial_axial_momentum_flux_range_Pa": [
+          101329.12324189216,
+          101345.31821011685
+        ],
+        "initial_axial_momentum_flux_span_Pa": 16.194968224692275,
+        "final_marker_displacement_m": -9.097230212959384e-07,
+        "maximum_temperature_drift_K": 3.3258679188593305,
+        "maximum_temperature_shape_difference_after_translation_K": 2.574695159917269,
+        "initial_species_residual": 0.0257931870731371,
+        "final_species_residual": 0.11030888747147036,
+        "final_fresh_station_velocity_m_per_s": 2.428967093144179,
+        "final_fresh_station_pressure_Pa": 101341.6825902563,
+        "accepted_steps": 659,
+        "rhs_calls": 3800,
+        "elapsed_seconds_including_all_IO": 311.2551850830205,
+        "all_saved_frames_passed_original_audit": true,
+        "sample_count": 15,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 2.6088529052781416e-16,
+          "element_budget_per_initial_mass": 1.6207161138978232e-15,
+          "energy_budget_scaled": 6.118790338236282e-17,
+          "momentum_budget_scaled": 3.271109109984753e-15
+        }
+      },
+      "momentum": {
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/report.json",
+        "field_sha256": "9c8a3f09d1260bf2d82e5ab328b14e7f22b7c3ee67cf9bfabe7ec255903ee226",
+        "maximum_initial_momentum_derivative_kg_per_m2_s2": 12599.235782968415,
+        "initial_axial_momentum_flux_range_Pa": [
+          101328.91983306562,
+          101329.39119054258
+        ],
+        "initial_axial_momentum_flux_span_Pa": 0.47135747695574537,
+        "final_marker_displacement_m": -5.467174400523855e-07,
+        "maximum_temperature_drift_K": 1.9503630501358202,
+        "maximum_temperature_shape_difference_after_translation_K": 2.488912740235378,
+        "initial_species_residual": 0.02381567782360207,
+        "final_species_residual": 0.05210625651668159,
+        "final_fresh_station_velocity_m_per_s": 2.4662166326825745,
+        "final_fresh_station_pressure_Pa": 101330.19559253877,
+        "accepted_steps": 660,
+        "rhs_calls": 3793,
+        "elapsed_seconds_including_all_IO": 311.3112697079778,
+        "all_saved_frames_passed_original_audit": true,
+        "sample_count": 15,
+        "budget_defects": {
+          "mass_budget_per_initial_mass": 1.0048299769781762e-15,
+          "element_budget_per_initial_mass": 5.954339936403998e-16,
+          "energy_budget_scaled": 1.818506807564742e-16,
+          "momentum_budget_scaled": 6.759931952998282e-15
+        }
+      }
+    },
+    "cases": {
+      "original": {
+        "report": {
+          "path": "outputs/combustion-foundation/flame-motion-001/original-10us/report.json",
+          "sha256": "0a7241e2ddddea08bf69706b004fe9eb18a7a0db0eb5ff70937ab2167eb9c567"
+        },
+        "physical_audit": {
+          "fixture_index": 2,
+          "returncode": 0,
+          "elapsed_seconds_including_all_IO": 311.2551850830205,
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2",
+          "raw_sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/evaluation-progress.jsonl": "805c117880239a77f8d5d076f7793e1a7a9beab8e3e63ca2faab2864a2251ba9",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/field.json": "02a7040c7d9022c92251f4cd785d707e7f0e7a35df467321c2d8500641150435",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/steps.jsonl": "926d3e000ea1a8f1812149b58cc63c74f6c3f11730428fe9b279dde7e0f46686",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/accepted-state.json": "ceb505968e8e0d436d655a1355ffca99b3eac3b8a5e4a000c401798a69222557",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/accepted.checkpoint": "b1de3b52bb427b837588481477dddb96402c539746b20f8d1b64fe0df7434b33",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/samples.jsonl": "4a26cf830bbbd3605ef83401d6aca2a64dee4d090518952bbf147bfa0d69019a"
+          },
+          "numerical_checks_passed": true,
+          "physical_endpoint_reached": true,
+          "qualified_flame": false,
+          "cells": 890,
+          "spacing_m": 1e-05,
+          "time_s": 1e-05,
+          "accepted_steps": 659,
+          "rejections": null,
+          "failure": "",
+          "initial_time_s": 0,
+          "initial_accepted_steps": 0,
+          "total_accepted_steps": 659,
+          "restarted": false,
+          "thermo_relative_error": 1.3719410516947074e-14,
+          "source_error_over_gross_activity": 2.1616234697611163e-15,
+          "face_assembly_relative_error": 1.039787163108739e-16,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 2.6088529052781416e-16,
+          "energy_budget_scaled": 6.118790338236282e-17,
+          "momentum_budget_scaled": 3.271109109984753e-15,
+          "element_budget_per_initial_mass": 1.6207161138978232e-15,
+          "initial_residual": {
+            "species_residual_L1_over_chemical_activity": 0.0257931870731371,
+            "maximum_temperature_derivative_K_per_s": 441502.5476567114,
+            "hydrogen_consumption_kg_per_m2_s": 0.038023706301407584,
+            "pressure_max_relative_to_reference": 5.180039436236683e-05
+          },
+          "final_residual": {
+            "species_residual_L1_over_chemical_activity": 0.11030888747147036,
+            "maximum_temperature_derivative_K_per_s": 296992.7587432784,
+            "hydrogen_consumption_kg_per_m2_s": 0.03794124113481436,
+            "pressure_max_relative_to_reference": 0.00016794009270526544
+          },
+          "maximum_temperature_drift_K": 3.3258679188593305,
+          "integration": {
+            "method": "CVODES-BDF",
+            "errorControlCorrection": "fullPredictorCorrection",
+            "maximumOrder": 5,
+            "maximumNonlinearIterations": 3,
+            "continueDampedNewton": false,
+            "reflectSpeciesNewton": true,
+            "relativeTolerance": 1e-07,
+            "spatialOrder": 2,
+            "jacobianAdvectionOrder": 1,
+            "absoluteConservedTolerance": 1e-12,
+            "absoluteSpeciesFraction": 1e-18,
+            "maximumStep": 1e-05,
+            "maximumResidualEvaluations": 100000,
+            "rhsCalls": 3800,
+            "rejectedRhsCalls": 1,
+            "errorTestFailures": 1,
+            "linearSetups": 43,
+            "jacobianEvaluations": 12,
+            "nonlinearIterations": 1575,
+            "nonlinearConvergenceFailures": 1,
+            "dampedNewtonUpdates": 0,
+            "continuedDampedNewtonUpdates": 0,
+            "reflectedNewtonUpdates": 915,
+            "reflectionAttempts": 915,
+            "maximumReflectedSpeciesScaledChange": 3.3465544082228827e-22,
+            "maximumLocalErrorNorm": 0.9621531402710684,
+            "minimumNewtonFraction": 1,
+            "bandHalfWidth": 64,
+            "bandBytes": 17864080,
+            "sampleEveryAcceptedSteps": 50,
+            "sampleResidualEvaluations": 15,
+            "maximumSamples": 128,
+            "samplingFailure": "",
+            "acceptedByBdfOrder": [
+              0,
+              4,
+              17,
+              638,
+              0,
+              0
+            ],
+            "lastDampedTrialFailure": "implicit reacting flow: trial cell 370 species AR density=-7.22665688886529e-128"
+          },
+          "bdf_species_quadrature_defect_per_mass": 1.6524356942261384e-15,
+          "constraint_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            3.171958032831524e-17
+          ],
+          "field_sha256": "02a7040c7d9022c92251f4cd785d707e7f0e7a35df467321c2d8500641150435",
+          "accepted_state_samples": {
+            "all_samples_passed": true,
+            "sampling_complete": true,
+            "sampling_failure": "",
+            "sample_count": 15,
+            "sample_audits": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/original-10us/native-2/sample-audits.json",
+            "sample_audits_sha256": "12a67014069f769f952afc6c7d5c18c2b45c79265747e70703dbf0dcc742c4c9",
+            "samples_sha256": "4a26cf830bbbd3605ef83401d6aca2a64dee4d090518952bbf147bfa0d69019a"
+          }
+        },
+        "sample_audits": {
+          "path": "outputs/combustion-foundation/flame-motion-001/original-10us/native-2/sample-audits.json",
+          "sha256": "12a67014069f769f952afc6c7d5c18c2b45c79265747e70703dbf0dcc742c4c9"
+        }
+      },
+      "momentum": {
+        "report": {
+          "path": "outputs/combustion-foundation/flame-motion-001/momentum-10us/report.json",
+          "sha256": "a1106bba764798f620bbdffdd58bd996e0f365579041aebc07f44abb71aa03d6"
+        },
+        "physical_audit": {
+          "fixture_index": 0,
+          "returncode": 0,
+          "elapsed_seconds_including_all_IO": 311.3112697079778,
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0",
+          "raw_sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/evaluation-progress.jsonl": "50800b05c5eb6583678c6969d43a56c7ca8b73e927c107532a09acc74abfbc47",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/field.json": "9c8a3f09d1260bf2d82e5ab328b14e7f22b7c3ee67cf9bfabe7ec255903ee226",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/steps.jsonl": "00c49c39312a5bbb1bc9f1dc578281df3efb26134fdb9511465a7c6c7c95e67b",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/accepted-state.json": "5819100958857375a46a46faf6ab915f9e35ebced3444825533747971a8319df",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/accepted.checkpoint": "3831c086a4087011ea2e439c78602ee40071e26e4d37db018768759283d221b8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/samples.jsonl": "0935e65d96007b5788641911f38309c5a690d4662ea72151716286e781795348"
+          },
+          "numerical_checks_passed": true,
+          "physical_endpoint_reached": true,
+          "qualified_flame": false,
+          "cells": 890,
+          "spacing_m": 1e-05,
+          "time_s": 1e-05,
+          "accepted_steps": 660,
+          "rejections": null,
+          "failure": "",
+          "initial_time_s": 0,
+          "initial_accepted_steps": 0,
+          "total_accepted_steps": 660,
+          "restarted": false,
+          "thermo_relative_error": 1.4188465355785655e-14,
+          "source_error_over_gross_activity": 2.2051957974559042e-15,
+          "face_assembly_relative_error": 1.049470841103104e-16,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 1.0048299769781762e-15,
+          "energy_budget_scaled": 1.818506807564742e-16,
+          "momentum_budget_scaled": 6.759931952998282e-15,
+          "element_budget_per_initial_mass": 5.954339936403998e-16,
+          "initial_residual": {
+            "species_residual_L1_over_chemical_activity": 0.02381567782360207,
+            "maximum_temperature_derivative_K_per_s": 439887.81699885894,
+            "hydrogen_consumption_kg_per_m2_s": 0.03801676425098117,
+            "pressure_max_relative_to_reference": 0.00015958626417755806
+          },
+          "final_residual": {
+            "species_residual_L1_over_chemical_activity": 0.05210625651668159,
+            "maximum_temperature_derivative_K_per_s": 140237.17015656453,
+            "hydrogen_consumption_kg_per_m2_s": 0.03793435497094291,
+            "pressure_max_relative_to_reference": 0.00014815110702259826
+          },
+          "maximum_temperature_drift_K": 1.9503630501358202,
+          "integration": {
+            "method": "CVODES-BDF",
+            "errorControlCorrection": "fullPredictorCorrection",
+            "maximumOrder": 5,
+            "maximumNonlinearIterations": 3,
+            "continueDampedNewton": false,
+            "reflectSpeciesNewton": true,
+            "relativeTolerance": 1e-07,
+            "spatialOrder": 2,
+            "jacobianAdvectionOrder": 1,
+            "absoluteConservedTolerance": 1e-12,
+            "absoluteSpeciesFraction": 1e-18,
+            "maximumStep": 1e-05,
+            "maximumResidualEvaluations": 100000,
+            "rhsCalls": 3793,
+            "rejectedRhsCalls": 1,
+            "errorTestFailures": 1,
+            "linearSetups": 44,
+            "jacobianEvaluations": 12,
+            "nonlinearIterations": 1567,
+            "nonlinearConvergenceFailures": 1,
+            "dampedNewtonUpdates": 0,
+            "continuedDampedNewtonUpdates": 0,
+            "reflectedNewtonUpdates": 1071,
+            "reflectionAttempts": 1071,
+            "maximumReflectedSpeciesScaledChange": 7.818390543076554e-23,
+            "maximumLocalErrorNorm": 0.974270205369407,
+            "minimumNewtonFraction": 1,
+            "bandHalfWidth": 64,
+            "bandBytes": 17864080,
+            "sampleEveryAcceptedSteps": 50,
+            "sampleResidualEvaluations": 15,
+            "maximumSamples": 128,
+            "samplingFailure": "",
+            "acceptedByBdfOrder": [
+              0,
+              2,
+              9,
+              620,
+              29,
+              0
+            ],
+            "lastDampedTrialFailure": "implicit reacting flow: trial cell 43 species H density=-2.6321026128563919e-23"
+          },
+          "bdf_species_quadrature_defect_per_mass": 5.278183584997166e-16,
+          "constraint_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.2415219233751617e-17
+          ],
+          "field_sha256": "9c8a3f09d1260bf2d82e5ab328b14e7f22b7c3ee67cf9bfabe7ec255903ee226",
+          "accepted_state_samples": {
+            "all_samples_passed": true,
+            "sampling_complete": true,
+            "sampling_failure": "",
+            "sample_count": 15,
+            "sample_audits": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/sample-audits.json",
+            "sample_audits_sha256": "158848ebcbc6a05794aa6c83db9bb54697d2a3fd8f05186efc769d4629dcc2fa",
+            "samples_sha256": "0935e65d96007b5788641911f38309c5a690d4662ea72151716286e781795348"
+          }
+        },
+        "sample_audits": {
+          "path": "outputs/combustion-foundation/flame-motion-001/momentum-10us/native-0/sample-audits.json",
+          "sha256": "158848ebcbc6a05794aa6c83db9bb54697d2a3fd8f05186efc769d4629dcc2fa"
+        }
+      }
+    },
+    "preparation": {
+      "source_field_sha256": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26",
+      "source_fixture_sha256": "2a37090a7e421fa1a42ab7ca0412035fc4f5a1379b8770c804dbf77d64a07202",
+      "source_script_sha256": "6f466f4972e2373423eb604f172029619ccfb4b1fbced25145f1ce8a596b5283",
+      "output_fixture_sha256": "60634dce57414a84beb50f249e081409ca56ba6b67ea1131d98721e21b3f3b1b",
+      "method": "Hold original cell T/Y, inlet state, total mass flux and geometry. Choose the subsonic root of p + m^2/rho - tau_xx = inlet momentum flux, with rho=p/(Rmix*T), tau_xx=(4/3)*mu*du/dx and a converged full-viscosity fixed point. Reconstruct thermodynamically consistent conservative initial data.",
+      "gradient": "Nonuniform second-order numpy.gradient on cell centres; this initial continuum momentum balance is not an exact native discrete flux balance.",
+      "native_solver_and_boundary_models_changed": false,
+      "new_initial_condition_not_an_accepted_restart": true,
+      "maximum_mass_fraction_change": 1.1102230246251565e-16,
+      "pressure_range_Pa": [
+        101308.82992178225,
+        101325.04142982571
+      ],
+      "maximum_pressure_change_Pa": 16.17007821770676,
+      "maximum_preparation_momentum_flux_defect_Pa": 1.4551915228366852e-11,
+      "iteration_history": [
+        {
+          "iteration": 1,
+          "maximum_pressure_update_Pa": 16.17007821770676
+        },
+        {
+          "iteration": 2,
+          "maximum_pressure_update_Pa": 0.00022479123435914516
+        },
+        {
+          "iteration": 3,
+          "maximum_pressure_update_Pa": 3.192690201103687e-08
+        },
+        {
+          "iteration": 4,
+          "maximum_pressure_update_Pa": 2.9103830456733704e-11
+        }
+      ],
+      "integrated_conserved_initial_change_per_height": [
+        -5.704197764723473e-07,
+        3.622102617839573e-15,
+        0.0,
+        0.3384518901402771,
+        -2.218779719957882e-10,
+        -2.951942417994838e-11,
+        -4.461612997743613e-10,
+        -2.7351105185390023e-08,
+        -2.804117801486931e-09,
+        -1.1203779199016068e-07,
+        -4.434713040676895e-12,
+        -4.3196607456979215e-13,
+        -6.337481988276669e-26,
+        -4.275243361030745e-07
+      ],
+      "relative_initial_mass_change": -4.372215631450424e-05,
+      "limits": [
+        "Only initial pressure/rho/velocity/energy compatibility is changed. Total initial mass and energy are therefore different and explicitly reported.",
+        "Same detailed reactions, all species, molecular/Soret transport, actual compressible momentum/energy equations and numerical controls will be used during evolution.",
+        "This preparation holds temperature/composition and does not solve the coupled steady species/energy equations or establish flame speed."
+      ]
+    },
+    "preparation_report": {
+      "path": "outputs/combustion-foundation/flame-motion-001/momentum-input/preparation.json",
+      "sha256": "253cf5d8812fdd93fb6fe46c295e601ca9341d685130feb74ae88fd98f31fb97"
+    },
+    "experimental_input": {
+      "path": "outputs/combustion-foundation/flame-motion-001/momentum-input/grid-2.fixture",
+      "sha256": "60634dce57414a84beb50f249e081409ca56ba6b67ea1131d98721e21b3f3b1b"
+    },
+    "experimental_script": {
+      "path": "outputs/combustion-foundation/flame-motion-001/prepare_momentum_input.py",
+      "sha256": "6f466f4972e2373423eb604f172029619ccfb4b1fbced25145f1ce8a596b5283"
+    }
+  },
+  "canonical_preparation": {
+    "tool": {
+      "path": "tools/verification/prepare_reacting_flame_momentum.py",
+      "sha256": "9054276d25987d72aff0b3130f965be1842e96a0976b82d60e108721d7c983a4"
+    },
+    "input_report": {
+      "path": "outputs/combustion-foundation/flame-motion-001/canonical-input/preparation.json",
+      "sha256": "e436f75f424a16bca4de57d129bb5dcb842158ebd85ec0609bdd160fd3a5a292"
+    },
+    "fixture": {
+      "path": "outputs/combustion-foundation/flame-motion-001/canonical-input/grid.fixture",
+      "sha256": "60634dce57414a84beb50f249e081409ca56ba6b67ea1131d98721e21b3f3b1b"
+    },
+    "workflow_checks": {
+      "canonical_fixture_matches_native_tested_input_bytes": true,
+      "existing_output_rejected_without_change": true,
+      "invalid_fixture_selection_rejected_before_output": true,
+      "canonical_script_sha256": "9054276d25987d72aff0b3130f965be1842e96a0976b82d60e108721d7c983a4",
+      "canonical_fixture_sha256": "60634dce57414a84beb50f249e081409ca56ba6b67ea1131d98721e21b3f3b1b",
+      "canonical_preparation_report_sha256": "e436f75f424a16bca4de57d129bb5dcb842158ebd85ec0609bdd160fd3a5a292",
+      "preserved_output_sha256": {
+        "preparation.json": "e436f75f424a16bca4de57d129bb5dcb842158ebd85ec0609bdd160fd3a5a292",
+        "grid.fixture": "60634dce57414a84beb50f249e081409ca56ba6b67ea1131d98721e21b3f3b1b",
+        "profile-2.json": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746",
+        "reference.json": "14f66f66f4d9276f0d3182c2e3fbb2e921e7c3aadbd5ef90b91b0e5b72540e94"
+      }
+    },
+    "checks_report": {
+      "path": "outputs/combustion-foundation/flame-motion-001/canonical-checks.json",
+      "sha256": "3b8370d4b48b6d2ebbab4470ffd68e611fac13dd4dd419d88c99856698cb505e"
+    },
+    "no_overwrite_rejection": {
+      "path": "outputs/combustion-foundation/flame-motion-001/canonical-overwrite.stderr",
+      "sha256": "e1906dd3e68a4012661b198b37f865e743d3215e63506d855c143aaf796d3f01"
+    },
+    "invalid_fixture_rejection": {
+      "path": "outputs/combustion-foundation/flame-motion-001/canonical-invalid-grid.stderr",
+      "sha256": "8462747c7971763e47d309808a90ebb5f66b583694956f00f8db4ea88460b28b"
+    }
+  },
+  "native_build": {
+    "path": "outputs/combustion-foundation/flame-motion-001/build.json",
+    "sha256": "9b2ce9d96a120dcb79815a37e3517d4f59468d1007579557c2028838ef8b392e"
+  },
+  "native_probe": {
+    "path": "outputs/combustion-foundation/flame-motion-001/probe",
+    "sha256": "330765ed33c7b772e8a6511678b23820f9ab157610c1c91cfcc14d50ace67dc0"
+  },
+  "verifier": {
+    "path": "outputs/combustion-foundation/flame-motion-001/verify_reacting_flame.py",
+    "sha256": "694f4787e49dc2b79b7128f58bc60405544ee52a20eeb079726dd3d3c8fd14d3"
+  },
+  "run_report": {
+    "path": "outputs/combustion-foundation/flame-motion-001/comparison.json",
+    "sha256": "9804561b1287e842d68ea73eba1b8df3349904ebe6f20bbf6202678c47f2ba44"
+  },
+  "run_script": {
+    "path": "outputs/combustion-foundation/flame-motion-001/run_cases.py",
+    "sha256": "66bfe167f93dbff12c3689080bcd41a3d1eef3653e187e0758d41734b6a2e5e6"
+  },
+  "preview": {
+    "path": "artifacts/current/native-reacting-flame-motion.png",
+    "sha256": "5d2fb871fa69703baa889cc7dfb2ac335969b7899da02785ecfc19ae26fa7168"
+  },
+  "generator": {
+    "path": "outputs/combustion-foundation/flame-motion-001/write_evidence.py",
+    "sha256": "458e7d1623868b6230445a9bef251a2727ace85ab974120c2e0ba7137cb2c627"
+  },
+  "limits": [
+    "This is a new thermodynamically consistent initial-pressure condition, with explicitly changed density, velocity, energy and initial integrals; it is not a modification of an accepted state or a default change.",
+    "Continuum momentum-compatible input is not an exact native discrete steady state. No equation, reaction, transport term or residual gate is removed.",
+    "Both 10-microsecond full-physics runs are independently audited using existing gates, including every saved frame.",
+    "A short controlled comparison can identify an initialization contribution but cannot establish long-term traveling-wave or experimental accuracy.",
+    "Marker translation and shifted-profile interpolation are diagnostic only; different marker levels and downstream chemistry can continue changing.",
+    "rhoY time derivative equals Y*rho time derivative plus rho*Y time derivative; individual L1 norms do not add because contributions can cancel.",
+    "Relative isotherm motion is a diagnostic, not a qualified burning velocity while different markers or profile shape evolve.",
+    "Fresh-gas station choice and actual sampled window are explicit; no time-integrated solver trajectory or initial state was changed.",
+    "The reservoir boundary is a Riemann exterior state; it does not impose an exact mass flow at a subsonic face.",
+    "A causal contribution from initial momentum incompatibility must be tested by a separate full-physics calculation.",
+    "Corrected-input 100-microsecond evolution and its mesh/time sensitivities were not run in this comparison.",
+    "Solver code is unchanged; native/frontend/App/platform suites were not rerun for this diagnostic and optional input tool.",
+    "Reference physics and numerical discretization differ from native compressible flow and still share chemical/transport data; this is not an experiment."
+  ]
+}

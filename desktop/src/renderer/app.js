@@ -15,9 +15,8 @@ const state = {
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
-  euler: null,
-  eulerRestart: null,
-  eulerHistory: [],
+  adaptiveFieldPath: null,
+  adaptiveSuggestion: null,
   thermal: null,
   thermalRestart: null,
   thermalHistory: [],
@@ -75,13 +74,13 @@ function setBusy(busy) {
   $('returnHome').disabled = busy;
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
+  $('suggestFlowRefinement').disabled = busy || !state.result || !state.flow || state.method === 'background';
   updateFlowMode();
-  updateEulerControls();
   updateReady();
 }
 function validInputs() {
   for (const input of document.querySelectorAll('.panel input[type=number]')) {
-    if (!input.closest('#flowBlock, #thermalBlock, #eulerBlock') && !input.disabled && input.getClientRects().length &&
+    if (!input.closest('#flowBlock, #thermalBlock') && !input.disabled && input.getClientRects().length &&
         (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity();
       input.focus();
@@ -105,15 +104,21 @@ function validFlowInputs() {
 function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
   state.flowHistory=[];
+  state.adaptiveFieldPath = null;
+  state.adaptiveSuggestion = null;
+  updateFlowAdaptNote();
   $('flowTimeline').hidden=true;
   if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();
     $('flowCaseFileInfo').textContent='保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。';}
   view.setFlowFields(null);
+  view.setAdaptiveFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
+  $('suggestFlowRefinement').disabled = true;
   $('flowSpeedOption').hidden = true;
   $('flowPressureOption').hidden = true;
-  if (['speed', 'pressure'].includes($('displayMode').value)) {
+  $('adaptiveIndicatorOption').hidden = true;
+  if (['speed', 'pressure', 'adaptive'].includes($('displayMode').value)) {
     $('displayMode').value = 'level'; view.mode = 'level';
     $('canvasWrap').classList.remove('light');
     view.draw();
@@ -122,7 +127,6 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   if (state.mesh) renderLegend(state.mesh, state.levelBasis);
 }
 function clearResult() {
-  clearEulerBinding(true);
   clearFlowBinding({ hidePanel: true });
   clearThermalBinding({ hidePanel: true });
   state.mesh = null; state.result = null; state.wallBounds = null;
@@ -172,15 +176,14 @@ window.__exportThermalPreview = async () => {
   return payload.thermal ? window.CartMeshExport.renderThermal(payload.mesh, payload.thermal) : null;
 };
 
-window.__exportEulerPreview = async () => {
-  await document.fonts.load('13px "CartMesh UI"','可压结果');await document.fonts.ready;
-  const payload=await window.cartmesh.exportPreviewData();
-  return payload.euler ? window.CartMeshExport.renderEuler(payload.mesh,payload.euler) : null;
-};
-
 let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
-const { levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP, TEMPERATURE_RAMP } = window.MeshView;
+const {
+  renderCounters, renderGates, renderHistogram, renderLegend: renderLegendView,
+  renderResolution, renderFlowResult: renderFlowResultView, renderThermalResult, renderTimeSeriesMonitor
+} = window.CartMeshResultsView;
+const renderLegend = (mesh, basis) => renderLegendView(mesh, basis, view);
+const renderFlowResult = summary => renderFlowResultView(summary, state.catalog);
 
 const fmt = value => Number(value || 0).toLocaleString('en-US');
 const log = line => { $('log').textContent += `${line}\n`; $('log').scrollTop = 1e9; };
@@ -219,6 +222,14 @@ function buildRequest() {
     allowUnsafeWallLevel: $('relativeAllowUnsafe').checked,
     ...importSettings()
   };
+  const useAdaptiveCellField = !base.automatic && !base.targetCells &&
+    Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+  const adaptiveRequest = {
+    useAdaptiveCellField,
+    adaptiveFieldPath: useAdaptiveCellField ? state.adaptiveFieldPath : undefined,
+    refineBoxes: (base.targetCells || useAdaptiveCellField ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
+      ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
+  };
   if (state.method === 'hybrid') {
     return {
       ...base,
@@ -231,12 +242,14 @@ function buildRequest() {
       firstThickness: Number($('firstThickness').value),
       growthRatio: Number($('controlMode').value === 'auto' ? $('autoGrowth').value : $('growthRatio').value),
       domainPadding: Number($('domainPadding').value),
-      extrusionThickness: Number($('extrusionThickness').value)
+      extrusionThickness: Number($('extrusionThickness').value),
+      ...adaptiveRequest
     };
   }
   return {
     ...base,
     smallAlpha: Number($('smallAlpha').value),
+    cutcellStrategy: $('cutcellStrategy').value,
     wallCellsPerSpan: Number($('wallCellsPerSpan').value),
     farLevel: Number($('farLevel').value),
     curvatureCellsPerRadius: !base.targetCells && $('useCurvature').checked ? Number($('curvatureCellsPerRadius').value) : 0,
@@ -247,8 +260,7 @@ function buildRequest() {
       halfWidthSpans: Number($('wakeHalfWidth').value),
       levelsBelowWall: Number($('wakeLevels').value)
     } : null,
-    refineBoxes: (base.targetCells ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
-      ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
+    ...adaptiveRequest
   };
 }
 
@@ -318,19 +330,26 @@ function schedulePlan() {
     }
   }, 160);
 }
-function useManualParameters(request) {
-  if (!request || state.busy) return;
+function applyManualParameters(request) {
+  if (!request) return;
   const fields = { wallRelativeSize:'wallRelativeSize', backgroundRelativeSize:'backgroundRelativeSize',
     farFieldSpans:'relativePadding', cellsPerLevel:'relativeBandCells', firstLayerRelativeSize:'firstLayerRelativeSize',
-    nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha' };
+    nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha', cutcellStrategy:'cutcellStrategy' };
   for (const [key,id] of Object.entries(fields)) if (request[key] != null) $(id).value = request[key];
   if (request.referenceLength != null) {
     $('referenceMode').value = 'explicit'; $('referenceLength').value = request.referenceLength;
     $('referenceLengthField').hidden = false;
     $('referenceMode').closest('details').open = true;
+  } else {
+    $('referenceMode').value = 'bbox';
+    $('referenceLengthField').hidden = true;
   }
   $('relativeAllowUnsafe').checked = Boolean(request.allowUnsafeWallLevel);
   $('controlMode').value = 'manual'; updateControlMode(); syncRegions();
+}
+function useManualParameters(request) {
+  if (!request || state.busy) return;
+  applyManualParameters(request);
   status('已转为手动设置', '参数已填入，可微调后重新生成。');
 }
 $('planToManual').addEventListener('click', () => useManualParameters(state.budgetSuggestion));
@@ -408,8 +427,10 @@ function updateControlMode() {
   $('resolutionBlock').hidden = automatic||background;
   $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
-  $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
-  $('smallAlphaNote').hidden = automatic || state.method !== 'cutcell';
+  $('regionsBlock').hidden = automatic || background;
+  $('cutcellStrategyField').hidden = state.method !== 'cutcell';
+  $('smallAlphaField').hidden = automatic || state.method !== 'cutcell' || $('cutcellStrategy').value === 'shape';
+  $('smallAlphaNote').hidden = $('smallAlphaField').hidden;
   $('automaticControls').hidden = !automatic;
   $('autoLayerFields').hidden = state.method !== 'hybrid';
   $('customTargetField').hidden = $('density').value !== 'custom';
@@ -571,140 +592,6 @@ async function probeSizing() {
   }
 }
 
-function renderCounters(result) {
-  if(result.background){
-    $('counters').innerHTML=[['完整单元',result.counts.cells],['外部',result.counts.classification[0]],['内部',result.counts.classification[1]],['相交（未裁切）',result.counts.classification[2]]]
-      .map(([label,n])=>`<div><span>${label}</span><b>${fmt(n)}</b></div>`).join('');return;
-  }
-  // A run that died before its summary block leaves some counters unknown.  Showing a
-  // dash beats showing a confident zero.
-  const count = value => (value ? fmt(value) : '—');
-  const rows = [
-    ['solver cells', count(result.counts.cells)],
-    ['vertices', count(result.counts.vertices)],
-    ['faces', count(result.counts.faces)],
-    ['quadtree leaves', count(result.counts.leaves)],
-    ['cut cells', count(result.counts.cutCells)],
-    ['openfoam cells', result.openFoam.written ? fmt(result.openFoam.cells) : '未导出']
-  ];
-  if (result.counts.layerCells) rows.splice(4, 0, ['layer cells', fmt(result.counts.layerCells)]);
-  $('counters').innerHTML = rows
-    .map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join('');
-}
-
-function renderGates(result) {
-  if(result.background){$('gates').innerHTML=gateRow('背景网格','已生成','完整域覆盖与记录一致性已核对。物体内部保留；几何轮廓不是数值壁面，未生成流体求解拓扑或OpenFOAM算例。');return;}
-  const parts = [];
-  parts.push(gateRow('内部拓扑检查', result.gates.topology.pass === null ? '未确认' : result.gates.topology.pass ? 'PASS' : 'FAIL',
-    result.gates.topology.pass ? '生成器内部检查通过；外部 checkMesh 需另外执行。' : '本次未完整成功，不能据此确认通过。'));
-  const solver = result.gates.solver;
-  if (solver) {
-    const worst = solver.rows.filter(row => !row.pass);
-    parts.push(gateRow('Solver 质量', solver.valid ? 'PASS' : 'FAIL',
-      worst.length ? worst.map(row => `${row.label} ${row.value.toPrecision(4)} (限 ${row.limit})`).join('　') :
-        solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')));
-  }
-  const directional = result.resolution?.directional_connectivity;
-  if (directional) {
-    const minimum = Number.isFinite(directional.minimum) ? directional.minimum.toPrecision(5) : '未测得';
-    parts.push(gateRow('方向连通质量', directional.valid ? 'PASS' : 'FAIL',
-      `最小 determinant ${minimum}，下限 ${directional.threshold}；不合格单元 ${directional.failed_cell_ids.length}。` +
-      '适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。'));
-  }
-  if (result.actualMethod === 'cutcell-fallback')
-    parts.push(gateRow('方法', 'WARN', '请求了贴体边界层，实际落到纯 Cut-cell fallback'));
-  if (!result.openFoam.written)
-    parts.push(gateRow('OpenFOAM 导出', 'WARN', '未写出。solver 门未通过，或导出阶段自身失败；CM2D 与 VTK 仍然可用'));
-  $('gates').innerHTML = parts.join('');
-}
-
-const gateRow = (label, verdict, detail) =>
-  `<div class="gate"><b>${label}</b><span class="verdict ${verdict}">${verdict}</span>` +
-  `<details class="gate-detail"><summary>详情</summary><span class="detail">${detail}</span></details></div>`;
-
-// Cells per level is the readout that answers the far-field question directly: it
-// shows how few cells the coarse levels actually cost.
-//
-// Built with DOM calls rather than an HTML string because the strict CSP has no
-// style-src 'unsafe-inline': a `style="..."` attribute would be dropped, while
-// assigning element.style here is allowed.
-function renderHistogram(histogram, mesh, basis) {
-  const container = $('histogram');
-  container.replaceChildren();
-  if (!histogram.length) return;
-  const title = document.createElement('div');
-  title.className = 'title';
-  // The hybrid mesh has no Quadtree level to report, so its bands are cell sizes.
-  title.textContent = basis === 'size' ? '每尺寸档单元数（粗→细）' : '每层级单元数';
-  container.appendChild(title);
-  const peak = Math.max(...histogram.map(row => row.count));
-  for (const row of histogram) {
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    const label = document.createElement('em');
-    label.textContent = `${basis === 'size' ? '档' : 'L'}${row.level}`;
-    const fill = document.createElement('i');
-    fill.style.width = `${Math.max(1, Math.round((row.count / peak) * 108))}px`;
-    fill.style.background = levelColour(row.level, mesh.minLevel, mesh.maxLevel);
-    const count = document.createElement('b');
-    count.textContent = fmt(row.count);
-    bar.append(label, fill, count);
-    container.appendChild(bar);
-  }
-}
-
-function renderLegend(mesh, basis) {
-  const container = $('legend');
-  container.replaceChildren();
-  if(mesh.background && view.mode==='classification'){
-    for(const [i,label] of ['外部','内部','相交'].entries()){
-      const entry=document.createElement('span');entry.textContent=`${label} ${fmt(mesh.classificationCounts[i])}　`;
-      entry.style.color=['#79b8d4','#9da9bc','#efac56'][i];container.appendChild(entry);
-    }
-    container.hidden=false;return;
-  }
-  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode) || view.mode.startsWith('euler-');
-  const coloured = view.mode === 'level' || fieldMode;
-  const ramp = document.createElement('div');
-  ramp.className = 'ramp';
-  const palette = fieldMode ? view.fieldPalette() : RAMP;
-  for (const colour of palette) {
-    const swatch = document.createElement('span');
-    swatch.style.background = colour;
-    ramp.appendChild(swatch);
-  }
-  const ends = document.createElement('div');
-  ends.className = 'ends';
-  const coarse = document.createElement('span');
-  const fine = document.createElement('span');
-  if (fieldMode) {
-    const range = view.fieldRange;
-    const unit = ({'euler-rho':'kg/m³','euler-p':'Pa','euler-temperature':'K','euler-mach':'Mach','euler-speed':'m/s'})[view.mode] || (view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²');
-    coarse.textContent = range ? `${range.min.toPrecision(4)} ${unit}` : '最小';
-    fine.textContent = range ? `${range.max.toPrecision(4)} ${unit}` : '最大';
-  } else {
-    const prefix = basis === 'size' ? '档' : 'L';
-    coarse.textContent = `${prefix}${mesh.minLevel} 粗`;
-    fine.textContent = `细 ${prefix}${mesh.maxLevel}`;
-  }
-  ends.append(coarse, fine);
-
-  const keys = document.createElement('div');
-  keys.className = 'keys';
-  const theme = view.theme();
-  for (const [colour, text] of [[theme.wall, '物面（嵌入边界）'],
-                                [theme.domain, '计算域边界']]) {
-    const key = document.createElement('span');
-    const dash = document.createElement('i');
-    dash.style.background = colour;
-    key.append(dash, document.createTextNode(text));
-    keys.appendChild(key);
-  }
-  if (coloured) container.append(ramp, ends);
-  container.appendChild(keys);
-  container.hidden = false;
-}
-
 // Both of these failures are alignment events: a wall vertex grazing a grid line.
 // Measured on a 48-vertex CSV outline, the solver gate fails at a 8x and 9x far field
 // and passes at 10x and 11x with the wall resolution untouched, so nudging the far
@@ -714,22 +601,19 @@ function advice(message) {
     return '提示：这是壁面顶点擦过格点的构造失败（见 CURRENT_STATE_CN.md 第 4 节 A）。' +
       '把远场距离改动 ±1 倍体长会移动整个格点阵列，通常比调壁面分辨率更有效。';
   }
-  if (/solver-quality gate failed/.test(message)) {
-    return '提示：把小单元阈值 α 提高一档先合并掉薄片，或把远场距离改动 ±1 倍体长以改变格点对齐。' +
-      '两者都不改变你要求的壁面分辨率。';
-  }
   return '';
 }
 
 async function generate() {
   if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
+  const request = buildRequest();
   clearResult();
   setBusy(true);
   $('generate').textContent = '正在生成…';
   $('log').textContent = '';
   status('生成中', state.method==='background'?'几何诊断 → 完整笛卡尔网格 → 分类 → 导出':'几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
   try {
-    const payload = await window.cartmesh.generate(buildRequest());
+    const payload = await window.cartmesh.generate(request);
     state.mesh = payload.mesh;
     state.wallBounds = payload.wallBounds;
     state.result = payload.result;
@@ -753,45 +637,21 @@ async function generate() {
     renderCounters(payload.result);
     renderGates(payload.result);
     renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
-    const resolution = payload.result.resolution;
-    $('resolutionResult').hidden = !resolution;
-    if (resolution) {
-      const actual = resolution.actual;
-      const percent = resolution.wall_owner_tangential_exceedance_length_fraction;
-      $('resolutionResult').textContent = `最终求解网格实测：Lref=${resolution.reference_length.toPrecision(5)} m；` +
-        `单元等效尺寸 h/Lref 中位 ${actual.sqrt_area_over_reference?.p50.toPrecision(4) ?? '—'}；` +
-        `壁面单元切向跨度 P95 ${actual.wall_owner_tangential_extent_over_reference?.p95.toPrecision(4) ?? '—'}；` +
-        `切向跨度超过壁面目标的壁长占比 ${percent == null ? '未设置目标' : (100*percent).toFixed(2)+'%'}。` +
-        '切向跨度与法向高度分开测量；完整尺寸报告随结果包保存。';
-      const layers = resolution.boundary_layers;
-      if (layers && layers.status !== 'not_requested') {
-        const percent = value => value == null ? '未测得' : (100*value).toFixed(2)+'%';
-        $('resolutionResult').textContent += layers.status === 'no_layers_retained'
-          ? ' 本次为纯网格回退，未保留边界层。'
-          : ` 边界层最终保留 ${layers.retained_cells}/${layers.requested_cells} 个请求单元；` +
-            `首层覆盖壁长 ${percent(layers.first_layer_wall_length_fraction)}，` +
-            `完整请求层数覆盖壁长 ${percent(layers.full_requested_layers_wall_length_fraction)}。` +
-            `首层法向高度超过目标的壁长占比 ${percent(layers.first_layer_height_exceedance_wall_length_fraction)}。` +
-            (layers.status === 'incomplete' ? ' 层身份或连通性核对不完整，详见报告。' : '');
-      }
-    }
+    renderResolution(payload.result.resolution);
     fitOverview();
     if (payload.automatic) {
       const job = payload.job;
       $('autoNote').textContent = job.relativeSizing
         ? `${payload.cellBudget ? '参数已按最终选中的结果记录。' : payload.densityReduced ? '更密请求未满足，已降密。' : ''}上次生成的壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
         : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
-        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
+        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，${job.cutcellStrategy === 'shape' ? '形状聚合＋局部重划分' : 'α ' + job.smallAlpha}`
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
     $('exportResult').hidden = Boolean(payload.incomplete);
     $('flowBlock').hidden = Boolean(payload.incomplete || payload.background);
     $('thermalBlock').hidden = Boolean(payload.incomplete || payload.background);
-    $('eulerBlock').hidden = Boolean(payload.incomplete || payload.background);
     if (!payload.incomplete && !payload.background) {
       $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
-      $('eulerCase').value=payload.job.fluidRegion==='interior'?'sod':'external';
-      updateEulerControls();
       updateFlowScope();
     }
     const seconds = payload.result.timings.total_seconds;
@@ -880,91 +740,6 @@ async function prepareFlowBoundaries(source) {
   finally{setBusy(false);}
 }
 
-function flowConvectionLabel(summary) {
-  const scheme = state.catalog?.flowConvectionSchemes?.[summary.convection];
-  const label = scheme?.label || (summary.convection === 'limited-linear'
-    ? '线性迎风（限制重构）' : '一阶迎风');
-  return `${label}${summary.convectionInferred ? '（旧摘要缺字段，按一阶迎风推断）' : ''}`;
-}
-
-function flowPressurePreconditionerLabel(summary) {
-  if (summary.pressurePreconditionerInferred || summary.pressurePreconditioner === 'legacy-unspecified')
-    return '旧结果未记录';
-  const scheme = state.catalog?.flowPressurePreconditioners?.[summary.pressurePreconditioner];
-  const label = scheme?.label || (summary.pressurePreconditioner === 'aggregation'
-    ? '多重网格（试验）' : '标准（IC0）');
-  return label;
-}
-function flowOutletBackflowLabel(summary) {
-  if (summary.outletBackflow === 'normal-inlet') return '允许法向回流（试验）';
-  return '检测到回流时停止';
-}
-
-function renderFlowResult(summary) {
-  const container = $('flowResult');
-  container.replaceChildren();
-  const convectionText = flowConvectionLabel(summary);
-  const pressurePreconditionerText = flowPressurePreconditionerLabel(summary);
-  const pressureText = summary.pressureDiscretization === 'shared-face-gauss'
-    ? '共享面压力' : '旧结果未记录';
-  const stateLine = document.createElement('div');
-  stateLine.className = 'flow-state';
-  stateLine.textContent = summary.converged
-    ? `已收敛 · ${summary.iterations} 次迭代 · 对流：${convectionText}`
-    : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛 · 对流：${convectionText}`;
-  if (summary.temporalDiscretization) stateLine.textContent=`已接受 t=${summary.acceptedTime.toPrecision(6)} s · 本次 ${summary.completedSteps} 步 · 最后一步内迭代 ${summary.iterations} 次`;
-  container.appendChild(stateLine);
-  const rows = [
-    ...(summary.temporalDiscretization ? [['最后一步步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
-    ...(summary.timeStepControl==='adaptive-cfl-retry' ? [['时间步控制','自动 CFL / 重试'],['拒绝的试算次数',String(summary.rejectedSteps)],['CFL 上限',summary.targetCourant]] : []),
-    ['对流格式', convectionText],
-    ['压力求解', pressurePreconditionerText],
-    ['线性迭代精度',summary.linearPolicy==='adaptive'?(summary.converged?'自适应 · 严格复核通过':'自适应 · 尚未收敛'):'固定精度'],
-    ['速度松弛系数',summary.velocityRelaxation ?? .6],
-    ['压力校正次数',summary.pressureCorrectionPasses ?? 4],
-    ['稳态加速', summary.steadyAcceleration==='anderson'
-      ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
-    ['出口回流', flowOutletBackflowLabel(summary)],
-    ['压力离散', pressureText],
-    ['局部连续性（无量纲）', summary.continuity],
-    ['全局不平衡（m²/s）', summary.globalImbalance],
-    ['全局相对不平衡', summary.globalRelativeImbalance],
-    ['速度变化', summary.velocityChange],
-    ['流动停止容差', summary.tolerance],
-    ['压力变化', summary.pressureChange],
-    ['动量残差', summary.momentumResidual]
-  ];
-  if (summary.outletBackflowFaces !== undefined)
-    rows.push(['回流出口面数', String(summary.outletBackflowFaces)]);
-  if (summary.outletInflow !== undefined)
-    rows.push(['出口流入量（m²/s）', summary.outletInflow]);
-  if (summary.namedBoundaryFluxes) {
-    rows.push(['边界体积流量', '每单位厚度；净流出为正，净流入为负']);
-    for(const flux of summary.namedBoundaryFluxes) {
-      rows.push([`${flux.name} · 净流量（m²/s）`,flux.net],
-        [`${flux.name} · 流入／流出（m²/s）`,`${flux.inflow.toExponential(3)} / ${flux.outflow.toExponential(3)}`],
-        [`${flux.name} · 平均法向速度（m/s）`,flux.normalMeanVelocity]);
-    }
-  }
-  if (summary.namedWallLoads) {
-    rows.push(['壁面载荷', '流体作用于壁面；力÷ρ÷单位厚度'],
-      ['力矩基准', '原点 (0,0)，逆时针为正']);
-    for (const load of summary.namedWallLoads) {
-      rows.push([`${load.name} · Fx（m³/s²）`,load.forceX],
-        [`${load.name} · Fy（m³/s²）`,load.forceY],
-        [`${load.name} · 力矩（m⁴/s²）`,load.torque]);
-    }
-  }
-  for (const [label, value] of rows) {
-    const item = document.createElement('div');
-    const caption = document.createElement('span'); caption.textContent = label;
-    const number = document.createElement('b');
-    number.textContent = typeof value === 'number' ? value.toExponential(3) : value;
-    item.append(caption, number); container.appendChild(item);
-  }
-  container.hidden = false;
-}
-
 function updateFlowMode() {
   const transient = $('flowMode').value !== 'steady';
   const adaptive = $('flowMode').value === 'adaptive';
@@ -975,7 +750,12 @@ function updateFlowMode() {
   $('flowDtLabel').textContent=adaptive?'最大时间步长':transient?'时间步长':'温度联算步长';
   for (const id of ['flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).disabled=state.busy||!adaptive;
   $('flowRestartSettings').hidden = !transient;
-  $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
+  $('flowIterationLabel').textContent = transient ? '每个时间步的外迭代上限' : '最大外迭代';
+  const pimple=$('flowCoupling').value==='pimple';
+  $('flowMomentumCorrectorsField').hidden=!pimple;
+  $('flowMomentumCorrectors').disabled=state.busy||!pimple;
+  $('flowCoupling').disabled=state.busy;
+  $('flowPressureRelaxation').disabled=state.busy;
   const restart = state.flowRestart;
   if (!restart) $('flowResume').checked = false;
   $('flowResume').disabled = state.busy || !restart || !transient;
@@ -1038,54 +818,16 @@ function applyRestartControls() {
   updateFlowMode();
 }
 function renderFlowMonitor() {
-  const rows = state.flowHistory || [];
-  $('flowTimeline').hidden = rows.length === 0;
-  const svg = $('flowMonitor'); svg.replaceChildren();
-  if (!rows.length) return;
-  const metric=$('flowMonitorMetric').value;
-  const data=rows.filter(row => Number.isFinite(row[metric]));
-  if (!data.length) return;
-  const stride=Math.max(1,Math.ceil(data.length/700));
-  const sampled=data.filter((_r,i)=>i%stride===0);
-  if (sampled.at(-1)!==data.at(-1)) sampled.push(data.at(-1));
-  const t0=data[0].time,t1=data.at(-1).time;
-  let lo=Infinity,hi=-Infinity;
-  for (const r of data) {lo=Math.min(lo,r[metric]);hi=Math.max(hi,r[metric]);}
-  const margin=hi===lo?Math.max(1e-12,Math.abs(hi)*.02):.05*(hi-lo);lo-=margin;hi+=margin;
-  const x=t=>94+592*(t-t0)/(t1-t0||1),y=v=>100-82*(v-lo)/(hi-lo);
-  const add=(tag,attrs,text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));if(text!==undefined)el.textContent=text;svg.appendChild(el);};
-  add('path',{d:'M94 12 V100 H690',fill:'none',stroke:'currentColor',opacity:.3});
-  add('path',{d:sampled.map((r,i)=>`${i?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
-  const last=sampled.at(-1);add('circle',{cx:x(last.time),cy:y(last[metric]),r:2.5,fill:'currentColor'});
-  const digits=Math.min(12,Math.max(3,2+Math.ceil(Math.log10(Math.max(Math.abs(lo),Math.abs(hi))/(hi-lo)||1))));
-  for(const [tx,ty,label]of [[90,20,hi.toPrecision(digits)],[90,101,lo.toPrecision(digits)],[135,122,`${t0.toPrecision(4)} s`],[675,122,`${t1.toPrecision(4)} s`]])
-    add('text',{x:tx,y:ty,fill:'currentColor','text-anchor':'end','font-size':11},label);
-  $('flowMonitorCaption').textContent=`已接受时间步 · 最新 ${last[metric].toPrecision(Math.max(5,digits))} · 曲线按需抽样显示，导出 CSV 保留本次全部步数。`;
+  renderTimeSeriesMonitor(state.flowHistory, {
+    timelineId: 'flowTimeline', svgId: 'flowMonitor', metricId: 'flowMonitorMetric',
+    captionId: 'flowMonitorCaption', prefix: '已接受时间步'
+  });
 }
 function renderThermalMonitor() {
-  const rows = state.thermalHistory || [];
-  $('thermalTimeline').hidden = rows.length === 0;
-  const svg = $('thermalMonitor'); svg.replaceChildren();
-  if (!rows.length) return;
-  const metric=$('thermalMonitorMetric').value;
-  const data=rows.filter(row => Number.isFinite(row[metric]));
-  if (!data.length) return;
-  const stride=Math.max(1,Math.ceil(data.length/700));
-  const sampled=data.filter((_r,i)=>i%stride===0);
-  if (sampled.at(-1)!==data.at(-1)) sampled.push(data.at(-1));
-  const t0=data[0].time,t1=data.at(-1).time;
-  let lo=Infinity,hi=-Infinity;
-  for (const r of data) {lo=Math.min(lo,r[metric]);hi=Math.max(hi,r[metric]);}
-  const margin=hi===lo?Math.max(1e-12,Math.abs(hi)*.02):.05*(hi-lo);lo-=margin;hi+=margin;
-  const x=t=>94+592*(t-t0)/(t1-t0||1),y=v=>100-82*(v-lo)/(hi-lo);
-  const add=(tag,attrs,text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));if(text!==undefined)el.textContent=text;svg.appendChild(el);};
-  add('path',{d:'M94 12 V100 H690',fill:'none',stroke:'currentColor',opacity:.3});
-  add('path',{d:sampled.map((r,i)=>`${i?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
-  const last=sampled.at(-1);add('circle',{cx:x(last.time),cy:y(last[metric]),r:2.5,fill:'currentColor'});
-  const digits=Math.min(12,Math.max(3,2+Math.ceil(Math.log10(Math.max(Math.abs(lo),Math.abs(hi))/(hi-lo)||1))));
-  for(const [tx,ty,label]of [[90,20,hi.toPrecision(digits)],[90,101,lo.toPrecision(digits)],[135,122,`${t0.toPrecision(4)} s`],[675,122,`${t1.toPrecision(4)} s`]])
-    add('text',{x:tx,y:ty,fill:'currentColor','text-anchor':'end','font-size':11},label);
-  $('thermalMonitorCaption').textContent=`已接受联合时间步 · 最新 ${last[metric].toPrecision(Math.max(5,digits))} · 曲线按需抽样显示，导出 CSV 保留本次全部步数。`;
+  renderTimeSeriesMonitor(state.thermalHistory, {
+    timelineId: 'thermalTimeline', svgId: 'thermalMonitor', metricId: 'thermalMonitorMetric',
+    captionId: 'thermalMonitorCaption', prefix: '已接受联合时间步'
+  });
 }
 const thermalPatches = ['wall', 'inlet', 'outlet', 'top', 'bottom'];
 const thermalPatchId = patch => `thermal${patch[0].toUpperCase()}${patch.slice(1)}`;
@@ -1152,8 +894,8 @@ function thermalRequest() {
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
 }
 function validThermalInputs() {
-  if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
-    status('温度联算的迭代设置需要调整','请恢复固定线性精度、0.6速度松弛和4次压力校正。');return false;
+  if($('flowCoupling').value!=='simple' || Number($('flowPressureRelaxation').value)!==.25 || $('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
+    status('温度联算的迭代设置需要调整','请恢复 SIMPLE、0.25压力松弛、固定线性精度、0.6速度松弛和4次压力校正。');return false;
   }
   if($('flowPressurePreconditioner').value==='cholesky') {
     status('温度联算的压力求解设置需要调整','系统稀疏 Cholesky 暂仅用于独立层流；请选择 IC0 或多重网格。');return false;
@@ -1176,19 +918,8 @@ function bindThermal(payload) {
   state.thermal = payload; state.thermalHistory = boundedThermalHistory(payload.history || []);
   $('thermalOption').hidden = false; $('displayMode').value = 'temperature'; view.mode = 'temperature';
   $('canvasWrap').classList.remove('light'); view.draw(); renderLegend(state.mesh, state.levelBasis);
-  const summary = payload.summary, last = state.thermalHistory.at(-1);
-  const container = $('thermalResult'); container.replaceChildren();
-  const heading = document.createElement('div'); heading.className = 'flow-state';
-  heading.textContent = `温度与流动已接受 t=${Number(summary.acceptedTime ?? summary.time).toPrecision(6)} s · 本次 ${summary.steps} 步 · 单向恒物性输运`;
-  container.appendChild(heading);
-  for (const [label, value] of [['时间步（s）',summary.dt], ['最低温度（K）',summary.minValue], ['最高温度（K）',summary.maxValue],
-    ['热扩散率（m²/s）',summary.diffusivity], ['温度积分（K·m²）',last?.heatContent],
-    ['全域平衡（K·m²/s）',last?.globalBalance], ['温度残差',last?.scalarResidual], ['最后一步最大 CFL',last?.maxCourant]]) {
-    const item = document.createElement('div'), caption = document.createElement('span'), number = document.createElement('b');
-    caption.textContent = label; number.textContent = Number.isFinite(value) ? value.toExponential(4) : '未记录';
-    item.append(caption, number); container.appendChild(item);
-  }
-  container.hidden = false; renderThermalMonitor();
+  renderThermalResult(payload.summary, state.thermalHistory.at(-1));
+  renderThermalMonitor();
 }
 async function refreshThermalState(restoreResult = false) {
   const saved = await window.cartmesh.thermalState();
@@ -1221,6 +952,7 @@ function bindFlow(payload) {
   $('flowSpeedOption').hidden=false; $('flowPressureOption').hidden=false;
   $('displayMode').value='speed';view.mode='speed';view.draw();
   renderLegend(state.mesh,state.levelBasis);renderFlowResult(payload.summary);renderFlowMonitor();
+  $('suggestFlowRefinement').disabled = state.busy || !state.result || state.method === 'background';
 }
 async function refreshFlowState(restoreResult=false) {
   const saved=await window.cartmesh.flowState();
@@ -1237,6 +969,8 @@ function flowRequest() {
     pressurePreconditioner:$('flowPressurePreconditioner').value,
     steadyAcceleration:transient?'none':$('flowSteadyAcceleration').value,
     linearPolicy:$('flowLinearPolicy').value,velocityRelaxation:Number($('flowVelocityRelaxation').value),pressureCorrectionPasses:Number($('flowPressureCorrections').value),
+    coupling:$('flowCoupling').value,pressureRelaxation:Number($('flowPressureRelaxation').value),
+    momentumCorrectors:$('flowCoupling').value==='pimple'?Number($('flowMomentumCorrectors').value):2,
     outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),
     endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
@@ -1254,6 +988,7 @@ function applyFlowCase(request) {
   state.flowBoundaryDefinition = request.boundaryDefinition ? structuredClone(request.boundaryDefinition) : null;
   applySharedFlowControls(request);
   const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',steadyAcceleration:'flowSteadyAcceleration',linearPolicy:'flowLinearPolicy',velocityRelaxation:'flowVelocityRelaxation',pressureCorrectionPasses:'flowPressureCorrections',
+    coupling:'flowCoupling',pressureRelaxation:'flowPressureRelaxation',momentumCorrectors:'flowMomentumCorrectors',
     dt:'flowDt',steps:'flowSteps',endTime:'flowEndTime',minDt:'flowMinDt',maxCourant:'flowMaxCourant',
     maxRetries:'flowMaxRetries',maxSteps:'flowMaxSteps'};
   for (const [key,id] of Object.entries(fields)) if (request[key] !== undefined) $(id).value=request[key];
@@ -1287,124 +1022,12 @@ async function loadFlowCase() {
   }catch(error){status('工况读取失败',error.message);log(error.message);return null;}
   finally{setBusy(false);}
 }
-const EULER_CONTROLS={dynamicViscosity:'eulerViscosity',thermalConductivity:'eulerConductivity',wallValue:'eulerWallValue',density:'eulerDensity',u:'eulerU',v:'eulerV',pressure:'eulerPressure',gamma:'eulerGamma',gasConstant:'eulerGasConstant',split:'eulerSplit',endTime:'eulerEndTime',maximumStep:'eulerMaximumStep',minimumStep:'eulerMinimumStep',cfl:'eulerCfl',maximumSteps:'eulerMaximumSteps',maximumSeconds:'eulerMaximumSeconds'};
-const EULER_PHYSICAL=['dynamicViscosity','thermalConductivity','wallValue','density','u','v','pressure','gamma','gasConstant','split'];
-const EULER_OPTIONS=['eulerDensityOption','eulerPressureOption','eulerTemperatureOption','eulerMachOption','eulerSpeedOption'];
-function eulerRequest() {
-  const request={case:$('eulerCase').value,resume:$('eulerResume').checked,fluxScheme:$('eulerFluxScheme').value,order:Number($('eulerOrder').value),wallThermal:$('eulerWallThermal').value,wallModel:$('eulerWallModel').value,wallGradient:$('eulerWallGradient').value};
-  for(const [key,id] of Object.entries(EULER_CONTROLS))request[key]=Number($(id).value);
-  if(request.case!=='sod')request.split=.5;
-  if(request.wallThermal==='insulated')request.wallValue=0;
-  return request;
-}
-function updateEulerControls() {
-  const restart=state.eulerRestart;if(!restart)$('eulerResume').checked=false;
-  const resuming=Boolean(restart&&$('eulerResume').checked),sod=$('eulerCase').value==='sod';
-  $('eulerResume').disabled=Boolean(state.busy||!restart);$('eulerCase').disabled=Boolean(state.busy||resuming);
-  for(const [key,id] of Object.entries(EULER_CONTROLS))$(id).disabled=Boolean(state.busy||(resuming&&EULER_PHYSICAL.includes(key))||(sod&&['u','v'].includes(key)));
-  if(sod){$('eulerU').value=0;$('eulerV').value=0;}
-  $('eulerSplitField').hidden=!sod;
-  const conduction=Number($('eulerConductivity').value)>0,hasWall=$('eulerCase').value!=='uniform';
-  const viscous=Number($('eulerViscosity').value)>0;
-  if(!viscous||!hasWall)$('eulerWallModel').value='slip';
-  $('eulerWallModel').disabled=Boolean(state.busy||resuming||!viscous||!hasWall);
-  if(!conduction||!hasWall)$('eulerWallThermal').value='insulated';
-  const thermalKind=$('eulerWallThermal').value;
-  $('eulerWallThermal').disabled=Boolean(state.busy||resuming||!conduction||!hasWall);
-  $('eulerWallValue').disabled=Boolean(state.busy||resuming||thermalKind==='insulated');
-  $('eulerWallValueField').hidden=thermalKind==='insulated';
-  $('eulerWallValueLabel').textContent=thermalKind==='temperature'?'壁温（K）':'向外热流（W/m²；负值加热）';
-  if(thermalKind==='temperature')$('eulerWallValue').min='0.000000000001';else $('eulerWallValue').removeAttribute('min');
-  $('eulerFluxScheme').disabled=Boolean(state.busy);$('eulerOrder').disabled=Boolean(state.busy);$('eulerWallGradient').disabled=Boolean(state.busy);
-  $('pickEulerCheckpoint').disabled=Boolean(state.busy||!state.result);
-  $('runEuler').disabled=Boolean(state.busy||!state.result||$('eulerBlock').hidden);
-  if(!state.busy)$('runEuler').textContent=resuming?'继续可压计算':'启动可压计算';
-  $('eulerScope').textContent=sod?'仅限轴对齐矩形。左侧使用下方密度和压力，右侧分别为其0.125倍、0.1倍；初始速度为零，上下壁面、左右透射；壁面条件在下方选择。':$('eulerCase').value==='external'?'下方为初始场与远场状态。物面采用下方机械及热条件，外域施加特征远场并取零黏性牵引；边界层分辨率需要单独验证。':$('eulerCase').value==='sealed'?'下方为初始场；所有物面与外边界均为固定壁，采用下方机械及热条件。封闭系统只通过设定的壁面导热交换能量。':'无物面的均匀初始场，所有外边界施加相同特征远场。';
-  $('eulerRestartInfo').textContent=restart?`可续算到 t=${restart.time.toPrecision(6)} s 的已接受状态（${restart.steps}步）。物理参数锁定，目标时间需更晚；取消续算则从初始场重新计算。`:'每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。';
-}
-function applyEulerRestart() {
-  if($('eulerResume').checked&&state.eulerRestart) {
-    const request=state.eulerRestart.request;$('eulerCase').value=request.case;
-    for(const key of EULER_PHYSICAL)$(EULER_CONTROLS[key]).value=request[key]??0;
-    $('eulerWallThermal').value=request.wallThermal??'insulated';$('eulerWallModel').value=request.wallModel??'slip';
-    $('eulerFluxScheme').value=request.fluxScheme??'rusanov';$('eulerOrder').value=String(request.order??1);$('eulerWallGradient').value=request.wallGradient??'linear';
-  }
-  updateEulerControls();
-}
-function clearEulerBinding(hidePanel=false) {
-  state.euler=null;state.eulerHistory=[];view.setEulerFields(null);
-  $('eulerResult').hidden=true;$('eulerResult').replaceChildren();$('eulerTimeline').hidden=true;
-  for(const id of EULER_OPTIONS)$(id).hidden=true;
-  if($('displayMode').value.startsWith('euler-')){$('displayMode').value='level';view.mode='level';view.draw();}
-  if(hidePanel){state.eulerRestart=null;$('eulerResume').checked=false;$('eulerBlock').hidden=true;}
-  if(state.mesh)renderLegend(state.mesh,state.levelBasis);
-}
-function renderEulerMonitor() {
-  const rows=state.eulerHistory||[];$('eulerTimeline').hidden=!rows.length;const svg=$('eulerMonitor');svg.replaceChildren();if(!rows.length)return;
-  const metric=$('eulerMonitorMetric').value,values=rows.map(r=>r[metric]);let min=Infinity,max=-Infinity;
-  for(const value of values){min=Math.min(min,value);max=Math.max(max,value);}
-  const first=rows[0].time,last=rows.at(-1).time,span=max-min||Math.max(Math.abs(max)*.02,1e-12);
-  const sampled=rows.filter((_r,i)=>i%Math.max(1,Math.ceil(rows.length/1000))===0||i===rows.length-1);
-  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
-  line.setAttribute('points',sampled.map(r=>`${55+620*(r.time-first)/(last-first||1)},${108-85*(r[metric]-min)/span}`).join(' '));
-  line.setAttribute('fill','none');line.setAttribute('stroke','#61b7dd');line.setAttribute('stroke-width','2');svg.appendChild(line);
-  for(const [x,y,value] of [[6,20,max.toPrecision(4)],[6,110,min.toPrecision(4)],[55,128,first.toPrecision(4)+' s'],[600,128,last.toPrecision(4)+' s']]) {
-    const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x',x);text.setAttribute('y',y);text.setAttribute('fill','currentColor');text.setAttribute('font-size','11');text.textContent=value;svg.appendChild(text);
-  }
-  $('eulerMonitorCaption').textContent=`已接受状态 · 最新 ${values.at(-1).toPrecision(6)} · 运行时每25步更新，完成后读回全部历史；导出 CSV 保留每一步。`;
-}
-function bindEuler(payload) {
-  state.euler=payload;state.eulerHistory=payload.history.map(row=>({...row}));view.setEulerFields(payload.fields.cells);
-  for(const id of EULER_OPTIONS)$(id).hidden=false;
-  $('displayMode').value='euler-rho';view.mode='euler-rho';view.draw();renderLegend(state.mesh,state.levelBasis);
-  const container=$('eulerResult');container.replaceChildren();container.hidden=false;
-  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · ${payload.request.fluxScheme==='hllc'?'HLLC/HLLE':'Rusanov'} / ${payload.request.order===2?'二阶':'一阶'} · ${payload.request.dynamicViscosity>0?'黏性层流':'无黏'} · ${payload.request.wallGradient==='quadratic'?'二次壁面梯度':'线性壁面梯度'}`;container.appendChild(title);
-  const last=payload.history.at(-1),lines=[`最小密度 ${last.minimumDensity.toPrecision(6)} kg/m³；最小绝对压力 ${last.minimumPressure.toPrecision(6)} Pa`,
-    `最后步声学 CFL ${payload.audit.acousticCourant.toPrecision(4)}；逐格守恒相对误差 ${payload.audit.maximumCellBalanceRelative.toExponential(2)}`,
-    `动力黏度 ${payload.request.dynamicViscosity??0} Pa·s；壁面 ${payload.request.wallModel==='no-slip'?'无滑移':'自由滑移'}；导热系数 ${payload.request.thermalConductivity??0} W/m/K；最后步组合 CFL ${(payload.audit.combinedCourant??payload.audit.acousticCourant).toPrecision(4)}；向外净热流 ${(payload.audit.boundaryHeat??0).toPrecision(6)} W/m`,
-    `本次 HLLC 通量回退 ${payload.summary.hllcFallbackEvaluations??0} 次；重构退阶 ${payload.summary.reconstructionFallbackCells??0} 个单元阶段`,
-    '到达目标时间不代表稳态或任意工况精度合格；黏性功与导热通过总能量耦合；未包含湍流或固体共轭传热。'];
-  for(const line of lines){const p=document.createElement('p');p.className='note';p.textContent=line;container.appendChild(p);}renderEulerMonitor();
-}
-async function refreshEulerState(show=false) {
-  const saved=await window.cartmesh.eulerState();state.eulerRestart=saved.restart||null;
-  if(show&&saved.euler)bindEuler(saved.euler);return saved;
-}
-async function runEuler() {
-  if(state.busy||!state.result||!state.mesh)return;
-  for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))if(!input.disabled&&(!input.value.trim()||!input.checkValidity())){input.reportValidity();status('可压参数需要调整','检查气体、时间和计算预算。');return;}
-  const request=eulerRequest();clearEulerBinding();setBusy(true);$('runEuler').textContent='可压推进中…';status('可压 Euler 推进中','显式声学时间步；取消后保留已接受状态。');
-  try {
-    const payload=await window.cartmesh.runEuler(request);bindEuler(payload);await refreshEulerState();$('eulerResume').checked=true;
-    status('可压时间推进完成',`t=${payload.summary.time.toPrecision(6)} s；可查看密度、绝对压力、温度、Mach数和速度，并导出实际场。`);
-  }catch(error) {
-    const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
-    const saved=await refreshEulerState(true).catch(()=>null);$('eulerResume').checked=Boolean(saved?.restart);
-    status(/取消|cancelled/.test(message)?'可压计算已取消':'可压计算未完成',message.split('\n')[0]+(saved?.euler?' 显示上次完整结果。':''));log(message);
-  }finally{setBusy(false);applyEulerRestart();}
-}
-$('runEuler').addEventListener('click',runEuler);
-$('eulerResume').addEventListener('change',applyEulerRestart);
-$('eulerCase').addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-$('eulerMonitorMetric').addEventListener('change',renderEulerMonitor);
-for(const id of ['eulerFluxScheme','eulerOrder','eulerWallThermal','eulerWallModel','eulerWallGradient'])$(id).addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
-$('pickEulerCheckpoint').addEventListener('click',async()=>{
-  if(state.busy||!state.result)return;setBusy(true);
-  try{const selected=await window.cartmesh.pickEulerCheckpoint();if(selected){state.eulerRestart=selected;$('eulerResume').checked=true;applyEulerRestart();status('可压续算清单已载入','原生计算开始前还会核对完整网格与物理边界。');}}
-  catch(error){status('可压续算载入失败',error.message);log(error.message);}finally{setBusy(false);}
-});
-window.cartmesh.onEulerProgress(progress=>{
-  if(!state.busy||state.euler)return;
-  state.eulerHistory.push(progress);if(state.eulerHistory.length>1400)state.eulerHistory=state.eulerHistory.filter((_r,i)=>i%2===0||i===state.eulerHistory.length-1);
-  renderEulerMonitor();status('可压 Euler 推进中',`已接受 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 声学 CFL ${progress.acousticCourant.toPrecision(4)}`);
-});
 
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
   const request=flowRequest(),transient=request.mode!=='steady';
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
-  status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
+  status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':`${request.coupling.toUpperCase()} 速度—压力耦合；可随时取消。`);
   try {
     const payload=await window.cartmesh.runFlow(request);
     bindFlow(payload);
@@ -1419,6 +1042,89 @@ async function runFlow() {
     status(/取消/.test(message)?'层流求解已取消':'本次计算未完成',message.split('\n')[0]+(saved?.flow?' 当前显示上次完整结果。':''));
     log(message);
   } finally {setBusy(false);applyRestartControls();}
+}
+
+function updateFlowAdaptNote(overrideMessage = '') {
+  if (overrideMessage) {
+    $('flowAdaptNote').textContent = overrideMessage;
+    return;
+  }
+  const s = state.adaptiveSuggestion;
+  if (!s) {
+    $('flowAdaptNote').textContent = '完成层流预览后可用；自动继承本次参数并展示梯度热图与参考框。';
+    return;
+  }
+  const pct = (s.selectedAreaFraction * 100).toFixed(1);
+  const thermalSuffix = s.referenceScalarSpan > 0 ? '（含温度梯度）' : '';
+  const fieldActive = Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+  if (fieldActive) {
+    $('flowAdaptNote').textContent =
+      `已就绪紧凑单元级流场 AMR${thermalSuffix}（${s.cellTargetCount || s.selectedCellCount} 个高梯度目标单元，选中 ${s.selectedCellCount}/${s.cellCount}，面积占比 ${pct}%；下方 ${state.regions.length} 个参考框仅用于预览，手动编辑将自动切换为矩形加密框模式），点击“生成预览”即可重划。`;
+  } else {
+    $('flowAdaptNote').textContent =
+      `已启用可编辑矩形加密框模式${thermalSuffix}（共 ${state.regions.length} 个加密区；原流场选中 ${s.selectedCellCount}/${s.cellCount} 单元，面积占比 ${pct}%），微调后点击“生成预览”即可局部重划。`;
+  }
+}
+
+function switchToBoxAdaptOnManualEdit() {
+  if ($('flowAdaptMode').value === 'field' && state.adaptiveFieldPath) {
+    $('flowAdaptMode').value = 'boxes';
+    updateFlowAdaptNote('检测到手动编辑加密区，已自动切换为“可编辑矩形加密框”模式；点击“生成预览”将按下方矩形框局部重划。');
+  }
+}
+
+async function suggestFlowRefinement() {
+  if (state.busy || !state.result || !state.flow || state.method === 'background') return;
+  const refineFraction = Number($('flowAdaptFraction').value);
+  const maxBoxes = Number($('flowAdaptMaxBoxes').value);
+  setBusy(true);
+  status('流场自适应分析中', '正在按当前速度与压力梯度提取局部加密区…');
+  try {
+    const suggestion = await window.cartmesh.suggestFlowRefinement({ refineFraction, maxBoxes });
+    if (suggestion.fields?.cells?.length) {
+      view.setAdaptiveFields(suggestion.fields.cells);
+      $('adaptiveIndicatorOption').hidden = false;
+      $('displayMode').value = 'adaptive';
+      view.mode = 'adaptive';
+      $('canvasWrap').classList.remove('light');
+      view.draw();
+      if (state.mesh) renderLegend(state.mesh, state.levelBasis);
+    }
+    if (!suggestion.regions.length && !(suggestion.cellTargetCount > 0)) {
+      state.adaptiveFieldPath = null;
+      state.adaptiveSuggestion = null;
+      $('flowAdaptNote').textContent = '当前流场梯度接近均匀，未生成新的局部加密区。';
+      status('无需局部加密', '当前流场未检测到显著高梯度区。');
+      return;
+    }
+    if ($('controlMode').value !== 'manual') {
+      if (state.selectedRequest) {
+        applyManualParameters(state.selectedRequest);
+      } else {
+        $('controlMode').value = 'manual';
+        updateControlMode();
+      }
+    }
+    state.adaptiveFieldPath = suggestion.cellTargetCount > 0 && suggestion.adaptiveFieldPath
+      ? suggestion.adaptiveFieldPath : null;
+    state.adaptiveSuggestion = suggestion;
+    state.regions = suggestion.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) => ({
+      xmin, xmax, ymin, ymax, levelsBelowWall, active: true
+    }));
+    renderRegions();
+    const thermalSuffix = suggestion.referenceScalarSpan > 0 ? '（含温度梯度）' : '';
+    const fieldActive = Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+    updateFlowAdaptNote();
+    status('自适应加密已就绪', fieldActive
+      ? `已按梯度${thermalSuffix}生成 ${suggestion.cellTargetCount} 个单元级 AMR 目标并显示梯度热图，点击“生成预览”即可紧凑重划。`
+      : `已按梯度${thermalSuffix}填入 ${state.regions.length} 个局部加密框并显示梯度热图，点击“生成预览”即可局部重划。`);
+  } catch (error) {
+    const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
+    status('自适应分析失败', message.split('\n')[0]);
+    log(message);
+  } finally {
+    setBusy(false);
+  }
 }
 
 async function importGeometryFile(picked) {
@@ -1475,6 +1181,8 @@ $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
+$('suggestFlowRefinement').addEventListener('click', suggestFlowRefinement);
+$('flowAdaptMode').addEventListener('change', () => updateFlowAdaptNote());
 $('saveFlowCase').addEventListener('click', saveFlowCase);
 $('loadFlowCase').addEventListener('click', loadFlowCase);
 $('runThermal').addEventListener('click', runThermal);
@@ -1513,6 +1221,9 @@ $('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) c
 $('flowLinearPolicy').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('flowVelocityRelaxation').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowPressureCorrections').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
+$('flowCoupling').addEventListener('change', () => { if (state.flow) clearFlowBinding(); updateFlowMode(); });
+for(const id of ['flowPressureRelaxation','flowMomentumCorrectors'])
+  $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 
@@ -1530,6 +1241,7 @@ $('toggleRegions').addEventListener('click', () => {
 
 $('fitOverview').addEventListener('click', fitOverview);
 $('controlMode').addEventListener('change', updateControlMode);
+$('cutcellStrategy').addEventListener('change', () => { clearResult(); updateControlMode(); });
 $('fluidRegion').addEventListener('change', () => {
   clearResult();
   selectMethod(state.method);
@@ -1607,7 +1319,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, suggestFlowRefinement, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {
@@ -1637,6 +1349,7 @@ function syncRegions() {
 function addRegion() {
   // A downstream patch is the common case, so the default is one: from just behind the
   // body out to six body lengths, four levels coarser than the wall.
+  switchToBoxAdaptOnManualEdit();
   state.regions.push({ xmin: 0.6, xmax: 6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4, active: true });
   renderRegions();
 }
@@ -1662,6 +1375,7 @@ function renderRegions() {
     depthInput.value = String(box.levelsBelowWall);
     depthInput.addEventListener('input', () => {
       box.levelsBelowWall = Number(depthInput.value);
+      switchToBoxAdaptOnManualEdit();
       syncRegions();
     });
     depth.append(document.createTextNode('低于壁面'), depthInput, document.createTextNode('级'));
@@ -1673,6 +1387,7 @@ function renderRegions() {
     drop.title = '删除这个加密区';
     drop.addEventListener('click', () => {
       state.regions.splice(index, 1);
+      switchToBoxAdaptOnManualEdit();
       renderRegions();
     });
     top.append(name, grow, depth, drop);
@@ -1689,6 +1404,7 @@ function renderRegions() {
       input.value = String(box[key]);
       input.addEventListener('input', () => {
         box[key] = Number(input.value);
+        switchToBoxAdaptOnManualEdit();
         syncRegions();
       });
       input.addEventListener('focus', () => {

@@ -79,12 +79,45 @@ inline std::vector<Vector2D> symmetricViscousCorrection(const FvMesh2D& m,
 inline constexpr double pressureGradientConditionTarget2D = 16.;
 inline constexpr std::size_t pressureGradientMaximumRings2D = 6;
 
-// Fixed-mesh reconstruction geometry. Samples preserve the original row order,
-// divisions and final 2x2 solve; only geometry/ring discovery is cached. Build a
-// fresh stencil when the mesh or fixed-boundary mask changes. A solver owns its
+// Test equality of supporting lines at coordinate-construction precision.
+// This only identifies subdivisions of one straight boundary; it does not
+// smooth polygon corners or relax any mesh/solution acceptance criterion.
+inline bool sameGradientBoundaryPlane2D(const Face& a, const Face& b) {
+    const double la=std::hypot(a.areaVector.x,a.areaVector.y);
+    const double lb=std::hypot(b.areaVector.x,b.areaVector.y);
+    const auto na=a.areaVector*(1/la),nb=b.areaVector*(1/lb);
+    const auto delta=b.centre-a.centre;
+    const double coordinate=std::max({la,lb,std::abs(a.centre.x),std::abs(a.centre.y),
+                                             std::abs(b.centre.x),std::abs(b.centre.y)});
+    const double roundoff=128*std::numeric_limits<double>::epsilon()*coordinate;
+    return na.x*nb.x+na.y*nb.y>0 &&
+        std::abs(na.x*nb.y-na.y*nb.x)<=roundoff/std::min(la,lb) &&
+        std::abs(delta.x*na.x+delta.y*na.y)<=roundoff;
+}
+
+inline bool gradientBoundarySegmentsTouch2D(const Face& a, const Face& b) {
+    const double coordinate=std::max({std::hypot(a.areaVector.x,a.areaVector.y),
+        std::hypot(b.areaVector.x,b.areaVector.y),std::abs(a.centre.x),std::abs(a.centre.y),
+        std::abs(b.centre.x),std::abs(b.centre.y)});
+    const double roundoff=128*std::numeric_limits<double>::epsilon()*coordinate;
+    for(const double sa:{-.5,.5})for(const double sb:{-.5,.5}) {
+        const double dx=(a.centre.x+sa*a.areaVector.y)-(b.centre.x+sb*b.areaVector.y);
+        const double dy=(a.centre.y-sa*a.areaVector.x)-(b.centre.y-sb*b.areaVector.x);
+        if(std::hypot(dx,dy)<=roundoff)return true;
+    }
+    return false;
+}
+
+// Fixed-mesh reconstruction geometry. Cached and uncached applications use the
+// same ordered RHS contributions and final 2x2 solve; only geometry/group/ring
+// discovery is cached. Rebuild on mesh, fixed-mask or physical-group changes.
+// A solver owns its
 // pressure stencil locally, so separate solves and rejected candidates cannot
 // share mutable state. Boundary VALUES and cell fields remain live inputs.
 struct FlowGradientStencil2D {
+    // A boundary mean stores one RHS contribution per real face. Its direction
+    // includes that face's length fraction; the normal matrix uses one row for
+    // the complete straight segment. Boundary values remain live inputs.
     struct Sample { std::size_t index; Vector2D direction; double length; bool boundary; bool zero; };
     struct Row { std::size_t begin,end; double xx,xy,yy,det; };
     std::vector<Sample> samples;
@@ -112,12 +145,18 @@ struct FlowGradientStencil2D {
 // Pressure at velocity boundaries is extrapolated from interior values.
 // It is not a prescribed zero physical pressure gradient. Velocity slip/outflow
 // retains the zero-normal row; pressure-correction face flux remains a separate BC.
+// Optional boundaryGroups identify physical traces (type/name), not geometry
+// patches. Only subdivisions within one group may share a reconstruction row.
+// Empty groups preserve the original point-sample reconstruction.
 inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                                const std::vector<double>& u,
                                const std::vector<double>& bc,
                                const std::vector<bool>& fixed,
                                bool extrapolateUnknown = false,
-                               FlowGradientStencil2D* capture = nullptr) {
+                               FlowGradientStencil2D* capture = nullptr,
+                               const std::vector<std::size_t>& boundaryGroups = {}) {
+    if(!boundaryGroups.empty() && boundaryGroups.size()!=m.faces.size())
+        throw std::runtime_error("Flow gradient boundary group size differs from mesh");
     if(capture) {
         capture->rows.clear();capture->rows.reserve(m.cells.size());
         capture->samples.clear();capture->samples.reserve(2*m.faces.size());
@@ -132,10 +171,50 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
         double by = 0;
         bool omittedBoundary=false;
         const auto rowBegin=capture?capture->samples.size():0;
+        std::vector<std::size_t> consumedBoundary;
         for (auto id : m.cells[i].faces) {
             const auto& f = m.faces[id];
             const auto j =
                 f.owner == i ? f.neighbour : std::optional<std::size_t>(f.owner);
+            if(!j && !extrapolateUnknown && !boundaryGroups.empty()) {
+                if(std::find(consumedBoundary.begin(),consumedBoundary.end(),id)!=consumedBoundary.end())continue;
+                std::vector<std::size_t> group{id};
+                // Grow only a connected chain. A concave polygon can have
+                // disconnected boundary fragments on the same supporting line.
+                for(std::size_t segment=0;segment<group.size();++segment)
+                for(const auto other:m.cells[i].faces) {
+                    const auto& candidate=m.faces[other];
+                    if(other!=id && !candidate.neighbour && fixed[other]==fixed[id] &&
+                       boundaryGroups[other]==boundaryGroups[id] && candidate.patch==f.patch &&
+                       std::find(consumedBoundary.begin(),consumedBoundary.end(),other)==consumedBoundary.end() &&
+                       std::find(group.begin(),group.end(),other)==group.end() &&
+                       sameGradientBoundaryPlane2D(f,candidate) &&
+                       gradientBoundarySegmentsTouch2D(m.faces[group[segment]],candidate))group.push_back(other);
+                }
+                if(group.size()>1) {
+                    consumedBoundary.insert(consumedBoundary.end(),group.begin(),group.end());
+                    double length=0;Vector2D meanDisplacement{};
+                    for(const auto other:group) {
+                        const auto& face=m.faces[other];const double weight=std::hypot(face.areaVector.x,face.areaVector.y);
+                        const auto displacement=face.centre-m.cells[i].centre;
+                        length+=weight;meanDisplacement.x+=weight*displacement.x;meanDisplacement.y+=weight*displacement.y;
+                    }
+                    auto direction=fixed[id]?meanDisplacement*(1/length):f.areaVector;
+                    const double distance=std::hypot(direction.x,direction.y);
+                    if(!(distance>0))throw std::runtime_error("Flow gradient degenerate boundary mean");
+                    direction=direction*(1/distance);
+                    xx+=direction.x*direction.x;xy+=direction.x*direction.y;yy+=direction.y*direction.y;
+                    for(const auto other:group) {
+                        const auto& face=m.faces[other];
+                        const auto contribution=direction*(std::hypot(face.areaVector.x,face.areaVector.y)/length);
+                        const double sampleLength=fixed[id]?distance:1;
+                        const double value=fixed[id]?(bc[other]-u[i])/sampleLength:0;
+                        bx+=contribution.x*value;by+=contribution.y*value;
+                        if(capture)capture->samples.push_back({other,contribution,sampleLength,true,!fixed[id]});
+                    }
+                    continue;
+                }
+            }
             Vector2D d;
             double value = 0;
             double sampleLength=1;
@@ -204,27 +283,30 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
 
 
 inline FlowGradientStencil2D buildFlowGradientStencil2D(const FvMesh2D& mesh,
-    const std::vector<bool>& fixed,bool extrapolateUnknown=false) {
+    const std::vector<bool>& fixed,bool extrapolateUnknown=false,
+    const std::vector<std::size_t>& boundaryGroups = {}) {
     if(fixed.size()!=mesh.faces.size())throw std::runtime_error("Flow gradient boundary mask size differs from mesh");
     FlowGradientStencil2D result;
-    (void)flowGradient(mesh,std::vector<double>(mesh.cells.size()),std::vector<double>(mesh.faces.size()),fixed,extrapolateUnknown,&result);
+    (void)flowGradient(mesh,std::vector<double>(mesh.cells.size()),std::vector<double>(mesh.faces.size()),fixed,extrapolateUnknown,&result,boundaryGroups);
     return result;
 }
 
 // Velocity boundary types can change with outlet backflow. Compare the entire
-// mask before each use and rebuild on any change; values never enter the cache.
+// fixed mask and physical groups before use; values never enter the cache.
 // The mesh referenced by this per-solve object must remain immutable.
 class ChangingFlowGradientStencil2D {
     const FvMesh2D& mesh_;
     std::vector<bool> fixed_;
+    std::vector<std::size_t> boundaryGroups_;
     std::optional<FlowGradientStencil2D> stencil_;
 public:
     explicit ChangingFlowGradientStencil2D(const FvMesh2D& mesh):mesh_(mesh) {}
     std::vector<Vector2D> apply(const std::vector<double>& field,const std::vector<double>& boundary,
-                               const std::vector<bool>& fixed) {
-        if(!stencil_ || fixed_!=fixed) {
-            auto next=buildFlowGradientStencil2D(mesh_,fixed);
-            stencil_=std::move(next);fixed_=fixed;
+                               const std::vector<bool>& fixed,
+                               const std::vector<std::size_t>& boundaryGroups = {}) {
+        if(!stencil_ || fixed_!=fixed || boundaryGroups_!=boundaryGroups) {
+            auto next=buildFlowGradientStencil2D(mesh_,fixed,false,boundaryGroups);
+            stencil_=std::move(next);fixed_=fixed;boundaryGroups_=boundaryGroups;
         }
         return stencil_->apply(field,boundary);
     }

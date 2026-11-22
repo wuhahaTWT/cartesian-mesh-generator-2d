@@ -1,6 +1,6 @@
 'use strict';
 
-const { planBudget, refineBudget, refineFailedQuality, assessBudget } = require('./cell-budget');
+const { planBudget, refineBudget, assessBudget } = require('./cell-budget');
 
 // Keep every attempt's provenance and select the nearest successfully exported
 // solver mesh. A later failed attempt must not destroy an earlier valid result.
@@ -46,17 +46,13 @@ async function runBudget(request, frame, { generate, progress = () => {}, signal
         ...(error.outputDirectory ? { outputDirectory: error.outputDirectory } : {}) });
       if (signal?.aborted) throw new Error('操作已取消');
       // A failed layer construction may be retried with a thinner/thicker first
-      // layer. This bounded geometric adjustment never changes the quality gates,
+      // layer. This bounded geometric adjustment does not change the requested domain,
       // number of layers, domain, or requested method.
       if (error.layerFallback && i < 2) {
         layerRetries++;
         choice = { ...choice, firstLayerRelativeSize: originalFirstLayer * (layerRetries === 1 ? 0.65 : 1.5),
           budgetPlan: { ...choice.budgetPlan, attempt: i+2, correctionKind: 'first-layer-retry' } };
         continue;
-      }
-      if (!best && error.solverQualityFailure === true && i < 2) {
-        const refined = refineFailedQuality(choice);
-        if (refined) { choice = refined; continue; }
       }
       break;
     }

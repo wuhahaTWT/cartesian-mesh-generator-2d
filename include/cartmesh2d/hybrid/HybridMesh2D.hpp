@@ -426,7 +426,7 @@ struct PureCutCellFallback2D {
 
     [[nodiscard]] bool valid() const noexcept {
         return failureMessage.empty() && topology.valid() && solverTopology.valid() &&
-               meshQuality.valid() && solverQuality.valid();
+               meshQuality.valid() && solverQuality.exportable();
     }
 };
 
@@ -737,7 +737,7 @@ resolveAutomaticHybridTransitionPlan2D(
             appliedPolicy=historicalApplied;
         }
     }
-    if (!result.success() && boundaryLayers.localReductionApplied) {
+    if (!result.success()) {
         auto directPolicy=resolvedPolicy;
         directPolicy.directLayerConnection=true;
         directPolicy.enableTerminationConstructionQualitySelection=false;

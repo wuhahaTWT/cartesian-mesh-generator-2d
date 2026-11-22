@@ -1,0 +1,3269 @@
+{
+  "format": "cartmesh2d-cutcell-cross-v1",
+  "date": "2026-10-29",
+  "branch": "codex/cfd-development",
+  "baseCommit": "ef47085a1ed2212f83a905b7b05bfc0fa1531196",
+  "scope": "Geometry and convergence diagnosis only; no product numerical code/default/quality changes; no new physical accuracy qualification.",
+  "conclusions": [
+    "On the tested single straight plane, native cutting agrees with independent AMReX 2D EB geometry.",
+    "The common production small-cell agglomerator produces quality-admissible grids on which both native SIMPLE and OpenFOAM SIMPLE converge.",
+    "Raw extreme cells are rejected by the unchanged native quality gate; successful OpenFOAM residual stopping does not erase extended checkMesh failures.",
+    "On the original fine annulus both native SIMPLE and full-corrected OpenFOAM SIMPLE exhibit growing residuals, while native coupled solves the original discrete system.",
+    "Quality-guarded annulus merges do not eliminate the minimum neighbour area ratio. They do not isolate or exclude small cells as a cause. Unique causality remains unresolved."
+  ],
+  "controls": {
+    "background": [
+      16,
+      16
+    ],
+    "domain": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "wallSlope": 0.5,
+    "wallIntercepts": {
+      "mild": 0.2375,
+      "small": 0.246875,
+      "tiny": 0.24996875
+    },
+    "nu": 0.1,
+    "Uref": 1,
+    "initialVelocity": [
+      0,
+      0
+    ],
+    "initialPressure": 0,
+    "convection": "upwind",
+    "velocityRelaxation": 0.6,
+    "pressureRelaxation": 0.25,
+    "pressurePasses": 4,
+    "nativeTolerance": 1e-08,
+    "nativeLinear": "strict",
+    "openfoamStopping": "separate OpenFOAM residualControl p/U 1e-8, not the native normalization",
+    "exactVelocity": "u=(y-.5*x-b)/1.25; v=.5*u",
+    "exactPressure": "constant; remove volume-weighted mean for error",
+    "errorUnits": {
+      "velocityL2": "m/s",
+      "pressureL2": "m2/s2"
+    },
+    "aggregationThreshold": 0.1
+  },
+  "limits": [
+    "Only single straight-plane reference geometry; not a curved/multiple-cut or adaptive-AMR generator qualification.",
+    "Shared native topology assembly and optional agglomerator mean these components are not independently cross-validated.",
+    "Across severity levels the wall intercept changes slightly; each within-level source comparison is matched, but severity is not a pure fixed-geometry area intervention.",
+    "Finite-volume spatial operators and stopping normalizations differ across solvers. No iteration-count or speed equivalence is asserted.",
+    "All twelve external matrix meshes passed standard checkMesh but failed at least one extended check. Errors and convergence are separately reported.",
+    "Original l5/l6/l7 have different polygon faceting; these observations are not a fixed-geometry convergence series.",
+    "First native-default-initialization matrix runs were excluded; only explicit-rest runs are in final matrix results."
+  ],
+  "provenance": {
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "amrex": {
+      "reportedVersion": "26.08",
+      "sourcePath": "/Users/Zhuanz/Desktop/mesh-reference-sources/amrex-development",
+      "upstream": "https://github.com/AMReX-Codes/amrex",
+      "gitCommit": null,
+      "sourceTreeSha256": "c5587d3b01b1f5ba61d5e352fcd26826fda62f959b29d77a20ed824bb693b06a",
+      "sourceTreeHashDefinition": "sorted relative path NUL file SHA256 newline; Src and Tools/CMake suffixes .H/.h/.cpp/.c/.cmake/.in plus root CMakeLists.txt",
+      "hashedFileCount": 782,
+      "spacedim": 2,
+      "small_volfrac": 0,
+      "geometryMomentBudget": 1e-09
+    },
+    "openfoam": {
+      "version": "OpenCFD 2606",
+      "platform": "linuxARM64GccDPInt32Opt",
+      "image": "opencfd/openfoam-run:2606",
+      "digest": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+      "referenceSource": "https://www.openfoam.com/",
+      "initialEntryPointAttempt": "Image /openfoam/run entrypoint did not execute intended shell command; excluded. Explicit /bin/bash and container user 0 used for actual runs."
+    },
+    "sources": {
+      "tools/benchmarks/cutcell_cross.py": "c1031b0f3ebb7ce75f913a69a070692d7754dd4397fb3fcc5a24687d20937f4c",
+      "tools/benchmarks/annulus_merge_probe.cpp": "52bbdac68753ae4df19a1080f154077c1b2d5f3a5e8b25683158420f5e5400a8",
+      "tools/benchmarks/amrex_cutcell/main.cpp": "c7a3d81f8e9b7e827e7b30cf42e7dd4ba9b6e589a8f710d14bebc6da32111c46",
+      "tools/benchmarks/amrex_cutcell/CMakeLists.txt": "ec695ebed517883af656214b555bbd71cc197a5e155f1e715af864c358136198"
+    },
+    "binaries": {
+      "build/cartmesh2d_flow_cli": "c1fe7900494b94390846b71ee302621fd4674970777efb245cabab3b7893b660",
+      "build/libcartmesh2d.a": "703359b5c8eccf2783faeab44bf034a6da8e60d31371ae3a7f1f96e245dc233f",
+      "build/libcartmesh2d_fv.a": "3660bb2607f28c35324ebae18c5280024385b2c0d394711394f450805e9d7fef",
+      "outputs/cutcell-cross/annulus_merge_probe": "243154d2646ba228cd6edbb741584ef4dc51bf2199c4f9a3646d3cf7cb08c4bd",
+      "outputs/cutcell-cross/amrex-build/cutcell_reference": "15bccc2788cafeea3c8fbfffb7469d5d32db2b6b2932d232f625064c39de879b"
+    }
+  },
+  "geometryComparison": [
+    {
+      "severity": "mild",
+      "mode": "raw",
+      "cellsNative": 144,
+      "cellsAMReX": 144,
+      "matchedPolygons": 144,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 0.0,
+      "maxMatchedCentreDifference": 0.0
+    },
+    {
+      "severity": "mild",
+      "mode": "merged",
+      "cellsNative": 136,
+      "cellsAMReX": 136,
+      "matchedPolygons": 136,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 0.0,
+      "maxMatchedCentreDifference": 0.0
+    },
+    {
+      "severity": "small",
+      "mode": "raw",
+      "cellsNative": 144,
+      "cellsAMReX": 144,
+      "matchedPolygons": 144,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 1.734723475976807e-18,
+      "maxMatchedCentreDifference": 5.551115123125783e-17
+    },
+    {
+      "severity": "small",
+      "mode": "merged",
+      "cellsNative": 136,
+      "cellsAMReX": 136,
+      "matchedPolygons": 136,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 1.734723475976807e-18,
+      "maxMatchedCentreDifference": 5.551115123125783e-17
+    },
+    {
+      "severity": "tiny",
+      "mode": "raw",
+      "cellsNative": 144,
+      "cellsAMReX": 144,
+      "matchedPolygons": 144,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 0.0,
+      "maxMatchedCentreDifference": 0.0
+    },
+    {
+      "severity": "tiny",
+      "mode": "merged",
+      "cellsNative": 136,
+      "cellsAMReX": 136,
+      "matchedPolygons": 136,
+      "allPolygonsMatched": true,
+      "maxMatchedAreaDifference": 0.0,
+      "maxMatchedCentreDifference": 0.0
+    }
+  ],
+  "geometryRepeat": [
+    {
+      "mesh": "amrex-tiny-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "19e7af6a6fd1455d1065dc5bcdc65958b331a673c0f865e4d25338ca4353ca2d"
+    },
+    {
+      "mesh": "amrex-tiny-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "a7741af1c31c5fe36c939bbf608ed2c356ceeef67da574b1774e4de2dfee34ba"
+    },
+    {
+      "mesh": "amrex-small-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "c2d0882c358675aab44daa10dd171354ffd891eae4c2732147cdab386e6ccc89"
+    },
+    {
+      "mesh": "native-tiny-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "e6c4dba8cc79052db85da4aec418948de65016128ea27808103cb3840989924f"
+    },
+    {
+      "mesh": "native-small-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "6990d5d371a6fd5e6985f6c6db27ce986bf890cd46ab591faf4b09479d956786"
+    },
+    {
+      "mesh": "native-mild-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "5925da5c0bce274458fcb0a8b07ed80a6ea9a29a68100faeeb1dd2d53686c696"
+    },
+    {
+      "mesh": "amrex-small-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "894ce2f429e96d4b883b27c83c59d8a2e86836bb1523c5ccc652011d6b422dde"
+    },
+    {
+      "mesh": "amrex-mild-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "5925da5c0bce274458fcb0a8b07ed80a6ea9a29a68100faeeb1dd2d53686c696"
+    },
+    {
+      "mesh": "native-small-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "b57c1f8126e558f22c141fe8c6c827813961b377af184119c80d6654d5452b1d"
+    },
+    {
+      "mesh": "amrex-mild-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "9c44c19f43b41c5746dcbcc197f112c6e26ad7bb8db64c22156aad10583d0894"
+    },
+    {
+      "mesh": "native-mild-raw.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "9061ede8f86be37b33af53764e92ac91b379cde5e2424242907a3b97f9e1ae6a"
+    },
+    {
+      "mesh": "native-tiny-merged.solver.cm2d",
+      "sameBytes": true,
+      "sha256": "19e7af6a6fd1455d1065dc5bcdc65958b331a673c0f865e4d25338ca4353ca2d"
+    }
+  ],
+  "matrix": [
+    {
+      "name": "native-mild-raw",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.2375,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 0.0399999999999999,
+        "mergedSmallCells": 0,
+        "area": 0.5125,
+        "exactArea": 0.5125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.15634583300561644,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 84,
+          "converged": true,
+          "momentumResidual": 2.8867045104981393e-09,
+          "continuity": 7.221489031761224e-12,
+          "velocityChange": 8.8709335165126e-09,
+          "pressureChange": 7.188678465022852e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005553286387207947,
+            "pressureL2": 0.003511700490474754
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-raw-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04061904099944513,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.645569793874217e-14,
+          "continuity": 3.982274579539255e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005553156097540084,
+            "pressureL2": 0.003511701559501889
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 114,
+        "lastIteration": 114.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-mild-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.9237650830036728,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0005741450458240118,
+          "pressureL2": 0.0034656422008210513
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.0778712515182338e-10,
+            "final": 1.5709994481775673e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 1.1769236599384057e-10,
+            "final": 1.6325192474823515e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 9.150585673086108e-09,
+            "final": 2.37849187791131e-12,
+            "iterations": 19
+          },
+          {
+            "field": "p",
+            "initial": 2.963090626458213e-10,
+            "final": 6.0668958253037105e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 2.1410237694907135e-11,
+            "final": 3.889846741207033e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 4.1395124152920276e-12,
+            "final": 4.1395124152920276e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 2.5276719233951136e-14, global = 4.9780746090340888e-17, cumulative = 8.2602653016233512e-16",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.4425516376733754e-08,
+        "v": 3.231453807317486e-08,
+        "p": 4.084882931649353e-08
+      }
+    },
+    {
+      "name": "native-mild-merged",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.2375,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 0.0399999999999999,
+        "mergedSmallCells": 8,
+        "area": 0.5125,
+        "exactArea": 0.5125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.039721042005112395,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 84,
+          "converged": true,
+          "momentumResidual": 2.8886361686975017e-09,
+          "continuity": 1.9354561749672546e-12,
+          "velocityChange": 8.883791418525489e-09,
+          "pressureChange": 7.482298808339666e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005545096595129585,
+            "pressureL2": 0.0035031934655677935
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-mild-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.03774662500654813,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.5789573291816222e-14,
+          "continuity": 3.89059649329221e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005544966367446654,
+            "pressureL2": 0.0035031944432981415
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-mild-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.762248750004801,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.000893869045820263,
+          "pressureL2": 0.0058406225460254846
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.450045152331408e-10,
+            "final": 3.618321246910535e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.234542996597419e-10,
+            "final": 3.331717062018035e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 9.399420687101785e-09,
+            "final": 8.840514461643669e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.6384112986617084e-10,
+            "final": 7.612950412477602e-12,
+            "iterations": 13
+          },
+          {
+            "field": "p",
+            "initial": 8.76093659798852e-12,
+            "final": 8.76093659798852e-12,
+            "iterations": 0
+          },
+          {
+            "field": "p",
+            "initial": 8.76093659798852e-12,
+            "final": 8.76093659798852e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.3567697722747562e-13, global = 8.3794283757644125e-18, cumulative = 9.4437975816781276e-17",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.453097968148967e-08,
+        "v": 3.2301229080378135e-08,
+        "p": 4.260194893732083e-08
+      }
+    },
+    {
+      "name": "amrex-mild-raw",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.2375,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 0.03999999999999988,
+        "mergedSmallCells": 0,
+        "area": 0.5125,
+        "exactArea": 0.5125,
+        "momentAreaError": 1.3877787807814457e-17,
+        "momentCentreError": 4.449557262054371e-16,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04101283299678471,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 84,
+          "converged": true,
+          "momentumResidual": 2.8867044919799415e-09,
+          "continuity": 7.223667193925747e-12,
+          "velocityChange": 8.87093350300292e-09,
+          "pressureChange": 7.188706256084877e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.000555328638720793,
+            "pressureL2": 0.0035117004904749206
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-raw-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04056095799023751,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.6394314303767935e-14,
+          "continuity": 3.458604930228756e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005553156097540092,
+            "pressureL2": 0.0035117015595017955
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 114,
+        "lastIteration": 114.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-mild-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7040688330016565,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0005741450458240135,
+          "pressureL2": 0.0034656422008209624
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.077871546500496e-10,
+            "final": 1.5709992309969115e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 1.1769241717123417e-10,
+            "final": 1.6325197196931412e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 9.150604987449172e-09,
+            "final": 2.3784988001314786e-12,
+            "iterations": 19
+          },
+          {
+            "field": "p",
+            "initial": 2.9630667441077837e-10,
+            "final": 6.0670218093892855e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 2.1411043966810033e-11,
+            "final": 3.88997601574034e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 4.139458762873406e-12,
+            "final": 4.139458762873406e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 2.520733690590092e-14, global = -2.5419252153699604e-17, cumulative = 4.3339990196771987e-16",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.4425516376733754e-08,
+        "v": 3.2314538100930434e-08,
+        "p": 4.0848817397208526e-08
+      }
+    },
+    {
+      "name": "amrex-mild-merged",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.2375,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 0.03999999999999988,
+        "mergedSmallCells": 8,
+        "area": 0.5125,
+        "exactArea": 0.5125,
+        "momentAreaError": 1.3877787807814457e-17,
+        "momentCentreError": 4.449557262054371e-16,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04035329099860974,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 84,
+          "converged": true,
+          "momentumResidual": 2.8886361686975017e-09,
+          "continuity": 1.9354561749672546e-12,
+          "velocityChange": 8.883791418525489e-09,
+          "pressureChange": 7.482298808339666e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005545096595129585,
+            "pressureL2": 0.0035031934655677935
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-mild-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04020349998609163,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.5789573291816222e-14,
+          "continuity": 3.89059649329221e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.550094363217855e-18,
+          "exactErrors": {
+            "velocityL2": 0.0005544966367446654,
+            "pressureL2": 0.0035031944432981415
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-mild-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7062344589940039,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.000893869045820263,
+          "pressureL2": 0.0058406225460254846
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.450045152331408e-10,
+            "final": 3.618321246910535e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.234542996597419e-10,
+            "final": 3.331717062018035e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 9.399420687101785e-09,
+            "final": 8.840514461643669e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.6384112986617084e-10,
+            "final": 7.612950412477602e-12,
+            "iterations": 13
+          },
+          {
+            "field": "p",
+            "initial": 8.76093659798852e-12,
+            "final": 8.76093659798852e-12,
+            "iterations": 0
+          },
+          {
+            "field": "p",
+            "initial": 8.76093659798852e-12,
+            "final": 8.76093659798852e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.3567697722747562e-13, global = 8.3794283757644125e-18, cumulative = 9.4437975816781276e-17",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.453097968148967e-08,
+        "v": 3.2301229080378135e-08,
+        "p": 4.260194893732083e-08
+      }
+    },
+    {
+      "name": "native-small-raw",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.246875,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 0.0024999999999999827,
+        "mergedSmallCells": 0,
+        "area": 0.503125,
+        "exactArea": 0.503125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 30
+      },
+      "native": {
+        "simple": {
+          "status": "rejected-by-original-quality-gate"
+        },
+        "coupled": {
+          "status": "rejected-by-original-quality-gate"
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 115,
+        "lastIteration": 115.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-small-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7089462089934386,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0006856220066622171,
+          "pressureL2": 0.004423134471404261
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.1705120716379066e-10,
+            "final": 1.7351122190548352e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 9.598095914746926e-11,
+            "final": 9.598095914746926e-11,
+            "iterations": 0
+          },
+          {
+            "field": "p",
+            "initial": 9.271093542627761e-09,
+            "final": 3.607148257846587e-12,
+            "iterations": 12
+          },
+          {
+            "field": "p",
+            "initial": 4.270253437985182e-10,
+            "final": 6.603459270394464e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 3.0905398938819744e-11,
+            "final": 5.2490151050997314e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 5.711016215458781e-12,
+            "final": 5.711016215458781e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 8.2432642455469757e-14, global = 2.5882380666535789e-17, cumulative = -1.2779044026227157e-16",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1",
+          "***Faces with small interpolation weight (< 0.050000000000000003) found, number of faces: 15",
+          "***Faces with small volume ratio (< 0.01) found, number of faces: 15"
+        ]
+      }
+    },
+    {
+      "name": "native-small-merged",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.246875,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 0.0024999999999999827,
+        "mergedSmallCells": 8,
+        "area": 0.503125,
+        "exactArea": 0.503125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.040801458992064,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 82,
+          "converged": true,
+          "momentumResidual": 3.069983208559833e-09,
+          "continuity": 4.573609520643789e-12,
+          "velocityChange": 9.411513645260773e-09,
+          "pressureChange": 7.92938863237974e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.146061087811788e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005470440086713071,
+            "pressureL2": 0.0034795393827227327
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-small-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04064879099314567,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.279381240293112e-14,
+          "continuity": 3.6498023374986316e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.146061087811788e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005470304859040886,
+            "pressureL2": 0.0034795405708040548
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-small-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.6971442909998586,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0008275132235799278,
+          "pressureL2": 0.0052945545548139196
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.2449567637520174e-10,
+            "final": 3.289149064712752e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.1926215009253518e-10,
+            "final": 3.2946214477073974e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.174487557016833e-09,
+            "final": 7.963004924670604e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.1295802057231406e-10,
+            "final": 7.343935696040737e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.45884400324555e-11,
+            "final": 5.452931646226319e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 5.509880909919501e-12,
+            "final": 5.509880909919501e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.2795376084102948e-13, global = 7.399174764089744e-18, cumulative = 1.8763095050240042e-16",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.6323291924554866e-08,
+        "v": 3.3419116834965124e-08,
+        "p": 4.419965745055404e-08
+      }
+    },
+    {
+      "name": "amrex-small-raw",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.246875,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 0.0024999999999999814,
+        "mergedSmallCells": 0,
+        "area": 0.503125,
+        "exactArea": 0.503125,
+        "momentAreaError": 1.734723475976807e-18,
+        "momentCentreError": 8.881784197001252e-16,
+        "qualityIssues": 30
+      },
+      "native": {
+        "simple": {
+          "status": "rejected-by-original-quality-gate"
+        },
+        "coupled": {
+          "status": "rejected-by-original-quality-gate"
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 115,
+        "lastIteration": 115.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-small-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7122526250022929,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0006856220066622288,
+          "pressureL2": 0.004423134471404577
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.1705126236943196e-10,
+            "final": 1.735111971599076e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 9.598094272585219e-11,
+            "final": 9.598094272585219e-11,
+            "iterations": 0
+          },
+          {
+            "field": "p",
+            "initial": 9.27109137156822e-09,
+            "final": 3.610282868873687e-12,
+            "iterations": 12
+          },
+          {
+            "field": "p",
+            "initial": 4.2702847994721034e-10,
+            "final": 6.605489417737779e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 3.090699241511747e-11,
+            "final": 5.249485966994737e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 5.711417985637402e-12,
+            "final": 5.711417985637402e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 8.2417112816626859e-14, global = 7.7600844546589637e-18, cumulative = 3.9432172064007356e-16",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1",
+          "***Faces with small interpolation weight (< 0.050000000000000003) found, number of faces: 15",
+          "***Faces with small volume ratio (< 0.01) found, number of faces: 15"
+        ]
+      }
+    },
+    {
+      "name": "amrex-small-merged",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.246875,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 0.0024999999999999814,
+        "mergedSmallCells": 8,
+        "area": 0.503125,
+        "exactArea": 0.503125,
+        "momentAreaError": 1.734723475976807e-18,
+        "momentCentreError": 8.881784197001252e-16,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.03965733300719876,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 82,
+          "converged": true,
+          "momentumResidual": 3.0699832252364297e-09,
+          "continuity": 4.573631824661572e-12,
+          "velocityChange": 9.41151342332701e-09,
+          "pressureChange": 7.929386108655734e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.146061087811788e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005470440086712842,
+            "pressureL2": 0.0034795393827228424
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-small-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.04048312500526663,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.2795363406416954e-14,
+          "continuity": 3.650742587311015e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 4.146061087811788e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005470304859041041,
+            "pressureL2": 0.0034795405708040244
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-small-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7046482080040732,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0008275132235799317,
+          "pressureL2": 0.005294554554813602
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.2449566373789878e-10,
+            "final": 3.289148344697402e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.192621589793427e-10,
+            "final": 3.294621094038818e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.174487875665009e-09,
+            "final": 7.963011350458183e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.129589504505663e-10,
+            "final": 7.344127345231517e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.4588563202656037e-11,
+            "final": 5.453052827913633e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 5.510031215277026e-12,
+            "final": 5.510031215277026e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.2788843934368098e-13, global = -1.913347467437544e-17, cumulative = 2.4877725936062239e-16",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.6323291869043715e-08,
+        "v": 3.341911666843167e-08,
+        "p": 4.419965788770436e-08
+      }
+    },
+    {
+      "name": "native-tiny-raw",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.24996875,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 2.5000000000016696e-07,
+        "mergedSmallCells": 0,
+        "area": 0.50003125,
+        "exactArea": 0.50003125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 30
+      },
+      "native": {
+        "simple": {
+          "status": "rejected-by-original-quality-gate"
+        },
+        "coupled": {
+          "status": "rejected-by-original-quality-gate"
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-tiny-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7157001669984311,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0008054711520570671,
+          "pressureL2": 0.005142083318738163
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.6853892884783903e-10,
+            "final": 2.45737601023582e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 1.794543210746278e-10,
+            "final": 2.6431692197876088e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.140164204815251e-09,
+            "final": 8.514696024772767e-12,
+            "iterations": 11
+          },
+          {
+            "field": "p",
+            "initial": 3.604701927278531e-10,
+            "final": 5.165648486354667e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.7691614641021677e-11,
+            "final": 3.3601310434470545e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 3.4655611093195627e-12,
+            "final": 3.4655611093195627e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 5.534195975069143e-14, global = 1.1508901796308458e-17, cumulative = 1.7147092744983801e-15",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1",
+          "***Faces with small interpolation weight (< 0.050000000000000003) found, number of faces: 15",
+          "***Faces with small volume ratio (< 0.01) found, number of faces: 15"
+        ]
+      }
+    },
+    {
+      "name": "native-tiny-merged",
+      "geometry": {
+        "source": "native",
+        "n": 16,
+        "intercept": 0.24996875,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 2.5000000000016696e-07,
+        "mergedSmallCells": 8,
+        "area": 0.5000312500000001,
+        "exactArea": 0.50003125,
+        "momentAreaError": 0,
+        "momentCentreError": 0,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.040716792005696334,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 82,
+          "converged": true,
+          "momentumResidual": 2.754828779125838e-09,
+          "continuity": 4.556458856563983e-12,
+          "velocityChange": 8.458986140957744e-09,
+          "pressureChange": 7.1340935692779955e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 2.5441550916371653e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005443773076240653,
+            "pressureL2": 0.003469824378078152
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/native-tiny-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.038698958000168204,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.1987209919175596e-14,
+          "continuity": 3.935496000304083e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 2.5441550916371653e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005443652634141143,
+            "pressureL2": 0.0034698255171272665
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/native-tiny-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7174721670016879,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0008071917262208168,
+          "pressureL2": 0.0051518460903430515
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.0773214849523385e-10,
+            "final": 3.0390920638871504e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.125336697387015e-10,
+            "final": 3.19187185777062e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.522266748076921e-09,
+            "final": 6.903483562778417e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.3856042500122815e-10,
+            "final": 6.7558661072272355e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.7222089993872182e-11,
+            "final": 4.430771306539684e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 4.4459921202326146e-12,
+            "final": 4.4459921202326146e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.0570446292714787e-13, global = 1.6535435693999413e-17, cumulative = 1.2150350576947619e-15",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.1304882625325945e-08,
+        "v": 2.972654039590239e-08,
+        "p": 3.946964144494608e-08
+      }
+    },
+    {
+      "name": "amrex-tiny-raw",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.24996875,
+        "rawCells": 144,
+        "cells": 144,
+        "rawMinFraction": 2.500000000001416e-07,
+        "mergedSmallCells": 0,
+        "area": 0.50003125,
+        "exactArea": 0.50003125,
+        "momentAreaError": 3.05990652195616e-20,
+        "momentCentreError": 1.1077282661246642e-13,
+        "qualityIssues": 30
+      },
+      "native": {
+        "simple": {
+          "status": "rejected-by-original-quality-gate"
+        },
+        "coupled": {
+          "status": "rejected-by-original-quality-gate"
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-tiny-raw-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7077191660064273,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.000805471152061206,
+          "pressureL2": 0.005142083318735788
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 1.6853895157775677e-10,
+            "final": 2.457377133091852e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 1.79454363191356e-10,
+            "final": 2.643170944930702e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.140166731060692e-09,
+            "final": 8.51487488337116e-12,
+            "iterations": 11
+          },
+          {
+            "field": "p",
+            "initial": 3.604702687027364e-10,
+            "final": 5.166177373462698e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.769169108370991e-11,
+            "final": 3.3601630518515225e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 3.4655848105071254e-12,
+            "final": 3.4655848105071254e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 5.5359347639405086e-14, global = 2.6102978298149269e-17, cumulative = 1.2589780981215531e-15",
+        "extendedFailures": [
+          "***Cells with small determinant (< 0.001) found, number of cells: 1",
+          "***Faces with small interpolation weight (< 0.050000000000000003) found, number of faces: 15",
+          "***Faces with small volume ratio (< 0.01) found, number of faces: 15"
+        ]
+      }
+    },
+    {
+      "name": "amrex-tiny-merged",
+      "geometry": {
+        "source": "amrex",
+        "n": 16,
+        "intercept": 0.24996875,
+        "rawCells": 144,
+        "cells": 136,
+        "rawMinFraction": 2.500000000001416e-07,
+        "mergedSmallCells": 8,
+        "area": 0.5000312500000001,
+        "exactArea": 0.50003125,
+        "momentAreaError": 3.05990652195616e-20,
+        "momentCentreError": 1.1077282661246642e-13,
+        "qualityIssues": 0
+      },
+      "native": {
+        "simple": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "simple",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged-rest-simple"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.040068332993541844,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 82,
+          "converged": true,
+          "momentumResidual": 2.754828779125838e-09,
+          "continuity": 4.556458856563983e-12,
+          "velocityChange": 8.458986140957744e-09,
+          "pressureChange": 7.1340935692779955e-09,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 2.5441550916371653e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005443773076240653,
+            "pressureL2": 0.003469824378078152
+          }
+        },
+        "coupled": {
+          "run": {
+            "command": [
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+              "--mesh",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.boundaries",
+              "--nu",
+              ".1",
+              "--speed",
+              "1",
+              "--convection",
+              "upwind",
+              "--viscous-stress",
+              "symmetric",
+              "--coupling",
+              "coupled",
+              "--linear-policy",
+              "strict",
+              "--max-iterations",
+              "1500",
+              "--tolerance",
+              "1e-8",
+              "--initial-guess",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged.rest.csv",
+              "--profile",
+              "--output",
+              "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/cutcell-cross/matrix/amrex-tiny-merged-rest-coupled"
+            ],
+            "exitCode": 0,
+            "wallSeconds": 0.040436750001390465,
+            "budgetSeconds": 60
+          },
+          "status": "converged",
+          "iterations": 10,
+          "converged": true,
+          "momentumResidual": 2.1987209919175596e-14,
+          "continuity": 3.935496000304083e-15,
+          "velocityChange": 0,
+          "pressureChange": 0,
+          "strictLinearFinal": true,
+          "globalRelativeImbalance": 2.5441550916371653e-17,
+          "exactErrors": {
+            "velocityL2": 0.0005443652634141143,
+            "pressureL2": 0.0034698255171272665
+          }
+        }
+      },
+      "openfoam": {
+        "status": "converged",
+        "declaredIterations": 110,
+        "lastIteration": 110.0,
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "run": {
+          "command": [
+            "docker",
+            "run",
+            "--rm",
+            "--user",
+            "0",
+            "--entrypoint",
+            "/bin/bash",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/work",
+            "-w",
+            "/work/outputs/cutcell-cross/matrix/amrex-tiny-merged-openfoam",
+            "opencfd/openfoam-run:2606",
+            "-lc",
+            "source /usr/lib/openfoam/openfoam2606/etc/bashrc; checkMesh > checkMesh.log 2>&1; checkMesh -allGeometry -allTopology > checkMesh-extended.log 2>&1; timeout 45 simpleFoam > solve.log 2>&1"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.7076212500105612,
+          "budgetSeconds": 60
+        },
+        "exactErrors": {
+          "velocityL2": 0.0008071917262208168,
+          "pressureL2": 0.0051518460903430515
+        },
+        "lastLinearResiduals": [
+          {
+            "field": "Ux",
+            "initial": 2.0773214849523385e-10,
+            "final": 3.0390920638871504e-11,
+            "iterations": 1
+          },
+          {
+            "field": "Uy",
+            "initial": 2.125336697387015e-10,
+            "final": 3.19187185777062e-11,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 8.522266748076921e-09,
+            "final": 6.903483562778417e-12,
+            "iterations": 16
+          },
+          {
+            "field": "p",
+            "initial": 3.3856042500122815e-10,
+            "final": 6.7558661072272355e-12,
+            "iterations": 7
+          },
+          {
+            "field": "p",
+            "initial": 1.7222089993872182e-11,
+            "final": 4.430771306539684e-12,
+            "iterations": 1
+          },
+          {
+            "field": "p",
+            "initial": 4.4459921202326146e-12,
+            "final": 4.4459921202326146e-12,
+            "iterations": 0
+          }
+        ],
+        "lastContinuityReport": "sum local = 1.0570446292714787e-13, global = 1.6535435693999413e-17, cumulative = 1.2150350576947619e-15",
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 7"
+        ]
+      },
+      "nativeSameDiscreteSolutionMaxDifference": {
+        "u": 4.1304882625325945e-08,
+        "v": 2.972654039590239e-08,
+        "p": 3.946964144494608e-08
+      }
+    }
+  ],
+  "originalAnnuli": [
+    {
+      "level": 5,
+      "cells": 484,
+      "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+      "boundarySha256": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da",
+      "minArea": 0.0001046325914297925,
+      "maxArea": 0.006601562500000008,
+      "minAreaOverMaxArea": 0.015849670654453755,
+      "minNeighbourAreaRatio": 0.0362296807978717,
+      "simple": {
+        "prefix": "outputs/cutcell-cross/original-l5-simple",
+        "status": "converged",
+        "cells": 484,
+        "iterations": 176,
+        "momentumResidual": 3.206529330343606e-09,
+        "continuity": 3.2143264949117407e-12,
+        "velocityChange": 9.635565029303325e-09,
+        "pressureChange": 9.262808872196274e-09,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "build/laminar-fixtures/annulus-l5.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "build/laminar-fixtures/annulus-l5.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "simple",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/original-l5-simple"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 0.24388320799334906,
+          "budgetSeconds": 60
+        }
+      }
+    },
+    {
+      "level": 6,
+      "cells": 1672,
+      "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+      "boundarySha256": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273",
+      "minArea": 3.0778905582067805e-05,
+      "maxArea": 0.0018696523743740874,
+      "minAreaOverMaxArea": 0.016462368087207555,
+      "minNeighbourAreaRatio": 0.026365606292427377,
+      "simple": {
+        "prefix": "outputs/cutcell-cross/original-l6-simple",
+        "status": "converged",
+        "cells": 1672,
+        "iterations": 578,
+        "momentumResidual": 3.307565320894223e-09,
+        "continuity": 7.080498402674184e-12,
+        "velocityChange": 9.92336399202878e-09,
+        "pressureChange": 5.941017021772087e-09,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "build/laminar-fixtures/annulus-l6.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "build/laminar-fixtures/annulus-l6.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "simple",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/original-l6-simple"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 3.7579668749967823,
+          "budgetSeconds": 60
+        }
+      }
+    },
+    {
+      "level": 7,
+      "cells": 6208,
+      "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+      "boundarySha256": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad",
+      "minArea": 5.372906372004136e-07,
+      "maxArea": 0.00046164693927073,
+      "minAreaOverMaxArea": 0.0011638561668992735,
+      "minNeighbourAreaRatio": 0.01169846026329623,
+      "simple": {
+        "prefix": "outputs/cutcell-cross/original-simple",
+        "status": "failed",
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 120,
+          "momentumResidual": 358250.8364302442,
+          "continuity": 7.163583928193359e-07,
+          "velocityChange": 268375.4398104987,
+          "pressureChange": 11285217631.632938
+        },
+        "lastError": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.67798e-07, target=0.018095, diagonal-scaled residual=4.53916e-11, diagonal-scaled target=3e-11, rhs=1.8095e+09"
+      },
+      "coupled": {
+        "prefix": "outputs/cutcell-cross/original-coupled-strict",
+        "status": "converged",
+        "cells": 6208,
+        "iterations": 10,
+        "momentumResidual": 5.915852375075677e-13,
+        "continuity": 1.544670572400831e-13,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "build/laminar-fixtures/annulus-l7.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "build/laminar-fixtures/annulus-l7.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "coupled",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/original-coupled-strict"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 5.9498586660047295,
+          "budgetSeconds": 60
+        }
+      },
+      "openfoam": {
+        "status": "not-converged-with-growing-residuals",
+        "exitCode": 124,
+        "budgetSeconds": 90,
+        "lastIteration": 797,
+        "lastContinuityReport": "sum local = 1.4959889685869703e+62, global = 5.2820733744250995e+55, cumulative = 8.2491875264912302e+55",
+        "standardCheckMesh": true,
+        "extendedCheckMesh": false,
+        "extendedFailures": [
+          "***Concave cells (using face planes) found, number of cells: 84"
+        ],
+        "note": "Timeout is not convergence. Final accepted field not produced; no accuracy metric inferred."
+      }
+    }
+  ],
+  "annulusMerges": [
+    {
+      "name": "annulus-ratio01",
+      "metrics": {
+        "selectionMetric": "cell area / largest face-neighbour area",
+        "threshold": 0.01,
+        "selected": 0,
+        "inputCells": 6208,
+        "cells": 6208,
+        "areaBefore": 2.3559579381994737,
+        "areaAfter": 2.3559579381994737,
+        "areaError": 0,
+        "minNeighbourAreaRatio": 0.01169846026329612,
+        "qualityIssues": 0
+      },
+      "quality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 1.8503914348294581,
+          "max_boundary_skewness": 3.7461281663306814,
+          "max_concavity_deg": 1.406250000005116,
+          "max_cell_aspect": 60.78235249015395,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.054365856180213966,
+          "min_volume_ratio": 0.011698460263296153,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "simple": {
+        "prefix": "outputs/cutcell-cross/annulus-ratio01-simple",
+        "status": "failed",
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 120,
+          "momentumResidual": 358260.1799954084,
+          "continuity": 7.162536778709701e-07,
+          "velocityChange": 268382.4000089546,
+          "pressureChange": 11285806402.820435
+        },
+        "lastError": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=1.40898e-07, target=0.0180959, diagonal-scaled residual=4.1113e-11, diagonal-scaled target=3e-11, rhs=1.80959e+09",
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-ratio01.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-ratio01.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "simple",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-ratio01-simple"
+          ],
+          "exitCode": 1,
+          "wallSeconds": 12.152942958011408,
+          "budgetSeconds": 60
+        }
+      },
+      "coupled": {
+        "prefix": "outputs/cutcell-cross/annulus-ratio01-coupled",
+        "status": "converged",
+        "cells": 6208,
+        "iterations": 10,
+        "momentumResidual": 5.903823975829116e-13,
+        "continuity": 1.5470841201702075e-13,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-ratio01.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-ratio01.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "coupled",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-ratio01-coupled"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 5.885932416989817,
+          "budgetSeconds": 60
+        }
+      }
+    },
+    {
+      "name": "annulus-batch-recheck02",
+      "metrics": {
+        "selectionMetric": "cell area / largest face-neighbour area",
+        "threshold": 0.02,
+        "selected": 9,
+        "inputCells": 6208,
+        "cells": 6199,
+        "areaBefore": 2.3559579381994737,
+        "areaAfter": 2.3559579381994746,
+        "areaError": 8.881784197001252e-16,
+        "minNeighbourAreaRatio": 0.02896067313466857,
+        "qualityGuardedCandidates": 0,
+        "rejectedCandidates": 0,
+        "qualityIssues": 9
+      },
+      "quality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": false,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 5.1746690768868735,
+          "max_boundary_skewness": 3.7461281663306814,
+          "max_concavity_deg": 71.01562500000091,
+          "max_cell_aspect": 60.78235249015395,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.054365856180213966,
+          "min_volume_ratio": 0.02896067313466857,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 9,
+        "issues": [
+          {
+            "code": 11,
+            "cell_id": 3707,
+            "edge_id": 3691,
+            "measured": -0.0010206356545768651,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 11,
+            "cell_id": 1837,
+            "edge_id": 9256,
+            "measured": -0.00916677925022391,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 1837,
+            "edge_id": 9256,
+            "measured": 5.1746690768868735,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 6140,
+            "edge_id": 9258,
+            "measured": -0.00916677925022391,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 6140,
+            "edge_id": 9258,
+            "measured": 5.1746690768868735,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 2791,
+            "edge_id": 12423,
+            "measured": -0.00916677925022325,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 2791,
+            "edge_id": 12423,
+            "measured": 5.1746690768866435,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 5645,
+            "edge_id": 12424,
+            "measured": -0.00916677925022369,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 5645,
+            "edge_id": 12424,
+            "measured": 5.174669076886768,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          }
+        ]
+      }
+    },
+    {
+      "name": "annulus-batch-recheck05",
+      "metrics": {
+        "selectionMetric": "cell area / largest face-neighbour area",
+        "threshold": 0.05,
+        "selected": 30,
+        "inputCells": 6208,
+        "cells": 6178,
+        "areaBefore": 2.3559579381994737,
+        "areaAfter": 2.3559579381994746,
+        "areaError": 8.881784197001252e-16,
+        "minNeighbourAreaRatio": 0.002254369118802847,
+        "qualityGuardedCandidates": 0,
+        "rejectedCandidates": 0,
+        "qualityIssues": 27
+      },
+      "quality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": false,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 5.1746690768868735,
+          "max_boundary_skewness": 4.1819250365592495,
+          "max_concavity_deg": 73.67761653286937,
+          "max_cell_aspect": 60.78235249015395,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.009593006517915862,
+          "min_volume_ratio": 0.002254369118802847,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 27,
+        "issues": [
+          {
+            "code": 5,
+            "cell_id": 3525,
+            "edge_id": 968,
+            "measured": 4.181925036559051,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 8,
+            "edge_id": 970,
+            "measured": 4.1819250365592495,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 4181,
+            "edge_id": 2276,
+            "measured": 4.181925036559126,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 3695,
+            "edge_id": 3685,
+            "measured": -0.0010206356545768651,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 9,
+            "cell_id": 1179,
+            "edge_id": 4326,
+            "measured": 0.017726868782776056,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1179,
+            "edge_id": 4326,
+            "measured": 0.002254369118803512,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 1179,
+            "edge_id": 4457,
+            "measured": 0.009593006517915862,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 1179,
+            "edge_id": 4457,
+            "measured": 0.002254369118803051,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 2364,
+            "edge_id": 8452,
+            "measured": 0.00959300651791878,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 2364,
+            "edge_id": 8452,
+            "measured": 0.002254369118803539,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4995,
+            "edge_id": 8455,
+            "measured": 0.01772686878277071,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4995,
+            "edge_id": 8455,
+            "measured": 0.002254369118803309,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 2364,
+            "edge_id": 8521,
+            "measured": 0.01772686878277071,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 2364,
+            "edge_id": 8521,
+            "measured": 0.002254369118802847,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 9,
+            "cell_id": 4995,
+            "edge_id": 8523,
+            "measured": 0.009593006517918782,
+            "limit": 0.05,
+            "message": "internal face interpolation weight is below limit"
+          },
+          {
+            "code": 10,
+            "cell_id": 4995,
+            "edge_id": 8523,
+            "measured": 0.0022543691188035087,
+            "limit": 0.01,
+            "message": "neighbouring cell volume ratio is below limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 1832,
+            "edge_id": 9235,
+            "measured": -0.00916677925022391,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 1832,
+            "edge_id": 9235,
+            "measured": 5.1746690768868735,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 6119,
+            "edge_id": 9237,
+            "measured": -0.00916677925022391,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 6119,
+            "edge_id": 9237,
+            "measured": 5.1746690768868735,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 1960,
+            "edge_id": 10490,
+            "measured": 4.181925036558928,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 6082,
+            "edge_id": 10649,
+            "measured": 4.181925036559174,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 5,
+            "cell_id": 5690,
+            "edge_id": 11816,
+            "measured": 4.181925036559173,
+            "limit": 4,
+            "message": "boundary face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 2780,
+            "edge_id": 12396,
+            "measured": -0.00916677925022325,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 2780,
+            "edge_id": 12396,
+            "measured": 5.1746690768866435,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          },
+          {
+            "code": 11,
+            "cell_id": 5626,
+            "edge_id": 12397,
+            "measured": -0.00916677925022369,
+            "limit": 0,
+            "message": "face has nonpositive or nonfinite outward normal centre distance/bracket"
+          },
+          {
+            "code": 4,
+            "cell_id": 5626,
+            "edge_id": 12397,
+            "measured": 5.174669076886768,
+            "limit": 4,
+            "message": "internal face skewness exceeds limit"
+          }
+        ]
+      }
+    },
+    {
+      "name": "annulus-guarded02",
+      "metrics": {
+        "selectionMetric": "cell area / largest face-neighbour area",
+        "threshold": 0.02,
+        "selected": 4,
+        "inputCells": 6208,
+        "cells": 6204,
+        "areaBefore": 2.3559579381994737,
+        "areaAfter": 2.355957938199474,
+        "areaError": 4.440892098500626e-16,
+        "minNeighbourAreaRatio": 0.01169846026329612,
+        "qualityGuardedCandidates": 74,
+        "rejectedCandidates": 70,
+        "qualityIssues": 0
+      },
+      "quality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 1.8503914348294581,
+          "max_boundary_skewness": 3.7461281663306814,
+          "max_concavity_deg": 1.406250000005116,
+          "max_cell_aspect": 60.78235249015395,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.054365856180213966,
+          "min_volume_ratio": 0.011698460263296153,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "simple": {
+        "prefix": "outputs/cutcell-cross/annulus-guarded02-simple",
+        "status": "failed",
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 60,
+          "momentumResidual": 362413.5348948572,
+          "continuity": 1.1725991225340782e-06,
+          "velocityChange": 284663.4878805748,
+          "pressureChange": 25479673465.71028
+        },
+        "lastError": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.90224e-07, target=0.0238374, diagonal-scaled residual=6.53582e-11, diagonal-scaled target=3e-11, rhs=2.38374e+09",
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-guarded02.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-guarded02.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "simple",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-guarded02-simple"
+          ],
+          "exitCode": 1,
+          "wallSeconds": 6.19587258300453,
+          "budgetSeconds": 60
+        }
+      },
+      "coupled": {
+        "prefix": "outputs/cutcell-cross/annulus-guarded02-coupled-strict",
+        "status": "converged",
+        "cells": 6204,
+        "iterations": 10,
+        "momentumResidual": 1.9049163764808463e-13,
+        "continuity": 3.888638237269825e-14,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-guarded02.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-guarded02.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "coupled",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-guarded02-coupled-strict"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 6.184026625007391,
+          "budgetSeconds": 60
+        }
+      }
+    },
+    {
+      "name": "annulus-guarded05",
+      "metrics": {
+        "selectionMetric": "cell area / largest face-neighbour area",
+        "threshold": 0.05,
+        "selected": 31,
+        "inputCells": 6208,
+        "cells": 6177,
+        "areaBefore": 2.3559579381994737,
+        "areaAfter": 2.355957938199474,
+        "areaError": 4.440892098500626e-16,
+        "minNeighbourAreaRatio": 0.01169846026329612,
+        "qualityGuardedCandidates": 725,
+        "rejectedCandidates": 694,
+        "qualityIssues": 0
+      },
+      "quality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 69.129146392283,
+          "max_internal_skewness": 1.8503914348294581,
+          "max_boundary_skewness": 3.9071473822073814,
+          "max_concavity_deg": 73.67761653286937,
+          "max_cell_aspect": 60.78235249015395,
+          "min_interior_angle_deg": 1.9369057893492612,
+          "min_face_length": 0.000269479546568791,
+          "min_face_weight": 0.054365856180213966,
+          "min_volume_ratio": 0.011698460263296153,
+          "min_compactness": 0.05114853189731458
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "simple": {
+        "prefix": "outputs/cutcell-cross/annulus-guarded05-simple",
+        "status": "failed",
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 100,
+          "momentumResidual": 596370.1069834005,
+          "continuity": 3.3502970129592484e-06,
+          "velocityChange": 279028.1039686196,
+          "pressureChange": 30924972471.46967
+        },
+        "lastError": "cartmesh2d_flow_cli: Flow linear solver iteration limit reached: true residual=2.24936e-07, target=0.0271503, diagonal-scaled residual=5.41872e-11, diagonal-scaled target=3e-11, rhs=2.71503e+09",
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-guarded05.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-guarded05.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "simple",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-guarded05-simple"
+          ],
+          "exitCode": 1,
+          "wallSeconds": 9.750348916000803,
+          "budgetSeconds": 60
+        }
+      },
+      "coupled": {
+        "prefix": "outputs/cutcell-cross/annulus-guarded05-coupled",
+        "status": "converged",
+        "cells": 6177,
+        "iterations": 10,
+        "momentumResidual": 1.51722003693466e-13,
+        "continuity": 4.014078180407561e-14,
+        "velocityChange": 0,
+        "pressureChange": 0,
+        "strictLinearFinal": true,
+        "globalRelativeImbalance": 0,
+        "run": {
+          "command": [
+            "build/cartmesh2d_flow_cli",
+            "--mesh",
+            "outputs/cutcell-cross/annulus-guarded05.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "outputs/cutcell-cross/annulus-guarded05.boundaries",
+            "--nu",
+            ".1",
+            "--speed",
+            ".5",
+            "--convection",
+            "upwind",
+            "--viscous-stress",
+            "symmetric",
+            "--coupling",
+            "coupled",
+            "--linear-policy",
+            "strict",
+            "--max-iterations",
+            "1500",
+            "--tolerance",
+            "1e-8",
+            "--profile",
+            "--output",
+            "outputs/cutcell-cross/annulus-guarded05-coupled"
+          ],
+          "exitCode": 0,
+          "wallSeconds": 5.981499417001032,
+          "budgetSeconds": 60
+        }
+      }
+    },
+    {
+      "name": "annulus-ratio10",
+      "status": "rejected-no-nonsmall-neighbour",
+      "run": {
+        "command": [
+          "outputs/cutcell-cross/annulus_merge_probe",
+          "build/laminar-fixtures/annulus-l7.solver.cm2d",
+          "outputs/cutcell-cross/annulus-ratio10",
+          ".1"
+        ],
+        "exitCode": 1,
+        "wallSeconds": 0.041293208007118665,
+        "budgetSeconds": 60
+      },
+      "message": "no nonsmall neighbour for experiment"
+    }
+  ],
+  "annulusGeometryComparison": [
+    {
+      "name": "annulus-ratio01",
+      "boundarySamplesMaxDistance": 7.85429459156923e-17,
+      "oldBoundaryEdges": 984,
+      "newBoundaryEdges": 954,
+      "areaDifference": 0.0,
+      "maxCellAreaDifference": 4.87890977618477e-19,
+      "maxCellCentreDifference": 1.1102230246251565e-16
+    },
+    {
+      "name": "annulus-guarded02",
+      "boundarySamplesMaxDistance": 7.85429459156923e-17,
+      "oldBoundaryEdges": 984,
+      "newBoundaryEdges": 954,
+      "areaDifference": 0.0
+    },
+    {
+      "name": "annulus-guarded05",
+      "boundarySamplesMaxDistance": 7.85429459156923e-17,
+      "oldBoundaryEdges": 984,
+      "newBoundaryEdges": 948,
+      "areaDifference": 0.0
+    }
+  ],
+  "noopCoupledFieldDifference": {
+    "u": 9.794942634755444e-14,
+    "v": 9.886536034287019e-14,
+    "p": 1.0193345733461312e-12
+  },
+  "verification": {
+    "ctestCommand": "ctest --test-dir build -R '^(cartmesh2d_flow_(face|coupled|equation|boundary)|cartmesh2d_stage5[ab]_.*)$' --output-on-failure",
+    "ctestPassed": 6,
+    "log": "outputs/cutcell-cross/ctest.log",
+    "geometryRepeatMatched": 12,
+    "pythonSyntax": "python3 -m py_compile tools/benchmarks/cutcell_cross.py",
+    "notRun": [
+      "frontend",
+      "real App",
+      "platform CI",
+      "full CTest",
+      "spatial refinement/accuracy study"
+    ]
+  },
+  "artifacts": {
+    "archive": "cutcell-cross-fields.tar.gz",
+    "originalInput": "laminar-foundation/failure-inputs.tar.gz",
+    "consumer": "Further diagnosis of quality-admissible small-cell treatment, curved-wall discretization and momentum/pressure coupling; accepted fields are finite-grid diagnostic results, failed candidates are never substituted for them.",
+    "rebuildable": "AMReX libraries and research executables/builds remain in ignored outputs/cutcell-cross; no dependency binaries/source copies committed."
+  }
+}

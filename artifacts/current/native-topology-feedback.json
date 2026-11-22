@@ -1,0 +1,2922 @@
+{
+  "schema": "cartmesh2d-topology-feedback-results-v1",
+  "primary": {
+    "schema": "cartmesh2d-sharp-feedback-v1",
+    "status": "round-limit",
+    "method": "local discrepancy secants + full-field material probes + native acceptance",
+    "feedbackEnabled": true,
+    "problem": {
+      "nx": 36,
+      "ny": 24,
+      "width": 1.5,
+      "height": 1,
+      "viscosity": 1.0,
+      "alpha_max": 360000.0,
+      "volume_fraction": 0.3333333333333333,
+      "filter_radius": 0.055,
+      "port_width": 0.16666666666666666,
+      "case": "double-pipe",
+      "linear_residual_limit": 1e-08,
+      "reynolds": 0.0,
+      "newton_residual_limit": 1e-11,
+      "newton_iterations": 60
+    },
+    "q": 0.1,
+    "beta": 6.0,
+    "acceptedIds": [
+      0,
+      2,
+      8,
+      9,
+      15
+    ],
+    "initialId": 0,
+    "initialObjective": 95.51454303866507,
+    "physicalAccuracyQualified": false,
+    "optimizationConverged": false,
+    "controls": {
+      "rounds": 5,
+      "move": 0.15,
+      "probes": 3,
+      "seed": 0,
+      "maxSeconds": 1200.0,
+      "materialSteps": 4,
+      "nativeBacktracks": 1
+    },
+    "limits": [
+      "Online new material designs; no exact native gradient or global-optimum claim.",
+      "Objective improvements refer to one fixed native mesh/equation contract.",
+      "Round/time limits are budgets, not stationarity or mesh-independence certificates."
+    ],
+    "finalId": 15,
+    "finalObjective": 71.76930450629656,
+    "relativeReduction": 0.24860338307598073,
+    "elapsedSeconds": 13.075443083995197,
+    "nativeEvaluations": 25,
+    "successfulNativeEvaluations": 15,
+    "feedbackDrivenAcceptedSteps": 1,
+    "acceptedTopologyChanges": 1,
+    "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004",
+    "files": [
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/run.json",
+        "sha256": "8568c76e594426c512c23374e14519b7732d521d16308e01557f34b753c659fa"
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/summary.json",
+        "sha256": "a129c9ce397fec49b3392ecf7538fa77deacf9fab1e48f30864e3c4c611fc028"
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations.json",
+        "sha256": "ef05c71b879f1485050339e98f84f1f36865bf298147458d87dac008cc22ca20"
+      }
+    ],
+    "rejectedEvaluations": [
+      {
+        "id": 11,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/011-interface-close",
+        "issue": null
+      },
+      {
+        "id": 14,
+        "name": "porous-gradient",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/014-porous-gradient",
+        "issue": null
+      },
+      {
+        "id": 16,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/016-interface-close",
+        "issue": null
+      },
+      {
+        "id": 17,
+        "name": "interface-close-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/017-interface-close-half-1",
+        "issue": null
+      },
+      {
+        "id": 18,
+        "name": "interface-open",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/018-interface-open",
+        "issue": null
+      },
+      {
+        "id": 19,
+        "name": "interface-open-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/019-interface-open-half-1",
+        "issue": null
+      },
+      {
+        "id": 21,
+        "name": "interface-open",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/021-interface-open",
+        "issue": null
+      },
+      {
+        "id": 22,
+        "name": "interface-open-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/022-interface-open-half-1",
+        "issue": null
+      },
+      {
+        "id": 23,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/023-interface-close",
+        "issue": null
+      },
+      {
+        "id": 24,
+        "name": "interface-close-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/024-interface-close-half-1",
+        "issue": null
+      }
+    ],
+    "acceptedDesigns": [
+      {
+        "id": 0,
+        "name": "initial",
+        "J_B": 66.97312205409068,
+        "J_T": 95.51454303866507,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 2,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "79628bbc47f995601aa48a8402f0fd6575400285ca8a007e2856bab0dd781a15"
+            },
+            {
+              "file": "fluid-component-1.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "dc14f3a848aec6c1b9a40306c5cd68c5a0bbf32611545b01150f37d049ef424f"
+            }
+          ],
+          "vertices": 168,
+          "fluidArea": 0.5,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333333333333,
+          "sourceFieldSha256": "d7c6e90bd6fadca76eabb548f6bcecd14e6501cbb8233935f383dc772513e4d9",
+          "boundarySha256": "4e42bdae3b751dac9ae5d2dd5fc5b1ffe397b5a6d96377be3b23764a01c9d3b8",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.0,
+                0.16666666666666663,
+                0.0
+              ],
+              [
+                0.0,
+                0.16666666666666652,
+                0.0,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "outlet_0"
+              ],
+              [
+                "inlet_1",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                false
+              ],
+              [
+                false,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/material.npz",
+          "sha256": "0549b74d0f121f778b3e442446555748da72de6840eea80660915af897e7ef19"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/sharp/fluid.xy",
+          "sha256": "4e42bdae3b751dac9ae5d2dd5fc5b1ffe397b5a6d96377be3b23764a01c9d3b8"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/000-initial/native/summary.json",
+          "sha256": "f51e86ac1f97e8a0c383a95a87133113aa30147d6b2bf7122be5a92e7cc6718a"
+        }
+      },
+      {
+        "id": 2,
+        "name": "merge-shared-corridor",
+        "J_B": 74.78619182593576,
+        "J_T": 73.24831278941325,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.4999999999585622,
+              "boundarySha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.4999999999585622,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.33333333330570813,
+          "sourceFieldSha256": "f509f37594b22716066abcf3d9dfbf771516bb3923a1a13cf65f87fb76e0419f",
+          "boundarySha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/002-merge-shared-corridor/material.npz",
+          "sha256": "d4b3616f514f17c79ab7402c045ac4f81d49d6baf251f705f5bb30c506ce8def"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/002-merge-shared-corridor/sharp/fluid.xy",
+          "sha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/002-merge-shared-corridor/native/summary.json",
+          "sha256": "bc879cfa577c2aa054a53865de551316315fe9b01735725c937d57d3ab5dca12"
+        }
+      },
+      {
+        "id": 8,
+        "name": "feedback-gradient",
+        "J_B": 77.4809792940863,
+        "J_T": 72.30771648307183,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.4999999997058155,
+              "boundarySha256": "8fd5bcaede7cdbf298ad33b9efb04fbee8d06e8937930039915d817bb60dbe33"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.4999999997058155,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333331372103,
+          "sourceFieldSha256": "97ad216d5763318328b180acccc8273b54d84380f6febed78725ebbbdecc9649",
+          "boundarySha256": "8fd5bcaede7cdbf298ad33b9efb04fbee8d06e8937930039915d817bb60dbe33",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": {
+          "sampleIds": [
+            5,
+            6,
+            7
+          ],
+          "rank": 3,
+          "correctionNorm": 17.877175283749335,
+          "secantResidual": 1.0950198975068616e-14,
+          "centreId": 2,
+          "lowGradientNorm": 28.151082522180957,
+          "correctedGradientNorm": 22.6870006702139
+        },
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/008-feedback-gradient/material.npz",
+          "sha256": "184f02aee626bee78b3cc17836214ecd7032de0ff16231cbcd38cb024efa7719"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/008-feedback-gradient/sharp/fluid.xy",
+          "sha256": "8fd5bcaede7cdbf298ad33b9efb04fbee8d06e8937930039915d817bb60dbe33"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/008-feedback-gradient/native/summary.json",
+          "sha256": "55bd521b037ff036ea45ddd597860482e3e7b367502bee28518d7a6c2872c7a2"
+        }
+      },
+      {
+        "id": 9,
+        "name": "porous-gradient",
+        "J_B": 70.16064815099381,
+        "J_T": 71.77001426917425,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.499999999491089,
+              "boundarySha256": "e69c2b5eec892ada07a986dc95396ff6204e0bbc757a577f248b39635c2044ee"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.499999999491089,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333329940593,
+          "sourceFieldSha256": "e0ed8890f37600c2bf4b23b8c47590f881faf29fa68ff4f7919742b5c7a96f97",
+          "boundarySha256": "e69c2b5eec892ada07a986dc95396ff6204e0bbc757a577f248b39635c2044ee",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/009-porous-gradient/material.npz",
+          "sha256": "4ff102f97ba839a4a364100ffe5f68e17f145263209d2444db156586e51572e3"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/009-porous-gradient/sharp/fluid.xy",
+          "sha256": "e69c2b5eec892ada07a986dc95396ff6204e0bbc757a577f248b39635c2044ee"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/009-porous-gradient/native/summary.json",
+          "sha256": "ee62e4bf493036ad9eacf0f7aa5f1cdf4c4eeb56dd9ef5dcf7954df54579f5eb"
+        }
+      },
+      {
+        "id": 15,
+        "name": "porous-gradient-half-1",
+        "J_B": 69.96087567850569,
+        "J_T": 71.76930450629656,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.49999999988856797,
+              "boundarySha256": "712ad262320eb3634ef8fc3d815ded49280c51b813e50c82abc18c512ab90204"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.49999999988856797,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333332590453,
+          "sourceFieldSha256": "2b5727a55ae24acbb3c03fc6865c5da9423574b41725e0be4d9672db976d4a61",
+          "boundarySha256": "712ad262320eb3634ef8fc3d815ded49280c51b813e50c82abc18c512ab90204",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/015-porous-gradient-half-1/material.npz",
+          "sha256": "610d1faf7db82a3c4ce48f3927589ad956c580af4afa389149a79c9243ebff61"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/015-porous-gradient-half-1/sharp/fluid.xy",
+          "sha256": "712ad262320eb3634ef8fc3d815ded49280c51b813e50c82abc18c512ab90204"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-004/evaluations/015-porous-gradient-half-1/native/summary.json",
+          "sha256": "78c269ae1426b23ef822d431960130a39de31353b222b8f74501259e8348bd3c"
+        }
+      }
+    ],
+    "feedbackSteps": [
+      {
+        "round": 0,
+        "centreId": 0,
+        "centreObjective": 95.51454303866507,
+        "move": 0.15,
+        "probeIds": [
+          1,
+          2,
+          3
+        ],
+        "trialIds": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "feedback": {
+          "sampleIds": [
+            3
+          ],
+          "rank": 1,
+          "correctionNorm": 9.438521228118866,
+          "secantResidual": 7.105427357601002e-15,
+          "centreId": 0,
+          "lowGradientNorm": 21.93570726165935,
+          "correctedGradientNorm": 20.345636064953613
+        },
+        "materialSearch": [
+          {
+            "method": "measured-material-subspace",
+            "dimensions": 1,
+            "optimizerStatus": 0,
+            "optimizerMessage": "Optimization terminated successfully",
+            "optimizerIterations": 5,
+            "surrogateSearchConverged": true,
+            "correctedMerit": 66.6796498865669,
+            "materialChange": 0.15364088441557602
+          }
+        ],
+        "correctedMaterialChange": 0.15364088441557602,
+        "changeFromPorousProposal": 0.15364088441557602,
+        "correctedId": 4,
+        "accepted": true,
+        "chosenId": 2,
+        "chosenObjective": 73.24831278941325,
+        "topologyChanged": true
+      },
+      {
+        "round": 1,
+        "centreId": 2,
+        "centreObjective": 73.24831278941325,
+        "move": 0.15,
+        "probeIds": [
+          5,
+          6,
+          7
+        ],
+        "trialIds": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "feedback": {
+          "sampleIds": [
+            5,
+            6,
+            7
+          ],
+          "rank": 3,
+          "correctionNorm": 17.877175283749335,
+          "secantResidual": 1.0950198975068616e-14,
+          "centreId": 2,
+          "lowGradientNorm": 28.151082522180957,
+          "correctedGradientNorm": 22.6870006702139
+        },
+        "materialSearch": [
+          {
+            "method": "measured-material-subspace",
+            "dimensions": 3,
+            "optimizerStatus": 0,
+            "optimizerMessage": "Optimization terminated successfully",
+            "optimizerIterations": 8,
+            "surrogateSearchConverged": true,
+            "correctedMerit": 72.84454126713706,
+            "materialChange": 0.12486098193823036
+          }
+        ],
+        "correctedMaterialChange": 0.12486098193823036,
+        "changeFromPorousProposal": 0.0656338768163708,
+        "correctedId": 8,
+        "accepted": true,
+        "chosenId": 8,
+        "chosenObjective": 72.30771648307183,
+        "topologyChanged": false
+      },
+      {
+        "round": 2,
+        "centreId": 8,
+        "centreObjective": 72.30771648307183,
+        "move": 0.15,
+        "probeIds": [
+          9,
+          10,
+          12
+        ],
+        "trialIds": [
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "rejectedTrialIds": [
+          11
+        ],
+        "feedback": {
+          "sampleIds": [
+            2,
+            5,
+            6,
+            7,
+            9,
+            10,
+            12
+          ],
+          "rank": 7,
+          "correctionNorm": 1366.332876732978,
+          "secantResidual": 4.2650551240590033e-13,
+          "centreId": 8,
+          "lowGradientNorm": 31.564540823978877,
+          "correctedGradientNorm": 1353.501112621327
+        },
+        "materialSearch": [
+          {
+            "method": "measured-material-subspace",
+            "dimensions": 7,
+            "optimizerStatus": 0,
+            "optimizerMessage": "Optimization terminated successfully",
+            "optimizerIterations": 9,
+            "surrogateSearchConverged": true,
+            "correctedMerit": 76.60688787122542,
+            "materialChange": 0.0609912972897072
+          }
+        ],
+        "correctedMaterialChange": 0.0609912972897072,
+        "changeFromPorousProposal": 0.01974481033280364,
+        "correctedId": 13,
+        "accepted": true,
+        "chosenId": 9,
+        "chosenObjective": 71.77001426917425,
+        "topologyChanged": false
+      },
+      {
+        "round": 3,
+        "centreId": 9,
+        "centreObjective": 71.77001426917425,
+        "move": 0.15,
+        "probeIds": [
+          15,
+          17,
+          19
+        ],
+        "trialIds": [
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          9
+        ],
+        "rejectedTrialIds": [
+          14,
+          16,
+          18
+        ],
+        "feedback": {
+          "sampleIds": [
+            8,
+            10,
+            12,
+            13,
+            15
+          ],
+          "rank": 5,
+          "correctionNorm": 23.339845071395345,
+          "secantResidual": 1.377392637215886e-14,
+          "centreId": 9,
+          "lowGradientNorm": 25.514528435338995,
+          "correctedGradientNorm": 16.107493820684393
+        },
+        "materialSearch": [
+          {
+            "method": "measured-material-subspace",
+            "dimensions": 5,
+            "optimizerStatus": 0,
+            "optimizerMessage": "Optimization terminated successfully",
+            "optimizerIterations": 1,
+            "surrogateSearchConverged": true,
+            "correctedMerit": 70.16064815099381,
+            "materialChange": 0.0
+          }
+        ],
+        "correctedMaterialChange": 0.0,
+        "changeFromPorousProposal": 0.05441021815397984,
+        "correctedId": 9,
+        "accepted": true,
+        "chosenId": 15,
+        "chosenObjective": 71.76930450629656,
+        "topologyChanged": false
+      },
+      {
+        "round": 4,
+        "centreId": 15,
+        "centreObjective": 71.76930450629656,
+        "move": 0.15,
+        "probeIds": [
+          20,
+          22,
+          24
+        ],
+        "trialIds": [
+          20,
+          21,
+          22,
+          23,
+          24,
+          15
+        ],
+        "rejectedTrialIds": [
+          21,
+          23
+        ],
+        "feedback": {
+          "sampleIds": [
+            13,
+            20
+          ],
+          "rank": 2,
+          "correctionNorm": 7.000152429205419,
+          "secantResidual": 4.490574227168739e-15,
+          "centreId": 15,
+          "lowGradientNorm": 25.498313358088268,
+          "correctedGradientNorm": 26.06194849747501
+        },
+        "materialSearch": [
+          {
+            "method": "measured-material-subspace",
+            "dimensions": 2,
+            "optimizerStatus": 0,
+            "optimizerMessage": "Optimization terminated successfully",
+            "optimizerIterations": 1,
+            "surrogateSearchConverged": true,
+            "correctedMerit": 69.96087567850569,
+            "materialChange": 0.0
+          }
+        ],
+        "correctedMaterialChange": 0.0,
+        "changeFromPorousProposal": 0.05667203596724568,
+        "correctedId": 15,
+        "accepted": false,
+        "chosenId": 15,
+        "chosenObjective": 71.76930450629656
+      }
+    ]
+  },
+  "physicalAccuracyQualified": false,
+  "preview": {
+    "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/native-topology-feedback.png",
+    "sha256": "62918ede3808d47e34add784de9e1d4f930969fb1991d406b60a6512368b9ced"
+  },
+  "relatedRuns": [
+    {
+      "schema": "cartmesh2d-sharp-feedback-v1",
+      "status": "round-limit",
+      "method": "local discrepancy secants + full-field material probes + native acceptance",
+      "feedbackEnabled": true,
+      "problem": {
+        "nx": 36,
+        "ny": 24,
+        "width": 1.5,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 360000.0,
+        "volume_fraction": 0.3333333333333333,
+        "filter_radius": 0.055,
+        "port_width": 0.16666666666666666,
+        "case": "double-pipe",
+        "linear_residual_limit": 1e-08,
+        "reynolds": 50.0,
+        "newton_residual_limit": 1e-11,
+        "newton_iterations": 60
+      },
+      "q": 0.1,
+      "beta": 6.0,
+      "acceptedIds": [
+        0,
+        4,
+        10,
+        16
+      ],
+      "initialId": 0,
+      "initialObjective": 95.50852667703097,
+      "physicalAccuracyQualified": false,
+      "optimizationConverged": false,
+      "controls": {
+        "rounds": 3,
+        "move": 0.15,
+        "probes": 3,
+        "seed": 0,
+        "maxSeconds": 900.0,
+        "materialSteps": 4,
+        "nativeBacktracks": 1
+      },
+      "limits": [
+        "Online new material designs; no exact native gradient or global-optimum claim.",
+        "Objective improvements refer to one fixed native mesh/equation contract.",
+        "Round/time limits are budgets, not stationarity or mesh-independence certificates."
+      ],
+      "finalId": 16,
+      "finalObjective": 95.46205191567026,
+      "relativeReduction": 0.00048660326965221934,
+      "elapsedSeconds": 13.017694832997222,
+      "nativeEvaluations": 17,
+      "successfulNativeEvaluations": 12,
+      "feedbackDrivenAcceptedSteps": 3,
+      "acceptedTopologyChanges": 0,
+      "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001",
+      "files": [
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/run.json",
+          "sha256": "8a517489c0e4b9e4c61fbd78cd7e1cf56671845b7872a48ff367f89cc3b243e1"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/summary.json",
+          "sha256": "a204db88133145c8fc98e4b6a2573eda71700fec8f599ae85ae07234dfc43dc8"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations.json",
+          "sha256": "bf0e51bdcbf739a0eb491eb6cb38a5c07b19c53821c2067d571dbecafee51cf2"
+        }
+      ],
+      "rejectedEvaluations": [
+        {
+          "id": 5,
+          "name": "porous-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/005-porous-gradient",
+          "issue": null
+        },
+        {
+          "id": 8,
+          "name": "interface-open",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/008-interface-open",
+          "issue": null
+        },
+        {
+          "id": 9,
+          "name": "interface-open-half-1",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/009-interface-open-half-1",
+          "issue": null
+        },
+        {
+          "id": 11,
+          "name": "porous-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/011-porous-gradient",
+          "issue": null
+        },
+        {
+          "id": 15,
+          "name": "feedback-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/015-feedback-gradient",
+          "issue": null
+        }
+      ],
+      "acceptedDesigns": [
+        {
+          "id": 0,
+          "name": "initial",
+          "J_B": 63.98409608835814,
+          "J_T": 95.50852667703097,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.25,
+                "boundarySha256": "79628bbc47f995601aa48a8402f0fd6575400285ca8a007e2856bab0dd781a15"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.25000000000000006,
+                "boundarySha256": "90364f96a1fb354c75278586fb7ba5fe321260536474300212c97f2d8eecb6db"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.5,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.3333333333333333,
+            "sourceFieldSha256": "96c1cb18d730f56bf0b6403396cf87925c02f86ebd8703a4d19fba3a6985af4f",
+            "boundarySha256": "b881270e9aa63aeab12944b266d2eba37e757f6b545451dd2c92a2aec045a08a",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/000-initial/material.npz",
+            "sha256": "81ce97af41775409296a34b1a04122c60eddb3b3040da3cd4b50bde922bf7391"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/000-initial/sharp/fluid.xy",
+            "sha256": "b881270e9aa63aeab12944b266d2eba37e757f6b545451dd2c92a2aec045a08a"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/000-initial/native/summary.json",
+            "sha256": "dde2d3cf481efaa92fb263da775cb97d655a84462761749fe524f7d231e6fa3d"
+          }
+        },
+        {
+          "id": 4,
+          "name": "feedback-gradient",
+          "J_B": 68.09134485357586,
+          "J_T": 95.48792382598563,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000001662724,
+                "boundarySha256": "05e835bd55b0c42175ebbcb55e8051e98112e19369f363720c00868a8c40cefc"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000001662726,
+                "boundarySha256": "74efa4a81717f1102ed452219c34cf2aa861b2c794f7f597e7a11bb7d2d850b0"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.500000000332545,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.33333333355503,
+            "sourceFieldSha256": "2ecb8e0c534408ced7b5c89ff89380d620d873a6b0249b812a1f84550202c0d8",
+            "boundarySha256": "5cc881768f57731d2c3e0ead1904e3fc91ea7057e5d97ab3406b66bf520b7ead",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": {
+            "sampleIds": [
+              3
+            ],
+            "rank": 1,
+            "correctionNorm": 9.649079070106607,
+            "secantResidual": 8.881784197001252e-15,
+            "centreId": 0,
+            "lowGradientNorm": 22.531608038375655,
+            "correctedGradientNorm": 20.917243355656062
+          },
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/004-feedback-gradient/material.npz",
+            "sha256": "77beec20ab32814565ef40ed58fda066176b0c385033dae2df5c74aad9861c23"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/004-feedback-gradient/sharp/fluid.xy",
+            "sha256": "5cc881768f57731d2c3e0ead1904e3fc91ea7057e5d97ab3406b66bf520b7ead"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/004-feedback-gradient/native/summary.json",
+            "sha256": "79a80338c1bcaba7a361a673afc964a30760b8e227eb5cc0ddcacd6320b1e17e"
+          }
+        },
+        {
+          "id": 10,
+          "name": "feedback-gradient",
+          "J_B": 68.48849962029774,
+          "J_T": 95.48656028157978,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.250000000024982,
+                "boundarySha256": "7a5818f24d4e29b61e2607cd32d5990867fafc81a3231ce847831ce6c82586b4"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000000249821,
+                "boundarySha256": "650fcf1348dca9e78731f3f6ad317db8c9ebcfea8a140032a244687d00dd54ce"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.5000000000499641,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.3333333333666428,
+            "sourceFieldSha256": "2bd4fc5d7554f5ce31aaf952186bcb28bbb3d0a8132246a5b8c4a8068ba03e46",
+            "boundarySha256": "017718514d23b5ba40238c2bb723cfa4a5b1608f4f34ee76ee51a57560dfa15e",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": {
+            "sampleIds": [
+              0,
+              1,
+              3,
+              6,
+              7
+            ],
+            "rank": 4,
+            "correctionNorm": 37.252233945493956,
+            "secantResidual": 3.3875217983369336e-11,
+            "centreId": 4,
+            "lowGradientNorm": 25.290491416142046,
+            "correctedGradientNorm": 14.280758752055345
+          },
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/010-feedback-gradient/material.npz",
+            "sha256": "b9234c7e3c11606dd7704927a4f85576875ac54403cb8fecca7a2b91c04515ff"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/010-feedback-gradient/sharp/fluid.xy",
+            "sha256": "017718514d23b5ba40238c2bb723cfa4a5b1608f4f34ee76ee51a57560dfa15e"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/010-feedback-gradient/native/summary.json",
+            "sha256": "446a9e752f114cceb04ef594099fe7affa1546baff4e8ca413a8f1f2ee9c6df4"
+          }
+        },
+        {
+          "id": 16,
+          "name": "feedback-gradient-half-1",
+          "J_B": 75.60997216095689,
+          "J_T": 95.46205191567026,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000000658951,
+                "boundarySha256": "407d802d07d8fb449ce2e4b08b5a1fd8ba9986d11a27a027db8ca765107d6aa7"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000000658957,
+                "boundarySha256": "78288a27c3222a098d3e4802843cad9669c40475dc793c176d222c68b2160f6b"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.5000000001317908,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.33333333342119387,
+            "sourceFieldSha256": "8f7a1a3f486396a50c514d837d6f8a88ca40f9ff70143ec0dd3f6b670862697b",
+            "boundarySha256": "e1eb69360eaf98730eca35542a4146de1c1d918b5b980b9a5a930c319b101425",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": {
+            "sampleIds": [
+              3,
+              4,
+              6,
+              7,
+              12,
+              13,
+              14
+            ],
+            "rank": 7,
+            "correctionNorm": 38.46931902261717,
+            "secantResidual": 1.1176941126748384e-13,
+            "centreId": 10,
+            "lowGradientNorm": 25.568614358052404,
+            "correctedGradientNorm": 16.35741464426688
+          },
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/016-feedback-gradient-half-1/material.npz",
+            "sha256": "5c8f39bdb86b067338282a034f5beb51ef0e3d49174f97860d59e747a7a9fbd4"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/016-feedback-gradient-half-1/sharp/fluid.xy",
+            "sha256": "e1eb69360eaf98730eca35542a4146de1c1d918b5b980b9a5a930c319b101425"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-001/evaluations/016-feedback-gradient-half-1/native/summary.json",
+            "sha256": "b583325f499e58c3216c761eb3c2f4bc2a7b6d29587915621fdcfaa988300523"
+          }
+        }
+      ],
+      "feedbackSteps": [
+        {
+          "round": 0,
+          "centreId": 0,
+          "centreObjective": 95.50852667703097,
+          "move": 0.15,
+          "probeIds": [
+            1,
+            2,
+            3
+          ],
+          "trialIds": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "feedback": {
+            "sampleIds": [
+              3
+            ],
+            "rank": 1,
+            "correctionNorm": 9.649079070106607,
+            "secantResidual": 8.881784197001252e-15,
+            "centreId": 0,
+            "lowGradientNorm": 22.531608038375655,
+            "correctedGradientNorm": 20.917243355656062
+          },
+          "materialSearch": [
+            {
+              "method": "measured-material-subspace",
+              "dimensions": 1,
+              "optimizerStatus": 0,
+              "optimizerMessage": "Optimization terminated successfully",
+              "optimizerIterations": 4,
+              "surrogateSearchConverged": true,
+              "correctedMerit": 63.68008464146301,
+              "materialChange": 0.153640884415576
+            }
+          ],
+          "correctedMaterialChange": 0.153640884415576,
+          "changeFromPorousProposal": 0.153640884415576,
+          "correctedId": 4,
+          "accepted": true,
+          "chosenId": 4,
+          "chosenObjective": 95.48792382598563,
+          "topologyChanged": false
+        },
+        {
+          "round": 1,
+          "centreId": 4,
+          "centreObjective": 95.48792382598563,
+          "move": 0.15,
+          "probeIds": [
+            6,
+            7,
+            9
+          ],
+          "trialIds": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "rejectedTrialIds": [
+            5,
+            8
+          ],
+          "feedback": {
+            "sampleIds": [
+              0,
+              1,
+              3,
+              6,
+              7
+            ],
+            "rank": 4,
+            "correctionNorm": 37.252233945493956,
+            "secantResidual": 3.3875217983369336e-11,
+            "centreId": 4,
+            "lowGradientNorm": 25.290491416142046,
+            "correctedGradientNorm": 14.280758752055345
+          },
+          "materialSearch": [
+            {
+              "method": "measured-material-subspace",
+              "dimensions": 4,
+              "optimizerStatus": 0,
+              "optimizerMessage": "Optimization terminated successfully",
+              "optimizerIterations": 8,
+              "surrogateSearchConverged": true,
+              "correctedMerit": 67.77884946824751,
+              "materialChange": 0.015332757013248571
+            }
+          ],
+          "correctedMaterialChange": 0.015332757013248571,
+          "changeFromPorousProposal": 0.16533275701324857,
+          "correctedId": 10,
+          "accepted": true,
+          "chosenId": 10,
+          "chosenObjective": 95.48656028157978,
+          "topologyChanged": false
+        },
+        {
+          "round": 2,
+          "centreId": 10,
+          "centreObjective": 95.48656028157978,
+          "move": 0.15,
+          "probeIds": [
+            12,
+            13,
+            14
+          ],
+          "trialIds": [
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "rejectedTrialIds": [
+            11,
+            15
+          ],
+          "feedback": {
+            "sampleIds": [
+              3,
+              4,
+              6,
+              7,
+              12,
+              13,
+              14
+            ],
+            "rank": 7,
+            "correctionNorm": 38.46931902261717,
+            "secantResidual": 1.1176941126748384e-13,
+            "centreId": 10,
+            "lowGradientNorm": 25.568614358052404,
+            "correctedGradientNorm": 16.35741464426688
+          },
+          "materialSearch": [
+            {
+              "method": "measured-material-subspace",
+              "dimensions": 7,
+              "optimizerStatus": 0,
+              "optimizerMessage": "Optimization terminated successfully",
+              "optimizerIterations": 8,
+              "surrogateSearchConverged": true,
+              "correctedMerit": 61.959889545642866,
+              "materialChange": 0.11175997155324416
+            }
+          ],
+          "correctedMaterialChange": 0.11175997155324416,
+          "changeFromPorousProposal": 0.05431098418976832,
+          "correctedId": 16,
+          "accepted": true,
+          "chosenId": 16,
+          "chosenObjective": 95.46205191567026,
+          "topologyChanged": false
+        }
+      ]
+    },
+    {
+      "schema": "cartmesh2d-sharp-feedback-v1",
+      "status": "round-limit",
+      "method": "measured-subspace discrepancy optimisation + material/connectivity probes + native acceptance",
+      "feedbackEnabled": false,
+      "problem": {
+        "nx": 36,
+        "ny": 24,
+        "width": 1.5,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 360000.0,
+        "volume_fraction": 0.3333333333333333,
+        "filter_radius": 0.055,
+        "port_width": 0.16666666666666666,
+        "case": "double-pipe",
+        "linear_residual_limit": 1e-08,
+        "reynolds": 50.0,
+        "newton_residual_limit": 1e-11,
+        "newton_iterations": 60
+      },
+      "q": 0.1,
+      "beta": 6.0,
+      "acceptedIds": [
+        0,
+        3,
+        4
+      ],
+      "initialId": 0,
+      "initialObjective": 95.50852667703097,
+      "physicalAccuracyQualified": false,
+      "optimizationConverged": false,
+      "controls": {
+        "rounds": 3,
+        "move": 0.15,
+        "probes": 3,
+        "seed": 0,
+        "maxSeconds": 900.0,
+        "materialSteps": 4,
+        "nativeBacktracks": 1
+      },
+      "limits": [
+        "Online new material designs; no exact native gradient or global-optimum claim.",
+        "Objective improvements refer to one fixed native mesh/equation contract.",
+        "Round/time limits are budgets, not stationarity or mesh-independence certificates."
+      ],
+      "finalId": 4,
+      "finalObjective": 95.4459568170569,
+      "relativeReduction": 0.0006551232874281165,
+      "elapsedSeconds": 8.98355625000113,
+      "nativeEvaluations": 11,
+      "successfulNativeEvaluations": 9,
+      "feedbackDrivenAcceptedSteps": 0,
+      "acceptedTopologyChanges": 0,
+      "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001",
+      "files": [
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/run.json",
+          "sha256": "82d43ea8b58439117210cd0386ea352da009e073d7eb0be393eb0568b5be5a12"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/summary.json",
+          "sha256": "37ad288275e8ea211c2f24efce3dbd2179648b4bf0bec0f37e46fb4b7d0af676"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations.json",
+          "sha256": "194d099eff71e2ab49ef30ce17bc35881f94a0c244bad8c73494d12876724d19"
+        }
+      ],
+      "rejectedEvaluations": [
+        {
+          "id": 7,
+          "name": "porous-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/007-porous-gradient",
+          "issue": null
+        },
+        {
+          "id": 8,
+          "name": "porous-gradient-half-1",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/008-porous-gradient-half-1",
+          "issue": null
+        }
+      ],
+      "acceptedDesigns": [
+        {
+          "id": 0,
+          "name": "initial",
+          "J_B": 63.98409608835814,
+          "J_T": 95.50852667703097,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.25,
+                "boundarySha256": "79628bbc47f995601aa48a8402f0fd6575400285ca8a007e2856bab0dd781a15"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.25000000000000006,
+                "boundarySha256": "90364f96a1fb354c75278586fb7ba5fe321260536474300212c97f2d8eecb6db"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.5,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.3333333333333333,
+            "sourceFieldSha256": "96c1cb18d730f56bf0b6403396cf87925c02f86ebd8703a4d19fba3a6985af4f",
+            "boundarySha256": "b881270e9aa63aeab12944b266d2eba37e757f6b545451dd2c92a2aec045a08a",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/000-initial/material.npz",
+            "sha256": "81ce97af41775409296a34b1a04122c60eddb3b3040da3cd4b50bde922bf7391"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/000-initial/sharp/fluid.xy",
+            "sha256": "b881270e9aa63aeab12944b266d2eba37e757f6b545451dd2c92a2aec045a08a"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/000-initial/native/summary.json",
+            "sha256": "39ac7e31018f83c01bf5e5e5aba0f74950ae707297ed750b1914a26d7a3d22ca"
+          }
+        },
+        {
+          "id": 3,
+          "name": "open-component-bridge",
+          "J_B": 73.41719893545864,
+          "J_T": 95.50161515206472,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.24999999994573346,
+                "boundarySha256": "d79a26d82260a249b91334d0de42edd74589d090f4421f13cca9c282ea4003b4"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.24999999994573377,
+                "boundarySha256": "38d3d21954e18cb614ebef423b04f41de93f113eeaa1dda1142aabb5adb60ad3"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.49999999989146726,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.3333333332609782,
+            "sourceFieldSha256": "711d8df9d966e03f538c61176f980d5c51a8caa93fef546ff5fbdb712c53cf36",
+            "boundarySha256": "e0ea4bc18555f77082a147bdaf1635ef68197884a1a38753cb9a0453e1d52aa3",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/003-open-component-bridge/material.npz",
+            "sha256": "ca2f45f9c6cdad4a65ae492edf5253ca6b7b394d4fe7a45e84a50874ba166fc1"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/003-open-component-bridge/sharp/fluid.xy",
+            "sha256": "e0ea4bc18555f77082a147bdaf1635ef68197884a1a38753cb9a0453e1d52aa3"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/003-open-component-bridge/native/summary.json",
+            "sha256": "863960c71400fb34592bf0b204a9eed46ce89e7630382273e0efafd2aee7a5f5"
+          }
+        },
+        {
+          "id": 4,
+          "name": "porous-gradient",
+          "J_B": 65.22120196465362,
+          "J_T": 95.4459568170569,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.24999999988057792,
+                "boundarySha256": "a5257747f57d4e532322fcecc5db9ec05d128bf8b460e7db4920af4e67d35e19"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.2499999998805782,
+                "boundarySha256": "7082b393a159a832f435afadef6fa4ced46481764582d6cabac95c57688c4cf5"
+              }
+            ],
+            "vertices": 168,
+            "fluidArea": 0.4999999997611561,
+            "designArea": 1.5,
+            "extractedVolumeFraction": 0.3333333331741041,
+            "sourceFieldSha256": "f6b725c6eab3899c6df3231f0a265bbc1f484a23b78700ac047f81964542c33e",
+            "boundarySha256": "aa69a994bfd43bad24af81dcb8bcf6b5b59a0984db24c38e71293bc97685f92e",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/004-porous-gradient/material.npz",
+            "sha256": "24f25f9ebb8b2b3c00fd44838e5426f2e66492c39ecfe4fc5e1d4a80a495f664"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/004-porous-gradient/sharp/fluid.xy",
+            "sha256": "aa69a994bfd43bad24af81dcb8bcf6b5b59a0984db24c38e71293bc97685f92e"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-re50-no-feedback-001/evaluations/004-porous-gradient/native/summary.json",
+            "sha256": "d1950ed10cc1a95f3d13d501bc4db01fd01b1ab0c8c110a5f7ef391008c809cb"
+          }
+        }
+      ],
+      "feedbackSteps": []
+    },
+    {
+      "schema": "cartmesh2d-sharp-feedback-v1",
+      "status": "round-limit",
+      "method": "local discrepancy secants + full-field material probes + native acceptance",
+      "feedbackEnabled": true,
+      "problem": {
+        "nx": 30,
+        "ny": 30,
+        "width": 1.0,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 249999.99999999997,
+        "volume_fraction": 0.25,
+        "filter_radius": 0.055,
+        "port_width": 0.2,
+        "case": "elbow",
+        "linear_residual_limit": 1e-08,
+        "reynolds": 0.0,
+        "newton_residual_limit": 1e-11,
+        "newton_iterations": 60
+      },
+      "q": 0.1,
+      "beta": 6.0,
+      "acceptedIds": [
+        0,
+        3,
+        9
+      ],
+      "initialId": 0,
+      "initialObjective": 26.770488965107273,
+      "physicalAccuracyQualified": false,
+      "optimizationConverged": false,
+      "controls": {
+        "rounds": 4,
+        "move": 0.2,
+        "probes": 3,
+        "seed": 0,
+        "maxSeconds": 1200.0
+      },
+      "limits": [
+        "Online new material designs; no exact native gradient or global-optimum claim.",
+        "Objective improvements refer to one fixed native mesh/equation contract.",
+        "Round/time limits are budgets, not stationarity or mesh-independence certificates."
+      ],
+      "finalId": 9,
+      "finalObjective": 26.74743291824469,
+      "relativeReduction": 0.0008612486268978481,
+      "elapsedSeconds": 104.9296761250007,
+      "nativeEvaluations": 17,
+      "successfulNativeEvaluations": 10,
+      "feedbackDrivenAcceptedSteps": 0,
+      "acceptedTopologyChanges": 0,
+      "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003",
+      "files": [
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/run.json",
+          "sha256": "700a2d2e3dc58d5b621570117032b1be9b1286d6d7fe12a43fa30db05b4a2c79"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/summary.json",
+          "sha256": "d1f562a7c55b7f2e2ba1f1144fffe303f6f2b1054bdfeebca94680fdb5fc890f"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations.json",
+          "sha256": "93c0abdee517d679a8ed3e36c0f8f7582556e46fa44f6665488b1162b7ac78e9"
+        }
+      ],
+      "rejectedEvaluations": [
+        {
+          "id": 2,
+          "name": "interface-open",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/002-interface-open",
+          "issue": null
+        },
+        {
+          "id": 5,
+          "name": "porous-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/005-porous-gradient",
+          "issue": null
+        },
+        {
+          "id": 6,
+          "name": "interface-close",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/006-interface-close",
+          "issue": null
+        },
+        {
+          "id": 8,
+          "name": "feedback-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/008-feedback-gradient",
+          "issue": null
+        },
+        {
+          "id": 11,
+          "name": "interface-close",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/011-interface-close",
+          "issue": null
+        },
+        {
+          "id": 13,
+          "name": "porous-gradient",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/013-porous-gradient",
+          "issue": null
+        },
+        {
+          "id": 15,
+          "name": "interface-open",
+          "status": "native-rejected",
+          "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/015-interface-open",
+          "issue": null
+        }
+      ],
+      "acceptedDesigns": [
+        {
+          "id": 0,
+          "name": "initial",
+          "J_B": 30.278176508057467,
+          "J_T": 26.770488965107273,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 1,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.25000000013561036,
+                "boundarySha256": "530beb4783b58d78b8b854060c35d0c29a23fdf315d7d67d59164cce6f01f830"
+              }
+            ],
+            "vertices": 112,
+            "fluidArea": 0.25000000013561036,
+            "designArea": 1.0,
+            "extractedVolumeFraction": 0.25000000013561036,
+            "sourceFieldSha256": "c1778aa1758980aa90efbd1003dacede24c4c1504e7cd996f1315e0760b94f4a",
+            "boundarySha256": "530beb4783b58d78b8b854060c35d0c29a23fdf315d7d67d59164cce6f01f830",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "outlet_0"
+              ],
+              "coverageLengths": [
+                [
+                  0.19999999999999984,
+                  0.19999999999999984
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/000-initial/material.npz",
+            "sha256": "3c13aaafad421c5aa4b2112d116f929c4a0489ed2bf26040c49bcfe3d3af13eb"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/000-initial/sharp/fluid.xy",
+            "sha256": "530beb4783b58d78b8b854060c35d0c29a23fdf315d7d67d59164cce6f01f830"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/000-initial/native/summary.json",
+            "sha256": "18da9d6239da226b837c79801ef2a6de1815bd39e8d45d280646e8b7b2e326a2"
+          }
+        },
+        {
+          "id": 3,
+          "name": "interface-close",
+          "J_B": 32.44676944860405,
+          "J_T": 26.75304954950929,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 1,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000002391625,
+                "boundarySha256": "60b8d7e9424d6a7089be3bae2b5d475c084201ff240be6f4900f4a1fd63b7adb"
+              }
+            ],
+            "vertices": 112,
+            "fluidArea": 0.2500000002391625,
+            "designArea": 1.0,
+            "extractedVolumeFraction": 0.2500000002391625,
+            "sourceFieldSha256": "8eb3ead3a1a599d7e2dcb355cab218a81be732f38516cfefd7a0839a5265d2f1",
+            "boundarySha256": "60b8d7e9424d6a7089be3bae2b5d475c084201ff240be6f4900f4a1fd63b7adb",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "outlet_0"
+              ],
+              "coverageLengths": [
+                [
+                  0.19999999999999984,
+                  0.19999999999999984
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/003-interface-close/material.npz",
+            "sha256": "b64577113d7d40c81ca83daa734f6e32bb80aeaf28ddeab81c5a853717a934b9"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/003-interface-close/sharp/fluid.xy",
+            "sha256": "60b8d7e9424d6a7089be3bae2b5d475c084201ff240be6f4900f4a1fd63b7adb"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/003-interface-close/native/summary.json",
+            "sha256": "628db74b42d31cde4dbbf5adef02fcc6837b4da89b1fa732da1fba73491b94cd"
+          }
+        },
+        {
+          "id": 9,
+          "name": "porous-gradient",
+          "J_B": 30.732657883965512,
+          "J_T": 26.74743291824469,
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 1,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.2500000001584397,
+                "boundarySha256": "1822155ef3ef5a0b4fa9f639b5a465db905731de635f7f01872c8799be1c64dc"
+              }
+            ],
+            "vertices": 112,
+            "fluidArea": 0.2500000001584397,
+            "designArea": 1.0,
+            "extractedVolumeFraction": 0.2500000001584397,
+            "sourceFieldSha256": "be16d630c5983dbf81d0c98be89a95b0c05af5a0839d46661a63ff1e8d477e10",
+            "boundarySha256": "1822155ef3ef5a0b4fa9f639b5a465db905731de635f7f01872c8799be1c64dc",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "outlet_0"
+              ],
+              "coverageLengths": [
+                [
+                  0.19999999999999984,
+                  0.19999999999999984
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          },
+          "feedback": null,
+          "material": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/009-porous-gradient/material.npz",
+            "sha256": "96df9151927bb57660d75d2d290517f896be3d7d017e97d071040759ea9a9b9e"
+          },
+          "boundary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/009-porous-gradient/sharp/fluid.xy",
+            "sha256": "1822155ef3ef5a0b4fa9f639b5a465db905731de635f7f01872c8799be1c64dc"
+          },
+          "nativeSummary": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/elbow-003/evaluations/009-porous-gradient/native/summary.json",
+            "sha256": "9b619411801b449b37914e11adb20b39838291246c1578ae30f70360695829c6"
+          }
+        }
+      ],
+      "feedbackSteps": [
+        {
+          "round": 0,
+          "centreId": 0,
+          "centreObjective": 26.770488965107273,
+          "move": 0.2,
+          "probeIds": [
+            1,
+            2,
+            3
+          ],
+          "feedback": {
+            "sampleIds": [
+              1,
+              3
+            ],
+            "rank": 2,
+            "correctionNorm": 2.4830402362567465,
+            "secantResidual": 8.95090418262362e-16,
+            "centreId": 0,
+            "lowGradientNorm": 7.814345697640655,
+            "correctedGradientNorm": 7.602048756905004
+          },
+          "correctedMaterialChange": 0.1828568030694359,
+          "changeFromPorousProposal": 0.18351304896030923,
+          "correctedId": 4,
+          "accepted": true,
+          "chosenId": 3,
+          "chosenObjective": 26.75304954950929,
+          "topologyChanged": false
+        },
+        {
+          "round": 1,
+          "centreId": 3,
+          "centreObjective": 26.75304954950929,
+          "move": 0.2,
+          "probeIds": [
+            5,
+            6,
+            7
+          ],
+          "feedback": {
+            "sampleIds": [
+              0,
+              1,
+              4,
+              7
+            ],
+            "rank": 4,
+            "correctionNorm": 4.719386229055741,
+            "secantResidual": 2.432376777795247e-15,
+            "centreId": 3,
+            "lowGradientNorm": 9.69463840886567,
+            "correctedGradientNorm": 7.856631778164753
+          },
+          "correctedMaterialChange": 0.155398348855741,
+          "changeFromPorousProposal": 0.2117964352764028,
+          "correctedId": 8,
+          "accepted": false,
+          "chosenId": 3,
+          "chosenObjective": 26.75304954950929
+        },
+        {
+          "round": 2,
+          "centreId": 3,
+          "centreObjective": 26.75304954950929,
+          "move": 0.1,
+          "probeIds": [
+            9,
+            10,
+            11
+          ],
+          "feedback": {
+            "sampleIds": [
+              0,
+              1,
+              4,
+              7,
+              9,
+              10
+            ],
+            "rank": 6,
+            "correctionNorm": 5.378800904940364,
+            "secantResidual": 5.895691955682626e-15,
+            "centreId": 3,
+            "lowGradientNorm": 9.69463840886567,
+            "correctedGradientNorm": 7.252634390101718
+          },
+          "correctedMaterialChange": 0.04050011331808051,
+          "changeFromPorousProposal": 0.0837888112269971,
+          "correctedId": 12,
+          "accepted": true,
+          "chosenId": 9,
+          "chosenObjective": 26.74743291824469,
+          "topologyChanged": false
+        },
+        {
+          "round": 3,
+          "centreId": 9,
+          "centreObjective": 26.74743291824469,
+          "move": 0.1,
+          "probeIds": [
+            13,
+            14,
+            15
+          ],
+          "feedback": {
+            "sampleIds": [
+              4,
+              7,
+              10,
+              12,
+              14
+            ],
+            "rank": 5,
+            "correctionNorm": 5.4391166709439664,
+            "secantResidual": 3.748544367384395e-15,
+            "centreId": 9,
+            "lowGradientNorm": 8.033931131154581,
+            "correctedGradientNorm": 6.839220933747601
+          },
+          "correctedMaterialChange": 0.07956643279285311,
+          "changeFromPorousProposal": 0.07934323870146498,
+          "correctedId": 16,
+          "accepted": false,
+          "chosenId": 9,
+          "chosenObjective": 26.74743291824469
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "schema": "cartmesh2d-sharp-feedback-v1",
+    "status": "round-limit",
+    "method": "local discrepancy secants + full-field material probes + native acceptance",
+    "feedbackEnabled": false,
+    "problem": {
+      "nx": 36,
+      "ny": 24,
+      "width": 1.5,
+      "height": 1,
+      "viscosity": 1.0,
+      "alpha_max": 360000.0,
+      "volume_fraction": 0.3333333333333333,
+      "filter_radius": 0.055,
+      "port_width": 0.16666666666666666,
+      "case": "double-pipe",
+      "linear_residual_limit": 1e-08,
+      "reynolds": 0.0,
+      "newton_residual_limit": 1e-11,
+      "newton_iterations": 60
+    },
+    "q": 0.1,
+    "beta": 6.0,
+    "acceptedIds": [
+      0,
+      2,
+      4,
+      7,
+      11
+    ],
+    "initialId": 0,
+    "initialObjective": 95.51454303866507,
+    "physicalAccuracyQualified": false,
+    "optimizationConverged": false,
+    "controls": {
+      "rounds": 5,
+      "move": 0.15,
+      "probes": 3,
+      "seed": 0,
+      "maxSeconds": 1200.0,
+      "materialSteps": 4,
+      "nativeBacktracks": 1
+    },
+    "limits": [
+      "Online new material designs; no exact native gradient or global-optimum claim.",
+      "Objective improvements refer to one fixed native mesh/equation contract.",
+      "Round/time limits are budgets, not stationarity or mesh-independence certificates."
+    ],
+    "finalId": 11,
+    "finalObjective": 71.78770925501517,
+    "relativeReduction": 0.24841069253762826,
+    "elapsedSeconds": 11.962855749996379,
+    "nativeEvaluations": 21,
+    "successfulNativeEvaluations": 13,
+    "feedbackDrivenAcceptedSteps": 0,
+    "acceptedTopologyChanges": 1,
+    "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001",
+    "files": [
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/run.json",
+        "sha256": "d381a5594285c0b08f018e66820ca7145172829d8bd58437e9d05f536cbf1fc9"
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/summary.json",
+        "sha256": "e17f5c21ea256fc1399a3a0c6b2628e3e10fc6aeaeb0655186d84e47dab141e3"
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations.json",
+        "sha256": "35e5c1c6db6f1100da7d9db7d42c526ed128c1b793c7fc17d07f40d0fc8e19e3"
+      }
+    ],
+    "rejectedEvaluations": [
+      {
+        "id": 9,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/009-interface-close",
+        "issue": null
+      },
+      {
+        "id": 12,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/012-interface-close",
+        "issue": null
+      },
+      {
+        "id": 13,
+        "name": "interface-close-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/013-interface-close-half-1",
+        "issue": null
+      },
+      {
+        "id": 14,
+        "name": "interface-open",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/014-interface-open",
+        "issue": null
+      },
+      {
+        "id": 15,
+        "name": "interface-open-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/015-interface-open-half-1",
+        "issue": null
+      },
+      {
+        "id": 17,
+        "name": "interface-open",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/017-interface-open",
+        "issue": null
+      },
+      {
+        "id": 19,
+        "name": "interface-close",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/019-interface-close",
+        "issue": null
+      },
+      {
+        "id": 20,
+        "name": "interface-close-half-1",
+        "status": "native-rejected",
+        "directory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/020-interface-close-half-1",
+        "issue": null
+      }
+    ],
+    "acceptedDesigns": [
+      {
+        "id": 0,
+        "name": "initial",
+        "J_B": 66.97312205409068,
+        "J_T": 95.51454303866507,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 2,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "79628bbc47f995601aa48a8402f0fd6575400285ca8a007e2856bab0dd781a15"
+            },
+            {
+              "file": "fluid-component-1.xy",
+              "holes": 0,
+              "fluidArea": 0.25,
+              "boundarySha256": "dc14f3a848aec6c1b9a40306c5cd68c5a0bbf32611545b01150f37d049ef424f"
+            }
+          ],
+          "vertices": 168,
+          "fluidArea": 0.5,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333333333333,
+          "sourceFieldSha256": "d7c6e90bd6fadca76eabb548f6bcecd14e6501cbb8233935f383dc772513e4d9",
+          "boundarySha256": "4e42bdae3b751dac9ae5d2dd5fc5b1ffe397b5a6d96377be3b23764a01c9d3b8",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.0,
+                0.16666666666666663,
+                0.0
+              ],
+              [
+                0.0,
+                0.16666666666666652,
+                0.0,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "outlet_0"
+              ],
+              [
+                "inlet_1",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                false
+              ],
+              [
+                false,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/000-initial/material.npz",
+          "sha256": "0549b74d0f121f778b3e442446555748da72de6840eea80660915af897e7ef19"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/000-initial/sharp/fluid.xy",
+          "sha256": "4e42bdae3b751dac9ae5d2dd5fc5b1ffe397b5a6d96377be3b23764a01c9d3b8"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/000-initial/native/summary.json",
+          "sha256": "dc3f0ac7b91806a629685fb202848b3b19b2277defb39b0a1e6628c293f490fe"
+        }
+      },
+      {
+        "id": 2,
+        "name": "merge-shared-corridor",
+        "J_B": 74.78619182593576,
+        "J_T": 73.24831278941325,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.4999999999585622,
+              "boundarySha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.4999999999585622,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.33333333330570813,
+          "sourceFieldSha256": "f509f37594b22716066abcf3d9dfbf771516bb3923a1a13cf65f87fb76e0419f",
+          "boundarySha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/002-merge-shared-corridor/material.npz",
+          "sha256": "d4b3616f514f17c79ab7402c045ac4f81d49d6baf251f705f5bb30c506ce8def"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/002-merge-shared-corridor/sharp/fluid.xy",
+          "sha256": "97c5323c7ad0aebbb1d7ea51413259e70a1baac55720199fe08046875c2c94e6"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/002-merge-shared-corridor/native/summary.json",
+          "sha256": "eea9d1e4b04b092eb3132aac9276fe286024b653887c73edf5d952622cec4f24"
+        }
+      },
+      {
+        "id": 4,
+        "name": "porous-gradient",
+        "J_B": 70.57761685654434,
+        "J_T": 72.34161655573534,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.5000000001825486,
+              "boundarySha256": "99f06cf6dc0e38780c642741043e890347f5d93e159b893b1b914d86afa8357a"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.5000000001825486,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.3333333334550324,
+          "sourceFieldSha256": "9248be538db0f99c164468059f765d75446eaec5140017c0428fbf67c4efceca",
+          "boundarySha256": "99f06cf6dc0e38780c642741043e890347f5d93e159b893b1b914d86afa8357a",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/004-porous-gradient/material.npz",
+          "sha256": "adcf2746e36f65f01aeeaef859dbc3c5f17839c658d6ebbc33a5f7c086d41c52"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/004-porous-gradient/sharp/fluid.xy",
+          "sha256": "99f06cf6dc0e38780c642741043e890347f5d93e159b893b1b914d86afa8357a"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/004-porous-gradient/native/summary.json",
+          "sha256": "7ee78f867eccfcc45ce3b2674087ccba499f557e5eef08ede7a54d5edd5b20a3"
+        }
+      },
+      {
+        "id": 7,
+        "name": "porous-gradient",
+        "J_B": 69.87545981325988,
+        "J_T": 71.80902448609599,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.5000000003762549,
+              "boundarySha256": "e0acf08866d40fce927f4916ee780783f972a47e5d60a6e63171defde724b991"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.5000000003762549,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.33333333358416994,
+          "sourceFieldSha256": "b7294fd4cc889ecded1be245584e16d890b0a9a0811cff465bec707acce145dd",
+          "boundarySha256": "e0acf08866d40fce927f4916ee780783f972a47e5d60a6e63171defde724b991",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/007-porous-gradient/material.npz",
+          "sha256": "58144376f433932633499377a49c3d7f0172f5559124a43c8041f7412aae7db9"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/007-porous-gradient/sharp/fluid.xy",
+          "sha256": "e0acf08866d40fce927f4916ee780783f972a47e5d60a6e63171defde724b991"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/007-porous-gradient/native/summary.json",
+          "sha256": "a36b95d1cf6af22266146c3e1afebfc5248b68b902e90708df7bf4a1f0657d8c"
+        }
+      },
+      {
+        "id": 11,
+        "name": "porous-gradient",
+        "J_B": 69.48003034798106,
+        "J_T": 71.78770925501517,
+        "extraction": {
+          "schema": "cartmesh2d-topology-extraction-v1",
+          "threshold": 0.5,
+          "field": "filtered projected rho at cell centres with edge extension",
+          "fluidRegion": "interior",
+          "components": 1,
+          "holes": 0,
+          "regions": [
+            {
+              "file": "fluid-component-0.xy",
+              "holes": 0,
+              "fluidArea": 0.499999999831487,
+              "boundarySha256": "e9c43ac375203b471c9bbbaf2f25b961b3141223926a86ee0a4cfe382dd73d7b"
+            }
+          ],
+          "vertices": 140,
+          "fluidArea": 0.499999999831487,
+          "designArea": 1.5,
+          "extractedVolumeFraction": 0.33333333322099135,
+          "sourceFieldSha256": "bc097326113487afcd03190c75c9f765bd801cb8bbc5a4f0580419f4ed22a4cc",
+          "boundarySha256": "e9c43ac375203b471c9bbbaf2f25b961b3141223926a86ee0a4cfe382dd73d7b",
+          "topologyQualified": false,
+          "solverQualityQualified": false,
+          "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+          "portConnectivity": {
+            "ports": [
+              "inlet_0",
+              "inlet_1",
+              "outlet_0",
+              "outlet_1"
+            ],
+            "coverageLengths": [
+              [
+                0.16666666666666663,
+                0.16666666666666652,
+                0.16666666666666663,
+                0.16666666666666652
+              ]
+            ],
+            "allPortsCovered": true,
+            "componentPorts": [
+              [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ]
+            ],
+            "inletToOutletReachability": [
+              [
+                true,
+                true
+              ],
+              [
+                true,
+                true
+              ]
+            ],
+            "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+          }
+        },
+        "feedback": null,
+        "material": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/011-porous-gradient/material.npz",
+          "sha256": "0771c076cc8d73fce26c1278e115e373b7ae4ab16b64ea60c866400bc3f9fdd4"
+        },
+        "boundary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/011-porous-gradient/sharp/fluid.xy",
+          "sha256": "e9c43ac375203b471c9bbbaf2f25b961b3141223926a86ee0a4cfe382dd73d7b"
+        },
+        "nativeSummary": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-feedback/double-pipe-no-feedback-001/evaluations/011-porous-gradient/native/summary.json",
+          "sha256": "a01d7d041407fda79aad6bf487f932056805029f7f2223c302adf3cad7e54359"
+        }
+      }
+    ],
+    "feedbackSteps": []
+  },
+  "comparison": {
+    "samePhysicalAndNativeControls": true,
+    "additionalRelativeReduction": 0.0002563774343771197,
+    "additionalNativeEvaluations": 4,
+    "elapsedDifferenceSeconds": 1.1125873339988175,
+    "scope": "Single recorded online run; no general speedup or physical-accuracy claim."
+  }
+}

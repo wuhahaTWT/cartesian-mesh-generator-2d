@@ -1,0 +1,12 @@
+{
+  "nativeRecords": 397,
+  "nativeOutputHashesChecked": 2966,
+  "schedules": 12,
+  "rejectedSegmentRollbackChecks": 8,
+  "unitBookkeepingChecks": 4,
+  "lockedSelectionReproduced": true,
+  "verifierScope": "data provenance, file identity, native flags and scheduling bookkeeping only; no rebuilt PDE",
+  "solverBinarySha256": "cff2a8810ce398aa387b60cd78701018ca34f1f2b59ceb6eee6eeef159427d2a",
+  "reportScriptSha256": "b115894e7f21fd68759fc94d3b0b666c9269b4fcac5a34a4fe2139491095fce4",
+  "bookkeepingVerifiedToolSha256": "f4065797cc5b7a8bb7bed90710f1dca2a55d232f83731845555adf3f17b8986a"
+}

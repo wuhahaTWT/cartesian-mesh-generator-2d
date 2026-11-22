@@ -152,16 +152,6 @@
       <p class="note">尾迹方向只控制网格加密，不改变流动入口方向或几何攻角。</p>
       <label class="toggle" hidden><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
 
-      <div class="regions">
-        <div class="regionsHead">
-          <span>手动加密区</span>
-          <button id="addRegion" class="mini">+ 添加</button>
-        </div>
-        <div id="regionList"></div>
-        <p class="note">坐标以 Lref 为单位、相对物体中心。这是尾流这类"非必要加密"区域的手动出口：
-          物面附近的加密由尺寸场保证，这里只管你想额外加密的地方。</p>
-      </div>
-
       <button id="probe" class="ghost wide" hidden>预检尺寸场</button>
       <div id="probeResult" class="probe" hidden></div>
     </section>
@@ -185,9 +175,26 @@
       <p class="note">贴体层与余域使用同一参考长度。急弯可能局部停层或回退；实际保留情况与质量结果分别报告。</p>
     </section>
 
+    <section class="block" id="regionsBlock" hidden>
+      <div class="regions">
+        <div class="regionsHead">
+          <span>局部 / 自适应加密区</span>
+          <button id="addRegion" class="mini">+ 添加</button>
+        </div>
+        <div id="regionList"></div>
+        <p class="note">坐标以 Lref 为单位、相对物体中心，适用于 Cut-cell 与混合网格余域。可手添尾迹区，也可由下方流场梯度自动生成。</p>
+      </div>
+    </section>
+
     <section class="block">
       <h2><span>4</span>预览与保存</h2>
       <p class="note">直接生成右侧预览，无需选择目录。临时结果仅供本次使用；需要保存时点击“导出结果包”，得到一个 ZIP。</p>
+      <label class="field" id="cutcellStrategyField">Cut-cell 处理策略
+        <select id="cutcellStrategy">
+          <option value="legacy">小单元合并＋凸划分</option>
+          <option value="shape">形状聚合＋局部重划分</option>
+        </select>
+      </label>
       <label class="field" id="smallAlphaField">小单元阈值 α
         <input id="smallAlpha" type="number" min="0.001" max="0.999" step="any" value="0.15">
       </label>
@@ -297,6 +304,22 @@
           <option value="adaptive">自适应精度，收敛后严格复核</option>
         </select>
       </label>
+      <label class="field">压力—速度耦合
+        <select id="flowCoupling">
+          <option value="simple" selected>SIMPLE（默认）</option>
+          <option value="simplec">SIMPLEC（稳态，试验）</option>
+          <option value="simpler">SIMPLER（先预测压力，稳态，试验）</option>
+          <option value="pimple">PIMPLE（含邻点动量校正，试验）</option>
+        </select>
+      </label>
+      <p class="note">扩展算法共用当前离散方程和守恒门，不保证更快或更稳定。SIMPLEC/SIMPLER 仅用于稳态；PIMPLE 支持稳态与时间步内外迭代。SIMPLER/PIMPLE 暂不支持定压开口；扩展算法遇普通出口回流时停止。</p>
+      <label class="field">压力松弛系数
+        <input id="flowPressureRelaxation" type="number" min="0" max="1" step="any" value="0.25">
+      </label>
+      <label class="field" id="flowMomentumCorrectorsField" hidden>PIMPLE 动量校正次数
+        <input id="flowMomentumCorrectors" type="number" min="1" max="8" step="1" value="2">
+      </label>
+      <p class="note">动量校正默认2次，每次更新邻点贡献并解压力；与下方非正交校正次数分别控制。SIMPLER 的压力松弛用于前置压力预测，最终校正只更新速度和面通量。温度联算继续使用默认 SIMPLE 设置。</p>
       <label class="field">速度松弛系数
         <input id="flowVelocityRelaxation" type="number" min="0" max="1" step="any" value="0.6">
       </label>
@@ -325,8 +348,23 @@
       <label class="field">流动停止容差
         <input id="flowTolerance" type="number" min="0.000000000001" max="0.000001" step="any" value="0.000001">
       </label>
-      <p class="note">可从默认 1e-6 加严到 1e-12，越严格通常越慢，过严可能触发迭代上限。控制动量残差和速度/压力变化；连续性门保持 1e-8。温度联算的流动容差取此值与 1e-8 中较严者；收敛不等于物理精度合格。</p>
+      <p class="note">默认 1e-6（参考尺度的 0.0001%），控制归一化动量残差和速度/压力变化，不是流场误差百分比。可加严到 1e-12；越严通常越慢。连续性门保持 1e-8。温度联算取此值与 1e-8 中较严者；收敛不等于物理精度合格。</p>
       <button id="runFlow" class="wide" disabled>启动层流求解</button>
+      <details><summary>流场驱动自适应加密（预览闭环）</summary>
+        <p class="note">基于当前求解出的速度与压力梯度自动提取高梯度加密目标，支持紧凑单元级流场 AMR 或手动可编辑矩形加密框，随后可直接点击“生成预览”局部重划。</p>
+        <label class="field">加密驱动方式
+          <select id="flowAdaptMode">
+            <option value="field" selected>紧凑单元级流场 AMR（推荐，紧贴尾迹/剪切层）</option>
+            <option value="boxes">可编辑矩形加密框（适合手动微调）</option>
+          </select>
+        </label>
+        <div class="pair">
+          <label class="field">高梯度单元比例<input id="flowAdaptFraction" type="number" min="0.02" max="0.5" step="0.01" value="0.15"></label>
+          <label class="field">最大加密区数<input id="flowAdaptMaxBoxes" type="number" min="1" max="16" step="1" value="6"></label>
+        </div>
+        <button id="suggestFlowRefinement" class="wide" disabled>按当前流场生成自适应加密区</button>
+        <p class="note" id="flowAdaptNote">完成层流预览后可用；自动继承本次参数并展示梯度热图与参考框。</p>
+      </details>
     </section>
 
     <section class="block flow-block" id="thermalBlock" hidden>
@@ -370,59 +408,11 @@
       <button id="runThermal" class="wide" disabled>启动温度与流动推进</button>
     </section>
 
-    <section class="block flow-block" id="eulerBlock" hidden>
-      <h2><span>7</span>可压流动（试验）</h2>
-      <p class="note">独立理想气体总能量模型；可选常物性层流黏性和导热，以及一阶或二阶格式。零黏度关闭黏性；尚未包含湍流、变物性或固体共轭导热。</p>
-      <label class="field">工况<select id="eulerCase"><option value="sod">矩形冲击管（Sod）</option><option value="external">物体外流（特征远场）</option><option value="uniform">均匀流（无物面）</option><option value="sealed">封闭全部边界（壁面）</option></select></label>
-      <p id="eulerScope" class="note"></p>
-      <div class="pair">
-        <label class="field">通量格式<select id="eulerFluxScheme"><option value="rusanov">Rusanov（原方案）</option><option value="hllc">HLLC（激波保护）</option></select></label>
-        <label class="field">精度格式<select id="eulerOrder"><option value="1">一阶</option><option value="2">二阶（受限线性 / RK2）</option></select></label>
-      </div>
-      <p class="note">二阶格式改善光滑区分辨率；激波附近自动限制斜率。HLLC 使用压力感知激波保护；正性回退次数随结果报告。</p>
-      <div class="pair">
-        <label class="field">密度 ρ（kg/m³）<input id="eulerDensity" type="number" min="0.000000000001" step="any" value="1.225"></label>
-        <label class="field">绝对压力（Pa）<input id="eulerPressure" type="number" min="0.000000000001" step="any" value="101325"></label>
-      </div>
-      <div class="pair">
-        <label class="field">速度 X（m/s）<input id="eulerU" type="number" step="any" value="0"></label>
-        <label class="field">速度 Y（m/s）<input id="eulerV" type="number" step="any" value="0"></label>
-      </div>
-      <div class="pair">
-        <label class="field">比热比 γ<input id="eulerGamma" type="number" min="1.000001" step="any" value="1.4"></label>
-        <label class="field">气体常数 R（J/kg/K）<input id="eulerGasConstant" type="number" min="0.000000000001" step="any" value="287.05"></label>
-      </div>
-      <label class="field">动力黏度 μ（Pa·s；0关闭）<input id="eulerViscosity" type="number" min="0" step="any" value="0"></label>
-      <label class="field">壁面机械条件<select id="eulerWallModel"><option value="slip">自由滑移</option><option value="no-slip">静止无滑移</option></select></label>
-      <label class="field">壁面热流 / 应力梯度<select id="eulerWallGradient"><option value="linear">线性</option><option value="quadratic">二次重构（更高壁面精度）</option></select></label>
-      <p class="hint">二次重构适用于定温和无滑移壁，整体精度仍取决于上方阶数及网格。壁面附近单元不足时会明确报错。</p>
-      <label class="field">导热系数 k（W/m/K；0关闭）<input id="eulerConductivity" type="number" min="0" step="any" value="0"></label>
-      <label class="field">壁面热条件<select id="eulerWallThermal"><option value="insulated">绝热</option><option value="temperature">指定温度</option><option value="flux">指定热流</option></select></label>
-      <label class="field" id="eulerWallValueField"><span id="eulerWallValueLabel">壁温（K）</span><input id="eulerWallValue" type="number" step="any" value="300"></label>
-      <p class="note">导热会反馈到压力和流动。热流以向流体外为正，负值表示加热；开口边界采用零导热通量，能量随流动进出。</p>
-      <label class="field" id="eulerSplitField">隔膜位置（长度比例）<input id="eulerSplit" type="number" min="0.000001" max="0.999999" step="any" value="0.5"></label>
-      <div class="pair">
-        <label class="field">目标物理时间（s）<input id="eulerEndTime" type="number" min="0.000000000001" step="any" value="0.0005"></label>
-        <label class="field">声学/导热/黏性组合 CFL 上限<input id="eulerCfl" type="number" min="0.000001" max="0.45" step="any" value="0.4"></label>
-      </div>
-      <details id="eulerAdvanced"><summary>时间步与计算预算</summary>
-        <div class="pair">
-          <label class="field">最大步长（s）<input id="eulerMaximumStep" type="number" min="0.00000000000001" step="any" value="0.001"></label>
-          <label class="field">最小步长（s）<input id="eulerMinimumStep" type="number" min="0.000000000000000001" step="any" value="0.00000000000001"></label>
-        </div>
-        <label class="field">本次最大接受步数<input id="eulerMaximumSteps" type="number" min="1" max="1000000" step="1" value="100000"></label>
-        <label class="field">本次时间预算（s）<input id="eulerMaximumSeconds" type="number" min="1" max="3600" step="1" value="180"></label>
-        <p class="note">按声学、导热与黏性组合限制自动缩步；小 Cut-cell 可能显著限制步长。目标时间表示演化终点，不表示达到稳态。</p>
-      </details>
-      <label class="toggle"><input id="eulerResume" type="checkbox" disabled>从已接受的可压状态继续</label>
-      <button id="pickEulerCheckpoint" class="wide">载入可压续算清单…</button>
-      <p class="note" id="eulerRestartInfo">每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。</p>
-      <button id="runEuler" class="wide" disabled>启动可压计算</button>
-    </section>
-
     <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许更高构造深度（高密度可能需要，质量标准不变）</label>
-    <button id="generate" class="primary" disabled>生成预览</button>
-    <button id="cancel" hidden>取消当前操作</button>
+    <div class="panel-footer">
+      <button id="generate" class="primary" disabled>生成预览</button>
+      <button id="cancel" hidden>取消当前操作</button>
+    </div>
   </aside>
 
   <section class="workspace">
@@ -437,11 +427,7 @@
           <option id="flowSpeedOption" value="speed" hidden>速度色图</option>
           <option id="flowPressureOption" value="pressure" hidden>压力色图</option>
           <option id="thermalOption" value="temperature" hidden>温度色图（K）</option>
-          <option id="eulerDensityOption" value="euler-rho" hidden>可压密度（kg/m³）</option>
-          <option id="eulerPressureOption" value="euler-p" hidden>可压绝对压力（Pa）</option>
-          <option id="eulerTemperatureOption" value="euler-temperature" hidden>可压温度（K）</option>
-          <option id="eulerMachOption" value="euler-mach" hidden>可压 Mach 数</option>
-          <option id="eulerSpeedOption" value="euler-speed" hidden>可压速度（m/s）</option>
+          <option id="adaptiveIndicatorOption" value="adaptive" hidden>自适应梯度热图</option>
         </select>
         <button id="fitOverview">物体周边</button><button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
@@ -468,12 +454,6 @@
       </section>
       <div id="flowResult" class="flow-result" hidden></div>
       <div id="thermalResult" class="flow-result" hidden></div>
-      <div id="eulerResult" class="flow-result" hidden></div>
-      <section id="eulerTimeline" hidden aria-label="可压物理时间监测">
-        <div class="flow-monitor-heading"><b>可压物理时间监测</b><select id="eulerMonitorMetric"><option value="minimumDensity">最小密度（kg/m³）</option><option value="minimumPressure">最小绝对压力（Pa）</option><option value="mass">总质量 / 深度（kg/m）</option><option value="totalEnergy">总能量 / 深度（J/m）</option><option value="acousticCourant">声学 CFL</option></select></div>
-        <svg id="eulerMonitor" viewBox="0 0 720 130" role="img" aria-label="Euler 接受状态随物理时间变化"></svg>
-        <p id="eulerMonitorCaption" class="note"></p>
-      </section>
       <section id="thermalTimeline" hidden aria-label="温度物理时间监测">
         <div class="flow-monitor-heading"><b>温度时间监测</b><select id="thermalMonitorMetric" aria-label="温度监测量"><option value="heatContent">温度积分（K·m²）</option><option value="globalBalance">全域平衡（K·m²/s）</option><option value="scalarResidual">温度残差</option><option value="maxCourant">最大 CFL</option></select></div>
         <svg id="thermalMonitor" viewBox="0 0 720 130" role="img" aria-label="温度监测量随物理时间变化"></svg>
@@ -485,6 +465,7 @@
 </main>
 <script src="themes.js"></script>
 <script src="viewport.js"></script>
+<script src="results-view.js"></script>
 <script src="export-preview.js"></script>
 <script src="raster-import.js"></script>
 <script src="app.js"></script>

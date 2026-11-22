@@ -28,6 +28,7 @@ SharedEdgePartition2D::SharedEdgePartition2D(const IntersectionRegistry2D& regis
         auto& rows=columns_.back().byY;
         if (rows.empty() || rows.back().first!=p.y) rows.emplace_back(p.y,i);
     }
+    partitions_.reserve(handles_.size()*2U+16U);
 }
 
 const std::vector<std::pair<double,std::size_t>>& SharedEdgePartition2D::partition(

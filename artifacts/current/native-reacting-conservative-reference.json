@@ -1,0 +1,1049 @@
+{
+  "schema_version": 1,
+  "scope": "Optional conservative total-species and total-enthalpy flux reference BVP with full thermochemistry and multicomponent/Soret transport.",
+  "mature_combustion_goal_complete": false,
+  "qualified_reference": false,
+  "qualified_native_flame": false,
+  "branch": "codex/cfd-development",
+  "parent_commit": "0db904742fc0431de9fd185c58451071b7d77d51",
+  "compiler": "/usr/bin/clang++",
+  "build_command": [
+    "cmake",
+    "--build",
+    "build",
+    "--target",
+    "cartmesh2d_reacting_flame_reference_probe",
+    "-j",
+    "2"
+  ],
+  "method": "Optional interval total-species and total-enthalpy flux divergences on nodal dual volumes. Same full chemistry, multicomponent/Soret transport, free-flame continuity, temperature anchor, algebraic mass closure and BVP tolerances. Steady reference only; pseudo-time stabilization is not physical transient integration.",
+  "runs": {
+    "complete": true,
+    "qualified_reference": false,
+    "started_utc": "2026-09-30T08:58:57.219219+00:00",
+    "probe_sha256": "f6a8946c2c2995a16dc9bdf9a37c83b56a4898710f0b439fe8ffbd170e953f31",
+    "source_sha256": "e084938f735b81ad90eeabc08bfe839105570e0e72bee52a7d82a81db0c53c42",
+    "generator_sha256": "30e54a612edb66a280f17b9c6b9e589e546823ca10dee28699aba6bf09b4ccae",
+    "script_sha256": "6bb1d31bdec3273c87dcc7314742b9244f667523e5fe9ddcde0513928269593c",
+    "build_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "guess": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+      "sha256": "3b6cc564195f4d72838887f011eeca7fabf06b667cafaef4ca0cbb21e8293794"
+    },
+    "baseline": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/original-domain.json",
+      "sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750"
+    },
+    "method": "Optional interval total-species and total-enthalpy flux divergences on nodal dual volumes. Same full chemistry, multicomponent/Soret transport, free-flame continuity, temperature anchor, algebraic mass closure and BVP tolerances. Steady reference only; pseudo-time stabilization is not physical transient integration.",
+    "cases": [
+      {
+        "name": "original-repeat",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-repeat.json",
+          "1",
+          "0"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "wall_seconds": 4.255612958979327,
+        "stdout_sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "all_original_fields_exact": true,
+        "profile_sha256": "33a7c0680cfcfcccc1a457f05dfb9d8cf6f69d48903dede2032e41bcc4884459"
+      },
+      {
+        "name": "conservative",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/conservative.json",
+          "1",
+          "1"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "wall_seconds": 8.328384792024735,
+        "stdout_sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "profile_sha256": "7f0bc639c286f7d1f16d174046945fd12099433c7af44c92eb21cbcac6e2acf5"
+      }
+    ],
+    "finished_utc": "2026-09-30T08:59:10.020771+00:00"
+  },
+  "refinement_snapshot": {
+    "observed_utc": "2026-09-30T09:39:39.048528+00:00",
+    "refinement": {
+      "complete": false,
+      "qualified_reference": false,
+      "script_sha256": "a588a4846d4c39bc197c99fb9100859894e4e1528aaf36bc6d56da2b2ff814df",
+      "parent_sha256": "ffe1cdc1eb2f641753786afc106bfdd4bdfed6d489802083cd74a4ea95f7b6b0",
+      "original_refinement_sha256": "1b441bc046dc0716aed09e896d81e5666e0e50133467571866036304abbc417b",
+      "cases": [
+        {
+          "name": "global-bisection-1",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-1.json",
+            "1",
+            "1"
+          ],
+          "state": "completed",
+          "input_sha256": "7148948ad14db00f41c36610ab8763f4515aa28dfa11f16ae12b297aa45611dd",
+          "baseline_sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+          "returncode": 0,
+          "wall_seconds": 258.5243407500093,
+          "stdout_sha256": "64bb36defe4a48ca499c00d5fd6aeb86fb07f934c26af9253dea39f51fcacfb3",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "profile_sha256": "b6f9b47ac00674e6e362e44ea70fa9ac5611bbcb73031f1482b9a18f3ca04bd1",
+          "points": 6891
+        },
+        {
+          "name": "global-bisection-2",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-2.json",
+            "1",
+            "1"
+          ],
+          "state": "failed",
+          "input_sha256": "f947d96cc2e22b4696e21dbc0068f390ccc966aa9cfe19b3960d4b16a51fa3cb",
+          "baseline_sha256": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a",
+          "returncode": -2,
+          "wall_seconds": 1949.917578749999,
+          "stdout_sha256": "24e1357223798e3d52a026c195737faf8928d955d1f0244b30e3f6c06a69b210",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "failure": "global-bisection-2"
+    }
+  },
+  "promotion_and_workflow": {
+    "complete": true,
+    "script_sha256": "4e19ecad8991c9d0edf6325c5a86e3e44cdadc8221e5392d9ae566d009d3148b",
+    "frozen_sha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/prepare_reacting_flame.py": "0b61bb1dc63b136cbaec754f4d572922f1cc2fa434d5efc1abb71c3210cc8638",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe.cpp": "5011a4c6686b773713730b16e1f1a83bfae5ee7b76c4019f20b454e04f6ab5b3",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe": "7c96b092dd3f5dbfd176d07a4f6f201002cdfc14bef711b81e52001e09015a16"
+    },
+    "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "input_sha256": "3b6cc564195f4d72838887f011eeca7fabf06b667cafaef4ca0cbb21e8293794",
+    "cases": [
+      {
+        "name": "default",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/default.json",
+          "1"
+        ],
+        "all_fields_exact_after_diagnostic_schema_mapping": true,
+        "compared_fields": [
+          "constraint_enabled",
+          "steady_relative_tolerance",
+          "steady_absolute_tolerance",
+          "transient_relative_tolerance",
+          "transient_absolute_tolerance",
+          "transport",
+          "soret",
+          "energy",
+          "dependent_species",
+          "p",
+          "species",
+          "grid",
+          "T",
+          "u",
+          "Y",
+          "rho",
+          "original_species_residual_per_s_interior",
+          "inlet_prescribed_mass_fractions",
+          "inlet_mass_flux_kg_per_m2_s",
+          "diffusive_flux_convention",
+          "diffusive_mass_flux_kg_per_m2_s_intervals",
+          "chemical_mass_production_kg_per_m3_s_interior",
+          "conservative_flux_form",
+          "total_species_flux_kg_per_m2_s_intervals",
+          "total_enthalpy_flux_W_per_m2_intervals",
+          "selected_species_residual_per_s_interior",
+          "original_energy_residual_K_per_s_interior",
+          "selected_energy_residual_K_per_s_interior"
+        ],
+        "wall_seconds": 4.993754125025589,
+        "profile_sha256": "0900d75538839a05ed74796c25e2ca8730a3ab253ee5c225ade518f06e1a22ce"
+      },
+      {
+        "name": "conservative",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/conservative.json",
+          "1",
+          "1"
+        ],
+        "all_fields_exact_after_diagnostic_schema_mapping": true,
+        "compared_fields": [
+          "constraint_enabled",
+          "steady_relative_tolerance",
+          "steady_absolute_tolerance",
+          "transient_relative_tolerance",
+          "transient_absolute_tolerance",
+          "transport",
+          "soret",
+          "energy",
+          "dependent_species",
+          "p",
+          "species",
+          "grid",
+          "T",
+          "u",
+          "Y",
+          "rho",
+          "original_species_residual_per_s_interior",
+          "inlet_prescribed_mass_fractions",
+          "inlet_mass_flux_kg_per_m2_s",
+          "diffusive_flux_convention",
+          "diffusive_mass_flux_kg_per_m2_s_intervals",
+          "chemical_mass_production_kg_per_m3_s_interior",
+          "conservative_flux_form",
+          "total_species_flux_kg_per_m2_s_intervals",
+          "total_enthalpy_flux_W_per_m2_intervals",
+          "selected_species_residual_per_s_interior",
+          "original_energy_residual_K_per_s_interior",
+          "selected_energy_residual_K_per_s_interior"
+        ],
+        "wall_seconds": 11.684589041979052,
+        "profile_sha256": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f"
+      }
+    ],
+    "rejected": [
+      "invalid-reference-selector",
+      "missing-explicit-reference-probe"
+    ],
+    "input_workflow": {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/chemistry-env/bin/python",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/prepare_reacting_flame.py",
+        "--mechanism",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow",
+        "--closure-probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe",
+        "--conservative-reference"
+      ],
+      "wall_seconds": 7.225961958989501,
+      "report_sha256": "7fcb7481332c4f3e08c064960edd2dd1adc748bcd970fd7ebc8f034b8510d75c",
+      "profile_file": "profile-conservative.json",
+      "projection": {
+        "maximum_absolute_mass_fraction_change": 5.551115123125783e-16,
+        "allowance": 1.6631940186722205e-13,
+        "allowance_basis": "10 times BVP absolute species tolerance plus 64*(N+1)*machine epsilon for closure arithmetic",
+        "maximum_element_mass_fraction_change": 5.551115123125783e-16,
+        "rho_momentum_total_energy_preserved_per_reference_point": true,
+        "native_time_step_projection": false,
+        "large_negative_input_rejected": true
+      },
+      "stages": [
+        {
+          "points": 134,
+          "speed_m_per_s": 2.4837996709614862,
+          "peak_temperature_K": 2219.035234295443,
+          "minimum_raw_mass_fraction": -1.6546770447291023e-16,
+          "maximum_raw_species_sum_error": 2.220446049250313e-14,
+          "refine_slope": 0.06,
+          "refine_curve": 0.12
+        },
+        {
+          "points": 238,
+          "speed_m_per_s": 2.477463422440337,
+          "peak_temperature_K": 2226.7761620664633,
+          "minimum_raw_mass_fraction": -2.314855495715792e-16,
+          "maximum_raw_species_sum_error": 7.882583474838611e-14,
+          "refine_slope": 0.03,
+          "refine_curve": 0.06
+        },
+        {
+          "points": 459,
+          "speed_m_per_s": 2.4830659424121304,
+          "peak_temperature_K": 2234.4436489125546,
+          "minimum_raw_mass_fraction": -1.005810858628349e-15,
+          "maximum_raw_species_sum_error": 1.2367884494324244e-13,
+          "refine_slope": 0.015,
+          "refine_curve": 0.03
+        },
+        {
+          "points": 459,
+          "speed_m_per_s": 2.511331942448306,
+          "peak_temperature_K": 2243.6992523045988,
+          "minimum_raw_mass_fraction": -5.173999691980247e-16,
+          "maximum_raw_species_sum_error": 4.440892098500626e-16,
+          "refine_slope": 0.015,
+          "refine_curve": 0.03,
+          "fixed_grid_algebraic_mass_closure": true,
+          "conservative_flux_form": true
+        }
+      ]
+    }
+  },
+  "finest_reference_attempt": {
+    "completed": false,
+    "stopped": true,
+    "interruption": {
+      "action": "SIGINT to the exact owned reference solver process after repeated unsuccessful steady Newton attempts; round closeout requested by user.",
+      "utc": "2026-09-30T09:38:52.105757+00:00",
+      "pid": 73886,
+      "verified_command": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-2.json 1 1",
+      "signal": "SIGINT",
+      "stdout_prefix_bytes": 4096,
+      "stdout_prefix_sha256": "24e1357223798e3d52a026c195737faf8928d955d1f0244b30e3f6c06a69b210",
+      "newton_steady_failure_messages_in_saved_prefix": 25,
+      "no_completed_profile_at_request": true,
+      "reference_convergence_claimed": false,
+      "physical_acceptance_gates_changed": false
+    }
+  },
+  "arithmetic_audit": {
+    "arithmetic_audit_complete": true,
+    "qualified_reference": false,
+    "mature_combustion_goal_complete": false,
+    "script_sha256": "b9d0a29aa61c0e64eeaf1d94739899e3d45f895668f566fe48542abb00e56285",
+    "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "cases": [
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-repeat.json",
+        "sha256": "33a7c0680cfcfcccc1a457f05dfb9d8cf6f69d48903dede2032e41bcc4884459",
+        "points": 3446,
+        "conservative_flux_form": false,
+        "arithmetic_checks_passed": true,
+        "arithmetic_allowance": 1.2505552149377763e-12,
+        "arithmetic_scaled_errors": {
+          "species_flux": 2.2170036540589604e-16,
+          "enthalpy_flux": 3.861993535990437e-16
+        },
+        "outlet_temperature_K": 2241.9664814069342,
+        "inlet_velocity_m_per_s": 2.489708125304847,
+        "minimum_raw_mass_fraction": -7.912334527100616e-16,
+        "negative_raw_values": 1965,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "mass_flux_span_kg_per_m2_s": 1.1102230246251565e-14,
+        "element_fluxes": [
+          {
+            "element": "O",
+            "prescribed_inlet_kg_per_m2_s": 0.3816248012221486,
+            "first_interval_kg_per_m2_s": 0.38162480122214854,
+            "last_interval_kg_per_m2_s": 0.381653250173405,
+            "difference_kg_per_m2_s": 2.844895125647673e-05,
+            "difference_per_prescribed_inlet": 7.454691405110287e-05
+          },
+          {
+            "element": "H",
+            "prescribed_inlet_kg_per_m2_s": 0.038470184349714436,
+            "first_interval_kg_per_m2_s": 0.03847018434971443,
+            "last_interval_kg_per_m2_s": 0.038404909167071746,
+            "difference_kg_per_m2_s": -6.527518264268228e-05,
+            "difference_per_prescribed_inlet": -0.0016967733257864366
+          },
+          {
+            "element": "Ar",
+            "prescribed_inlet_kg_per_m2_s": 0.0,
+            "first_interval_kg_per_m2_s": -1.373757108436749e-19,
+            "last_interval_kg_per_m2_s": 1.169021903256029e-16,
+            "difference_kg_per_m2_s": 1.1703956603644656e-16,
+            "difference_per_prescribed_inlet": null
+          },
+          {
+            "element": "N",
+            "prescribed_inlet_kg_per_m2_s": 1.2562518845616641,
+            "first_interval_kg_per_m2_s": 1.2562518845616641,
+            "last_interval_kg_per_m2_s": 1.2562887107930458,
+            "difference_kg_per_m2_s": 3.6826231381681396e-05,
+            "difference_per_prescribed_inlet": 2.9314369064235025e-05
+          }
+        ],
+        "enthalpy_flux_first_W_per_m2": 226078.8127976101,
+        "enthalpy_flux_last_W_per_m2": 225804.8310506004,
+        "enthalpy_flux_span_W_per_m2": 490.1885139120859,
+        "maximum_flux_balance_identity_defect_kg_per_m2_s": 0.000414798436404115,
+        "selected_species_L1_residual_over_net_chemical_activity": 4.581982327795574e-09,
+        "inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "outlet_minus_inlet_HP_equilibrium_K": -2.020952557286364
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/conservative.json",
+        "sha256": "7f0bc639c286f7d1f16d174046945fd12099433c7af44c92eb21cbcac6e2acf5",
+        "points": 3446,
+        "conservative_flux_form": true,
+        "arithmetic_checks_passed": true,
+        "arithmetic_allowance": 1.2505552149377763e-12,
+        "arithmetic_scaled_errors": {
+          "species_flux": 2.2200956663803127e-16,
+          "enthalpy_flux": 4.2366666922553526e-16,
+          "species_equation": 3.207977532190356e-16,
+          "enthalpy_equation": 2.7960692440549897e-16
+        },
+        "outlet_temperature_K": 2243.923700992808,
+        "inlet_velocity_m_per_s": 2.4955985559518963,
+        "minimum_raw_mass_fraction": -5.601537211120473e-16,
+        "negative_raw_values": 1750,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "mass_flux_span_kg_per_m2_s": 1.5987211554602254e-14,
+        "element_fluxes": [
+          {
+            "element": "O",
+            "prescribed_inlet_kg_per_m2_s": 0.3825276919674313,
+            "first_interval_kg_per_m2_s": 0.38252769196743125,
+            "last_interval_kg_per_m2_s": 0.3825276919795829,
+            "difference_kg_per_m2_s": 1.2151668560278495e-11,
+            "difference_per_prescribed_inlet": 3.176676830317711e-11
+          },
+          {
+            "element": "H",
+            "prescribed_inlet_kg_per_m2_s": 0.038561201425406165,
+            "first_interval_kg_per_m2_s": 0.038561201425406165,
+            "last_interval_kg_per_m2_s": 0.038561201270195744,
+            "difference_kg_per_m2_s": -1.5521042090460568e-10,
+            "difference_per_prescribed_inlet": -4.025041107830858e-09
+          },
+          {
+            "element": "Ar",
+            "prescribed_inlet_kg_per_m2_s": 0.0,
+            "first_interval_kg_per_m2_s": -1.5052544954724806e-18,
+            "last_interval_kg_per_m2_s": 4.5366790357028055e-18,
+            "difference_kg_per_m2_s": 6.041933531175286e-18,
+            "difference_per_prescribed_inlet": null
+          },
+          {
+            "element": "N",
+            "prescribed_inlet_kg_per_m2_s": 1.2592240661302683,
+            "first_interval_kg_per_m2_s": 1.2592240661302685,
+            "last_interval_kg_per_m2_s": 1.2592240662733207,
+            "difference_kg_per_m2_s": 1.4305223672295142e-10,
+            "difference_per_prescribed_inlet": 1.1360348056447683e-10
+          }
+        ],
+        "enthalpy_flux_first_W_per_m2": 226613.69540252918,
+        "enthalpy_flux_last_W_per_m2": 226613.69643901582,
+        "enthalpy_flux_span_W_per_m2": 0.0026594744995236397,
+        "maximum_flux_balance_identity_defect_kg_per_m2_s": 7.978612224564345e-16,
+        "selected_species_L1_residual_over_net_chemical_activity": 4.791649022051185e-09,
+        "inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "outlet_minus_inlet_HP_equilibrium_K": -0.06373297141271905
+      },
+      {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-1.json",
+        "sha256": "b6f9b47ac00674e6e362e44ea70fa9ac5611bbcb73031f1482b9a18f3ca04bd1",
+        "points": 6891,
+        "conservative_flux_form": true,
+        "arithmetic_checks_passed": true,
+        "arithmetic_allowance": 1.2505552149377763e-12,
+        "arithmetic_scaled_errors": {
+          "species_flux": 2.2202713865066654e-16,
+          "enthalpy_flux": 3.84783329846789e-16,
+          "species_equation": 2.4178538127111453e-16,
+          "enthalpy_equation": 3.1802450799780467e-16
+        },
+        "outlet_temperature_K": 2243.958342543482,
+        "inlet_velocity_m_per_s": 2.4944432506672656,
+        "minimum_raw_mass_fraction": -6.550558174869416e-16,
+        "negative_raw_values": 3480,
+        "maximum_species_sum_error": 5.551115123125783e-16,
+        "mass_flux_span_kg_per_m2_s": 1.3988810110276972e-14,
+        "element_fluxes": [
+          {
+            "element": "O",
+            "prescribed_inlet_kg_per_m2_s": 0.3823506056876715,
+            "first_interval_kg_per_m2_s": 0.38235060568767143,
+            "last_interval_kg_per_m2_s": 0.38235060573094026,
+            "difference_kg_per_m2_s": 4.326883296101869e-11,
+            "difference_per_prescribed_inlet": 1.1316533128853848e-10
+          },
+          {
+            "element": "H",
+            "prescribed_inlet_kg_per_m2_s": 0.03854335001269308,
+            "first_interval_kg_per_m2_s": 0.038543350012693066,
+            "last_interval_kg_per_m2_s": 0.03854334948891634,
+            "difference_kg_per_m2_s": -5.237767233823298e-10,
+            "difference_per_prescribed_inlet": -1.3589289026767002e-08
+          },
+          {
+            "element": "Ar",
+            "prescribed_inlet_kg_per_m2_s": 0.0,
+            "first_interval_kg_per_m2_s": -1.2733163197981812e-18,
+            "last_interval_kg_per_m2_s": 5.390136096339568e-21,
+            "difference_kg_per_m2_s": 1.2787064558945207e-18,
+            "difference_per_prescribed_inlet": null
+          },
+          {
+            "element": "N",
+            "prescribed_inlet_kg_per_m2_s": 1.258641124529078,
+            "first_interval_kg_per_m2_s": 1.2586411245290778,
+            "last_interval_kg_per_m2_s": 1.25864112500958,
+            "difference_kg_per_m2_s": 4.805020825671136e-10,
+            "difference_per_prescribed_inlet": 3.8176257966057957e-10
+          }
+        ],
+        "enthalpy_flux_first_W_per_m2": 226508.78750408435,
+        "enthalpy_flux_last_W_per_m2": 226508.790794224,
+        "enthalpy_flux_span_W_per_m2": 0.008908749878173694,
+        "maximum_flux_balance_identity_defect_kg_per_m2_s": 1.2605235412248197e-15,
+        "selected_species_L1_residual_over_net_chemical_activity": 1.881533114615564e-08,
+        "inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "outlet_minus_inlet_HP_equilibrium_K": -0.0290914207384958
+      }
+    ],
+    "limits": [
+      "Arithmetic consistency checks do not establish convergence or physical accuracy.",
+      "Thermochemistry and collision data remain shared Cantera inputs.",
+      "Raw negative BVP roundoff is retained and reported; these are not accepted native states.",
+      "Finite-domain outlet composition need not equal complete HP equilibrium.",
+      "Total-flux divergence identity is reported for both discretizations, enforced as an equation only in conservative mode."
+    ]
+  },
+  "audit_corruption_checks": {
+    "complete": true,
+    "script_sha256": "bc31cafea625922191aafc0065b4b01c1a91697f88c6dea4604bc02c4b61539d",
+    "auditor_sha256": "2d1588ba31df0fb4bceb33919ba2ee09fec4096cfa5ea3505c738bb75e26262f",
+    "original_sha256": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f",
+    "positive": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/conservative.json",
+      "sha256": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f",
+      "points": 3446,
+      "conservative_flux_form": true,
+      "arithmetic_checks_passed": true,
+      "arithmetic_allowance": 1.2505552149377763e-12,
+      "arithmetic_scaled_errors": {
+        "species_flux": 2.2200956663803127e-16,
+        "enthalpy_flux": 4.2366666922553526e-16,
+        "species_equation": 3.207977532190356e-16,
+        "enthalpy_equation": 2.7960692440549897e-16
+      },
+      "outlet_temperature_K": 2243.923700992808,
+      "inlet_velocity_m_per_s": 2.4955985559518963,
+      "minimum_raw_mass_fraction": -5.601537211120473e-16,
+      "negative_raw_values": 1750,
+      "maximum_species_sum_error": 4.440892098500626e-16,
+      "mass_flux_span_kg_per_m2_s": 1.5987211554602254e-14,
+      "element_fluxes": [
+        {
+          "element": "O",
+          "prescribed_inlet_kg_per_m2_s": 0.3825276919674313,
+          "first_interval_kg_per_m2_s": 0.38252769196743125,
+          "last_interval_kg_per_m2_s": 0.3825276919795829,
+          "difference_kg_per_m2_s": 1.2151668560278495e-11,
+          "difference_per_prescribed_inlet": 3.176676830317711e-11
+        },
+        {
+          "element": "H",
+          "prescribed_inlet_kg_per_m2_s": 0.038561201425406165,
+          "first_interval_kg_per_m2_s": 0.038561201425406165,
+          "last_interval_kg_per_m2_s": 0.038561201270195744,
+          "difference_kg_per_m2_s": -1.5521042090460568e-10,
+          "difference_per_prescribed_inlet": -4.025041107830858e-09
+        },
+        {
+          "element": "Ar",
+          "prescribed_inlet_kg_per_m2_s": 0.0,
+          "first_interval_kg_per_m2_s": -1.5052544954724806e-18,
+          "last_interval_kg_per_m2_s": 4.5366790357028055e-18,
+          "difference_kg_per_m2_s": 6.041933531175286e-18,
+          "difference_per_prescribed_inlet": null
+        },
+        {
+          "element": "N",
+          "prescribed_inlet_kg_per_m2_s": 1.2592240661302683,
+          "first_interval_kg_per_m2_s": 1.2592240661302685,
+          "last_interval_kg_per_m2_s": 1.2592240662733207,
+          "difference_kg_per_m2_s": 1.4305223672295142e-10,
+          "difference_per_prescribed_inlet": 1.1360348056447683e-10
+        }
+      ],
+      "enthalpy_flux_first_W_per_m2": 226613.69540252918,
+      "enthalpy_flux_last_W_per_m2": 226613.69643901582,
+      "enthalpy_flux_span_W_per_m2": 0.0026594744995236397,
+      "maximum_flux_balance_identity_defect_kg_per_m2_s": 7.978612224564345e-16,
+      "selected_species_L1_residual_over_net_chemical_activity": 4.791649022051185e-09,
+      "inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+      "outlet_minus_inlet_HP_equilibrium_K": -0.06373297141271905
+    },
+    "rejected": [
+      {
+        "name": "species-flux",
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-flux.json",
+        "sha256": "cde439c8ab620a5e9f55b080920b9b535ebe7716c1a4adb841e7f954fcb671dd",
+        "exception": "(PosixPath('/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-flux.json'), 0.002593280599095421, np.float64(1.2505552149377763e-12))"
+      },
+      {
+        "name": "enthalpy-flux",
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/enthalpy-flux.json",
+        "sha256": "4f8a794d7b8686849591ef69cd220a87091ce449e5e62f89a7bd954886a81dbd",
+        "exception": "(PosixPath('/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/enthalpy-flux.json'), 0.00042987388384575873, np.float64(1.2505552149377763e-12))"
+      },
+      {
+        "name": "species-equation",
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-equation.json",
+        "sha256": "0a46549526cc1e13d77d2451fdbe458c10d5bf5b1df28a74f5670565a5ae8781",
+        "exception": "(PosixPath('/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-equation.json'), 1.2833352858041408e-05, np.float64(1.2505552149377763e-12))"
+      },
+      {
+        "name": "temperature",
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/temperature.json",
+        "sha256": "ffb800b6cd31113d61b9577a1d8e5e46d1e9c904b5ee340991da56adbc075415",
+        "exception": "(PosixPath('/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/temperature.json'), 0.12438562962947519, np.float64(1.2505552149377763e-12))"
+      },
+      {
+        "name": "wrong-transport-model",
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/wrong-transport-model.json",
+        "sha256": "33b50eb7cb314e72a27a414581c6b54e792a5b2101ea5ba703a9d918f3f3e527",
+        "exception": ""
+      }
+    ]
+  },
+  "legacy_grid_reference": [
+    {
+      "name": "original-domain",
+      "profile_sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750",
+      "points": 3446,
+      "domain_m": [
+        0.0,
+        0.04
+      ],
+      "constraint_enabled": true,
+      "speed_m_per_s": 2.489708125304847,
+      "outlet_temperature_K": 2241.9664814069342,
+      "mass_flux_range_kg_per_m2_s": [
+        1.6763468701335227,
+        1.6763468701335338
+      ],
+      "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.569819357312042e-12,
+      "maximum_raw_species_sum_error": 4.440892098500626e-16,
+      "minimum_raw_mass_fraction": -7.912334527100616e-16,
+      "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+      "equation_reconstruction_global_scale_kg_per_m3_s": 2884.2968073224056,
+      "equation_reconstruction_error_over_epsilon_scale": 0.532538813654869,
+      "element_order": [
+        "O",
+        "H",
+        "Ar",
+        "N"
+      ],
+      "inlet_prescribed_element_flux_kg_per_m2_s": [
+        0.3816248012221486,
+        0.038470184349714436,
+        0.0,
+        1.2562518845616641
+      ],
+      "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+        2.8448951256462502e-05,
+        -6.527518264268017e-05,
+        1.1703956603644606e-16,
+        3.682623138145935e-05
+      ],
+      "element_flux_defect_over_prescribed_inlet_element_flux": [
+        7.454691405106559e-05,
+        -0.0016967733257863815,
+        null,
+        2.9314369064058273e-05
+      ],
+      "integrated_chemical_element_source_kg_per_m2_s": [
+        4.570822831893129e-16,
+        7.491652939572817e-17,
+        0.0,
+        0.0
+      ],
+      "integrated_original_element_equation_residual_kg_per_m2_s": [
+        -9.71725959996306e-12,
+        1.0394125131168204e-10,
+        -1.5320881901096644e-19,
+        -9.422369896003917e-11
+      ],
+      "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+        2.8448941539399495e-05,
+        -6.527507870152882e-05,
+        1.1688635721692814e-16,
+        3.682613715778612e-05
+      ],
+      "nonuniform_width_contribution_kg_per_m2_s": [
+        2.8448941540225755e-05,
+        -6.527507870135067e-05,
+        1.1688635721686715e-16,
+        3.682613716123436e-05
+      ],
+      "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+        -8.262090051447e-16,
+        -1.7817428810571636e-16,
+        6.098880873489948e-29,
+        -3.4482372469543665e-15
+      ],
+      "element_budget_identity_error_kg_per_m2_s": [
+        -7.099457469388754e-16,
+        2.1833121248426846e-17,
+        5.069663911209409e-28,
+        -2.5729472805796627e-17
+      ],
+      "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+      "outlet_diffusive_flux_max_kg_per_m2_s": 6.091248185550549e-33,
+      "original_all_species_equation_L1_over_net_chemistry": 4.581982327795575e-09,
+      "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.43977006763453,
+      "enthalpy_defect_over_outlet_cp_K": -0.10001430933948458,
+      "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+      "actual_outlet_HP_equilibrium": {
+        "available": true,
+        "temperature_K": 2242.065622890643,
+        "outlet_minus_equilibrium_K": -0.09914148370899056,
+        "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+      }
+    },
+    {
+      "name": "global-bisection-1",
+      "profile_sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+      "points": 6891,
+      "domain_m": [
+        0.0,
+        0.04
+      ],
+      "constraint_enabled": true,
+      "speed_m_per_s": 2.491504304115231,
+      "outlet_temperature_K": 2242.9903110515334,
+      "mass_flux_range_kg_per_m2_s": [
+        1.6775562563649364,
+        1.6775562563649509
+      ],
+      "maximum_diffusive_species_flux_sum_kg_per_m2_s": 4.462147231570901e-12,
+      "maximum_raw_species_sum_error": 4.440892098500626e-16,
+      "minimum_raw_mass_fraction": -8.672318214071482e-16,
+      "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+      "equation_reconstruction_global_scale_kg_per_m3_s": 2889.0487031500743,
+      "equation_reconstruction_error_over_epsilon_scale": 0.5316628959301456,
+      "element_order": [
+        "O",
+        "H",
+        "Ar",
+        "N"
+      ],
+      "inlet_prescribed_element_flux_kg_per_m2_s": [
+        0.38190012119821537,
+        0.03849793833792623,
+        0.0,
+        1.257158196828801
+      ],
+      "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+        1.424368079924555e-05,
+        -3.263173992420408e-05,
+        3.3076500360666803e-16,
+        1.838805911891228e-05
+      ],
+      "element_flux_defect_over_prescribed_inlet_element_flux": [
+        3.729687425747827e-05,
+        -0.0008476230502986944,
+        null,
+        1.4626686733059065e-05
+      ],
+      "integrated_chemical_element_source_kg_per_m2_s": [
+        1.4634213555753907e-16,
+        1.814365721554676e-16,
+        0.0,
+        0.0
+      ],
+      "integrated_original_element_equation_residual_kg_per_m2_s": [
+        -3.689662831302111e-11,
+        5.59745392455034e-10,
+        1.1935559630064482e-17,
+        -5.228488231064752e-10
+      ],
+      "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+        1.424364390327774e-05,
+        -3.263118017869707e-05,
+        3.427005632331676e-16,
+        1.8387536270085818e-05
+      ],
+      "nonuniform_width_contribution_kg_per_m2_s": [
+        1.4243643904019765e-05,
+        -3.2631180178707606e-05,
+        3.4270056325607375e-16,
+        1.838753627454558e-05
+      ],
+      "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+        -7.420107008617214e-16,
+        1.0544970167107223e-17,
+        -2.290615410490252e-26,
+        -4.459760604433663e-15
+      ],
+      "element_budget_identity_error_kg_per_m2_s": [
+        -7.63747585682574e-16,
+        -2.967529108728606e-16,
+        3.564911734500329e-27,
+        3.3576386029160465e-18
+      ],
+      "inlet_species_flux_bc_max_error_kg_per_m2_s": 8.475954916560887e-17,
+      "outlet_diffusive_flux_max_kg_per_m2_s": 7.909314849605179e-18,
+      "original_all_species_equation_L1_over_net_chemistry": 1.8630870657801484e-08,
+      "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -81.66093054244993,
+      "enthalpy_defect_over_outlet_cp_K": -0.04995834479197035,
+      "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+      "actual_outlet_HP_equilibrium": {
+        "available": true,
+        "temperature_K": 2243.0280968795128,
+        "outlet_minus_equilibrium_K": -0.03778582797940544,
+        "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+      }
+    },
+    {
+      "name": "global-bisection-2",
+      "profile_sha256": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a",
+      "points": 13781,
+      "domain_m": [
+        0.0,
+        0.04
+      ],
+      "constraint_enabled": true,
+      "speed_m_per_s": 2.4923947392730987,
+      "outlet_temperature_K": 2243.4877563578325,
+      "mass_flux_range_kg_per_m2_s": [
+        1.6781557957947875,
+        1.6781557957948015
+      ],
+      "maximum_diffusive_species_flux_sum_kg_per_m2_s": 1.0405032738192155e-11,
+      "maximum_raw_species_sum_error": 1.2212453270876722e-15,
+      "minimum_raw_mass_fraction": -3.168313432299965e-16,
+      "equation_reconstruction_max_error_kg_per_m3_s": 3.4106051401188104e-13,
+      "equation_reconstruction_global_scale_kg_per_m3_s": 2891.411237259697,
+      "equation_reconstruction_error_over_epsilon_scale": 0.5312284824867819,
+      "element_order": [
+        "O",
+        "H",
+        "Ar",
+        "N"
+      ],
+      "inlet_prescribed_element_flux_kg_per_m2_s": [
+        0.38203660793602484,
+        0.03851169706101762,
+        0.0,
+        1.257607490797751
+      ],
+      "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+        7.135680701012571e-06,
+        -1.6346579585394583e-05,
+        5.455478528579395e-16,
+        9.21089887806481e-06
+      ],
+      "element_flux_defect_over_prescribed_inlet_element_flux": [
+        1.8678002455218896e-05,
+        -0.0004244575241515635,
+        null,
+        7.324144413470348e-06
+      ],
+      "integrated_chemical_element_source_kg_per_m2_s": [
+        -2.500978422602023e-16,
+        3.8863847175430016e-16,
+        0.0,
+        0.0
+      ],
+      "integrated_original_element_equation_residual_kg_per_m2_s": [
+        -1.4227080739545385e-10,
+        2.1903923196565934e-09,
+        2.6755082188823814e-17,
+        -2.0481214722327837e-09
+      ],
+      "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+        7.135538432942024e-06,
+        -1.6344389193107495e-05,
+        5.723029350542315e-16,
+        9.208850756590748e-06
+      ],
+      "nonuniform_width_contribution_kg_per_m2_s": [
+        7.135538431434132e-06,
+        -1.634438919298949e-05,
+        5.723029350683421e-16,
+        9.20885076053259e-06
+      ],
+      "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+        1.507891013985541e-15,
+        -1.180075085314009e-16,
+        -1.4110552226914543e-26,
+        -3.941842308835021e-15
+      ],
+      "element_budget_identity_error_kg_per_m2_s": [
+        -2.482712013675715e-15,
+        -3.4541325962672564e-16,
+        -7.468244797340471e-27,
+        1.8295911660692887e-18
+      ],
+      "inlet_species_flux_bc_max_error_kg_per_m2_s": 1.3062149150743763e-15,
+      "outlet_diffusive_flux_max_kg_per_m2_s": 9.046464795929445e-18,
+      "original_all_species_equation_L1_over_net_chemistry": 7.530409496762944e-08,
+      "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -40.854789718810935,
+      "enthalpy_defect_over_outlet_cp_K": -0.02499090039514143,
+      "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+      "actual_outlet_HP_equilibrium": {
+        "available": true,
+        "temperature_K": 2243.50723051851,
+        "outlet_minus_equilibrium_K": -0.019474160677418695,
+        "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+      }
+    }
+  ],
+  "initial_readback": {
+    "zero_time_only": true,
+    "all_passed": true,
+    "native_cells": [
+      464,
+      610,
+      890
+    ]
+  },
+  "arithmetic_allowance": {
+    "formula": "512*(Nspecies+1)*machine epsilon",
+    "normalization": "Each independently recomputed quantity divided by the sum of absolute constituent terms before any cancellation, with the same dual-volume/rho/cp factors.",
+    "purpose": "Allow floating arithmetic and grouping differences between C++ and Python in recorded flux/equation consistency only, not combustion accuracy or residual convergence.",
+    "cost": "O(points*species) arithmetic plus one thermodynamic query per node and one conductivity query per interval; no new nonlinear solve."
+  },
+  "preserved_reader_failures": [
+    {
+      "file": "audit-first-two.log",
+      "cause": "Positional Python Cantera constructor silently selected mixture-averaged transport; corrected to named multicomponent model with an assertion."
+    },
+    {
+      "file": "audit-first-two-corrected.log",
+      "cause": "Arithmetic denominator incorrectly used already-canceled total face flux. Corrected to the absolute advective plus diffusive constituent terms; unchanged epsilon multiplier and physical gates."
+    }
+  ],
+  "validation_scope": {
+    "reference_target_build": true,
+    "default_and_optional_fixed_grid_replays": true,
+    "invalid_selector_and_missing_probe_rejected": true,
+    "complete_preparation_workflow": true,
+    "initial_only_native_readback_grids": 3,
+    "corrupted_real_reference_files_rejected": 5,
+    "full_ctest": false,
+    "frontend": false,
+    "app": false,
+    "platform_ci": false,
+    "experiment": false
+  },
+  "native_equations_defaults_and_import_gates_changed": false,
+  "limits": [
+    "Conservative upwind reference still has discretization error; speed and temperature sensitivity must be reported independently of flux closure.",
+    "This is an independent steady BVP algorithm sharing Cantera thermochemistry and collision data; it is not independent experimental validation.",
+    "Constant-pressure reference omits longitudinal kinetic energy and viscous work retained by native compressible flow.",
+    "The pseudo-time term stabilizes the BVP nonlinear solve and is not physical transient integration.",
+    "Raw negative BVP roundoff is retained; bounded preparation is only for new initial data, never a native accepted checkpoint.",
+    "Zero-time input readback does not establish native evolution or flame-speed accuracy."
+  ],
+  "figure": {
+    "path": "artifacts/current/native-reacting-conservative-reference.png",
+    "sha256": "12a1ee30c697bbb744cb682fd91a370d7b9328de16eabe9225c7faea39fee8d5"
+  },
+  "raw_sha256": {
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/make_probe.py": "30e54a612edb66a280f17b9c6b9e589e546823ca10dee28699aba6bf09b4ccae",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe.cpp": "e084938f735b81ad90eeabc08bfe839105570e0e72bee52a7d82a81db0c53c42",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/probe": "f6a8946c2c2995a16dc9bdf9a37c83b56a4898710f0b439fe8ffbd170e953f31",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-source.sha256": "8e6cc221f51eefa2d4342807c83daebb6a2b223272138472df7843a8e43c8b0d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/run.py": "6bb1d31bdec3273c87dcc7314742b9244f667523e5fe9ddcde0513928269593c",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/runs.json": "ffe1cdc1eb2f641753786afc106bfdd4bdfed6d489802083cd74a4ea95f7b6b0",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/launcher.log": "a6adf735b2e84c0473410d3953eb7b9e7d0ed2f86a83eede2e652a1778bbe782",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-repeat.json": "33a7c0680cfcfcccc1a457f05dfb9d8cf6f69d48903dede2032e41bcc4884459",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-repeat.stdout": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/original-repeat.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/conservative.json": "7f0bc639c286f7d1f16d174046945fd12099433c7af44c92eb21cbcac6e2acf5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/conservative.stdout": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/conservative.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/refine.py": "a588a4846d4c39bc197c99fb9100859894e4e1528aaf36bc6d56da2b2ff814df",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/check_promotion.py": "4e19ecad8991c9d0edf6325c5a86e3e44cdadc8221e5392d9ae566d009d3148b",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promotion.json": "c4bacd14bc5bf979db552f234d80ba57bac233bd721cfa848a82f6b58f7b586a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promotion.log": "c22dbaf8a9b3413386c1a8fe310723cb56bb0c7f19f3e1407a2e140f4f625a86",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted-build.log": "adb3a781e3adb916678b110bb1a77fdd13b39b6ad69eb2aa5374f396d6de9e59",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted-build-final.log": "adb3a781e3adb916678b110bb1a77fdd13b39b6ad69eb2aa5374f396d6de9e59",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit_flux.py": "2d1588ba31df0fb4bceb33919ba2ee09fec4096cfa5ea3505c738bb75e26262f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit_flux-v3.py": "b9d0a29aa61c0e64eeaf1d94739899e3d45f895668f566fe48542abb00e56285",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit_flux-failed-positional-model.py": "5b2050c53c518b0dac7af7baf9c5d14284dfa2c0c4bc453e824bb4179f5f0b07",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit_flux-failed-canceled-face-scale.py": "6e397b618c21a5f86aa7e72c617beef36162e29b8f09be373c0125d1de623378",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-first-two.log": "3345aec814943b5114a3c0ddfcffc944cd24dc9a465cf8aa83eae88f89c3787f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-first-two-corrected.log": "0a7a79fc241f87eee01ff7ffef557201b7d49d1b229040ae601cf4d7a683d458",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-first-two-v3.json": "1983cd907c905612e0dad4c2e471cdbf1ac63cea5adcefa416848d44d77c5ebd",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-first-two-v3.log": "622cde6d77208fa6380d6b1aad174900a3c3ce17a7c37368977a412ec21e8b88",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/check_audit.py": "bc31cafea625922191aafc0065b4b01c1a91697f88c6dea4604bc02c4b61539d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-tests.json": "cd607d28531c40a13a70ce23db6ce8c26af98ecf18ad46f0f14c87e1c8807ce3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/audit-tests.log": "a07ff0ef2662571e8c1e8ab1936ba6d67b2f91517433a1942ddf542e038f91d9",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/report.json": "359b6e6e59ef750400f273579582940b86838a1db2d13811bf209885b9329fa5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback.log": "c53d4d3980394aad02fae9767f7dc55478c19f4c1bdf31601687b3a2e3861012",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/reference.json": "7fcb7481332c4f3e08c064960edd2dd1adc748bcd970fd7ebc8f034b8510d75c",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow.stdout": "ac168a4e47ebcd16ee71a293f1284f8db7f71070a7683fc03df5d32d6e50c212",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/write_artifact.py": "158a33e4c42f2dcab5b4201c919d2442194b48c5a54b4939a1b0e1854fe5b483",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/refinement-stopped.json": "5ed92398c24bfbfcb2600ddeb696fe59f595766ae2354867d256e24e5639b3c5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/native-reacting-reference-flux.json": "7bc11a60b05bff8bd35fa41fcbb6dd2c99eb76fda817e331feecf0771ede9a8a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/missing-explicit-reference-probe.stderr": "5705b097f18691ebb6d1ab1667408b20b85cb2c184b67868bc2ecf3ae88f7967",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/invalid-reference-selector.stderr": "6cc127d90f7e2f5dd69c4945c0ef0fda10e66da01e44a0390757ff7671a93124",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/conservative.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/prepare_reacting_flame.py": "0b61bb1dc63b136cbaec754f4d572922f1cc2fa434d5efc1abb71c3210cc8638",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/conservative.json": "3fae89d3375dd712bb7a139dea9fcc8771e612942e5150195e7de98a20a4098f",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe.cpp": "5011a4c6686b773713730b16e1f1a83bfae5ee7b76c4019f20b454e04f6ab5b3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/conservative.stdout": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/default.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/default.json": "0900d75538839a05ed74796c25e2ca8730a3ab253ee5c225ade518f06e1a22ce",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/probe": "7c96b092dd3f5dbfd176d07a4f6f201002cdfc14bef711b81e52001e09015a16",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/promoted/default.stdout": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-1.json": "b6f9b47ac00674e6e362e44ea70fa9ac5611bbcb73031f1482b9a18f3ca04bd1",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-1.stdout": "64bb36defe4a48ca499c00d5fd6aeb86fb07f934c26af9253dea39f51fcacfb3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.guess": "7148948ad14db00f41c36610ab8763f4515aa28dfa11f16ae12b297aa45611dd",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-2.stdout": "24e1357223798e3d52a026c195737faf8928d955d1f0244b30e3f6c06a69b210",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/global-bisection-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess": "f947d96cc2e22b4696e21dbc0068f390ccc966aa9cfe19b3960d4b16a51fa3cb",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/interruption-request.json": "69e1c56820e5d80650bd7b5e519432c95a7a86f733aa579f10051a27728e1795",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/refinement-runs.json": "127bd72d376214bad6941f6f98df52b74ec803dab675f01d5b98cb8cc8df1ea7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/refinement.log": "8f5fd308720be0026d8498cc5fe8446641c231ffeb29aa16c5bb0ac5c4562ca6",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/refinement-snapshot-2.json": "3008760e8b2333f252ca076cebe0438e16c39bb44bd964a430bab24bc3819acd",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-0/evaluation-progress.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-0/field.json": "dfc92f6a3d4080dab84641324f98ffc3e6bd1b412d1501d2eef65e0c7e0bee5d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-0/steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-0/accepted-state.json": "e7a6c0ccf549e0172d35298a9e6ca5503e45198f90ff461b0c97137fa713ba30",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-1/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-1/evaluation-progress.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-1/field.json": "1bf05c245a8d206d6e9dc804ff846eb2d6f4d5b3abf47d7f272c11a82d2fc086",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-1/steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-1/accepted-state.json": "a80337652068d4e3f7dc7a60ae6dac694cd0490def1a2625a6183db8b4195b96",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-2/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-2/evaluation-progress.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-2/field.json": "85f698d54639715137fcce1d63aaf4d456ea0e969ccbdf89dc4d4d277113e707",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-2/steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-readback/native-2/accepted-state.json": "4ff1306584bc93e5257a128675202d1d2866f376df37a5b0e1cdff7aab2ab9f5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/closure-guess.txt": "d78094eac03d925fe595a65298dcc2ca110f406634b7dddcc1180a78c64ead95",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/prepared-reference.npz": "decbe1a64097737ec50cb1f6a31446fd65141a8bc68a64e607f3704a7113b57d",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/reference-2.yaml": "8060d1b5eb4e9a7f6b24475c58e0d8039cbf935c080d3c1e92a8e7a593127ec1",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/profile-2.json": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/reference-0.yaml": "4a01a1e9d167e375d6f72d70eb6ca9f7e7783a1fbfdacc6fde8844f5a83326fb",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/closure.stdout": "e6c4ba2752e40c41e188218c39be59798ca2f31d0108c6e470cd279e1f25d375",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/profile-1.json": "9d55a9d5f05bb99382dd028357fe7fecb6098b4bb49412313da4914c7f8e2a57",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/grid-2.fixture": "243c85b17e943d22e84a9fa776c55f23fc8d9e222bc39124c04033d669cd444c",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/profile-0.json": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/reference-1.yaml": "efe97552950bacdd33fa4d8efc0fa0109cfdd0a76ed1ef2438c3709995723ef3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/grid-1.fixture": "3ff240709196d52fbccdc8c76c8c36f4c758415ea9a244e149d3aead17ff934c",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/profile-conservative.json": "8e516ba89be591390b92269b363322faa5a89502390800a8ebe5c2aaa1fdda9a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/closure.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/input-workflow/grid-0.fixture": "0f1a67f5cac1c9c0147a162917605b319a2a03f54a91c18674987cdaf2c20989",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-flux.json": "cde439c8ab620a5e9f55b080920b9b535ebe7716c1a4adb841e7f954fcb671dd",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/enthalpy-flux.json": "4f8a794d7b8686849591ef69cd220a87091ce449e5e62f89a7bd954886a81dbd",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/species-equation.json": "0a46549526cc1e13d77d2451fdbe458c10d5bf5b1df28a74f5670565a5ae8781",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/temperature.json": "ffb800b6cd31113d61b9577a1d8e5e46d1e9c904b5ee340991da56adbc075415",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-conservative-001/corrupted/wrong-transport-model.json": "33b50eb7cb314e72a27a414581c6b54e792a5b2101ea5ba703a9d918f3f3e527",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/original-domain.json": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.json": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.json": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tests/reacting_flame_reference_probe.cpp": "5011a4c6686b773713730b16e1f1a83bfae5ee7b76c4019f20b454e04f6ab5b3",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/prepare_reacting_flame.py": "0b61bb1dc63b136cbaec754f4d572922f1cc2fa434d5efc1abb71c3210cc8638"
+  }
+}

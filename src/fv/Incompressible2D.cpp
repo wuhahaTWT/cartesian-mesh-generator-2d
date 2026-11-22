@@ -15,449 +15,11 @@
 #include <numeric>
 #include <stdexcept>
 
+#include "FlowSolverDetail2D.hpp"
+#include "FlowPressure2D.hpp"
+#include "FlowCoupled2D.hpp"
 namespace cartmesh2d::fv {
-namespace {
-
-using Vec = std::vector<double>;
-
-void ensure(bool valid, const char* message) {
-    if (!valid) throw std::runtime_error(message);
-}
-
-double finite(double x) {
-    ensure(std::isfinite(x), "Flow numerical range exceeded");
-    return x;
-}
-
-using System = detail::SparseSystem2D;
-
-enum class Role { Wall, Inlet, Outlet, Slip, Lid, Farfield, Opening };
-
-double counterflowSpeed(double y, double speed) {
-    return speed * (1 + 2 * std::cos(2 * std::acos(-1.) * y));
-}
-
-struct Boundary {
-    std::vector<Role> role;
-    Vec u;
-    Vec v;
-    Vec p; // populated only for explicit conditions; preset pressure remains zero
-    double initialU = 0, initialV = 0, initialP = 0;
-    std::vector<bool> fixedU;
-    std::vector<bool> fixedV;
-    std::vector<bool> fixedP;
-    std::vector<bool> constantU;
-    std::vector<bool> constantV;
-    double xmin = 0;
-    double xmax = 0;
-    double ymin = 0;
-    double ymax = 0;
-    bool closed = false;
-    bool pressureOpenings = false;
-};
-Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
-    const auto nf = m.faces.size();
-    Boundary b;
-    b.role.assign(nf, Role::Wall);
-    b.u.resize(nf);
-    b.v.resize(nf);
-    b.fixedU.assign(nf, false);
-    b.fixedV.assign(nf, false);
-    b.fixedP.assign(nf, false);
-    b.constantU.assign(nf, false);
-    b.constantV.assign(nf, false);
-    b.xmin = b.ymin = std::numeric_limits<double>::infinity();
-    b.xmax = b.ymax = -b.xmin;
-    for (const auto& f : m.faces) {
-        if (!f.neighbour) {
-            // Curved duct extrema may occur at vertices, not face centres.
-            // For a 2-D edge, rotating its area vector gives its tangent.
-            const bool vertexBounds = c.scenario == "duct" || c.scenario == "custom";
-            const double dx = vertexBounds ? .5 * std::abs(f.areaVector.y) : 0;
-            const double dy = vertexBounds ? .5 * std::abs(f.areaVector.x) : 0;
-            b.xmin = std::min(b.xmin, f.centre.x - dx);
-            b.xmax = std::max(b.xmax, f.centre.x + dx);
-            b.ymin = std::min(b.ymin, f.centre.y - dy);
-            b.ymax = std::max(b.ymax, f.centre.y + dy);
-        }
-    }
-    const double width = b.xmax - b.xmin;
-    const double height = b.ymax - b.ymin;
-    ensure(width > 0 && height > 0, "Flow empty domain");
-    const double eps = TolerancePolicy{}.scale(std::max(width, height));
-    const auto equal = [&](double a, double d) { return std::abs(a - d) <= eps; };
-    if (c.scenario == "custom") {
-        ensure(std::isfinite(c.speed) && c.speed > 0, "Custom boundary reference speed must be positive");
-        ensure(c.outletBackflow == OutletBackflow2D::Reject,
-               "Custom pressure outlets currently require explicit backflow rejection");
-        std::vector<bool> seen(nf, false);
-        std::map<std::string, FlowBoundaryKind2D> namedKinds;
-        b.p.resize(nf);
-        std::size_t inletCount = 0, outletCount = 0, openingCount = 0;
-        double inletLength = 0, outletLength = 0;
-        for (const auto& condition : c.boundaryConditions) {
-            const auto id = condition.face;
-            ensure(id < nf, "Custom boundary face ID is out of range");
-            const auto& face = m.faces[id];
-            ensure(!face.neighbour, "Custom boundary condition refers to an internal face");
-            ensure(!seen[id], "Duplicate custom boundary face");
-            seen[id] = true;
-            ensure(!condition.name.empty() && condition.name.size() <= 128 &&
-                   std::none_of(condition.name.begin(), condition.name.end(), [](unsigned char ch) {
-                       return ch < 32 || ch == 127 || ch == ',' || ch == '"';
-                   }), "Invalid custom boundary name");
-            const auto [it, inserted] = namedKinds.emplace(condition.name, condition.kind);
-            ensure(inserted || it->second == condition.kind,
-                   "One named boundary cannot mix physical condition types");
-            ensure(std::isfinite(condition.velocity.x) && std::isfinite(condition.velocity.y) &&
-                   std::isfinite(condition.pressure), "Non-finite custom boundary value");
-            const double length = std::hypot(face.areaVector.x, face.areaVector.y);
-            const double q = finite(dot(condition.velocity, face.areaVector));
-            switch (condition.kind) {
-            case FlowBoundaryKind2D::VelocityInlet:
-                ensure(condition.pressure == 0 && q < 0,
-                       "Velocity inlet must point into the fluid and cannot prescribe pressure");
-                b.role[id] = Role::Inlet;
-                b.fixedU[id] = b.fixedV[id] = true;
-                b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
-                b.initialU += condition.velocity.x * length;
-                b.initialV += condition.velocity.y * length;
-                inletLength += length;
-                ++inletCount;
-                break;
-            case FlowBoundaryKind2D::PressureOutlet:
-            case FlowBoundaryKind2D::PressureOpening:
-                ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
-                       "Pressure boundary cannot also prescribe velocity");
-                if (condition.kind == FlowBoundaryKind2D::PressureOpening) {
-                    ensure(std::min(std::abs(face.areaVector.x), std::abs(face.areaVector.y)) <=
-                               TolerancePolicy{}.scale(1.) * length,
-                           "Pressure opening must be axis aligned");
-                    ++openingCount;
-                    b.pressureOpenings = true;
-                }
-                b.role[id] = condition.kind == FlowBoundaryKind2D::PressureOpening ? Role::Opening : Role::Outlet;
-                b.fixedP[id] = true; b.p[id] = condition.pressure;
-                b.initialP += condition.pressure * length;
-                outletLength += length;
-                ++outletCount;
-                break;
-            case FlowBoundaryKind2D::Symmetry:
-                ensure(condition.velocity.x == 0 && condition.velocity.y == 0 && condition.pressure == 0,
-                       "Symmetry cannot prescribe velocity or pressure");
-                ensure(std::min(std::abs(face.areaVector.x), std::abs(face.areaVector.y)) <=
-                           TolerancePolicy{}.scale(1.) * length,
-                       "Symmetry face must be axis aligned");
-                b.role[id] = Role::Slip;
-                if (std::abs(face.areaVector.x) > std::abs(face.areaVector.y))
-                    b.fixedU[id] = b.constantU[id] = true;
-                else b.fixedV[id] = b.constantV[id] = true;
-                break;
-            case FlowBoundaryKind2D::Wall:
-            case FlowBoundaryKind2D::MovingWall:
-            case FlowBoundaryKind2D::SmoothMovingWall:
-                ensure(condition.pressure == 0, "Wall cannot prescribe pressure");
-                if (condition.kind == FlowBoundaryKind2D::Wall)
-                    ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
-                           "Stationary wall velocity must be zero");
-                ensure(std::abs(q) <= TolerancePolicy{}.scale(std::max(c.speed,
-                           std::hypot(condition.velocity.x, condition.velocity.y))) * length,
-                       "Moving wall velocity must be tangential to its face");
-                b.role[id] = condition.kind == FlowBoundaryKind2D::Wall ? Role::Wall : Role::Lid;
-                b.fixedU[id] = b.fixedV[id] = true;
-                b.constantU[id] = b.constantV[id] = condition.kind != FlowBoundaryKind2D::SmoothMovingWall;
-                b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
-                break;
-            default:
-                throw std::runtime_error("Unknown custom boundary condition type");
-            }
-        }
-        for (std::size_t id = 0; id < nf; ++id)
-            ensure(m.faces[id].neighbour || seen[id], "Missing custom boundary face");
-        ensure(openingCount > 0 || (inletCount > 0 && outletCount > 0) || (inletCount == 0 && outletCount == 0),
-               "Custom open flow needs a pressure opening or velocity inlet and pressure outlet; closed flow needs only walls");
-        b.closed = outletCount == 0;
-        if (!b.closed) {
-            if (inletLength > 0) {
-                b.initialU = finite(b.initialU / inletLength);
-                b.initialV = finite(b.initialV / inletLength);
-            }
-            b.initialP = finite(b.initialP / outletLength);
-        }
-        return b;
-    }
-    ensure(c.boundaryConditions.empty(), "Explicit boundary conditions require the custom scenario");
-    if(c.scenario=="flatplate")
-        ensure(c.flatPlateLeadingEdge>=b.xmin && c.flatPlateLeadingEdge<b.xmax,
-               "Flat plate leading edge must lie within the bottom boundary");
-
-    std::size_t inlets = 0;
-    std::size_t outlets = 0;
-    std::size_t walls = 0;
-    for (std::size_t id = 0; id < nf; ++id) {
-        const auto& f = m.faces[id];
-        if (f.neighbour) {
-            continue;
-        }
-        const bool left = equal(f.centre.x, b.xmin);
-        const bool right = equal(f.centre.x, b.xmax);
-        const bool top = equal(f.centre.y, b.ymax);
-        const bool bottom = equal(f.centre.y, b.ymin);
-        const bool embedded =
-            c.scenario == "external" && f.patch == BoundaryPatch2D::EmbeddedBoundary;
-        if (embedded) {
-            b.role[id] = Role::Wall;
-            ++walls;
-        } else if (c.scenario == "duct") {
-            // A user-selected duct has planar x-end openings and arbitrary
-            // stationary walls between them. Unlike the channel preset, its
-            // fluid region need not fill the bounding rectangle.
-            const bool vertical = std::abs(f.areaVector.y) <= eps;
-            if (left && vertical && f.areaVector.x < 0) {
-                b.role[id] = Role::Inlet;
-                ++inlets;
-            } else if (right && vertical && f.areaVector.x > 0) {
-                b.role[id] = Role::Outlet;
-                ++outlets;
-            } else {
-                b.role[id] = Role::Wall;
-                ++walls;
-            }
-        } else {
-            ensure(left || right || top || bottom,
-                   "Selected flow case requires rectangular outer boundary");
-            // An axis-position match alone is insufficient for a sloping edge.
-            ensure((left || right) ? std::abs(f.areaVector.y) <= eps
-                                   : std::abs(f.areaVector.x) <= eps,
-                   "Flow outer edge is not axis aligned");
-            if (c.scenario == "taylor-green") {
-                b.role[id] = Role::Slip;
-            } else if (c.scenario == "manufactured") {
-                b.role[id] = Role::Wall;
-            } else if (c.scenario == "cavity") {
-                b.role[id] = top ? Role::Lid : Role::Wall;
-            } else if (left) {
-                b.role[id] = Role::Inlet;
-                ++inlets;
-            } else if (right) {
-                b.role[id] = Role::Outlet;
-                ++outlets;
-            } else if(c.scenario=="flatplate") {
-                b.role[id]=top && c.flatPlateTop==FlatPlateTop2D::PressureFarfield ? Role::Farfield : Role::Slip;
-                if(bottom) {
-                    const double halfLength=.5*std::abs(f.areaVector.y);
-                    const double lo=f.centre.x-halfLength,hi=f.centre.x+halfLength;
-                    ensure(!(lo<c.flatPlateLeadingEdge-eps && hi>c.flatPlateLeadingEdge+eps),
-                           "Flat plate leading edge crosses a boundary face; split the mesh edge");
-                    if(f.centre.x>=c.flatPlateLeadingEdge) {b.role[id]=Role::Wall;++walls;}
-                }
-            } else {
-                b.role[id] = (c.scenario == "external" || c.scenario == "counterflow") ? Role::Slip : Role::Wall;
-            }
-        }
-
-        b.constantU[id]=b.role[id]==Role::Wall || b.role[id]==Role::Lid;
-        b.constantV[id]=b.constantU[id];
-        switch (b.role[id]) {
-        case Role::Wall:
-            b.fixedU[id] = b.fixedV[id] = true;
-            break;
-        case Role::Lid:
-            b.fixedU[id] = b.fixedV[id] = true;
-            b.u[id] = c.speed;
-            break;
-        case Role::Inlet:
-            b.fixedU[id] = b.fixedV[id] = true;
-            b.u[id] = c.scenario == "channel"
-                          ? 4 * c.speed * (f.centre.y - b.ymin) * (b.ymax - f.centre.y) /
-                                (height * height)
-                          : c.speed;
-            if (c.scenario == "counterflow") b.u[id] = counterflowSpeed(f.centre.y, c.speed);
-            break;
-        case Role::Outlet:
-        case Role::Opening:
-            b.fixedP[id] = true;
-            break;
-        case Role::Farfield:
-            b.fixedP[id] = true;
-            b.u[id] = c.speed;
-            break;
-        case Role::Slip:
-            // Outer boundaries were checked to be axis aligned above.
-            if (left || right) b.fixedU[id] = b.constantU[id] = true;
-            else b.fixedV[id] = b.constantV[id] = true;
-            break;
-        }
-    }
-    b.closed = c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green";
-    if (c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow")
-        ensure(equal(b.xmin,0) && equal(b.ymin,0) && equal(b.xmax,1) && equal(b.ymax,1),
-               "Verification flow requires the unit square [0,1]^2");
-    if (!b.closed) {
-        ensure(inlets && outlets, "Flow needs left inlet and right pressure outlet");
-    }
-    if (c.scenario == "external") {
-        ensure(walls > 0, "External case requires embedded solid wall");
-    } else if (c.scenario == "duct") {
-        ensure(walls > 0, "Duct requires stationary wall faces between its openings");
-    } else {
-        if(c.scenario=="flatplate")ensure(walls>0,"Flat plate requires resolved no-slip faces");
-        double area = 0;
-        for (const auto& cell : m.cells) {
-            area += cell.area;
-        }
-        ensure(std::abs(area - width * height) <
-                   TolerancePolicy{}.areaScale(std::max(width, height)) * 10,
-               "Channel/cavity requires a filled rectangle without holes");
-    }
-    return b;
-}
-
-void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
-                          const FlowControls2D& c, const Vec& flux) {
-    if(c.scenario!="flatplate" && c.scenario!="custom" && c.outletBackflow!=OutletBackflow2D::NormalInlet)return;
-    for (std::size_t id = 0; id < m.faces.size(); ++id) {
-        if (!m.faces[id].neighbour && b.role[id] == Role::Opening) {
-            const bool normalX = std::abs(m.faces[id].areaVector.x) > std::abs(m.faces[id].areaVector.y);
-            b.fixedU[id] = b.constantU[id] = !normalX && flux[id] < 0;
-            b.fixedV[id] = b.constantV[id] = normalX && flux[id] < 0;
-            continue;
-        }
-        if(!m.faces[id].neighbour && b.role[id]==Role::Farfield) {
-            // Horizontal open top: pressure controls normal flux; only the
-            // entering tangential component is prescribed from the freestream.
-            b.fixedU[id]=b.constantU[id]=flux[id]<0;
-            continue;
-        }
-        if (c.outletBackflow != OutletBackflow2D::NormalInlet) continue;
-        if (m.faces[id].neighbour || b.role[id] != Role::Outlet) continue;
-        // Current cases have a right, axis-aligned pressure outlet. Keep its
-        // normal component free; constrain only the incoming tangential one.
-        b.fixedV[id] = b.constantV[id] = flux[id] < 0;
-        b.v[id] = 0;
-    }
-}
-
-
-Vector2D interpolateGradient(const Face& f, const std::vector<Vector2D>& g) {
-    auto result = g[f.owner];
-    if (f.neighbour) {
-        const auto neighbour = g[*f.neighbour];
-        const double weight = f.neighbourWeight;
-        result = {result.x * (1 - weight) + neighbour.x * weight,
-                  result.y * (1 - weight) + neighbour.y * weight};
-    }
-    return result;
-}
-
-double interpolate(const Face& f, const Vec& x) {
-    return f.neighbour ? x[f.owner] * (1 - f.neighbourWeight) +
-                             x[*f.neighbour] * f.neighbourWeight
-                       : x[f.owner];
-}
-
-double faceNu(const FlowControls2D& c, std::size_t id) {
-    return c.faceViscosity.empty()?c.nu:c.faceViscosity[id];
-}
-void validateViscosity(const FvMesh2D& m, const FlowControls2D& c) {
-    ensure(c.faceViscosity.empty() || c.faceViscosity.size()==m.faces.size(),
-           "Face viscosity dimensions mismatch");
-    for (double value:c.faceViscosity)
-        ensure(std::isfinite(value)&&value>0,"Face viscosity must be finite positive");
-    ensure(std::isfinite(c.manufacturedViscositySlope) &&
-           (c.manufacturedViscositySlope==0 || (c.scenario=="manufactured" && !c.faceViscosity.empty() && c.manufacturedViscositySlope>-1)),
-           "Manufactured viscosity slope requires manufactured case and positive face field");
-    if (!c.faceViscosity.empty()) {
-        ensure(c.scenario!="taylor-green" && c.scenario!="counterflow",
-               "Verification case does not support prescribed face viscosity");
-        if (c.scenario=="manufactured")
-            for (std::size_t id=0;id<m.faces.size();++id)
-                ensure(c.faceViscosity[id]==c.nu*(1+c.manufacturedViscositySlope*m.faces[id].centre.x),
-                       "Manufactured viscosity field differs from analytic definition");
-    }
-}
-
-void momentum(System& a,
-                const FvMesh2D& m,
-                const FlowControls2D& c,
-                const Boundary& b,
-                const Vec& field,
-                const Vec& flux,
-                const std::vector<Vector2D>& gradField,
-                const std::vector<Vector2D>& gp,
-                const std::vector<Vector2D>& source,
-                const std::vector<Vector2D>& stressCorrection,
-                const std::vector<Vector2D>& faceVelocity,
-                bool y,
-                const Vec* previous = nullptr,
-                double timeStep = 0) {
-    a.reset();
-    const auto& bc = y ? b.v : b.u;
-    const auto& fixed = y ? b.fixedV : b.fixedU;
-    const auto limiter = c.convection == ConvectionScheme2D::LimitedLinearUpwind
-        ? detail::faceReconstructionLimiter(m, field, gradField, bc, fixed) : Vec{};
-    const auto advectiveValue=[&](std::size_t id,double q) {
-        return faceVelocity.empty() ? detail::upwindFaceValue(m,id,q,field,gradField,limiter)
-                                    : y ? faceVelocity[id].y : faceVelocity[id].x;
-    };
-    for (std::size_t i = 0; i < m.cells.size(); ++i) {
-        a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
-        if (!source.empty()) a.rhs[i] += y ? source[i].y : source[i].x;
-        if (previous) {
-            const double mass=finite(m.cells[i].area/timeStep);
-            a.diag[i]+=mass;
-            a.rhs[i]+=finite(mass*(*previous)[i]);
-        }
-    }
-    for (std::size_t id = 0; id < m.faces.size(); ++id) {
-        const auto& f = m.faces[id];
-        const auto i = f.owner;
-        const double q = flux[id];
-        const double viscosity=faceNu(c,id);
-        const double d = viscosity * f.transmissibility;
-        if (!stressCorrection.empty()) {
-            const double extra=y?stressCorrection[id].y:stressCorrection[id].x;
-            a.rhs[i]-=extra;
-            if (f.neighbour) a.rhs[*f.neighbour]+=extra;
-        }
-        if (f.neighbour) {
-            const auto j = *f.neighbour;
-            a.diag[i] += d + std::max(q, 0.);
-            a.add(i, j, -d + std::min(q, 0.));
-            a.diag[j] += d + std::max(-q, 0.);
-            a.add(j, i, -d - std::max(q, 0.));
-            const double correction =
-                viscosity * dot(interpolateGradient(f, gradField), f.correction);
-            const double upwind = q >= 0 ? field[i] : field[j];
-            const double deferred = q * (advectiveValue(id,q)-upwind);
-            a.rhs[i] += correction-deferred;
-            a.rhs[j] -= correction-deferred;
-        } else {
-            if (fixed[id]) {
-                a.diag[i] += d;
-                a.rhs[i] += d * bc[id] + viscosity * dot(gradField[i], f.correction);
-                a.rhs[i] -= q * bc[id];
-            } else {
-                if (q < 0 && (b.role[id] == Role::Farfield ||
-                    b.role[id] == Role::Opening ||
-                    (b.role[id] == Role::Outlet && c.outletBackflow == OutletBackflow2D::NormalInlet))) {
-                    // Same zero-gradient normal advective flux q*Uowner,
-                    // lagged in the linear solve to retain a positive diagonal.
-                    // The unrelaxed residual uses the current field exactly.
-                    a.rhs[i] -= q * field[i];
-                    continue;
-                }
-                ensure(q >= -1e-12 * c.speed * std::hypot(f.areaVector.x, f.areaVector.y),
-                       "Flow outlet backflow unsupported in this laminar prototype");
-                a.diag[i] += q;
-                a.rhs[i] -= q * (advectiveValue(id,q)-field[i]);
-            }
-        }
-    }
-}
-
-} // namespace
-
+using namespace solver_detail;
 static FlowResult2D solveFlow(
     const FvMesh2D& m, const FlowControls2D& input,
     const std::function<void(const FlowIteration2D&)>& progress,
@@ -484,6 +46,14 @@ static FlowResult2D solveFlow(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
+    ensure(c.coupling==FlowCoupling2D::Simple || (c.coupling==FlowCoupling2D::Pimple && !material) ||
+           ((c.coupling==FlowCoupling2D::SimpleC || c.coupling==FlowCoupling2D::Coupled ||
+             c.coupling==FlowCoupling2D::SimpleConsistent || c.coupling==FlowCoupling2D::Simpler) && !previous && !material),
+           "Selected coupling requires constant-property laminar flow; only SIMPLE/PIMPLE support time stepping");
+    ensure(c.momentumCorrectors>=1 && c.momentumCorrectors<=8,
+           "Momentum correctors must be in [1,8]");
+    ensure(c.coupling==FlowCoupling2D::Pimple || c.momentumCorrectors==2,
+           "Momentum correctors apply only to PIMPLE");
     ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
            "Pressure corrections must be in [1,4]");
     ensure(!material || c.pressureCorrectionPasses==4,
@@ -492,9 +62,13 @@ static FlowResult2D solveFlow(
            (c.convergence==FlowConvergence2D::Engineering && !previous && !material),
            "Engineering convergence requires steady laminar flow");
     ensure(!c.adaptiveLinear || !material,"Adaptive linear solving does not support material coupling");
+    ensure(c.minimumIterations>=1 && (c.minimumIterations==10 || (!previous && !material)),
+           "Custom minimum iterations require steady laminar flow and a positive count");
     ensure(c.steadyAcceleration==SteadyAcceleration2D::None ||
            (c.steadyAcceleration==SteadyAcceleration2D::Anderson && !previous && !material),
            "Anderson acceleration requires steady laminar flow");
+    ensure(c.andersonHistory>=1 && c.andersonHistory<=32 && c.andersonStart>=1,
+           "Invalid Anderson history/start controls");
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
                c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ||
                c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ||
@@ -508,6 +82,8 @@ static FlowResult2D solveFlow(
                c.convection == ConvectionScheme2D::LimitedLinearUpwind ||
                c.convection == ConvectionScheme2D::FaceLimitedLinearUpwind,
            "Invalid convection scheme");
+    ensure(c.momentumInertia == 1 || (c.momentumInertia == 0 && c.scenario == "custom" && !previous && !material),
+           "Momentum inertia must be 1, or 0 for steady custom laminar Stokes only");
     ensure(c.viscousStress == ViscousStress2D::Symmetric ||
                c.viscousStress == ViscousStress2D::Laplacian,
            "Invalid viscous stress form");
@@ -515,6 +91,15 @@ static FlowResult2D solveFlow(
            "Invalid outlet backflow model");
     validateViscosity(m,c);
     auto b = boundaries(m, c);
+    const bool simpler=c.coupling==FlowCoupling2D::Simpler;
+    const bool pimple=c.coupling==FlowCoupling2D::Pimple;
+    if(simpler || pimple) {
+        ensure(c.outletBackflow==OutletBackflow2D::Reject,
+               "SIMPLER/PIMPLE require outlet backflow rejection");
+        ensure(std::none_of(b.role.begin(),b.role.end(),[](Role role) {
+            return role==Role::Opening || role==Role::Farfield;
+        }),"SIMPLER/PIMPLE require fixed boundary roles (no opening/farfield)");
+    }
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
     if(guess) {
@@ -555,6 +140,12 @@ static FlowResult2D solveFlow(
     }
     ensure(pending.size() == n,
            "Flow requires one connected fluid region with an unambiguous pressure reference");
+
+    if(c.coupling==FlowCoupling2D::Coupled || c.coupling==FlowCoupling2D::SimpleConsistent) {
+        auto coupled=solveCoupledFlow2D(m,c,b,progress,guess);
+        if(c.profile)coupled.performance.solveSeconds=std::chrono::duration<double>(Clock::now()-solveStart).count();
+        return coupled;
+    }
 
     std::vector<std::pair<std::size_t, std::size_t>> connections;
     connections.reserve(nf);
@@ -633,41 +224,20 @@ static FlowResult2D solveFlow(
     r.p.resize(n);
     r.flux.resize(nf);
     r.domainHeight = b.ymax - b.ymin;
-    if (c.scenario == "manufactured") {
-        r.sourceIntegrals.reserve(n);
-        for (const auto& cell : m.cells) {
-            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu,c.manufacturedPressureSlope,c.manufacturedViscositySlope,c.viscousStress==ViscousStress2D::Symmetric).acceleration;
-            r.sourceIntegrals.push_back({finite(cell.area*acceleration.x),finite(cell.area*acceleration.y)});
-        }
-    }
-    if (c.scenario == "counterflow") {
-        const double pi=std::acos(-1.);
-        for (const auto& cell : m.cells)
-            r.sourceIntegrals.push_back({finite(cell.area*8*pi*pi*c.nu*c.speed*std::cos(2*pi*cell.centre.y)),0});
-    }
+    initializeCaseSources(m,c,r);
     Vec zeros(nf);
     const auto& pressureBoundary = c.scenario == "custom" ? b.p : zeros;
     // fixedP is constant. Velocity caches detect every mask change caused by
     // backflow, including candidate rejection and physical-time initialization.
-    const auto pressureGradientStencil=detail::buildFlowGradientStencil2D(m,b.fixedP,true);
-    detail::ChangingFlowGradientStencil2D velocityGradientU(m),velocityGradientV(m);
-    Vec ra(n);
+    FlowEquation2D equation(m,b.fixedP);
+    const auto& pressureGradientStencil=equation.pressureStencil();
+    Vec ra(n), correctionResponse(c.coupling==FlowCoupling2D::SimpleC?n:0);
     Vec pc(n);
     Vec df(nf);
     const double h = b.ymax - b.ymin;
     const double pressureScale = finite(c.speed * c.speed + c.nu * c.speed / h);
     ensure(pressureScale > 0, "Flow reference pressure scale underflow");
-    for (std::size_t i = 0; i < n; ++i) {
-        const double y = m.cells[i].centre.y;
-        r.u[i] = b.closed ? 0
-                          : (c.scenario == "channel"
-                                 ? 4 * c.speed * (y - b.ymin) * (b.ymax - y) / (h * h)
-                                 : c.speed);
-        if (c.scenario == "counterflow") r.u[i] = counterflowSpeed(y,c.speed);
-        if (c.scenario == "custom") {
-            r.u[i] = b.initialU; r.v[i] = b.initialV; r.p[i] = b.initialP;
-        }
-    }
+    initializeCaseVelocity(m,c,b,r);
     if(guess) {
         r.u=guess->u;r.v=guess->v;r.p=guess->p;
         if(b.closed) {const double gauge=r.p.front();for(double& p:r.p)p=finite(p-gauge);}
@@ -716,7 +286,7 @@ static FlowResult2D solveFlow(
         updateOutletBoundary(b,m,c,r.flux);
         r.time=previous->time+timeStep; r.timeStep=timeStep;
         r.previousU=previous->u; r.previousV=previous->v;
-        const auto oldGu=velocityGradientU.apply(r.u,b.u,b.fixedU),oldGv=velocityGradientV.apply(r.v,b.v,b.fixedV);
+        const auto oldGu=equation.velocityGradient(r.u,b,false),oldGv=equation.velocityGradient(r.v,b,true);
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=m.faces[id];
             if (!f.neighbour) {
@@ -739,8 +309,10 @@ static FlowResult2D solveFlow(
     // residual are exactly the systems needed at the start of the next SIMPLE
     // iteration. Refresh after every field/flux/boundary update, then transfer
     // numeric storage and apply relaxation without rebuilding the same rows.
-    std::vector<Vector2D> gp,gu,gv,forceGradient,stressCorrection;
-    Vec pressureFaces;
+    FlowReconstruction2D reconstruction;
+    auto& gp=reconstruction.gp;auto& gu=reconstruction.gu;auto& gv=reconstruction.gv;
+    auto& forceGradient=reconstruction.pressureForce;auto& stressCorrection=reconstruction.stress;
+    auto& pressureFaces=reconstruction.pressureFaces;
     bool materialConverged=!material;
     const auto refreshMomentum = [&](bool updateMaterial=false) {
         updateOutletBoundary(b,m,c,r.flux);
@@ -757,18 +329,8 @@ static FlowResult2D solveFlow(
             ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
             validateViscosity(m,c);
         }
-        gp=pressureGradientStencil.apply(r.p,pressureBoundary);
-        gu=velocityGradientU.apply(r.u,b.u,b.fixedU);
-        gv=velocityGradientV.apply(r.v,b.v,b.fixedV);
-        pressureFaces=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
-        forceGradient=detail::conservativePressureGradient(m,pressureFaces);
-        stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu,c.faceViscosity)
-            : std::vector<Vector2D>{};
-        const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
-            ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,false,previous?&previous->u:nullptr,timeStep);
-        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,true,previous?&previous->v:nullptr,timeStep);
+        reconstruction=equation.reconstruct(r,c,b,pressureBoundary,r.flux);
+        equation.assembleMomentum(checkU,checkV,r,c,b,reconstruction,r.flux,r.sourceIntegrals,previous,timeStep);
     };
     const auto takeRelaxed = [&](System& destination,System& source,const Vec& field) {
         destination.diag.swap(source.diag);
@@ -785,49 +347,9 @@ static FlowResult2D solveFlow(
     // scales, so zero lift/flow never causes a relative division by zero.
     std::vector<std::size_t> monitorGroup(nf);
     Vec monitorLengths;
-    if(c.convergence==FlowConvergence2D::Engineering) {
-        r.monitorNames.push_back("kinetic-energy/(area*Uref^2)");
-        std::map<std::string,std::size_t> groups;
-        std::map<std::size_t,std::string> names;
-        for(const auto& condition:c.boundaryConditions)names[condition.face]=condition.name;
-        for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour) {
-            const std::string key=c.scenario=="custom" ? names.at(id)
-                : "role-"+std::to_string(static_cast<int>(b.role[id]))+"-patch-"+std::to_string(static_cast<int>(m.faces[id].patch));
-            const auto [it,added]=groups.emplace(key,groups.size());
-            if(added) {
-                monitorLengths.push_back(0);
-                for(const auto* label:{"flux/(Uref*length)","forceX/(pressureScale*length)","forceY/(pressureScale*length)"})
-                    r.monitorNames.push_back(key+":"+label);
-            }
-            monitorGroup[id]=it->second;
-            monitorLengths[it->second]+=std::hypot(m.faces[id].areaVector.x,m.faces[id].areaVector.y);
-        }
-    }
-    const auto physicalMonitors=[&] {
-        Vec values(r.monitorNames.size());
-        if(values.empty())return values;
-        double totalArea=0;
-        for(std::size_t i=0;i<n;++i) {
-            totalArea+=m.cells[i].area;
-            values[0]+=.5*m.cells[i].area*(r.u[i]*r.u[i]+r.v[i]*r.v[i]);
-        }
-        values[0]/=totalArea*c.speed*c.speed;
-        for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour) {
-            const auto& face=m.faces[id];const auto i=face.owner,g=monitorGroup[id],offset=1+3*g;
-            values[offset]+=r.flux[id]/(c.speed*monitorLengths[g]);
-            if(b.role[id]!=Role::Wall && b.role[id]!=Role::Lid)continue;
-            const double dx=-faceNu(c,id)*(face.transmissibility*(b.u[id]-r.u[i])+dot(gu[i],face.correction))
-                +(stressCorrection.empty()?0:stressCorrection[id].x);
-            const double dy=-faceNu(c,id)*(face.transmissibility*(b.v[id]-r.v[i])+dot(gv[i],face.correction))
-                +(stressCorrection.empty()?0:stressCorrection[id].y);
-            values[offset+1]+=(pressureFaces[id]*face.areaVector.x+dx)/(pressureScale*monitorLengths[g]);
-            values[offset+2]+=(pressureFaces[id]*face.areaVector.y+dy)/(pressureScale*monitorLengths[g]);
-        }
-        for(double value:values)finite(value);
-        return values;
-    };
+    prepareMonitors(m,c,b,r,monitorGroup,monitorLengths);
     const bool accelerated=c.steadyAcceleration==SteadyAcceleration2D::Anderson;
-    detail::Anderson2D accelerator;
+    detail::Anderson2D accelerator(c.andersonHistory);
     Vec stateScale;
     if(accelerated) {
         double area=0,length=0;
@@ -855,6 +377,7 @@ static FlowResult2D solveFlow(
     };
     refreshMomentum();
     for (std::size_t it = 1; it <= c.maxIterations; ++it) {
+        const bool finalCertification=certifyNext;
         strictLinearIteration=!c.adaptiveLinear || certifyNext;
         certifyNext=false;
         linearRelativeTolerance=linearPolicy.relative(strictLinearIteration);
@@ -862,6 +385,7 @@ static FlowResult2D solveFlow(
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
+        const Vec outerFlux=(simpler || pimple)?r.flux:Vec{};
         const Vec previousScaled=accelerated ? packState() : Vec{};
         takeRelaxed(au,checkU,r.u);
         takeRelaxed(av,checkV,r.v);
@@ -875,92 +399,99 @@ static FlowResult2D solveFlow(
             au.diag[i] = av.diag[i] = common;
         }
         predictorResidual=0;predictorWorstCell=0;pressureLinearResidual=0;
-        linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
-        const auto gup=velocityGradientU.apply(r.u,b.u,b.fixedU),gvp=velocityGradientV.apply(r.v,b.v,b.fixedV);
-        Vec predicted(nf);
-        for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
-            const double rf=interpolate(f,ra);df[id]=rf*f.transmissibility;
-            if(f.neighbour){const auto j=*f.neighbour;const double w=f.neighbourWeight;
-                const Point2D point{m.cells[i].centre.x*(1-w)+m.cells[j].centre.x*w,m.cells[i].centre.y*(1-w)+m.cells[j].centre.y*w};
-                const auto skew=f.centre-point;
-                const double uf=interpolate(f,r.u)+dot(interpolateGradient(f,gup),skew),vf=interpolate(f,r.v)+dot(interpolateGradient(f,gvp),skew);
-                const Vector2D rag{(1-w)*ra[i]*forceGradient[i].x+w*ra[j]*forceGradient[j].x,(1-w)*ra[i]*forceGradient[i].y+w*ra[j]*forceGradient[j].y};
-                predicted[id]=uf*f.areaVector.x+vf*f.areaVector.y+dot(rag,f.areaVector)-rf*(f.transmissibility*(r.p[j]-r.p[i])+dot(interpolateGradient(f,gp),f.correction));
-                if (previous) {
-                    const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
-                    const double oldVf=interpolate(f,oldV)+dot(interpolateGradient(f,gv),skew);
-                    // Backward Euler transports the accepted old face flux.
-                    // Correct both its cell-interpolation defect and the inner
-                    // under-relaxation defect; otherwise the dt -> 0 response
-                    // depends on the arbitrary inner relaxation factor.
-                    predicted[id]+=rf/timeStep*oldFluxDefect[id]
-                        +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
-                } else {
-                    // The face equation must retain the same implicit
-                    // relaxation as the cell momentum equation. Otherwise
-                    // the converged Rhie--Chow flux depends on alphaU.
-                    const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
-                    const double oldVf=interpolate(f,oldV)+dot(interpolateGradient(f,gv),skew);
-                    predicted[id]+=(1-c.velocityRelaxation)*
-                        (r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
-                }
-            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield){
-                const double pressureDifference = c.scenario == "custom"
-                    ? f.transmissibility*(b.p[id]-r.p[i]) : -f.transmissibility*r.p[i];
-                predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(pressureDifference+dot(gp[i],f.correction));
-                if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
-                    +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);
-                else predicted[id]+=(1-c.velocityRelaxation)*
-                    (r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
-            else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
-            else predicted[id]=0;
+        // Frozen H/a uses the current neighbouring velocities, including the
+        // signed off-diagonal entries. It is not an extra momentum solve or
+        // another non-orthogonal pressure pass. Explicit stress/convection
+        // terms remain frozen until the next nonlinear outer iteration.
+        const auto frozenForce=(simpler || pimple)?forceGradient:std::vector<Vector2D>{};
+        const auto diagonalPredictor=[&](const std::vector<Vector2D>& currentForce) {
+            au.apply(r.u,mu);av.apply(r.v,mv);
+            for(std::size_t i=0;i<n;++i) {
+                r.u[i]=finite(r.u[i]+(au.rhs[i]-mu[i])/au.diag[i]-ra[i]*(currentForce[i].x-frozenForce[i].x));
+                r.v[i]=finite(r.v[i]+(av.rhs[i]-mv[i])/av.diag[i]-ra[i]*(currentForce[i].y-frozenForce[i].y));
+            }
+        };
+        const auto predictFlux=[&](const std::vector<Vector2D>& currentGp,
+                                   const std::vector<Vector2D>& currentForce) {
+            const auto currentGu=equation.velocityGradient(r.u,b,false);
+            const auto currentGv=equation.velocityGradient(r.v,b,true);
+            // Every inner corrector uses the SAME outer relaxation defect.
+            // Reusing the last corrected flux here changes the face equation.
+            r.flux=outerFlux;
+            return rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,currentGu,currentGv,
+                currentGp,currentForce,oldFluxDefect,previous!=nullptr,timeStep,df);
+        };
+        if(simpler) {
+            diagonalPredictor(frozenForce);
+            const auto pseudoFlux=predictFlux(gp,forceGradient);
+            // Written in incremental form about oldP, this is SIMPLER's
+            // pressure equation from pseudo velocities, before momentum.
+            solvePressureCorrection(m,c,b,r,ap,pc,ra,df,pseudoFlux,pressureGradientStencil,zeros,linearSolve);
+            for(std::size_t i=0;i<n;++i)r.p[i]=finite(oldP[i]+c.pressureRelaxation*pc[i]);
+            gp=pressureGradientStencil.apply(r.p,pressureBoundary);
+            forceGradient=equation.pressureForce(r.p,pressureBoundary,b.fixedP);
+            for(std::size_t i=0;i<n;++i) {
+                au.rhs[i]-=m.cells[i].area*(forceGradient[i].x-frozenForce[i].x);
+                av.rhs[i]-=m.cells[i].area*(forceGradient[i].y-frozenForce[i].y);
+            }
+            r.u=oldU;r.v=oldV;r.flux=outerFlux;
         }
+        linearSolve(au, r.u, false);linearSolve(av, r.v, false);
+        const auto gup=equation.velocityGradient(r.u,b,false),gvp=equation.velocityGradient(r.v,b,true);
+        const auto predicted=rhieChowFlux(m,c,b,r,ra,oldU,oldV,gu,gv,gup,gvp,gp,forceGradient,
+            oldFluxDefect,previous!=nullptr,timeStep,df);
+        if(c.coupling==FlowCoupling2D::SimpleC) {
+            // Approximate neighbouring velocity corrections by the local
+            // correction: aP' = aP + sum(aPN), with signed off-diagonals.
+            // This changes only the correction preconditioner, not the
+            // predicted face equation or the residual used for acceptance.
+            for(std::size_t i=0;i<n;++i) {
+                double du=au.diag[i],dv=av.diag[i];
+                for(auto k=pattern.rows[i];k<pattern.rows[i+1];++k){du+=au.off[k];dv+=av.off[k];}
+                const double diagonal=std::max(du,dv);
+                ensure(std::isfinite(diagonal) && diagonal>0,
+                       "SIMPLEC correction diagonal is not positive; reduce velocity relaxation");
+                correctionResponse[i]=m.cells[i].area/diagonal;
+            }
+            for(std::size_t id=0;id<nf;++id)df[id]=interpolate(m.faces[id],correctionResponse)*m.faces[id].transmissibility;
+        }
+        const auto& pressureResponse=c.coupling==FlowCoupling2D::SimpleC?correctionResponse:ra;
         // rAU and the orthogonal pressure coefficients stay fixed across the
         // four non-orthogonal corrections. Assemble and pin once; only the
         // explicit correction/RHS changes. The next SIMPLE iteration resets
         // the matrix and invalidates its IC(0) factorization.
-        ap.reset();
-        for (std::size_t id=0;id<nf;++id) {
-            const auto& f=m.faces[id]; const auto i=f.owner;
-            if (f.neighbour) {
-                const auto j=*f.neighbour;
-                ap.diag[i]+=df[id]; ap.diag[j]+=df[id];
-                ap.add(i,j,-df[id]); ap.add(j,i,-df[id]);
-            } else if (b.fixedP[id]) ap.diag[i]+=df[id];
-        }
-        if (b.closed) ap.pin(0);
-        std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
-        for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
-            std::fill(ap.rhs.begin(),ap.rhs.end(),0.);
-            const auto gc=pressureGradientStencil.apply(pc,zeros);
-            for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
-                correction[id]=(f.neighbour||b.fixedP[id])?-interpolate(f,ra)*dot(interpolateGradient(f,gc),f.correction):0;
-                ap.rhs[i]-=predicted[id]+correction[id];
-                if(f.neighbour)ap.rhs[*f.neighbour]+=predicted[id]+correction[id];
+        const auto correct=[&](const Vec& predictedFlux) {
+            const auto correction=solvePressureCorrection(m,c,b,r,ap,pc,pressureResponse,df,predictedFlux,pressureGradientStencil,zeros,linearSolve);
+            const auto gc=equation.pressureForce(pc,zeros,b.fixedP);
+            for(std::size_t i=0;i<n;++i) {
+                r.u[i]=finite(r.u[i]-pressureResponse[i]*gc[i].x);
+                r.v[i]=finite(r.v[i]-pressureResponse[i]*gc[i].y);
+                if(!simpler)r.p[i]=finite(r.p[i]+c.pressureRelaxation*pc[i]);
             }
-            if(b.closed){ap.rhs[0]=0;pc[0]=0;}
-            if (linearSolve(ap, pc, true)==0) {
-                // A zero-iteration solve does not modify pc. The next pass
-                // would reconstruct the exact same gradient, correction, RHS
-                // and matrix, and therefore return zero again. Keep this
-                // pass's correction for the accepted flux and omit only those
-                // identical repeats; no geometric approximation or new stop.
-                if (c.profile) r.performance.pressureCorrectionPassesSkipped+=c.pressureCorrectionPasses-1-pass;
-                break;
+            for(std::size_t id=0;id<nf;++id) {
+                const auto& f=m.faces[id];double flux=predictedFlux[id];
+                if(f.neighbour||b.fixedP[id])flux+=df[id]*(pc[f.owner]-(f.neighbour?pc[*f.neighbour]:0))+correction[id];
+                r.flux[id]=finite(flux);
             }
+        };
+        correct(predicted);
+        if(pimple)for(std::size_t inner=1;inner<c.momentumCorrectors;++inner) {
+            const auto currentGp=pressureGradientStencil.apply(r.p,pressureBoundary);
+            const auto currentForce=equation.pressureForce(r.p,pressureBoundary,b.fixedP);
+            diagonalPredictor(currentForce);
+            correct(predictFlux(currentGp,currentForce));
         }
-        const auto correctionGradient=pressureGradientStencil.apply(pc,zeros);
-        const auto gc=detail::conservativePressureGradient(m,
-            detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
         double du=0,dp=0;
-        for(std::size_t i=0;i<n;++i){r.u[i]-=ra[i]*gc[i].x;r.v[i]-=ra[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
-            finite(r.u[i]);finite(r.v[i]);finite(r.p[i]);du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);}
+        for(std::size_t i=0;i<n;++i) {
+            du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
+            dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+        }
         Vec div(n);r.globalImbalance=0;
-        for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];double flux=predicted[id];
-            if(f.neighbour||b.fixedP[id])flux+=df[id]*(pc[f.owner]-(f.neighbour?pc[*f.neighbour]:0))+correction[id];
-            r.flux[id]=finite(flux);div[f.owner]+=flux;if(f.neighbour)div[*f.neighbour]-=flux;else r.globalImbalance+=flux;
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& f=m.faces[id];const double flux=r.flux[id];
+            div[f.owner]+=flux;if(f.neighbour)div[*f.neighbour]-=flux;else r.globalImbalance+=flux;
         }
         double continuity=0;for(std::size_t i=0;i<n;++i)continuity=std::max(continuity,std::abs(div[i])/(c.speed*std::sqrt(m.cells[i].area)));
         double inflow=0;for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)inflow+=std::max(0.,-r.flux[id]);
@@ -977,57 +508,76 @@ static FlowResult2D solveFlow(
             const double residual=std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale;
             if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
         bool acceleratedCandidate=false;
-        const bool baseConverged=it>=10 && mr<c.tolerance && du<c.tolerance && dp<c.tolerance &&
-            continuity<1e-8 && r.globalRelativeImbalance<1e-8 && materialConverged;
-        if(accelerated && it>=10 && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
+        const bool baseConverged=detail::strictFlowConverged2D(it,mr,du,dp,continuity,r.globalRelativeImbalance,c.tolerance,materialConverged,c.minimumIterations);
+        if(accelerated && !finalCertification && it>=c.andersonStart && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
             const auto candidate=accelerator.propose(previousScaled,packState());
             if(candidate) {
                 ++r.performance.accelerationCandidates;
                 const Vec baseU=r.u,baseV=r.v,baseP=r.p,baseFlux=r.flux;
-                try {
-                    unpackState(*candidate);
-                    Vec candidateDivergence(n);double imbalance=0,incoming=0,candidateContinuity=0;
-                    bool allowed=true;
-                    for(std::size_t id=0;id<nf;++id) {
-                        const auto& face=m.faces[id];const double flux=r.flux[id];
-                        allowed=allowed && std::isfinite(flux);
-                        candidateDivergence[face.owner]+=flux;
-                        if(face.neighbour)candidateDivergence[*face.neighbour]-=flux;
-                        else {
-                            imbalance+=flux;incoming+=std::max(0.,-flux);
-                            if(b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::Reject && flux<0)allowed=false;
+                // Globalize the history direction with at most two halvings.
+                // Every trial uses the same conservative base state and must
+                // pass the original equation/boundary gates; this is a work
+                // budget, not a weaker convergence or acceptance tolerance.
+                for(unsigned backtrack=0;backtrack<3;++backtrack) {
+                    if(backtrack)++r.performance.accelerationBacktracks;
+                    try {
+                        unpackState(*candidate);
+                        if(backtrack) {
+                            const double weight=std::ldexp(1.,-static_cast<int>(backtrack));
+                            const auto blend=[&](Vec& field,const Vec& base) {
+                                for(std::size_t i=0;i<field.size();++i)
+                                    field[i]=base[i]+weight*(field[i]-base[i]);
+                            };
+                            blend(r.u,baseU);blend(r.v,baseV);blend(r.p,baseP);blend(r.flux,baseFlux);
                         }
-                    }
-                    for(std::size_t i=0;i<n;++i)candidateContinuity=std::max(candidateContinuity,
-                        std::abs(candidateDivergence[i])/(c.speed*std::sqrt(m.cells[i].area)));
-                    const double reference=b.closed?c.speed*h:incoming;
-                    const double relative=reference>0 ? std::abs(imbalance)/reference : (imbalance==0?0:1);
-                    allowed=allowed && std::isfinite(candidateContinuity) && candidateContinuity<1e-8 && relative<1e-8;
-                    if(allowed) {
-                        refreshMomentum();checkU.apply(r.u,mu);checkV.apply(r.v,mv);
-                        double candidateResidual=0,candidateX=0,candidateY=0;std::size_t candidateWorst=0;
-                        for(std::size_t i=0;i<n;++i) {
-                            const double scale=(checkU.diag[i]+checkV.diag[i])*c.speed;
-                            const double x=(mu[i]-checkU.rhs[i])/scale,y=(mv[i]-checkV.rhs[i])/scale;
-                            const double residual=std::hypot(x,y);
-                            allowed=allowed && std::isfinite(residual);
-                            if(residual>candidateResidual){candidateResidual=residual;candidateWorst=i;candidateX=x;candidateY=y;}
-                        }
-                        if(allowed && candidateResidual<mr) {
-                            acceleratedCandidate=true;
-                            mr=candidateResidual;worstCell=candidateWorst;worstX=candidateX;worstY=candidateY;
-                            continuity=candidateContinuity;r.globalImbalance=imbalance;r.globalRelativeImbalance=relative;
-                            du=dp=0;
-                            for(std::size_t i=0;i<n;++i) {
-                                du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
-                                dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+                        Vec candidateDivergence(n);double imbalance=0,incoming=0,candidateContinuity=0;
+                        bool allowed=true;
+                        for(std::size_t id=0;id<nf;++id) {
+                            const auto& face=m.faces[id];const double flux=r.flux[id];
+                            allowed=allowed && std::isfinite(flux);
+                            candidateDivergence[face.owner]+=flux;
+                            if(face.neighbour)candidateDivergence[*face.neighbour]-=flux;
+                            else {
+                                imbalance+=flux;incoming+=std::max(0.,-flux);
+                                if(b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::Reject && flux<0)allowed=false;
                             }
                         }
+                        for(std::size_t i=0;i<n;++i)candidateContinuity=std::max(candidateContinuity,
+                            std::abs(candidateDivergence[i])/(c.speed*std::sqrt(m.cells[i].area)));
+                        const double reference=b.closed?c.speed*h:incoming;
+                        const double relative=reference>0 ? std::abs(imbalance)/reference : (imbalance==0?0:1);
+                        allowed=allowed && std::isfinite(candidateContinuity) && candidateContinuity<1e-8 && relative<1e-8;
+                        if(allowed) {
+                            refreshMomentum();checkU.apply(r.u,mu);checkV.apply(r.v,mv);
+                            double candidateResidual=0,candidateX=0,candidateY=0;std::size_t candidateWorst=0;
+                            for(std::size_t i=0;i<n;++i) {
+                                const double scale=(checkU.diag[i]+checkV.diag[i])*c.speed;
+                                const double x=(mu[i]-checkU.rhs[i])/scale,y=(mv[i]-checkV.rhs[i])/scale;
+                                const double residual=std::hypot(x,y);
+                                allowed=allowed && std::isfinite(residual);
+                                if(residual>candidateResidual){candidateResidual=residual;candidateWorst=i;candidateX=x;candidateY=y;}
+                            }
+                            if(allowed && candidateResidual<mr) {
+                                acceleratedCandidate=true;
+                                mr=candidateResidual;worstCell=candidateWorst;worstX=candidateX;worstY=candidateY;
+                                continuity=candidateContinuity;r.globalImbalance=imbalance;r.globalRelativeImbalance=relative;
+                                du=dp=0;
+                                for(std::size_t i=0;i<n;++i) {
+                                    du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
+                                    dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+                                }
+                            }
+                        }
+                    } catch(const std::runtime_error&) {
+                        // A failed extrapolation is not a failed SIMPLE step.
+                        // Each trial restarts from the retained base. If none is
+                        // accepted, restore it and rebuild the original equations;
+                        // failures of that restore propagate.
                     }
-                } catch(const std::runtime_error&) {
-                    // A failed extrapolation is not a failed SIMPLE step.
-                    // Restore its exact fields, then rebuild and recheck the
-                    // original equations; failures of that restore propagate.
+                    if(acceleratedCandidate) {
+                        if(backtrack)++r.performance.accelerationDampedAccepted;
+                        break;
+                    }
                 }
                 if(acceleratedCandidate)++r.performance.accelerationAccepted;
                 else {
@@ -1043,17 +593,17 @@ static FlowResult2D solveFlow(
         step.linearRelativeTolerance=linearRelativeTolerance;
         step.strictLinearStep=strictLinearIteration && !acceleratedCandidate;
         step.globalRelativeImbalance=r.globalRelativeImbalance;
-        step.monitors=physicalMonitors();
+        step.monitors=physicalMonitors(m,c,b,r,monitorGroup,monitorLengths,pressureScale,pressureFaces,gu,gv,stressCorrection);
         if(it<=10)r.convergenceReference=std::max(r.convergenceReference,step.momentumResidual);
         r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
-        // Only an ordinary SIMPLE step can certify the fixed-point and all
-        // original stopping gates. An extrapolated field is never the final
+        // Only an ordinary step can certify the selected convergence mode.
+        // An extrapolated field is never the final
         // convergence proof, even when its momentum residual is small.
         const bool stoppingCandidate=c.convergence==FlowConvergence2D::Engineering
-            ? baseConverged && detail::engineeringWindow2D(r.history,r.convergenceReference,c.tolerance).accepted : baseConverged;
-        if(stoppingCandidate && !acceleratedCandidate) {
-            if(strictLinearIteration){r.converged=true;break;}
+            ? detail::engineeringWindow2D(r.history,r.convergenceReference,c.tolerance).accepted : baseConverged;
+        if(stoppingCandidate) {
+            if(strictLinearIteration && !acceleratedCandidate){r.converged=true;break;}
             certifyNext=true;
         }
         if(c.adaptiveLinear)linearPolicy.observe(std::max({mr,du,dp,continuity}));
@@ -1073,85 +623,7 @@ static FlowResult2D solveFlow(
             r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*absoluteFlux[i]/m.cells[i].area));
         }
     }
-    const auto pf=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
-    const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
-        ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
-    const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
-        ? detail::faceReconstructionLimiter(m,r.v,gv,b.v,b.fixedV) : Vec{};
-    const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
-        ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
-    r.faceMomentum.resize(nf);
-    for(std::size_t id=0;id<nf;++id) {
-        const auto& f=m.faces[id]; const auto i=f.owner;
-        auto& fm=r.faceMomentum[id]; fm.pressure=finite(pf[id]);
-        if (!f.neighbour && b.role[id]==Role::Outlet && r.flux[id]<0) {
-            ++r.outletBackflowFaces;
-            r.outletInflow=finite(r.outletInflow-r.flux[id]);
-        }
-        auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
-                           const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter,bool y) {
-            const bool normalInflow = !f.neighbour && !fixed[id] && r.flux[id]<0 &&
-                (b.role[id]==Role::Farfield || b.role[id]==Role::Opening || (b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::NormalInlet));
-            const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
-                : normalInflow ? value[i] : !faceVelocity.empty() ? (y?faceVelocity[id].y:faceVelocity[id].x)
-                : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
-            double diffusion=0;
-            if(f.neighbour || fixed[id]) {
-                const double other=f.neighbour ? value[*f.neighbour] : bc[id];
-                diffusion=-faceNu(c,id)*(f.transmissibility*(other-value[i])+dot(interpolateGradient(f,g),f.correction));
-            }
-            return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
-        };
-        auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu,false);
-        auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv,true);
-        if (!stressCorrection.empty()) {dx+=stressCorrection[id].x;dy+=stressCorrection[id].y;}
-        fm.advection={ax,ay}; fm.diffusion={dx,dy};
-        fm.wall=!f.neighbour && (b.role[id]==Role::Wall || b.role[id]==Role::Lid);
-        if (fm.wall) {
-            r.wallForceX+=pf[id]*f.areaVector.x+dx;
-            r.wallForceY+=pf[id]*f.areaVector.y+dy;
-            r.wallViscousForceX+=dx; r.wallViscousForceY+=dy;
-        }
-        if(f.neighbour || f.patch!=BoundaryPatch2D::EmbeddedBoundary || b.role[id]!=Role::Wall) continue;
-        const double px=pf[id]*f.areaVector.x,py=pf[id]*f.areaVector.y;
-        r.pressureForceX+=px; r.pressureForceY+=py;
-        r.discreteForceX+=px+dx; r.discreteForceY+=py+dy;
-        // Preserve the old cell-gradient diagnostic for explicit comparison;
-        // symmetric mode reports the actual shared-face stress above as force.
-        r.reconstructedForceX+=px-faceNu(c,id)*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
-        r.reconstructedForceY+=py-faceNu(c,id)*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
-    }
-    r.forceX=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceX:r.reconstructedForceX;
-    r.forceY=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceY:r.reconstructedForceY;
-    finite(r.reconstructedForceX);finite(r.reconstructedForceY);
-    finite(r.wallForceX);finite(r.wallForceY);
-    finite(r.wallViscousForceX);finite(r.wallViscousForceY);
-    finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);
-    finite(r.pressureForceX);finite(r.pressureForceY);finite(r.discreteForceX);finite(r.discreteForceY);
-    if (c.scenario == "custom") {
-        std::map<std::string, FlowWallLoad2D> loads;
-        // Sort face IDs so input record ordering cannot change reductions.
-        auto conditions = c.boundaryConditions;
-        std::sort(conditions.begin(), conditions.end(), [](const auto& a, const auto& b) { return a.face < b.face; });
-        for (const auto& condition : conditions) {
-            const auto id = condition.face;
-            const auto& momentum = r.faceMomentum[id];
-            if (!momentum.wall) continue;
-            const auto& face = m.faces[id];
-            auto& load = loads[condition.name];
-            load.name = condition.name;
-            ++load.faces;
-            load.length = finite(load.length + std::hypot(face.areaVector.x, face.areaVector.y));
-            const auto pressure = face.areaVector * momentum.pressure;
-            load.pressure.x = finite(load.pressure.x + pressure.x);
-            load.pressure.y = finite(load.pressure.y + pressure.y);
-            load.viscous.x = finite(load.viscous.x + momentum.diffusion.x);
-            load.viscous.y = finite(load.viscous.y + momentum.diffusion.y);
-            load.pressureTorque = finite(load.pressureTorque + face.centre.x*pressure.y - face.centre.y*pressure.x);
-            load.viscousTorque = finite(load.viscousTorque + face.centre.x*momentum.diffusion.y - face.centre.y*momentum.diffusion.x);
-        }
-        for (auto& entry : loads) r.namedWallLoads.push_back(std::move(entry.second));
-    }
+    postprocessForces(m,c,b,r,pressureFaces,gu,gv,stressCorrection);
     if (c.profile) {
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }
@@ -1178,63 +650,5 @@ FlowResult2D advanceIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
     return solveFlow(m,c,progress,&previous,timeStep);
 }
-FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D& c) {
-    validateFvMesh2D(m);
-    ensure(c.flatPlateLeadingEdge==0 && c.flatPlateTop==FlatPlateTop2D::PressureFarfield,
-           "Flat plate controls are not supported by transient initialization");
-    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="duct" || c.scenario=="custom" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
-           std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
-           "Invalid transient initial-state controls");
-    validateViscosity(m,c);
-    const auto b=boundaries(m,c); (void)b;
-    FlowState2D s;
-    s.u.resize(m.cells.size());s.v.resize(m.cells.size());s.p.resize(m.cells.size());s.flux.resize(m.faces.size());
-    if (c.scenario == "custom") std::fill(s.p.begin(), s.p.end(), b.initialP);
-    if (c.scenario=="taylor-green") {
-        ensure(std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,"Invalid vortex controls");
-        const double gauge=taylorGreen2D(m.cells.front().centre,0,c.speed,c.nu).pressure;
-        for (std::size_t i=0;i<m.cells.size();++i) {
-            const auto q=taylorGreen2D(m.cells[i].centre,0,c.speed,c.nu);
-            s.u[i]=q.velocity.x;s.v[i]=q.velocity.y;s.p[i]=q.pressure-gauge;
-        }
-        // Streamfunction differences give an exactly conservative integral flux.
-        for (std::size_t id=0;id<m.faces.size();++id) {
-            const auto& f=m.faces[id];
-            if (!f.neighbour) continue;
-            const Point2D a{f.centre.x+.5*f.areaVector.y,f.centre.y-.5*f.areaVector.x};
-            const Point2D z{f.centre.x-.5*f.areaVector.y,f.centre.y+.5*f.areaVector.x};
-            s.flux[id]=taylorGreen2D(z,0,c.speed,c.nu).streamfunction-taylorGreen2D(a,0,c.speed,c.nu).streamfunction;
-        }
-    }
-    return s;
-}
 
-void validateFlowBoundaryConditions2D(const FvMesh2D& mesh, const FlowControls2D& controls) {
-    (void)boundaries(mesh, controls);
-}
-
-std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
-    const FvMesh2D& mesh, const FlowControls2D& controls) {
-    validateFvMesh2D(mesh);
-    if (controls.scenario == "custom") {
-        validateFlowBoundaryConditions2D(mesh, controls);
-        return controls.boundaryConditions;
-    }
-    if (controls.scenario == "annulus")
-        return rotatingAnnulusBoundaryPreset2D(mesh, controls.speed);
-    ensure(controls.scenario == "duct" || controls.scenario == "channel" || controls.scenario == "cavity",
-           "Explicit boundary template currently supports duct, channel and cavity only");
-    const auto b=boundaries(mesh, controls);
-    std::vector<FlowBoundaryCondition2D> result;
-    for (std::size_t id=0;id<mesh.faces.size();++id) {
-        if (mesh.faces[id].neighbour) continue;
-        FlowBoundaryCondition2D value{id,FlowBoundaryKind2D::Wall,{b.u[id],b.v[id]},0,"wall"};
-        if (b.role[id]==Role::Inlet) {value.kind=FlowBoundaryKind2D::VelocityInlet;value.name="inlet";}
-        else if (b.role[id]==Role::Outlet) {value.kind=FlowBoundaryKind2D::PressureOutlet;value.name="outlet";}
-        else if (b.role[id]==Role::Lid) {value.kind=FlowBoundaryKind2D::MovingWall;value.name="lid";}
-        else ensure(b.role[id]==Role::Wall,"Unsupported condition in explicit boundary template");
-        result.push_back(std::move(value));
-    }
-    return result;
-}
 }

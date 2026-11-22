@@ -1,0 +1,5378 @@
+{
+  "completedNativeRuns": 397,
+  "statusCounts": {
+    "eligible": 260,
+    "linear-failure": 13,
+    "iteration-limit": 95,
+    "solver-failure": 5,
+    "solver-error": 17,
+    "uncompared": 1,
+    "reference": 6
+  },
+  "runRoleCounts": {
+    "cold-trial": 284,
+    "reference-bootstrap": 1,
+    "reference": 9,
+    "segment": 103
+  },
+  "coldTrialStatusCounts": {
+    "eligible": 252,
+    "linear-failure": 13,
+    "iteration-limit": 5,
+    "solver-failure": 2,
+    "solver-error": 12
+  },
+  "sumFullProcessSeconds": 2629.583034052004,
+  "summedCostMeaning": "sum of per-run process times; concurrent runs overlap, not project elapsed time",
+  "selections": {
+    "grid-selection": {
+      "training": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "batches": [
+        "grid"
+      ],
+      "rankings": {
+        "simple": [
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.5097404265101961,
+            "costs": {
+              "annulus-l5": 0.46069696100312285,
+              "poiseuille-l5": 0.5640048109999043
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.1
+            ],
+            "geometricMeanSeconds": 0.7187379648514336,
+            "costs": {
+              "annulus-l5": 0.6333523560024332,
+              "poiseuille-l5": 0.8156348630000139
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.5
+            ],
+            "geometricMeanSeconds": 0.8476418665159419,
+            "costs": {
+              "annulus-l5": 0.7171483679994708,
+              "poiseuille-l5": 1.0018801770056598
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.8990937573331258,
+            "costs": {
+              "annulus-l5": 0.6639787169988267,
+              "poiseuille-l5": 1.2174630959998467
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.05
+            ],
+            "geometricMeanSeconds": 0.9236139556525914,
+            "costs": {
+              "annulus-l5": 0.9689451400045073,
+              "poiseuille-l5": 0.880403547998867
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.1
+            ],
+            "geometricMeanSeconds": 1.0798384160216001,
+            "costs": {
+              "annulus-l5": 0.9273308449992328,
+              "poiseuille-l5": 1.2574271749981563
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.05
+            ],
+            "geometricMeanSeconds": 1.273077155120152,
+            "costs": {
+              "annulus-l5": 1.4875157630012836,
+              "poiseuille-l5": 1.0895517769968137
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              1.0
+            ],
+            "geometricMeanSeconds": 1.510659795239227,
+            "costs": {
+              "annulus-l5": 1.296495512004185,
+              "poiseuille-l5": 1.7602012469942565
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.5
+            ],
+            "geometricMeanSeconds": 1.5936671196407255,
+            "costs": {
+              "annulus-l5": 1.1970306849980261,
+              "poiseuille-l5": 2.121729141996184
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.25
+            ],
+            "geometricMeanSeconds": 1.6892104262353294,
+            "costs": {
+              "annulus-l5": 1.3813977030004025,
+              "poiseuille-l5": 2.0656121389984037
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.1
+            ],
+            "geometricMeanSeconds": 1.7521906362271473,
+            "costs": {
+              "annulus-l5": 1.4335253820026992,
+              "poiseuille-l5": 2.1416935229935916
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.05
+            ],
+            "geometricMeanSeconds": 1.899432298018366,
+            "costs": {
+              "annulus-l5": 1.6207543249984155,
+              "poiseuille-l5": 2.226027103002707
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              1.0
+            ],
+            "geometricMeanSeconds": 3.4861884992433407,
+            "costs": {
+              "annulus-l5": 2.753507551002258,
+              "poiseuille-l5": 4.4138285539957
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.5
+            ],
+            "geometricMeanSeconds": 3.6936857013729547,
+            "costs": {
+              "annulus-l5": 2.8703660320024937,
+              "poiseuille-l5": 4.753161760003422
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.25
+            ],
+            "geometricMeanSeconds": 3.848849663116938,
+            "costs": {
+              "annulus-l5": 3.3295831750001526,
+              "poiseuille-l5": 4.449098566001339
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.1
+            ],
+            "geometricMeanSeconds": 4.097007842402611,
+            "costs": {
+              "annulus-l5": 3.7736238809957285,
+              "poiseuille-l5": 4.448104472001432
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.05
+            ],
+            "geometricMeanSeconds": 4.270019520368777,
+            "costs": {
+              "annulus-l5": 3.5245874770043883,
+              "poiseuille-l5": 5.173106590002135
+            }
+          }
+        ],
+        "simple-consistent": [
+          {
+            "pair": [
+              1.0,
+              1.0
+            ],
+            "geometricMeanSeconds": 0.6642501558940864,
+            "costs": {
+              "annulus-l5": 0.3601699670034577,
+              "poiseuille-l5": 1.2250556959988899
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.5
+            ],
+            "geometricMeanSeconds": 1.4183771178785842,
+            "costs": {
+              "annulus-l5": 0.8673354810016463,
+              "poiseuille-l5": 2.3195103769976413
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              1.0
+            ],
+            "geometricMeanSeconds": 2.36883995004142,
+            "costs": {
+              "annulus-l5": 1.4764661219960544,
+              "poiseuille-l5": 3.800563132004754
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 2.5536332667344963,
+            "costs": {
+              "annulus-l5": 1.8927475919990684,
+              "poiseuille-l5": 3.4452786459951312
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.5
+            ],
+            "geometricMeanSeconds": 2.639112713472854,
+            "costs": {
+              "annulus-l5": 1.7800134150020313,
+              "poiseuille-l5": 3.912844619997486
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.25
+            ],
+            "geometricMeanSeconds": 3.087412871426118,
+            "costs": {
+              "annulus-l5": 1.914635631001147,
+              "poiseuille-l5": 4.978554709996388
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              1.0
+            ],
+            "geometricMeanSeconds": 3.77005491481274,
+            "costs": {
+              "annulus-l5": 2.8016754329946707,
+              "poiseuille-l5": 5.07314797899744
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.1
+            ],
+            "geometricMeanSeconds": 3.789765949000963,
+            "costs": {
+              "annulus-l5": 2.9374904739961494,
+              "poiseuille-l5": 4.889318305999041
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.1
+            ],
+            "geometricMeanSeconds": 4.387203250271679,
+            "costs": {
+              "annulus-l5": 3.31013992500084,
+              "poiseuille-l5": 5.814724693002063
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.5
+            ],
+            "geometricMeanSeconds": 5.247297954072303,
+            "costs": {
+              "annulus-l5": 2.9984560680022696,
+              "poiseuille-l5": 9.182771130996116
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.05
+            ],
+            "geometricMeanSeconds": 5.847223722629376,
+            "costs": {
+              "annulus-l5": 4.546925367998483,
+              "poiseuille-l5": 7.519372431997908
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.5
+            ],
+            "geometricMeanSeconds": 6.136901026529387,
+            "costs": {
+              "annulus-l5": 4.430158416005725,
+              "poiseuille-l5": 8.501175504999992
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              1.0
+            ],
+            "geometricMeanSeconds": 6.387911015363433,
+            "costs": {
+              "annulus-l5": 5.003856259005261,
+              "poiseuille-l5": 8.154792029999953
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 6.4344786946268915,
+            "costs": {
+              "annulus-l5": 2.8008598619999248,
+              "poiseuille-l5": 14.782073403002869
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.25
+            ],
+            "geometricMeanSeconds": 6.830867076596613,
+            "costs": {
+              "annulus-l5": 4.8000715149973985,
+              "poiseuille-l5": 9.720843715003866
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.05
+            ],
+            "geometricMeanSeconds": 6.919121342714611,
+            "costs": {
+              "annulus-l5": 5.232791680995433,
+              "poiseuille-l5": 9.14889089299686
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.1
+            ],
+            "geometricMeanSeconds": 6.936737265587393,
+            "costs": {
+              "annulus-l5": 5.835396672999195,
+              "poiseuille-l5": 8.245938808999199
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.05
+            ],
+            "geometricMeanSeconds": 8.580173845009014,
+            "costs": {
+              "annulus-l5": 7.302326490003907,
+              "poiseuille-l5": 10.081634025998937
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.25
+            ],
+            "geometricMeanSeconds": 12.694061451088535,
+            "costs": {
+              "annulus-l5": 8.95171159900201,
+              "poiseuille-l5": 18.000936953998462
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.1
+            ],
+            "geometricMeanSeconds": 12.805046052815017,
+            "costs": {
+              "annulus-l5": 10.252027727998211,
+              "poiseuille-l5": 15.993831538995437
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.1
+            ],
+            "geometricMeanSeconds": 13.252401974513743,
+            "costs": {
+              "annulus-l5": 14.046855298001901,
+              "poiseuille-l5": 12.502880849002395
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.05
+            ],
+            "geometricMeanSeconds": 13.431524254458232,
+            "costs": {
+              "annulus-l5": 9.31322154699592,
+              "poiseuille-l5": 19.370938711996132
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.05
+            ],
+            "geometricMeanSeconds": 14.973475789519277,
+            "costs": {
+              "annulus-l5": 9.46535466399655,
+              "poiseuille-l5": 23.686907165996672
+            }
+          }
+        ]
+      },
+      "note": "Only training observations used; common coupled normalization cancels in candidate ranking."
+    },
+    "refined-selection": {
+      "training": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "batches": [
+        "grid",
+        "refine-simple",
+        "refine-consistent"
+      ],
+      "rankings": {
+        "simple": [
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.4840663714413152,
+            "costs": {
+              "annulus-l5": 0.45116835300359526,
+              "poiseuille-l5": 0.5193632274967968
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.5157692967458586,
+            "costs": {
+              "annulus-l5": 0.43375618400023086,
+              "poiseuille-l5": 0.6132891640008893
+            }
+          },
+          {
+            "pair": [
+              0.7,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.5406664047593539,
+            "costs": {
+              "annulus-l5": 0.4253646990036941,
+              "poiseuille-l5": 0.6872224280014052
+            }
+          },
+          {
+            "pair": [
+              0.7,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.5657013129432387,
+            "costs": {
+              "annulus-l5": 0.4887157720004325,
+              "poiseuille-l5": 0.6548140939994482
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.075
+            ],
+            "geometricMeanSeconds": 0.6836418571796355,
+            "costs": {
+              "annulus-l5": 0.7525612780009396,
+              "poiseuille-l5": 0.6210340640027425
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.1
+            ],
+            "geometricMeanSeconds": 0.7187379648514336,
+            "costs": {
+              "annulus-l5": 0.6333523560024332,
+              "poiseuille-l5": 0.8156348630000139
+            }
+          },
+          {
+            "pair": [
+              0.7,
+              0.075
+            ],
+            "geometricMeanSeconds": 0.7489666406040485,
+            "costs": {
+              "annulus-l5": 0.7606224400005885,
+              "poiseuille-l5": 0.7374894550011959
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.5
+            ],
+            "geometricMeanSeconds": 0.8476418665159419,
+            "costs": {
+              "annulus-l5": 0.7171483679994708,
+              "poiseuille-l5": 1.0018801770056598
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.8990937573331258,
+            "costs": {
+              "annulus-l5": 0.6639787169988267,
+              "poiseuille-l5": 1.2174630959998467
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.05
+            ],
+            "geometricMeanSeconds": 0.9236139556525914,
+            "costs": {
+              "annulus-l5": 0.9689451400045073,
+              "poiseuille-l5": 0.880403547998867
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.1
+            ],
+            "geometricMeanSeconds": 1.0798384160216001,
+            "costs": {
+              "annulus-l5": 0.9273308449992328,
+              "poiseuille-l5": 1.2574271749981563
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.05
+            ],
+            "geometricMeanSeconds": 1.273077155120152,
+            "costs": {
+              "annulus-l5": 1.4875157630012836,
+              "poiseuille-l5": 1.0895517769968137
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              1.0
+            ],
+            "geometricMeanSeconds": 1.510659795239227,
+            "costs": {
+              "annulus-l5": 1.296495512004185,
+              "poiseuille-l5": 1.7602012469942565
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.5
+            ],
+            "geometricMeanSeconds": 1.5936671196407255,
+            "costs": {
+              "annulus-l5": 1.1970306849980261,
+              "poiseuille-l5": 2.121729141996184
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.25
+            ],
+            "geometricMeanSeconds": 1.6892104262353294,
+            "costs": {
+              "annulus-l5": 1.3813977030004025,
+              "poiseuille-l5": 2.0656121389984037
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.1
+            ],
+            "geometricMeanSeconds": 1.7521906362271473,
+            "costs": {
+              "annulus-l5": 1.4335253820026992,
+              "poiseuille-l5": 2.1416935229935916
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.05
+            ],
+            "geometricMeanSeconds": 1.899432298018366,
+            "costs": {
+              "annulus-l5": 1.6207543249984155,
+              "poiseuille-l5": 2.226027103002707
+            }
+          },
+          {
+            "pair": [
+              0.9,
+              0.075
+            ],
+            "geometricMeanSeconds": 1.907237236953807,
+            "costs": {
+              "annulus-l5": 5.786123042002146,
+              "poiseuille-l5": 0.6286686009989353
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              1.0
+            ],
+            "geometricMeanSeconds": 3.4861884992433407,
+            "costs": {
+              "annulus-l5": 2.753507551002258,
+              "poiseuille-l5": 4.4138285539957
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.5
+            ],
+            "geometricMeanSeconds": 3.6936857013729547,
+            "costs": {
+              "annulus-l5": 2.8703660320024937,
+              "poiseuille-l5": 4.753161760003422
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.25
+            ],
+            "geometricMeanSeconds": 3.848849663116938,
+            "costs": {
+              "annulus-l5": 3.3295831750001526,
+              "poiseuille-l5": 4.449098566001339
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.1
+            ],
+            "geometricMeanSeconds": 4.097007842402611,
+            "costs": {
+              "annulus-l5": 3.7736238809957285,
+              "poiseuille-l5": 4.448104472001432
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.05
+            ],
+            "geometricMeanSeconds": 4.270019520368777,
+            "costs": {
+              "annulus-l5": 3.5245874770043883,
+              "poiseuille-l5": 5.173106590002135
+            }
+          }
+        ],
+        "simple-consistent": [
+          {
+            "pair": [
+              1.0,
+              1.0
+            ],
+            "geometricMeanSeconds": 0.617591173681994,
+            "costs": {
+              "annulus-l5": 0.3440844985016156,
+              "poiseuille-l5": 1.1085034620009537
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.9
+            ],
+            "geometricMeanSeconds": 0.6375556194203835,
+            "costs": {
+              "annulus-l5": 0.4333707300029346,
+              "poiseuille-l5": 0.9379432889982127
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.75
+            ],
+            "geometricMeanSeconds": 0.7845857116339521,
+            "costs": {
+              "annulus-l5": 0.5693115930043859,
+              "poiseuille-l5": 1.0812615559989354
+            }
+          },
+          {
+            "pair": [
+              0.95,
+              1.0
+            ],
+            "geometricMeanSeconds": 0.9832855505944873,
+            "costs": {
+              "annulus-l5": 0.6225122749965522,
+              "poiseuille-l5": 1.553142826000112
+            }
+          },
+          {
+            "pair": [
+              0.95,
+              0.9
+            ],
+            "geometricMeanSeconds": 1.1545937013774974,
+            "costs": {
+              "annulus-l5": 0.7213652280042879,
+              "poiseuille-l5": 1.8480050929938443
+            }
+          },
+          {
+            "pair": [
+              0.9,
+              0.75
+            ],
+            "geometricMeanSeconds": 1.3842148536523564,
+            "costs": {
+              "annulus-l5": 0.9216963440048858,
+              "poiseuille-l5": 2.078830814003595
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.5
+            ],
+            "geometricMeanSeconds": 1.4183771178785842,
+            "costs": {
+              "annulus-l5": 0.8673354810016463,
+              "poiseuille-l5": 2.3195103769976413
+            }
+          },
+          {
+            "pair": [
+              0.9,
+              1.0
+            ],
+            "geometricMeanSeconds": 1.473900346040159,
+            "costs": {
+              "annulus-l5": 0.9673001909977756,
+              "poiseuille-l5": 2.245820119002019
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              1.0
+            ],
+            "geometricMeanSeconds": 2.36883995004142,
+            "costs": {
+              "annulus-l5": 1.4764661219960544,
+              "poiseuille-l5": 3.800563132004754
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 2.5536332667344963,
+            "costs": {
+              "annulus-l5": 1.8927475919990684,
+              "poiseuille-l5": 3.4452786459951312
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.5
+            ],
+            "geometricMeanSeconds": 2.639112713472854,
+            "costs": {
+              "annulus-l5": 1.7800134150020313,
+              "poiseuille-l5": 3.912844619997486
+            }
+          },
+          {
+            "pair": [
+              0.95,
+              0.75
+            ],
+            "geometricMeanSeconds": 2.829567147249239,
+            "costs": {
+              "annulus-l5": 4.496823407003831,
+              "poiseuille-l5": 1.780468014003418
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.25
+            ],
+            "geometricMeanSeconds": 3.087412871426118,
+            "costs": {
+              "annulus-l5": 1.914635631001147,
+              "poiseuille-l5": 4.978554709996388
+            }
+          },
+          {
+            "pair": [
+              0.9,
+              0.9
+            ],
+            "geometricMeanSeconds": 3.2524948671589575,
+            "costs": {
+              "annulus-l5": 4.774490495001373,
+              "poiseuille-l5": 2.2156757609991473
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              1.0
+            ],
+            "geometricMeanSeconds": 3.77005491481274,
+            "costs": {
+              "annulus-l5": 2.8016754329946707,
+              "poiseuille-l5": 5.07314797899744
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.1
+            ],
+            "geometricMeanSeconds": 3.789765949000963,
+            "costs": {
+              "annulus-l5": 2.9374904739961494,
+              "poiseuille-l5": 4.889318305999041
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.1
+            ],
+            "geometricMeanSeconds": 4.387203250271679,
+            "costs": {
+              "annulus-l5": 3.31013992500084,
+              "poiseuille-l5": 5.814724693002063
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.5
+            ],
+            "geometricMeanSeconds": 5.247297954072303,
+            "costs": {
+              "annulus-l5": 2.9984560680022696,
+              "poiseuille-l5": 9.182771130996116
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.05
+            ],
+            "geometricMeanSeconds": 5.847223722629376,
+            "costs": {
+              "annulus-l5": 4.546925367998483,
+              "poiseuille-l5": 7.519372431997908
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.5
+            ],
+            "geometricMeanSeconds": 6.136901026529387,
+            "costs": {
+              "annulus-l5": 4.430158416005725,
+              "poiseuille-l5": 8.501175504999992
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              1.0
+            ],
+            "geometricMeanSeconds": 6.387911015363433,
+            "costs": {
+              "annulus-l5": 5.003856259005261,
+              "poiseuille-l5": 8.154792029999953
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 6.4344786946268915,
+            "costs": {
+              "annulus-l5": 2.8008598619999248,
+              "poiseuille-l5": 14.782073403002869
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.25
+            ],
+            "geometricMeanSeconds": 6.830867076596613,
+            "costs": {
+              "annulus-l5": 4.8000715149973985,
+              "poiseuille-l5": 9.720843715003866
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.05
+            ],
+            "geometricMeanSeconds": 6.919121342714611,
+            "costs": {
+              "annulus-l5": 5.232791680995433,
+              "poiseuille-l5": 9.14889089299686
+            }
+          },
+          {
+            "pair": [
+              0.4,
+              0.1
+            ],
+            "geometricMeanSeconds": 6.936737265587393,
+            "costs": {
+              "annulus-l5": 5.835396672999195,
+              "poiseuille-l5": 8.245938808999199
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.05
+            ],
+            "geometricMeanSeconds": 8.580173845009014,
+            "costs": {
+              "annulus-l5": 7.302326490003907,
+              "poiseuille-l5": 10.081634025998937
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.25
+            ],
+            "geometricMeanSeconds": 12.694061451088535,
+            "costs": {
+              "annulus-l5": 8.95171159900201,
+              "poiseuille-l5": 18.000936953998462
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.1
+            ],
+            "geometricMeanSeconds": 12.805046052815017,
+            "costs": {
+              "annulus-l5": 10.252027727998211,
+              "poiseuille-l5": 15.993831538995437
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.1
+            ],
+            "geometricMeanSeconds": 13.252401974513743,
+            "costs": {
+              "annulus-l5": 14.046855298001901,
+              "poiseuille-l5": 12.502880849002395
+            }
+          },
+          {
+            "pair": [
+              0.2,
+              0.05
+            ],
+            "geometricMeanSeconds": 13.431524254458232,
+            "costs": {
+              "annulus-l5": 9.31322154699592,
+              "poiseuille-l5": 19.370938711996132
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.05
+            ],
+            "geometricMeanSeconds": 14.973475789519277,
+            "costs": {
+              "annulus-l5": 9.46535466399655,
+              "poiseuille-l5": 23.686907165996672
+            }
+          }
+        ]
+      },
+      "note": "Only training observations used; common coupled normalization cancels in candidate ranking."
+    },
+    "locked-selection": {
+      "training": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "batches": [
+        "confirm-simple",
+        "confirm-simple-consistent",
+        "repeat-simple",
+        "repeat-consistent"
+      ],
+      "rankings": {
+        "simple": [
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.36577605320843054,
+            "costs": {
+              "annulus-l5": 0.36125451299812994,
+              "poiseuille-l5": 0.37035418600135017
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.3753906036890845,
+            "costs": {
+              "annulus-l5": 0.35102845299843466,
+              "poiseuille-l5": 0.40144354149742867
+            }
+          },
+          {
+            "pair": [
+              0.7,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.5259242730680461,
+            "costs": {
+              "annulus-l5": 0.54408036100358,
+              "poiseuille-l5": 0.508374058001209
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.547036741150989,
+            "costs": {
+              "annulus-l5": 0.4477188539967756,
+              "poiseuille-l5": 0.6683864070000709
+            }
+          }
+        ],
+        "simple-consistent": [
+          {
+            "pair": [
+              1.0,
+              1.0
+            ],
+            "geometricMeanSeconds": 0.45006246654737064,
+            "costs": {
+              "annulus-l5": 0.2686348449969955,
+              "poiseuille-l5": 0.7540206624980783
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.9
+            ],
+            "geometricMeanSeconds": 0.45982820721472384,
+            "costs": {
+              "annulus-l5": 0.3034330110021983,
+              "poiseuille-l5": 0.6968324885019683
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.75
+            ],
+            "geometricMeanSeconds": 0.5088948154017344,
+            "costs": {
+              "annulus-l5": 0.35337602599611273,
+              "poiseuille-l5": 0.7328565439966042
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 2.1107049450935644,
+            "costs": {
+              "annulus-l5": 1.461006894998718,
+              "poiseuille-l5": 3.0493185080049443
+            }
+          }
+        ]
+      },
+      "note": "Only training observations used; common coupled normalization cancels in candidate ranking."
+    },
+    "confirmation-selection": {
+      "training": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "batches": [
+        "confirm-simple",
+        "confirm-simple-consistent"
+      ],
+      "rankings": {
+        "simple": [
+          {
+            "pair": [
+              0.8,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.37242807950198187,
+            "costs": {
+              "annulus-l5": 0.3399758939995081,
+              "poiseuille-l5": 0.40797796799597563
+            }
+          },
+          {
+            "pair": [
+              0.8,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.37406248725040175,
+            "costs": {
+              "annulus-l5": 0.4154574380008853,
+              "poiseuille-l5": 0.3367920070013497
+            }
+          },
+          {
+            "pair": [
+              0.7,
+              0.15
+            ],
+            "geometricMeanSeconds": 0.5259242730680461,
+            "costs": {
+              "annulus-l5": 0.54408036100358,
+              "poiseuille-l5": 0.508374058001209
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 0.547036741150989,
+            "costs": {
+              "annulus-l5": 0.4477188539967756,
+              "poiseuille-l5": 0.6683864070000709
+            }
+          }
+        ],
+        "simple-consistent": [
+          {
+            "pair": [
+              1.0,
+              1.0
+            ],
+            "geometricMeanSeconds": 0.4056406677804652,
+            "costs": {
+              "annulus-l5": 0.2500555910010007,
+              "poiseuille-l5": 0.6580310830031522
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.9
+            ],
+            "geometricMeanSeconds": 0.4236588747104946,
+            "costs": {
+              "annulus-l5": 0.28718188399943756,
+              "poiseuille-l5": 0.6249936090025585
+            }
+          },
+          {
+            "pair": [
+              1.0,
+              0.75
+            ],
+            "geometricMeanSeconds": 0.5088948154017344,
+            "costs": {
+              "annulus-l5": 0.35337602599611273,
+              "poiseuille-l5": 0.7328565439966042
+            }
+          },
+          {
+            "pair": [
+              0.6,
+              0.25
+            ],
+            "geometricMeanSeconds": 2.1107049450935644,
+            "costs": {
+              "annulus-l5": 1.461006894998718,
+              "poiseuille-l5": 3.0493185080049443
+            }
+          }
+        ]
+      },
+      "note": "Only training observations used; common coupled normalization cancels in candidate ranking."
+    }
+  },
+  "batches": {
+    "confirm-simple": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple"
+      ],
+      "pairs": [
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.15
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          0.6,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60
+      },
+      "repeats": 3,
+      "workers": 1,
+      "reference": false
+    },
+    "validation-coupled": {
+      "cases": [
+        "annulus-l6",
+        "annulus-l7",
+        "cavity100-l5",
+        "dfg20-l7"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 600
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": false
+    },
+    "reference-fine-strict": {
+      "cases": [
+        "annulus-l7"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.05
+        ],
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.4,
+          0.05
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.6,
+          0.05
+        ],
+        [
+          0.6,
+          0.1
+        ],
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.8,
+          0.05
+        ],
+        [
+          0.8,
+          0.1
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          0.8,
+          1.0
+        ],
+        [
+          1.0,
+          0.05
+        ],
+        [
+          1.0,
+          0.1
+        ],
+        [
+          1.0,
+          0.25
+        ],
+        [
+          1.0,
+          0.5
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 1000,
+        "seconds": 300.0
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": true,
+      "linearPolicy": "strict"
+    },
+    "repeat-consistent": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple-consistent"
+      ],
+      "pairs": [
+        [
+          1.0,
+          0.9
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60.0
+      },
+      "repeats": 7,
+      "workers": 1,
+      "reference": false
+    },
+    "repeat-simple": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple"
+      ],
+      "pairs": [
+        [
+          0.8,
+          0.15
+        ],
+        [
+          0.8,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60.0
+      },
+      "repeats": 7,
+      "workers": 1,
+      "reference": false
+    },
+    "references-holdout": {
+      "cases": [
+        "annulus-l6",
+        "annulus-l7",
+        "cavity100-l5",
+        "dfg20-l7"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.05
+        ],
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.4,
+          0.05
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.6,
+          0.05
+        ],
+        [
+          0.6,
+          0.1
+        ],
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.8,
+          0.05
+        ],
+        [
+          0.8,
+          0.1
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          0.8,
+          1.0
+        ],
+        [
+          1.0,
+          0.05
+        ],
+        [
+          1.0,
+          0.1
+        ],
+        [
+          1.0,
+          0.25
+        ],
+        [
+          1.0,
+          0.5
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 2000,
+        "seconds": 600.0
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": true
+    },
+    "references-training-v1": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.05
+        ],
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.4,
+          0.05
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.6,
+          0.05
+        ],
+        [
+          0.6,
+          0.1
+        ],
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.8,
+          0.05
+        ],
+        [
+          0.8,
+          0.1
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          0.8,
+          1.0
+        ],
+        [
+          1.0,
+          0.05
+        ],
+        [
+          1.0,
+          0.1
+        ],
+        [
+          1.0,
+          0.25
+        ],
+        [
+          1.0,
+          0.5
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 1000,
+        "seconds": 180.0
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": true
+    },
+    "fine-diagnostic": {
+      "cases": [
+        "annulus-l7"
+      ],
+      "methods": [
+        "simple"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 6000,
+        "seconds": 240.0
+      },
+      "repeats": 1,
+      "workers": 2,
+      "reference": false
+    },
+    "refine-consistent": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple-consistent"
+      ],
+      "pairs": [
+        [
+          0.9,
+          0.75
+        ],
+        [
+          0.9,
+          0.9
+        ],
+        [
+          0.9,
+          1.0
+        ],
+        [
+          0.95,
+          0.75
+        ],
+        [
+          0.95,
+          0.9
+        ],
+        [
+          0.95,
+          1.0
+        ],
+        [
+          1.0,
+          0.75
+        ],
+        [
+          1.0,
+          0.9
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60.0
+      },
+      "repeats": 1,
+      "workers": 2,
+      "reference": false
+    },
+    "pilot": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple",
+        "simple-consistent",
+        "coupled"
+      ],
+      "pairs": [
+        [
+          0.6,
+          0.25
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 90.0
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": false
+    },
+    "refine-simple": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple"
+      ],
+      "pairs": [
+        [
+          0.7,
+          0.075
+        ],
+        [
+          0.7,
+          0.15
+        ],
+        [
+          0.7,
+          0.25
+        ],
+        [
+          0.8,
+          0.075
+        ],
+        [
+          0.8,
+          0.15
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.9,
+          0.075
+        ],
+        [
+          0.9,
+          0.15
+        ],
+        [
+          0.9,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60.0
+      },
+      "repeats": 1,
+      "workers": 2,
+      "reference": false
+    },
+    "validation-simple-consistent": {
+      "cases": [
+        "annulus-l6",
+        "annulus-l7",
+        "cavity100-l5",
+        "dfg20-l7"
+      ],
+      "methods": [
+        "simple-consistent"
+      ],
+      "pairs": [
+        [
+          0.6,
+          0.25
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 600
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": false
+    },
+    "grid": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple",
+        "simple-consistent"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.05
+        ],
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.4,
+          0.05
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.6,
+          0.05
+        ],
+        [
+          0.6,
+          0.1
+        ],
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.8,
+          0.05
+        ],
+        [
+          0.8,
+          0.1
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          0.8,
+          1.0
+        ],
+        [
+          1.0,
+          0.05
+        ],
+        [
+          1.0,
+          0.1
+        ],
+        [
+          1.0,
+          0.25
+        ],
+        [
+          1.0,
+          0.5
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60.0
+      },
+      "repeats": 1,
+      "workers": 2,
+      "reference": false
+    },
+    "reference-fine-1e9": {
+      "cases": [
+        "annulus-l7"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          0.2,
+          0.05
+        ],
+        [
+          0.2,
+          0.1
+        ],
+        [
+          0.2,
+          0.25
+        ],
+        [
+          0.2,
+          0.5
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.4,
+          0.05
+        ],
+        [
+          0.4,
+          0.1
+        ],
+        [
+          0.4,
+          0.25
+        ],
+        [
+          0.4,
+          0.5
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.6,
+          0.05
+        ],
+        [
+          0.6,
+          0.1
+        ],
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.6,
+          0.5
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.8,
+          0.05
+        ],
+        [
+          0.8,
+          0.1
+        ],
+        [
+          0.8,
+          0.25
+        ],
+        [
+          0.8,
+          0.5
+        ],
+        [
+          0.8,
+          1.0
+        ],
+        [
+          1.0,
+          0.05
+        ],
+        [
+          1.0,
+          0.1
+        ],
+        [
+          1.0,
+          0.25
+        ],
+        [
+          1.0,
+          0.5
+        ],
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 1000,
+        "seconds": 180.0
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": true,
+      "referenceTolerance": 1e-09
+    },
+    "timing-fine-repeat": {
+      "cases": [
+        "annulus-l7"
+      ],
+      "methods": [
+        "simple-consistent",
+        "coupled"
+      ],
+      "pairs": [
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 600.0
+      },
+      "repeats": 2,
+      "workers": 1,
+      "reference": false
+    },
+    "confirm-coupled": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "coupled"
+      ],
+      "pairs": [
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60
+      },
+      "repeats": 3,
+      "workers": 1,
+      "reference": false
+    },
+    "confirm-simple-consistent": {
+      "cases": [
+        "annulus-l5",
+        "poiseuille-l5"
+      ],
+      "methods": [
+        "simple-consistent"
+      ],
+      "pairs": [
+        [
+          1.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.9
+        ],
+        [
+          1.0,
+          0.75
+        ],
+        [
+          0.6,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 60
+      },
+      "repeats": 3,
+      "workers": 1,
+      "reference": false
+    },
+    "validation-simple": {
+      "cases": [
+        "annulus-l6",
+        "annulus-l7",
+        "cavity100-l5",
+        "dfg20-l7"
+      ],
+      "methods": [
+        "simple"
+      ],
+      "pairs": [
+        [
+          0.6,
+          0.25
+        ],
+        [
+          0.8,
+          0.25
+        ]
+      ],
+      "budget": {
+        "iterations": 3000,
+        "seconds": 600
+      },
+      "repeats": 1,
+      "workers": 1,
+      "reference": false
+    }
+  },
+  "schedules": [
+    {
+      "case": "annulus-l6",
+      "method": "simple-consistent",
+      "policy": "adaptive",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 137618.02732214628,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 3.287634470005287
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 38998.130301518664,
+          "ratio": 0.28337951836955927,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.9434006220035371
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s002/flow",
+          "pair": [
+            0.75,
+            0.3125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 3468.042857017421,
+          "ratio": 0.08892843913807756,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.014670199001557
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s003/flow",
+          "pair": [
+            0.9375,
+            0.390625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 0.055117034220819136,
+          "ratio": 1.589283538099664e-05,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 5.661189993996231
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s004/flow",
+          "pair": [
+            1.0,
+            0.48828125
+          ],
+          "nativeStatus": "eligible",
+          "merit": 6.866729407306593e-05,
+          "ratio": 0.0012458452281369034,
+          "accepted": true,
+          "chargedIterations": 10,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.02224807300081
+        }
+      ],
+      "chargedIterations": 210,
+      "wallSeconds": 15.732637574001274,
+      "finalRun": "runs/schedule-adaptive/annulus-l6__simple-consistent__adaptive__s004/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 2.1459365514385427e-12,
+        "pressure": 2.178185680587097e-11,
+        "flux": 1.4582616496072496e-12
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 2080,
+        "pressureIterations": 119230,
+        "momentumIterations": 0,
+        "lineSearchTrials": 210
+      }
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple",
+      "policy": "adaptive",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 141497.97855441205,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4409869690061896
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 40093.43602211779,
+          "ratio": 0.28334988550172213,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.7361463330016704
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s002/flow",
+          "pair": [
+            0.75,
+            0.3125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 610776.2695575409,
+          "ratio": 15.233822045598746,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8648515739987488
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s003/flow",
+          "pair": [
+            0.375,
+            0.15625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 24701.711153116412,
+          "ratio": 0.6161036220365239,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.9133574229999795
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s004/flow",
+          "pair": [
+            0.46875,
+            0.1953125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 12151.987300354675,
+          "ratio": 0.4919492105234806,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.874972264005919
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s005/flow",
+          "pair": [
+            0.5859375,
+            0.244140625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 3919.8336632545665,
+          "ratio": 0.32256729425154684,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.9163551669989829
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s006/flow",
+          "pair": [
+            0.732421875,
+            0.30517578125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 6728.016538744809,
+          "ratio": 1.7164035815638816,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.913552764999622
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s007/flow",
+          "pair": [
+            0.732421875,
+            0.30517578125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 1986433.6602465792,
+          "ratio": 295.24803466329945,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.0308916430003592
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s008/flow",
+          "pair": [
+            0.3662109375,
+            0.152587890625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 283.156489784366,
+          "ratio": 0.04208617623838246,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8147748370029149
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s009/flow",
+          "pair": [
+            0.457763671875,
+            0.19073486328125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 143.77124775673093,
+          "ratio": 0.507744844083277,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8020990520017222
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s010/flow",
+          "pair": [
+            0.57220458984375,
+            0.2384185791015625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 49.34412700064748,
+          "ratio": 0.34321276173481174,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.4307086909975624
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s011/flow",
+          "pair": [
+            0.7152557373046875,
+            0.2980232238769531
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 14.467338468937124,
+          "ratio": 0.2931927130608124,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.185008308995748
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s012/flow",
+          "pair": [
+            0.8940696716308594,
+            0.3725290298461914
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 7069534778979.433,
+          "ratio": 488654827158.32336,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.7972646999987774
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s013/flow",
+          "pair": [
+            0.4470348358154297,
+            0.1862645149230957
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 3.527040084150354,
+          "ratio": 0.24379329285225995,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8616864319992601
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s014/flow",
+          "pair": [
+            0.5587935447692871,
+            0.23283064365386963
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 1.2805105819900564,
+          "ratio": 0.36305529606662373,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.955904284004646
+        },
+        {
+          "run": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s015/flow",
+          "pair": [
+            0.6984919309616089,
+            0.29103830456733704
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.2038620706205084,
+          "ratio": 0.1592037375463809,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.8116296450025402
+        }
+      ],
+      "chargedIterations": 800,
+      "wallSeconds": 26.31221314099821,
+      "finalRun": "runs/schedule-adaptive/annulus-l6__simple__adaptive__s015/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 1.7420666745553665e-07,
+        "pressure": 3.085699274614137e-08,
+        "flux": 1.1857158752638345e-07
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 154619,
+        "momentumIterations": 6905,
+        "lineSearchTrials": 0
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple-consistent",
+      "policy": "adaptive",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple-consistent__adaptive__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 165667.6865998539,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 11.34150982400024
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple-consistent__adaptive__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 33465.88384572561,
+          "ratio": 0.2020061034989736,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 16.502839471999323
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple-consistent__adaptive__s002/flow",
+          "pair": [
+            0.75,
+            0.3125
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 2052.0663635118144,
+          "ratio": 0.06131815830628098,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 14.249962216003041
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple-consistent__adaptive__s003/flow",
+          "pair": [
+            0.9375,
+            0.390625
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.09322194229724781,
+          "ratio": 4.542832724849695e-05,
+          "accepted": true,
+          "chargedIterations": 46,
+          "iterationCountKnown": true,
+          "wallSeconds": 47.10492038999655
+        }
+      ],
+      "chargedIterations": 196,
+      "wallSeconds": 92.40704859200196,
+      "finalRun": "runs/schedule-adaptive/dfg20-l7__simple-consistent__adaptive__s003/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 6.260337173675863e-09,
+        "pressure": 1.615692268559549e-09,
+        "flux": 4.519756420701033e-09
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 6715,
+        "pressureIterations": 503345,
+        "momentumIterations": 0,
+        "lineSearchTrials": 196
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple",
+      "policy": "adaptive",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "controller-stalled",
+      "steps": [
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "solver-error",
+          "merit": null,
+          "ratio": null,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": false,
+          "wallSeconds": 0.5985066180001013
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s001/flow",
+          "pair": [
+            0.3,
+            0.125
+          ],
+          "nativeStatus": "solver-error",
+          "merit": null,
+          "ratio": null,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": false,
+          "wallSeconds": 0.6589888140006224
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s002/flow",
+          "pair": [
+            0.15,
+            0.0625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 34818790561.95512,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.3728100060034194
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s003/flow",
+          "pair": [
+            0.15,
+            0.0625
+          ],
+          "nativeStatus": "solver-error",
+          "merit": null,
+          "ratio": null,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": false,
+          "wallSeconds": 0.8303332930008764
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s004/flow",
+          "pair": [
+            0.075,
+            0.05
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 9255156580.161871,
+          "ratio": 0.26580924928146565,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.435741378001694
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s005/flow",
+          "pair": [
+            0.09375,
+            0.0625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 71005856802.3401,
+          "ratio": 7.672031930236476,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.7149329769963515
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s006/flow",
+          "pair": [
+            0.05,
+            0.05
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 14857367031.475473,
+          "ratio": 1.6053069337931851,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.9543061789954663
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s007/flow",
+          "pair": [
+            0.05,
+            0.05
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 2046256159.404713,
+          "ratio": 0.13772670184896824,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.1795139690002543
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s008/flow",
+          "pair": [
+            0.0625,
+            0.0625
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 24570645509.8057,
+          "ratio": 12.007609798449513,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.9038752160049626
+        },
+        {
+          "run": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s009/flow",
+          "pair": [
+            0.05,
+            0.05
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 14994811539.649742,
+          "ratio": 7.327924937810309,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.7850748659984674
+        }
+      ],
+      "chargedIterations": 500,
+      "wallSeconds": 15.451886201000889,
+      "finalRun": "runs/schedule-adaptive/dfg20-l7__simple__adaptive__s007/flow",
+      "agreement": null,
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": false,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 24002,
+        "momentumIterations": 1775,
+        "lineSearchTrials": 0
+      }
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple-consistent",
+      "policy": "fixed",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 137618.02732214628,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.9822264879985596
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 38998.130301518664,
+          "ratio": 0.28337951836955927,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.9018712399993092
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s002/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 11453.9549142881,
+          "ratio": 0.29370523216704214,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.869593008996162
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s003/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 3371.6185533932185,
+          "ratio": 0.29436282739225145,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.7889250840016757
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s004/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 993.0291248490321,
+          "ratio": 0.294525940323125,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.7083037329939543
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s005/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 292.5192755867789,
+          "ratio": 0.29457270513717304,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.754181177006103
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s006/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 86.16104642133979,
+          "ratio": 0.29454826950636015,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.028785025999241
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s007/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 25.376864274832684,
+          "ratio": 0.29452827384124614,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 3.8202332080036285
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s008/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 7.474604298720462,
+          "ratio": 0.2945440468046064,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 3.6577089999991586
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s009/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 2.201602917823114,
+          "ratio": 0.2945444106251878,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 3.6058147629955783
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s010/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 0.6484703462758332,
+          "ratio": 0.29454464337148656,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 3.44796521000535
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s011/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.32705061690692666,
+          "ratio": 0.5043416692608678,
+          "accepted": true,
+          "chargedIterations": 28,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.1928889820046606
+        }
+      ],
+      "chargedIterations": 578,
+      "wallSeconds": 33.92988684699958,
+      "finalRun": "runs/schedule-fixed-default/annulus-l6__simple-consistent__fixed__s011/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 2.7942683341036344e-07,
+        "pressure": 5.240889003832532e-08,
+        "flux": 1.9018703675928442e-07
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 4847,
+        "pressureIterations": 290748,
+        "momentumIterations": 0,
+        "lineSearchTrials": 578
+      }
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple",
+      "policy": "fixed",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 141497.97855441205,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 2.9988250599999446
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 40093.43602211779,
+          "ratio": 0.28334988550172213,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8870100139974966
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s002/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 12068.018977055159,
+          "ratio": 0.3009973744928661,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.6685588450054638
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s003/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 3640.2518738673966,
+          "ratio": 0.301644526809958,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.659272881996003
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s004/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 1098.6860310851034,
+          "ratio": 0.3018159372356456,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.069219984994561
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s005/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 331.65652783870837,
+          "ratio": 0.3018665191466501,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.3793020090015489
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s006/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 100.12105006383153,
+          "ratio": 0.3018817410779942,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.8371059950004565
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s007/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 30.225315692188005,
+          "ratio": 0.3018877216421327,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.7427796180054429
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s008/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 9.124619037939084,
+          "ratio": 0.3018866413460628,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.7230876430039643
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s009/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 2.7546155222888924,
+          "ratio": 0.30188827728977263,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5224621990055311
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s010/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 0.8315946589293897,
+          "ratio": 0.3018913718450235,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5016196889991988
+        },
+        {
+          "run": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s011/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.32056832789355316,
+          "ratio": 0.3854862756168477,
+          "accepted": true,
+          "chargedIterations": 40,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.39575786600471474
+        }
+      ],
+      "chargedIterations": 590,
+      "wallSeconds": 20.13636358200165,
+      "finalRun": "runs/schedule-fixed-default/annulus-l6__simple__fixed__s011/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 2.7388743289473655e-07,
+        "pressure": 4.857097775903448e-08,
+        "flux": 1.8641774083530107e-07
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 104422,
+        "momentumIterations": 2978,
+        "lineSearchTrials": 0
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple-consistent",
+      "policy": "fixed",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 165667.6865998539,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 14.98251760599669
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s001/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 33465.88384572561,
+          "ratio": 0.2020061034989736,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 9.70547729300597
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s002/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 6155.5408721481535,
+          "ratio": 0.18393480657868122,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 17.08138956499897
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s003/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 1573.8426526119972,
+          "ratio": 0.2556790191635523,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 9.788636407000013
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s004/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 452.61490662823275,
+          "ratio": 0.28758586881417864,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 13.514374960002897
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s005/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 132.34331810482382,
+          "ratio": 0.2923971706780915,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 9.137800206997781
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s006/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 33.48061337267806,
+          "ratio": 0.25298302817343155,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 16.59033083900431
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s007/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 7.519018613449543,
+          "ratio": 0.22457828145960604,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 20.197799164998287
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s008/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 1.5744488323667023,
+          "ratio": 0.20939552264845152,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 17.117943324999942
+        },
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s009/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.3267531946964924,
+          "ratio": 0.20753497222600678,
+          "accepted": true,
+          "chargedIterations": 49,
+          "iterationCountKnown": true,
+          "wallSeconds": 21.125949360997765
+        }
+      ],
+      "chargedIterations": 499,
+      "wallSeconds": 155.46920965699974,
+      "finalRun": "runs/schedule-fixed-default/dfg20-l7__simple-consistent__fixed__s009/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 6.348871651600381e-08,
+        "pressure": 6.036245457345734e-09,
+        "flux": 4.587901422609588e-08
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 11882,
+        "pressureIterations": 865474,
+        "momentumIterations": 0,
+        "lineSearchTrials": 499
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple",
+      "policy": "fixed",
+      "initialPair": [
+        0.6,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "solver-error",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-default/dfg20-l7__simple__fixed__s000/flow",
+          "pair": [
+            0.6,
+            0.25
+          ],
+          "nativeStatus": "solver-error",
+          "merit": null,
+          "ratio": null,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": false,
+          "wallSeconds": 0.27890366000065114
+        }
+      ],
+      "chargedIterations": 50,
+      "wallSeconds": 0.28209700799925486,
+      "finalRun": null,
+      "agreement": null,
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": false,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 0,
+        "momentumIterations": 0,
+        "lineSearchTrials": 0
+      }
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple-consistent",
+      "policy": "fixed",
+      "initialPair": [
+        1.0,
+        1.0
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple-consistent__fixed__s000/flow",
+          "pair": [
+            1.0,
+            1.0
+          ],
+          "nativeStatus": "eligible",
+          "merit": 8.749052508190067e-06,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 10,
+          "iterationCountKnown": true,
+          "wallSeconds": 1.4644652999995742
+        }
+      ],
+      "chargedIterations": 10,
+      "wallSeconds": 1.564012950999313,
+      "finalRun": "runs/schedule-fixed-selected/annulus-l6__simple-consistent__fixed__s000/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 6.32484249566065e-13,
+        "pressure": 1.1845087777232215e-11,
+        "flux": 4.2915384787686733e-13
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 142,
+        "pressureIterations": 8620,
+        "momentumIterations": 0,
+        "lineSearchTrials": 10
+      }
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple",
+      "policy": "fixed",
+      "initialPair": [
+        0.8,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "iteration-limit",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s000/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 6643081528.283663,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.3953995109986863
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s001/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 29811045057.473183,
+          "ratio": 4.487532620298174,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.44583416800014675
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s002/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 36876424536.943344,
+          "ratio": 1.2370054275470284,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5489275609943434
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s003/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37698008396.487885,
+          "ratio": 1.022279379572753,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.520592665001459
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s004/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37528974551.13374,
+          "ratio": 0.9955161067508838,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4371586089982884
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s005/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37481163491.2926,
+          "ratio": 0.9987260227487432,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5088738299964461
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s006/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37489292828.40229,
+          "ratio": 1.0002168912689058,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4699434259964619
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s007/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37491383353.82583,
+          "ratio": 1.0000557632664107,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.48628719699627254
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s008/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37491032855.91782,
+          "ratio": 0.999990651240988,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.49405866500455886
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s009/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490943709.88162,
+          "ratio": 0.9999976222037802,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.47518415300146444
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s010/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490959530.82733,
+          "ratio": 1.0000004219937975,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.46181308799714316
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s011/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490963483.137825,
+          "ratio": 1.000000105420361,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5533762649938581
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s012/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962801.39403,
+          "ratio": 0.9999999818157835,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5276076010050019
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s013/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962632.16957,
+          "ratio": 0.9999999954862601,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5216800500056706
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s014/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962662.57615,
+          "ratio": 1.0000000008110375,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5925175380034489
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s015/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962669.98563,
+          "ratio": 1.0000000001976337,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5180309959978331
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s016/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.65591,
+          "ratio": 0.9999999999645323,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5134391719984706
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s017/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.33547,
+          "ratio": 0.9999999999914531,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4697600790022989
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s018/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.393845,
+          "ratio": 1.000000000001557,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5505661479983246
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s019/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40757,
+          "ratio": 1.0000000000003662,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.403153104998637
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s020/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40546,
+          "ratio": 0.9999999999999436,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4760458529999596
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s021/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40449,
+          "ratio": 0.9999999999999741,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4819729549999465
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s022/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40481,
+          "ratio": 1.0000000000000084,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.48022412700083805
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s023/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40444,
+          "ratio": 0.9999999999999902,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.47079553100047633
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s024/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40362,
+          "ratio": 0.999999999999978,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.43543500999658136
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s025/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.403984,
+          "ratio": 1.0000000000000098,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.46361760400031926
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s026/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40449,
+          "ratio": 1.0000000000000133,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.45060189600189915
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s027/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.403595,
+          "ratio": 0.9999999999999762,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.46804485799657414
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s028/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40457,
+          "ratio": 1.000000000000026,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.4851457050026511
+        },
+        {
+          "run": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s029/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "iteration-limit",
+          "merit": 37490962668.40584,
+          "ratio": 1.0000000000000338,
+          "accepted": true,
+          "chargedIterations": 50,
+          "iterationCountKnown": true,
+          "wallSeconds": 0.5845971980015747
+        }
+      ],
+      "chargedIterations": 1500,
+      "wallSeconds": 23.913992640002107,
+      "finalRun": "runs/schedule-fixed-selected/annulus-l6__simple__fixed__s029/flow",
+      "agreement": null,
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 50996,
+        "momentumIterations": 34682,
+        "lineSearchTrials": 0
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple-consistent",
+      "policy": "fixed",
+      "initialPair": [
+        1.0,
+        1.0
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "eligible",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-selected/dfg20-l7__simple-consistent__fixed__s000/flow",
+          "pair": [
+            1.0,
+            1.0
+          ],
+          "nativeStatus": "eligible",
+          "merit": 0.02137916359805568,
+          "ratio": null,
+          "accepted": true,
+          "chargedIterations": 43,
+          "iterationCountKnown": true,
+          "wallSeconds": 97.97507516799669
+        }
+      ],
+      "chargedIterations": 43,
+      "wallSeconds": 98.16119099099888,
+      "finalRun": "runs/schedule-fixed-selected/dfg20-l7__simple-consistent__fixed__s000/flow",
+      "agreement": {
+        "finite": true,
+        "velocity": 6.739952668528734e-11,
+        "pressure": 3.9545627247222886e-11,
+        "flux": 2.6504531697064263e-11
+      },
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": true,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 5689,
+        "pressureIterations": 419796,
+        "momentumIterations": 0,
+        "lineSearchTrials": 64
+      }
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple",
+      "policy": "fixed",
+      "initialPair": [
+        0.8,
+        0.25
+      ],
+      "chunk": 50,
+      "budget": {
+        "iterations": 1500,
+        "seconds": 300
+      },
+      "increase": 1.25,
+      "decrease": 0.5,
+      "minimum": 0.05,
+      "rejectGrowth": 2.0,
+      "growthThreshold": 0.8,
+      "rule": "accept finite completed segments with merit <= 2*previous; reject otherwise; increase both factors by 1.25 up to 1 if accepted merit ratio < .8; halve both down to .05 on rejection; no reference field used by controller",
+      "status": "solver-error",
+      "steps": [
+        {
+          "run": "runs/schedule-fixed-selected/dfg20-l7__simple__fixed__s000/flow",
+          "pair": [
+            0.8,
+            0.25
+          ],
+          "nativeStatus": "solver-error",
+          "merit": null,
+          "ratio": null,
+          "accepted": false,
+          "chargedIterations": 50,
+          "iterationCountKnown": false,
+          "wallSeconds": 0.37131013599719154
+        }
+      ],
+      "chargedIterations": 50,
+      "wallSeconds": 0.37403200999688124,
+      "finalRun": null,
+      "agreement": null,
+      "costScope": "all segment processes, field comparison, CSV extraction/reload and controller overhead",
+      "controllerSha256": "3b95eae644ce7044a83748b2d11545f673b530240b9e9ac7de6bdc0722b622e3",
+      "completeNativeProfiles": false,
+      "knownNativeWork": {
+        "coupledKrylovIterations": 0,
+        "pressureIterations": 0,
+        "momentumIterations": 0,
+        "lineSearchTrials": 0
+      }
+    }
+  ],
+  "protocolAmendments": [
+    {
+      "case": "annulus-l7",
+      "plannedReferenceTolerance": 1e-10,
+      "revisedReferenceTolerance": 1e-09,
+      "candidateToleranceUnchanged": 1e-08,
+      "agreementThresholdUnchanged": 0.0001,
+      "reason": "Cold adaptive, cold strict, and converged-field warm starts all exhausted 2000 FGMRES iterations at a maximum row residual above the 1e-12 gate while the global linear norm passed. Keep all failures; test an explicitly declared 1e-9 reference (still 10x tighter than candidate solves). No solver code or native acceptance gate is changed.",
+      "failedBatches": [
+        "references-holdout",
+        "reference-fine-strict",
+        "reference-warm-tight"
+      ]
+    }
+  ],
+  "trainingComparisons": [
+    {
+      "case": "annulus-l5",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.4477188539967756,
+      "minSeconds": 0.39539914499619044,
+      "maxSeconds": 0.4909013290016446,
+      "iterations": [
+        178
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple",
+      "pair": [
+        0.7,
+        0.15
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.54408036100358,
+      "minSeconds": 0.3772278819960775,
+      "maxSeconds": 0.5610990679997485,
+      "iterations": [
+        133
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.15
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.35102845299843466,
+      "minSeconds": 0.3173905199946603,
+      "maxSeconds": 0.4509522099979222,
+      "iterations": [
+        120
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.36125451299812994,
+      "minSeconds": 0.3156385840047733,
+      "maxSeconds": 0.4186261810027645,
+      "iterations": [
+        115
+      ],
+      "chosen": true
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 1.461006894998718,
+      "minSeconds": 1.4403052600027877,
+      "maxSeconds": 1.7183922520052874,
+      "iterations": [
+        176
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        0.75
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.35337602599611273,
+      "minSeconds": 0.33876642399991397,
+      "maxSeconds": 0.41174131799925817,
+      "iterations": [
+        15
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        0.9
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.3034330110021983,
+      "minSeconds": 0.24853153999720234,
+      "maxSeconds": 0.44932113400136586,
+      "iterations": [
+        10
+      ],
+      "chosen": false
+    },
+    {
+      "case": "annulus-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.2686348449969955,
+      "minSeconds": 0.23187383900221903,
+      "maxSeconds": 0.33540746299695456,
+      "iterations": [
+        10
+      ],
+      "chosen": true
+    },
+    {
+      "case": "annulus-l5",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.24794237400055863,
+      "minSeconds": 0.2090493020004942,
+      "maxSeconds": 0.3352750920021208,
+      "iterations": [
+        10
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.6683864070000709,
+      "minSeconds": 0.6103008049976779,
+      "maxSeconds": 1.1739325800008373,
+      "iterations": [
+        271
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple",
+      "pair": [
+        0.7,
+        0.15
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.508374058001209,
+      "minSeconds": 0.505019601994718,
+      "maxSeconds": 0.5942534060013713,
+      "iterations": [
+        183
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.15
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.40144354149742867,
+      "minSeconds": 0.34420276599848876,
+      "maxSeconds": 0.4835238380037481,
+      "iterations": [
+        114
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.37035418600135017,
+      "minSeconds": 0.3134904039980029,
+      "maxSeconds": 0.4383013749975362,
+      "iterations": [
+        115
+      ],
+      "chosen": true
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 3.0493185080049443,
+      "minSeconds": 2.8903466159972595,
+      "maxSeconds": 3.1278695950022666,
+      "iterations": [
+        276
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        0.75
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.7328565439966042,
+      "minSeconds": 0.7010777730029076,
+      "maxSeconds": 0.751072008999472,
+      "iterations": [
+        15
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        0.9
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.6968324885019683,
+      "minSeconds": 0.5419057770050131,
+      "maxSeconds": 0.9504311909986427,
+      "iterations": [
+        10
+      ],
+      "chosen": false
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "repeats": 10,
+      "statuses": {
+        "eligible": 10
+      },
+      "medianSeconds": 0.7540206624980783,
+      "minSeconds": 0.6146213239990175,
+      "maxSeconds": 0.8930603970002267,
+      "iterations": [
+        10
+      ],
+      "chosen": true
+    },
+    {
+      "case": "poiseuille-l5",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "repeats": 3,
+      "statuses": {
+        "eligible": 3
+      },
+      "medianSeconds": 0.6837026479988708,
+      "minSeconds": 0.6836609519959893,
+      "maxSeconds": 0.8925049630051944,
+      "iterations": [
+        10
+      ],
+      "chosen": false
+    }
+  ],
+  "validation": [
+    {
+      "case": "annulus-l6",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 10,
+      "wallSeconds": 0.8154327309966902,
+      "agreement": {
+        "finite": true,
+        "velocity": 6.32484249566065e-13,
+        "pressure": 1.1845087777232215e-11,
+        "flux": 4.2915384787686733e-13
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-coupled/annulus-l6__coupled__u1_p1__r0/flow"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 10,
+      "wallSeconds": 6.318566756002838,
+      "agreement": {
+        "finite": true,
+        "velocity": 0.0,
+        "pressure": 0.0,
+        "flux": 0.0
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-coupled/annulus-l7__coupled__u1_p1__r0/flow"
+    },
+    {
+      "case": "cavity100-l5",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 12,
+      "wallSeconds": 1.1323577190050855,
+      "agreement": {
+        "finite": true,
+        "velocity": 7.143793088594504e-10,
+        "pressure": 2.0777391610348315e-10,
+        "flux": 4.949483345721725e-10
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-coupled/cavity100-l5__coupled__u1_p1__r0/flow"
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "coupled",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 43,
+      "wallSeconds": 50.73371921899525,
+      "agreement": {
+        "finite": true,
+        "velocity": 6.739952668528734e-11,
+        "pressure": 3.9545627247222886e-11,
+        "flux": 2.6504531697064263e-11
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-coupled/dfg20-l7__coupled__u1_p1__r0/flow"
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 580,
+      "wallSeconds": 5.716928159003146,
+      "agreement": {
+        "finite": true,
+        "velocity": 2.737890547526343e-07,
+        "pressure": 4.8553390931040725e-08,
+        "flux": 1.8635078360403008e-07
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple/annulus-l6__simple__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "status": "iteration-limit",
+      "iterations": 3000,
+      "wallSeconds": 57.75069230199733,
+      "agreement": null,
+      "failureReason": null,
+      "prefix": "runs/validation-simple/annulus-l6__simple__u0p8_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 15.108692007997888,
+      "agreement": null,
+      "failureReason": null,
+      "prefix": "runs/validation-simple/annulus-l7__simple__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 2.8314522820001002,
+      "agreement": null,
+      "failureReason": null,
+      "prefix": "runs/validation-simple/annulus-l7__simple__u0p8_p0p25__r0/flow"
+    },
+    {
+      "case": "cavity100-l5",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 619,
+      "wallSeconds": 1.600675831999979,
+      "agreement": {
+        "finite": true,
+        "velocity": 2.6872711661793814e-07,
+        "pressure": 4.894806187158443e-08,
+        "flux": 1.866024776103666e-07
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple/cavity100-l5__simple__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "cavity100-l5",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 257,
+      "wallSeconds": 0.6775460250064498,
+      "agreement": {
+        "finite": true,
+        "velocity": 9.775712654742502e-08,
+        "pressure": 1.7559626474519106e-08,
+        "flux": 6.788105137623226e-08
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple/cavity100-l5__simple__u0p8_p0p25__r0/flow"
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "solver-error",
+      "iterations": null,
+      "wallSeconds": 0.3174993220018223,
+      "agreement": null,
+      "failureReason": null,
+      "prefix": "runs/validation-simple/dfg20-l7__simple__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple",
+      "pair": [
+        0.8,
+        0.25
+      ],
+      "status": "solver-error",
+      "iterations": null,
+      "wallSeconds": 0.2270963330011,
+      "agreement": null,
+      "failureReason": null,
+      "prefix": "runs/validation-simple/dfg20-l7__simple__u0p8_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 578,
+      "wallSeconds": 24.838481376995333,
+      "agreement": {
+        "finite": true,
+        "velocity": 2.7942683341695997e-07,
+        "pressure": 5.240889028939471e-08,
+        "flux": 1.9018703676358155e-07
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/annulus-l6__simple-consistent__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l6",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 10,
+      "wallSeconds": 1.1454811529984,
+      "agreement": {
+        "finite": true,
+        "velocity": 6.32484249566065e-13,
+        "pressure": 1.1845087777232215e-11,
+        "flux": 4.2915384787686733e-13
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/annulus-l6__simple-consistent__u1_p1__r0/flow"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 2025,
+      "wallSeconds": 547.1547341909973,
+      "agreement": {
+        "finite": true,
+        "velocity": 1.1168876643015691e-06,
+        "pressure": 1.931046937922969e-07,
+        "flux": 7.741681077807486e-07
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/annulus-l7__simple-consistent__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 10,
+      "wallSeconds": 13.379999021002732,
+      "agreement": {
+        "finite": true,
+        "velocity": 0.0,
+        "pressure": 0.0,
+        "flux": 0.0
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/annulus-l7__simple-consistent__u1_p1__r0/flow"
+    },
+    {
+      "case": "cavity100-l5",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 617,
+      "wallSeconds": 10.068408536004426,
+      "agreement": {
+        "finite": true,
+        "velocity": 2.7532116990315186e-07,
+        "pressure": 5.283044063172598e-08,
+        "flux": 1.9118171664820287e-07
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/cavity100-l5__simple-consistent__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "cavity100-l5",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 12,
+      "wallSeconds": 1.175733839001623,
+      "agreement": {
+        "finite": true,
+        "velocity": 7.143793088594504e-10,
+        "pressure": 2.0777391610348315e-10,
+        "flux": 4.949483345721725e-10
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/cavity100-l5__simple-consistent__u1_p1__r0/flow"
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple-consistent",
+      "pair": [
+        0.6,
+        0.25
+      ],
+      "status": "eligible",
+      "iterations": 499,
+      "wallSeconds": 120.87616181599878,
+      "agreement": {
+        "finite": true,
+        "velocity": 6.348871424701673e-08,
+        "pressure": 6.036244509149544e-09,
+        "flux": 4.587901255241743e-08
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/dfg20-l7__simple-consistent__u0p6_p0p25__r0/flow"
+    },
+    {
+      "case": "dfg20-l7",
+      "method": "simple-consistent",
+      "pair": [
+        1.0,
+        1.0
+      ],
+      "status": "eligible",
+      "iterations": 43,
+      "wallSeconds": 57.53160718099389,
+      "agreement": {
+        "finite": true,
+        "velocity": 6.739952668528734e-11,
+        "pressure": 3.9545627247222886e-11,
+        "flux": 2.6504531697064263e-11
+      },
+      "failureReason": null,
+      "prefix": "runs/validation-simple-consistent/dfg20-l7__simple-consistent__u1_p1__r0/flow"
+    }
+  ],
+  "timingReplicates": [
+    {
+      "case": "annulus-l7",
+      "method": "simple-consistent",
+      "times": [
+        11.712097338000603,
+        8.946524013997987,
+        13.379999021002732
+      ],
+      "medianSeconds": 11.712097338000603,
+      "minSeconds": 8.946524013997987,
+      "maxSeconds": 13.379999021002732,
+      "nativeWork": [
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        },
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        },
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        }
+      ]
+    },
+    {
+      "case": "annulus-l7",
+      "method": "coupled",
+      "times": [
+        10.861273392001749,
+        8.395557900999847,
+        6.318566756002838
+      ],
+      "medianSeconds": 8.395557900999847,
+      "minSeconds": 6.318566756002838,
+      "maxSeconds": 10.861273392001749,
+      "nativeWork": [
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        },
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        },
+        {
+          "coupledKrylovIterations": 248,
+          "pressureIterations": 29290
+        }
+      ]
+    }
+  ],
+  "postSelectionDiagnostics": [
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.2,
+        0.1
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 184.9174920239966,
+      "momentumResidual": null,
+      "agreement": null,
+      "scope": "post-selection diagnostic, excluded from locked ranking and transfer success rate"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.2,
+        0.25
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 61.61381261399947,
+      "momentumResidual": null,
+      "agreement": null,
+      "scope": "post-selection diagnostic, excluded from locked ranking and transfer success rate"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.4,
+        0.1
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 86.24151898800483,
+      "momentumResidual": null,
+      "agreement": null,
+      "scope": "post-selection diagnostic, excluded from locked ranking and transfer success rate"
+    },
+    {
+      "case": "annulus-l7",
+      "method": "simple",
+      "pair": [
+        0.4,
+        0.25
+      ],
+      "status": "linear-failure",
+      "iterations": null,
+      "wallSeconds": 53.391993544006255,
+      "momentumResidual": null,
+      "agreement": null,
+      "scope": "post-selection diagnostic, excluded from locked ranking and transfer success rate"
+    }
+  ],
+  "physicalReferenceDiagnostics": {
+    "annulus-l5": {
+      "tolerance": 1e-10,
+      "metrics": {
+        "velocityL2": 0.008830441420479743,
+        "pressureL2": 0.034429066908110734,
+        "housingTorque": 0.424101601461844,
+        "housingTorqueError": 0.012467993687621953,
+        "rotorTorque": -0.4243643087837245,
+        "rotorTorqueError": 0.01309516122057767
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    },
+    "annulus-l6": {
+      "tolerance": 1e-10,
+      "metrics": {
+        "velocityL2": 0.0023131836552845227,
+        "pressureL2": 0.021963948813872695,
+        "housingTorque": 0.42490959504817416,
+        "housingTorqueError": 0.014396936286386844,
+        "rotorTorque": -0.4258356165898561,
+        "rotorTorqueError": 0.016607649872910673
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    },
+    "annulus-l7": {
+      "tolerance": 1e-09,
+      "metrics": {
+        "velocityL2": 0.0013230131775279728,
+        "pressureL2": 0.01898432222822653,
+        "housingTorque": 0.4224957689604032,
+        "housingTorqueError": 0.008634350981893038,
+        "rotorTorque": -0.4230512631669866,
+        "rotorTorqueError": 0.009960495714442933
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    },
+    "dfg20-l7": {
+      "tolerance": 1e-10,
+      "metrics": {
+        "Cd": 5.395649986200133,
+        "Cl": 0.015749760387252173,
+        "pressureDrop": 0.10663465874613294,
+        "CdError": -0.1838852476398669,
+        "CdRelativeError": 0.03295709049825494,
+        "ClError": 0.005130812241252173,
+        "ClRelativeError": 0.48317518559358197,
+        "pressureDropError": -0.010885508223867066,
+        "pressureDropRelativeError": 0.09262672530618397,
+        "reference": {
+          "Cd": 5.57953523384,
+          "Cl": 0.010618948146,
+          "pressureDrop": 0.11752016697,
+          "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+          "coefficientMeanVelocity": 0.2
+        }
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    },
+    "poiseuille-l5": {
+      "tolerance": 1e-10,
+      "metrics": {
+        "velocityL2": 0.00050607293356568,
+        "pressureL2": 0.0019145328585312197
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    },
+    "cavity100-l5": {
+      "tolerance": 1e-10,
+      "metrics": {
+        "ghiaRmse": 0.011555720251583964,
+        "ghiaMax": 0.025919646264098872,
+        "samples": [
+          {
+            "field": "u",
+            "coordinate": 1,
+            "actual": 1,
+            "reference": 1,
+            "error": 0
+          },
+          {
+            "field": "u",
+            "coordinate": 0.9766,
+            "actual": 0.8291368272257746,
+            "reference": 0.84123,
+            "error": -0.012093172774225391
+          },
+          {
+            "field": "u",
+            "coordinate": 0.9688,
+            "actual": 0.7740629000400058,
+            "reference": 0.78871,
+            "error": -0.014647099959994248
+          },
+          {
+            "field": "u",
+            "coordinate": 0.9609,
+            "actual": 0.7229821872399664,
+            "reference": 0.73722,
+            "error": -0.014237812760033552
+          },
+          {
+            "field": "u",
+            "coordinate": 0.9531,
+            "actual": 0.6699281428763387,
+            "reference": 0.68717,
+            "error": -0.01724185712366122
+          },
+          {
+            "field": "u",
+            "coordinate": 0.8516,
+            "actual": 0.21161517739988636,
+            "reference": 0.23151,
+            "error": -0.019894822600113632
+          },
+          {
+            "field": "u",
+            "coordinate": 0.7344,
+            "actual": -0.0157316030960038,
+            "reference": 0.00332,
+            "error": -0.0190516030960038
+          },
+          {
+            "field": "u",
+            "coordinate": 0.6172,
+            "actual": -0.13605510217027572,
+            "reference": -0.13641,
+            "error": 0.0003548978297242822
+          },
+          {
+            "field": "u",
+            "coordinate": 0.5,
+            "actual": -0.18333552354061833,
+            "reference": -0.20581,
+            "error": 0.022474476459381665
+          },
+          {
+            "field": "u",
+            "coordinate": 0.4531,
+            "actual": -0.18498035373590113,
+            "reference": -0.2109,
+            "error": 0.025919646264098872
+          },
+          {
+            "field": "u",
+            "coordinate": 0.2813,
+            "actual": -0.14144654279791402,
+            "reference": -0.15662,
+            "error": 0.015173457202085988
+          },
+          {
+            "field": "u",
+            "coordinate": 0.1719,
+            "actual": -0.09653488649268352,
+            "reference": -0.1015,
+            "error": 0.004965113507316488
+          },
+          {
+            "field": "u",
+            "coordinate": 0.1016,
+            "actual": -0.06311684683888882,
+            "reference": -0.06434,
+            "error": 0.0012231531611111707
+          },
+          {
+            "field": "u",
+            "coordinate": 0.0703,
+            "actual": -0.04616113979316062,
+            "reference": -0.04775,
+            "error": 0.0015888602068393834
+          },
+          {
+            "field": "u",
+            "coordinate": 0.0625,
+            "actual": -0.04166546851623366,
+            "reference": -0.04192,
+            "error": 0.00025453148376634177
+          },
+          {
+            "field": "u",
+            "coordinate": 0.0547,
+            "actual": -0.037083422464966695,
+            "reference": -0.03717,
+            "error": 8.657753503330673e-05
+          },
+          {
+            "field": "u",
+            "coordinate": 0,
+            "actual": 0,
+            "reference": 0,
+            "error": 0
+          },
+          {
+            "field": "v",
+            "coordinate": 1,
+            "actual": 0,
+            "reference": 0,
+            "error": 0
+          },
+          {
+            "field": "v",
+            "coordinate": 0.9688,
+            "actual": -0.06487665312931205,
+            "reference": -0.05906,
+            "error": -0.005816653129312052
+          },
+          {
+            "field": "v",
+            "coordinate": 0.9609,
+            "actual": -0.08054885280311214,
+            "reference": -0.07391,
+            "error": -0.006638852803112133
+          },
+          {
+            "field": "v",
+            "coordinate": 0.9531,
+            "actual": -0.09630185470223306,
+            "reference": -0.08864,
+            "error": -0.007661854702233059
+          },
+          {
+            "field": "v",
+            "coordinate": 0.9453,
+            "actual": -0.1115076374453949,
+            "reference": -0.10313,
+            "error": -0.008377637445394895
+          },
+          {
+            "field": "v",
+            "coordinate": 0.9063,
+            "actual": -0.17320128126902892,
+            "reference": -0.16914,
+            "error": -0.00406128126902891
+          },
+          {
+            "field": "v",
+            "coordinate": 0.8594,
+            "actual": -0.21501177584809142,
+            "reference": -0.22445,
+            "error": 0.009438224151908592
+          },
+          {
+            "field": "v",
+            "coordinate": 0.8047,
+            "actual": -0.21977219877160936,
+            "reference": -0.24533,
+            "error": 0.02555780122839063
+          },
+          {
+            "field": "v",
+            "coordinate": 0.5,
+            "actual": 0.04543135379663186,
+            "reference": 0.05454,
+            "error": -0.00910864620336814
+          },
+          {
+            "field": "v",
+            "coordinate": 0.2344,
+            "actual": 0.162142999856014,
+            "reference": 0.17527,
+            "error": -0.013127000143986017
+          },
+          {
+            "field": "v",
+            "coordinate": 0.2266,
+            "actual": 0.16244728809727488,
+            "reference": 0.17507,
+            "error": -0.012622711902725126
+          },
+          {
+            "field": "v",
+            "coordinate": 0.1563,
+            "actual": 0.15293301223159486,
+            "reference": 0.16077,
+            "error": -0.007836987768405135
+          },
+          {
+            "field": "v",
+            "coordinate": 0.0938,
+            "actual": 0.11909207017201527,
+            "reference": 0.12317,
+            "error": -0.00407792982798473
+          },
+          {
+            "field": "v",
+            "coordinate": 0.0781,
+            "actual": 0.10571716460789642,
+            "reference": 0.1089,
+            "error": -0.0031828353921035807
+          },
+          {
+            "field": "v",
+            "coordinate": 0.0703,
+            "actual": 0.0978948577432563,
+            "reference": 0.10091,
+            "error": -0.003015142256743694
+          },
+          {
+            "field": "v",
+            "coordinate": 0.0625,
+            "actual": 0.08965847538527424,
+            "reference": 0.09233,
+            "error": -0.002671524614725751
+          },
+          {
+            "field": "v",
+            "coordinate": 0,
+            "actual": 0,
+            "reference": 0,
+            "error": 0
+          }
+        ],
+        "marchiRmse": 0.01930796757759236
+      },
+      "scope": "same fixed spatial discretization; diagnostic only, not accuracy qualification"
+    }
+  }
+}

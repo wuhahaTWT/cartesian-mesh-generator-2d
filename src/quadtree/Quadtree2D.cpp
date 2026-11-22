@@ -237,6 +237,45 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
         }
     }
 
+    // Build a deterministic spatial bin index when many cell-level AMR targets
+    // are present so per-leaf targetLevel lookup stays O(1) amortized instead of
+    // scanning thousands of targets for every quadtree leaf.
+    constexpr std::size_t kGridRes = 64U;
+    const bool useBoxGrid = policy.boxRegions.size() > 16U;
+    std::vector<std::vector<std::size_t>> boxBins;
+    const double domMinX = domain_.bounds.min.x;
+    const double domMinY = domain_.bounds.min.y;
+    const double invBinW = static_cast<double>(kGridRes) / domain_.width();
+    const double invBinH = static_cast<double>(kGridRes) / domain_.height();
+    const auto binRange = [](double lo, double hi, double origin, double invStep) {
+        int b0 = static_cast<int>(std::floor((lo - origin) * invStep));
+        int b1 = static_cast<int>(std::floor((hi - origin) * invStep));
+        b0 = std::clamp(b0, 0, static_cast<int>(kGridRes) - 1);
+        b1 = std::clamp(b1, 0, static_cast<int>(kGridRes) - 1);
+        return std::pair<std::size_t, std::size_t>{
+            static_cast<std::size_t>(b0), static_cast<std::size_t>(b1)};
+    };
+    if (useBoxGrid) {
+        boxBins.resize(kGridRes * kGridRes);
+        for (std::size_t rIdx = 0U; rIdx < policy.boxRegions.size(); ++rIdx) {
+            const auto& r = policy.boxRegions[rIdx];
+            const auto [bx0, bx1] = binRange(r.bounds.min.x, r.bounds.max.x, domMinX, invBinW);
+            const auto [by0, by1] = binRange(r.bounds.min.y, r.bounds.max.y, domMinY, invBinH);
+            for (std::size_t by = by0; by <= by1; ++by) {
+                for (std::size_t bx = bx0; bx <= bx1; ++bx) {
+                    boxBins[by * kGridRes + bx].push_back(rIdx);
+                }
+            }
+        }
+        for (auto& bin : boxBins) {
+            std::sort(bin.begin(), bin.end(), [&](std::size_t a, std::size_t b) {
+                if (policy.boxRegions[a].targetLevel != policy.boxRegions[b].targetLevel)
+                    return policy.boxRegions[a].targetLevel > policy.boxRegions[b].targetLevel;
+                return a < b;
+            });
+        }
+    }
+
     // Refine every eligible leaf once per level pass, then sort only after the
     // complete batch.  The former implementation split one leaf, sorted the
     // whole tree and restarted from index zero, making boundary refinement
@@ -258,9 +297,27 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
                     }
                 }
             }
-            for (const auto& region : policy.boxRegions) {
-                if (boxesOverlapPositive(leaf.bounds, region.bounds)) {
-                    requested = std::max(requested, region.targetLevel);
+            if (useBoxGrid) {
+                const auto [bx0, bx1] = binRange(leaf.bounds.min.x, leaf.bounds.max.x, domMinX, invBinW);
+                const auto [by0, by1] = binRange(leaf.bounds.min.y, leaf.bounds.max.y, domMinY, invBinH);
+                for (std::size_t by = by0; by <= by1; ++by) {
+                    for (std::size_t bx = bx0; bx <= bx1; ++bx) {
+                        for (const std::size_t rIdx : boxBins[by * kGridRes + bx]) {
+                            const auto& region = policy.boxRegions[rIdx];
+                            if (region.targetLevel <= requested) break;
+                            if (boxesOverlapPositive(leaf.bounds, region.bounds)) {
+                                requested = region.targetLevel;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (const auto& region : policy.boxRegions) {
+                    if (region.targetLevel > requested &&
+                        boxesOverlapPositive(leaf.bounds, region.bounds)) {
+                        requested = region.targetLevel;
+                    }
                 }
             }
             for (const auto& band : policy.segmentBands) {

@@ -1,0 +1,236 @@
+{
+  "scope": "Actual native H4 hybrid DFG Re20; geometry and discretization diagnostic, no high-density qualification",
+  "interpretation": [
+    "All cases retain real fluid area, native topology, strict solver-quality and FvMesh input gates. No bad cells are removed.",
+    "3085 to5891 uses byte-identical original128-facet geometry, same background levels, collinear facet halves, and each radial layer split into two at unchanged total BL thickness.",
+    "5891 and6503 both show lift and pressure-drop accuracy deterioration despite strict algebraic convergence. Further density advancement is paused for diagnosis and same-mesh OpenFOAM comparison.",
+    "Do not fit order using sqrt(area/N); these changes are anisotropic and the6503 case also changes polygon geometry."
+  ],
+  "driverSource": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/native_bl_probe.cpp",
+  "driverSourceSha256": "625d2c397c43d2e68013422dd1ce7d510a6937615ef44e951a96365da2c44ccc",
+  "splitDriverBinarySha256": "784f50ffdc144bfabdaccd1f4fd2f1de9cdc7ac816fad1dbca266e3d784bb3ca",
+  "rows": [
+    {
+      "name": "dfg-f128-l8m5-b6-quality-fixed",
+      "cells": 3085,
+      "facets": 128,
+      "subdivisions": 1,
+      "layers": 6,
+      "backgroundLevel": 8,
+      "minimumLevel": 5,
+      "firstHeight": 0.001,
+      "growthRatio": 1.25,
+      "totalBLThickness": 0.0112587890625,
+      "geometrySha256": "84bd148547d5817305565caec4f1b2f489eff7ea4c56a23d72dbc0f593ddd87d",
+      "meshSha256": "c90948ea4cfac723f8508c9e0240740420fd2bfa9273b939c9fb8380fa3b7ac6",
+      "fluidArea": 0.8941491721076131,
+      "strictConverged": true,
+      "iterations": 581,
+      "wallSeconds": 12.758561553999243,
+      "metrics": {
+        "Cd": 5.683381808397673,
+        "Cl": 0.008701271628676772,
+        "pressureDrop": 0.11837715787560388,
+        "CdError": 0.10384657455767332,
+        "CdRelativeError": 0.018612047456541117,
+        "ClError": -0.0019176765173232278,
+        "ClRelativeError": 0.1805900632489281,
+        "pressureDropError": 0.0008569909056038716,
+        "pressureDropRelativeError": 0.00729228801915028,
+        "reference": {
+          "Cd": 5.57953523384,
+          "Cl": 0.010618948146,
+          "pressureDrop": 0.11752016697,
+          "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+          "coefficientMeanVelocity": 0.2
+        }
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 64.80988067162009,
+          "max_internal_skewness": 2.965704015106067,
+          "max_boundary_skewness": 3.253090538423874e-14,
+          "max_concavity_deg": 8.94793037412282,
+          "max_cell_aspect": 41.41873259236452,
+          "min_interior_angle_deg": 2.9013372823818013,
+          "min_face_length": 0.0001546559532937669,
+          "min_face_weight": 0.05021956913456769,
+          "min_volume_ratio": 0.010174939538013569,
+          "min_compactness": 0.0748548493740661
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "meshRecord": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-l8m5-b6-quality-fixed/mesh.json",
+      "result": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-l8m5-b6-quality-fixed-aa16/result.json",
+      "resourceUse": {
+        "userSeconds": 12.690787,
+        "systemSeconds": 0.016144,
+        "peakRssKiB": 14848,
+        "measurement": "RUSAGE_CHILDREN; exactly one child in this Python invocation"
+      }
+    },
+    {
+      "name": "dfg-f128-s2-l8m5-b12-fixed-geometry",
+      "cells": 5891,
+      "facets": 128,
+      "subdivisions": 2,
+      "layers": 12,
+      "backgroundLevel": 8,
+      "minimumLevel": 5,
+      "firstHeight": 0.0004721359549995794,
+      "growthRatio": 1.118033988749895,
+      "totalBLThickness": 0.011258789062500005,
+      "geometrySha256": "84bd148547d5817305565caec4f1b2f489eff7ea4c56a23d72dbc0f593ddd87d",
+      "meshSha256": "90128773370d383eaa065cfa3a1a0ca70c9ee483657933c5ba2ac2213f80093d",
+      "fluidArea": 0.8941491721076131,
+      "strictConverged": true,
+      "iterations": 1185,
+      "wallSeconds": 62.296706679000636,
+      "metrics": {
+        "Cd": 5.687441222354824,
+        "Cl": -0.003868318527239777,
+        "pressureDrop": 0.1192452068132254,
+        "CdError": 0.10790598851482436,
+        "CdRelativeError": 0.01933960159627136,
+        "ClError": -0.014487266673239777,
+        "ClRelativeError": 1.364284529320064,
+        "pressureDropError": 0.00172503984322539,
+        "pressureDropRelativeError": 0.014678670799248865,
+        "reference": {
+          "Cd": 5.57953523384,
+          "Cl": 0.010618948146,
+          "pressureDrop": 0.11752016697,
+          "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+          "coefficientMeanVelocity": 0.2
+        }
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 67.38578291356644,
+          "max_internal_skewness": 3.311981038025208,
+          "max_boundary_skewness": 0.004730181905178604,
+          "max_concavity_deg": 71.71874999998784,
+          "max_cell_aspect": 41.41873259233048,
+          "min_interior_angle_deg": 2.9013372823845662,
+          "min_face_length": 1.225929036424711e-05,
+          "min_face_weight": 0.050219569134700666,
+          "min_volume_ratio": 0.015160938381267785,
+          "min_compactness": 0.07485484937412687
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "meshRecord": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f128-s2-l8m5-b12-fixed-geometry/mesh.json",
+      "result": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f128-s2-l8m5-b12-fixed-geometry-aa16/result.json",
+      "resourceUse": {
+        "userSeconds": 61.755415,
+        "systemSeconds": 0.107905,
+        "peakRssKiB": 26800,
+        "measurement": "RUSAGE_CHILDREN; exactly one child in this Python invocation"
+      }
+    },
+    {
+      "name": "dfg-f256-l9m5-b12-quality-fixed",
+      "cells": 6503,
+      "facets": 256,
+      "subdivisions": 1,
+      "layers": 12,
+      "backgroundLevel": 9,
+      "minimumLevel": 5,
+      "firstHeight": 0.0004721359549995794,
+      "growthRatio": 1.118033988749895,
+      "totalBLThickness": 0.011258789062500005,
+      "geometrySha256": "012c72ba6b336afae5a4b868292d45c06fbf20f4df661ffdf5b8aa55d71c9b7f",
+      "meshSha256": "b4a6829d618b619edb5d244499ac703b10a7a96c94068779cf9be13e4981d55e",
+      "fluidArea": 0.8941468068726681,
+      "strictConverged": true,
+      "iterations": 1467,
+      "wallSeconds": 74.9098933510013,
+      "metrics": {
+        "Cd": 5.833199533270018,
+        "Cl": 0.049543382500347455,
+        "pressureDrop": 0.11993871275812192,
+        "CdError": 0.2536642994300182,
+        "CdRelativeError": 0.04546333857550336,
+        "ClError": 0.038924434354347455,
+        "ClRelativeError": 3.6655640294288196,
+        "pressureDropError": 0.002418545788121909,
+        "pressureDropRelativeError": 0.020579836214318043,
+        "reference": {
+          "Cd": 5.57953523384,
+          "Cl": 0.010618948146,
+          "pressureDrop": 0.11752016697,
+          "source": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+          "coefficientMeanVelocity": 0.2
+        }
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 64.97345673312304,
+          "max_internal_skewness": 3.153164180223178,
+          "max_boundary_skewness": 5.4572391273173097e-14,
+          "max_concavity_deg": 79.4531250000125,
+          "max_cell_aspect": 69.79558296167505,
+          "min_interior_angle_deg": 1.6920416876700455,
+          "min_face_length": 2.901711022709752e-05,
+          "min_face_weight": 0.051439131054825664,
+          "min_volume_ratio": 0.014862746468598927,
+          "min_compactness": 0.044691268871567075
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "meshRecord": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/meshes/dfg-f256-l9m5-b12-quality-fixed/mesh.json",
+      "result": "/workspace/cartesian-mesh-generator-2d/outputs/boundary-layer-agent/runs/dfg-f256-l9m5-b12-quality-fixed-aa16/result.json",
+      "resourceUse": {
+        "userSeconds": 74.24923,
+        "systemSeconds": 0.604097,
+        "peakRssKiB": 33672,
+        "measurement": "RUSAGE_CHILDREN; exactly one child in this Python invocation"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "label": "Elbow | mean Re=10, Da_w=1e-4, level6",
+      "cells": 916,
+      "iterations": [
+        220
+      ],
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-fidelity/t01-completion-001/geometry-default-padding/elbow-re-10-da-0.0001-phase-8-alpha-0.25-level-6/level-6/mesh.solver.cm2d",
+          "meshSha256": "d0e74192f9f81b51f9f5edf820d9499e4d5a6f3b1bf223ff780b4e11624da3b5",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-fidelity/t01-completion-001/geometry-default-padding/elbow-re-10-da-0.0001-phase-8-alpha-0.25-level-6/level-6/flow.cells.csv",
+          "fieldSha256": "555fb9e7ac1d49af8ff28411af84deea137226ad98ffcad6c1cc648f576d0f32"
+        }
+      ],
+      "report": "outputs/topology-fidelity/t01-completion-001/geometry-default-padding/elbow-re-10-da-0.0001-phase-8-alpha-0.25-level-6/summary.json",
+      "reportSha256": "59b1921ba97734148a0eadcefb3489763815af7e2ffe516253a1292e499de2ff"
+    },
+    {
+      "label": "Elbow | mean Re=50, Da_w=1e-5, level6",
+      "cells": 1212,
+      "iterations": [
+        702
+      ],
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-fidelity/t01-completion-001/native/elbow-re-50-da-1e-05-level-6/level-6/mesh.solver.cm2d",
+          "meshSha256": "1cb831de83d5c0203a569add3e55276db1e2b4eb20f5f437c0ff8d207ab7fd69",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/topology-fidelity/t01-completion-001/native/elbow-re-50-da-1e-05-level-6/level-6/flow.cells.csv",
+          "fieldSha256": "3cc465a26f874a4068b88472fd430de69e188f3f20ce2b4df38ffc834b6d00f5"
+        }
+      ],
+      "report": "outputs/topology-fidelity/t01-completion-001/native/elbow-re-50-da-1e-05-level-6/summary.json",
+      "reportSha256": "28d669077421c7a6f2a4cdfbfe5ed13a1e69b259dad545f3edef0a43d14cced8"
+    }
+  ],
+  "interpolated": false,
+  "physicalAccuracyQualified": false
+}

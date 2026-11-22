@@ -1,8 +1,9 @@
 #pragma once
 #include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
-#include <map>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 namespace cartmesh2d {
@@ -27,6 +28,13 @@ public:
     [[nodiscard]] std::size_t partitionCount() const { return partitions_.size(); }
     [[nodiscard]] std::size_t cacheHits() const { return cacheHits_; }
 private:
+    struct PairHash {
+        [[nodiscard]] std::size_t operator()(const std::pair<std::size_t,std::size_t>& p) const noexcept {
+            std::size_t h=p.first*0x9e3779b97f4a7c15ULL;
+            h^=p.second+0x9e3779b97f4a7c15ULL+(h<<6)+(h>>2);
+            return h;
+        }
+    };
     std::vector<std::size_t> handles_;
     std::vector<Point2D> points_;
     std::vector<std::size_t> denseIds_;
@@ -35,7 +43,8 @@ private:
         std::vector<std::pair<double,std::size_t>> byY;
     };
     std::vector<Column> columns_;
-    std::map<std::pair<std::size_t,std::size_t>,std::vector<std::pair<double,std::size_t>>> partitions_;
+    std::unordered_map<std::pair<std::size_t,std::size_t>,
+                       std::vector<std::pair<double,std::size_t>>,PairHash> partitions_;
     std::size_t cacheHits_=0;
 };
 }

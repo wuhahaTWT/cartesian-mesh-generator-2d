@@ -15,10 +15,11 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
 enum class FlowConvergence2D { Strict, Engineering };
+enum class FlowCoupling2D { Simple, SimpleC, Coupled, SimpleConsistent, Simpler, Pimple };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
-enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall, PressureOpening, Symmetry };
+enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall, PressureOpening, Symmetry, VelocityOutlet };
 
 // Explicit conditions refer to boundary face IDs in the final FvMesh2D only.
 // Velocity and kinematic pressure are physical values, not multiples of speed.
@@ -48,11 +49,29 @@ struct FlowControls2D {
     double speed = 1;
     double tolerance = 1e-6;
     std::size_t maxIterations = 1500;
+    // Explicit steady-laminar experiment; all residual/field/flux gates remain.
+    std::size_t minimumIterations = 10;
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
+    // SimpleC changes the segregated correction response. Coupled solves the
+    // same steady equations with block FGMRES and a residual-based line search;
+    // SIMPLE relaxation and pressure-correction pass controls do not apply.
+    // SimpleConsistent retains both SIMPLE relaxations but solves the complete
+    // frozen momentum/pressure response together, including symmetric stress
+    // and the matching face relaxation defect. Pressure passes do not apply.
+    FlowCoupling2D coupling = FlowCoupling2D::Simple;
+    // PIMPLE momentum/pressure correctors per outer iteration. Distinct from
+    // the non-orthogonal pressure passes above; 1 recovers ordinary SIMPLE.
+    // SIMPLER predicts pressure before the momentum solve, and uses its final
+    // pressure correction only for velocity/flux. Constant-property only.
+    std::size_t momentumCorrectors = 2;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
+    // Explicit study controls; retain the original four-vector, step-10 default.
+    // Earlier history can capture unstable modes before SIMPLE amplifies them.
+    std::size_t andersonHistory = 4;
+    std::size_t andersonStart = 10;
     // Explicit opt-ins preserve existing API/checkpoint and verification cases.
     // Engineering stopping is steady laminar only; it also requires a 50-step
     // window of field/physical-monitor stability and a strict final linear step.
@@ -65,6 +84,9 @@ struct FlowControls2D {
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
+    // Explicit research opt-in: 0 is steady custom Stokes, 1 is unchanged NS.
+    // No intermediate values, transient/material coupling or checkpoints at 0.
+    double momentumInertia = 1;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
     // Opt-in pressure outlet: reverse flow has zero tangential velocity and
     // zero normal velocity gradient. The conservative flux is never clipped.
@@ -100,7 +122,13 @@ struct FlowState2D {
 };
 
 struct FlowPerformance2D {
+    // Coupled work includes rejected trial solves. Counts are always recorded;
+    // elapsed times are collected only when profile is enabled.
+    std::size_t coupledSolves = 0, coupledIterations = 0, maxCoupledIterations = 0;
+    std::size_t lineSearchTrials = 0, lineSearchRejected = 0;
+    double coupledLinearSolveSeconds = 0;
     std::size_t accelerationCandidates = 0, accelerationAccepted = 0, accelerationRejected = 0;
+    std::size_t accelerationBacktracks = 0, accelerationDampedAccepted = 0;
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
     std::size_t maxMomentumIterations = 0;
@@ -139,6 +167,10 @@ struct FlowIteration2D {
     double pressureLinearResidual = 0;
     double linearRelativeTolerance = 1e-11;
     bool strictLinearStep = true;
+    // Coupled only: |phi - RhieChow(U,p,rAU(phi))|/(Uref*face length).
+    double fluxConsistency = 0;
+    double coupledLinearResidual = 0;
+    double lineSearchWeight = 1;
     double globalRelativeImbalance = 0;
     std::vector<double> monitors;
 };
@@ -170,6 +202,10 @@ struct FlowResult2D {
     std::vector<Vector2D> temporalIntegrals;
     bool converged = false;
     bool stopped = false;
+    // Coupled numerical failures retain the last accepted diagnostic iterate.
+    // If no step was accepted, history contains only an iteration-zero
+    // diagnostic of the unchanged initialization. Neither is a physical state.
+    std::string failureReason;
     std::vector<double> u;
     std::vector<double> v;
     std::vector<double> p;

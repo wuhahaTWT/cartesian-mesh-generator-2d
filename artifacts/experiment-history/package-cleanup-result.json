@@ -1,0 +1,511 @@
+{
+  "completed": "2026-09-20T22:36:49.052605+08:00",
+  "deleted": [
+    {
+      "path": ".DS_Store",
+      "bytes": 14340,
+      "sha256": "1b37e41bb659316cd5ed8d7db4ecf23cd46455dc5e277e6d57b9da679013b538"
+    },
+    {
+      "path": ".claude/.DS_Store",
+      "bytes": 8196,
+      "sha256": "72782cd8337eeea8889bb3d9090fe2f5fa05dea1a0b10dce65ff04716eb638d9"
+    },
+    {
+      "path": ".github/.DS_Store",
+      "bytes": 6148,
+      "sha256": "e9322e213aef5fc4cc20ee238c047c3d1a42fcd8ddcf9d7c3868489abde52a78"
+    },
+    {
+      "path": "artifacts/.DS_Store",
+      "bytes": 10244,
+      "sha256": "fa149425d3a79e6704f60c0c88432301adf8e38f216bbfd0ebd7ff379f6c74ab"
+    },
+    {
+      "path": "build/.DS_Store",
+      "bytes": 10244,
+      "sha256": "cb4805fe0357249400c5c55d7aa8f3af572739fe52e41e06c0bdbe7a7ac8b898"
+    },
+    {
+      "path": "desktop/.DS_Store",
+      "bytes": 10244,
+      "sha256": "0561ef0037abab179559d8622c49e2a201489a80fe9b6941c979b628d7c88602"
+    },
+    {
+      "path": "desktop/dist/.DS_Store",
+      "bytes": 8196,
+      "sha256": "f1153dcfcba348174c7f422eaa5a1a8069dc38b592eed4cce2550f24a1f6541a"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.3.0-arm64-mac.zip",
+      "bytes": 114481477,
+      "sha256": "3d2a95acc6997b39f0fe6131bb12c2197eacbc941d6547047df282219e1af59c"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.3.0-arm64-mac.zip.blockmap",
+      "bytes": 121726,
+      "sha256": "56ae09192d1d9466e1ce793ac1bf47bbe917602b473469b4020519d4962fe9cd"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.0-arm64-mac.zip",
+      "bytes": 114563764,
+      "sha256": "706834e9650cacd4bfe961546c8e7f66bb87da149aa787c6ed7695391b6de1e7"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.0-arm64-mac.zip.blockmap",
+      "bytes": 121781,
+      "sha256": "9f30b860c844d9f9325f7b0a6e9d191b7af4a236dfa0155d1db71e9b7ffa8770"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.1-arm64-mac.zip",
+      "bytes": 114571154,
+      "sha256": "0ae4e24fbf4c8f7f4481fd5c0193d9a1b226dc9ceca4223a3dfc7b63537ef514"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.1-arm64-mac.zip.blockmap",
+      "bytes": 121710,
+      "sha256": "99403e6e248275fc46087801d0107686c2ef4d2923edcca8e8d6969fc49da525"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.10-arm64-mac.zip",
+      "bytes": 114772814,
+      "sha256": "66df17caab6d6b75ccc339f5a021af8ab342136cbee3565086bdf9fb68b10be8"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.10-arm64-mac.zip.blockmap",
+      "bytes": 122046,
+      "sha256": "838e6327800cc77961dcd4794db485f1e53f61517e6b0b5030b78b5473a86cd1"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.2-arm64-mac.zip",
+      "bytes": 114573711,
+      "sha256": "03b5c62aa18d57f0d470f1f908c3c0471bb5bd8731f54fb27b273b333a53a56d"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.2-arm64-mac.zip.blockmap",
+      "bytes": 121714,
+      "sha256": "0725c5a92b1b8aa06b0e1c5a3c20a5c636d82996515c6e273388f6dfb6c34a2d"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.3-arm64-mac.zip",
+      "bytes": 114577162,
+      "sha256": "41f45f210b397f9956de9d478a0103cdad5c3c6d4cbc82ff7ea4db81d260c038"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.3-arm64-mac.zip.blockmap",
+      "bytes": 121857,
+      "sha256": "7426e3838092f80d6282ad075c327fcf98e617e27d0c4573e0452b3900fa4a7f"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.4-arm64-mac.zip",
+      "bytes": 114603871,
+      "sha256": "086df9e23b4af1145d687ad802ba6e06b4a97c39009746ec177a2fce9beda862"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.4-arm64-mac.zip.blockmap",
+      "bytes": 121987,
+      "sha256": "cd80b2a14ee123e0b12be9fa5cfa4ec736a01fa353d60ccc6eb4060cdcfb85cb"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.5-arm64-mac.zip",
+      "bytes": 114603904,
+      "sha256": "98b442274de5cd6facd5bb5d4cb74eed7a73422d7c7a8e0c3414c5f1683f004c"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.5-arm64-mac.zip.blockmap",
+      "bytes": 121778,
+      "sha256": "7171c35b4dda68eef79ca7aaafdb02c14744038d104356f97e147fd5c3d453da"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.6-arm64-mac.zip",
+      "bytes": 114619594,
+      "sha256": "d8641516c4b6948739eaa1cbae2de14a5ad4e3d9b0b0824ab31132064ea3ce4a"
+    },
+    {
+      "path": "desktop/dist/CartMesh2D-0.4.6-arm64-mac.zip.blockmap",
+      "bytes": 121852,
+      "sha256": "7f700f79dde46d6012cff8d3bf46059a8894cc6043ee3e4ddad1f763572ad7a8"
+    },
+    {
+      "path": "desktop/dist/platforms/.DS_Store",
+      "bytes": 8196,
+      "sha256": "669beef44f470a79c9da2faf8d9c9b8bb0bdf954c085690a8dad32bf67ea5078"
+    },
+    {
+      "path": "desktop/dist/platforms/windows-x64/CartMesh2D-0.3.0-win.zip",
+      "bytes": 135978360,
+      "sha256": "4207578b730e673410bc32397622191680af3f9598bc1dbb65597220bc1f6807"
+    },
+    {
+      "path": "examples/.DS_Store",
+      "bytes": 6148,
+      "sha256": "553cb14a231037246443d46248f37ffb1d8ff679c6fe005ef5433b742571ba69"
+    },
+    {
+      "path": "include/.DS_Store",
+      "bytes": 6148,
+      "sha256": "516668c2a1d8bfafd0c7e5e6041609f326e05650dd492dbd3c4517eeec9a6c5b"
+    },
+    {
+      "path": "src/.DS_Store",
+      "bytes": 8196,
+      "sha256": "acb3285f8cbcc88c2b0215d5675a898b5b18a1ed7421a609ddf0a256995ae9dc"
+    },
+    {
+      "path": "tests/.DS_Store",
+      "bytes": 6148,
+      "sha256": "694b47a6ea60c69920856ba7f40e96a7bfe1d55e544028d98ba5ec1830bc3fe3"
+    },
+    {
+      "path": "tests/__pycache__/cavity_reference_test.cpython-314.pyc",
+      "bytes": 24003,
+      "sha256": "bb57b366bb888cdd2957147ac9099c7d6170ced98b315120885618a778b9bc3b"
+    },
+    {
+      "path": "tests/__pycache__/face_plane_audit_test.cpython-314.pyc",
+      "bytes": 17577,
+      "sha256": "65b917114f0a81502c41bac81626746d2600bd6acb77c4806b2cb449e21fb350"
+    },
+    {
+      "path": "tests/__pycache__/flow_cli_test.cpython-314.pyc",
+      "bytes": 12919,
+      "sha256": "679554d47f0b6f74bf32317e2b3ffd9392653e55ddea4019faa5c4967c427b89"
+    },
+    {
+      "path": "tests/__pycache__/flow_verifier_test.cpython-314.pyc",
+      "bytes": 63931,
+      "sha256": "a582b841a28c5a6bc8c6e3ba2425b807cc94b72b24b306c455fba083cbd75459"
+    },
+    {
+      "path": "tests/__pycache__/fv_cli_test.cpython-314.pyc",
+      "bytes": 4453,
+      "sha256": "d45354e6f7acdf74af32543773a3399a6a9648a36cedf0be9715965cf456cea0"
+    },
+    {
+      "path": "tests/__pycache__/mesh_resolution_cli_test.cpython-314.pyc",
+      "bytes": 19475,
+      "sha256": "e91eff0917888442199e7033a958a54e34cb67590b7fa961c062c9acf83b54ea"
+    },
+    {
+      "path": "tests/__pycache__/scalar_transport_cli_test.cpython-314.pyc",
+      "bytes": 29200,
+      "sha256": "65d5aec3b1421489fcee8c20ac782382c22315bf4606826c85d98426b43d5d4d"
+    },
+    {
+      "path": "tests/__pycache__/sst_nonlinear_verifier_test.cpython-314.pyc",
+      "bytes": 10390,
+      "sha256": "ea973d8ae35429fa5d9de3e9d9c2b0292f24fda75893f78d933390a667a3c703"
+    },
+    {
+      "path": "tests/__pycache__/sst_rans_verifier_test.cpython-314.pyc",
+      "bytes": 11787,
+      "sha256": "45df4a7b31f471ec7abdd50327f13edbe9572286282c18b65dfad039aeeddc4e"
+    },
+    {
+      "path": "tests/__pycache__/sst_spatial_verifier_test.cpython-314.pyc",
+      "bytes": 10846,
+      "sha256": "e3db5cb80906506c5c6ec9d6ff9bf763c987a09d2e631f0724a9840cc976e6e6"
+    },
+    {
+      "path": "tests/__pycache__/thermal_flow_cli_test.cpython-314.pyc",
+      "bytes": 18434,
+      "sha256": "31d72829cd9afa76b9ab834f7036e30e7fa9884b97beea7982b98afc067e2ac6"
+    },
+    {
+      "path": "tests/__pycache__/thermal_scale_verifier_test.cpython-314.pyc",
+      "bytes": 35596,
+      "sha256": "6c0096e42baf700bada2aed62c4b276efae26027bf05e257c3a16d64e906841d"
+    },
+    {
+      "path": "tests/__pycache__/transient_flow_cli_test.cpython-314.pyc",
+      "bytes": 15191,
+      "sha256": "392e0bf2724c2fa59b00d908b8d630611e69fce415456f3768bbd236434ead15"
+    },
+    {
+      "path": "tests/__pycache__/transient_step_comparison_test.cpython-314.pyc",
+      "bytes": 14107,
+      "sha256": "ed78ed4cd4b1e87ac9837446874e5959a88f430e81b748982eab618625c70984"
+    },
+    {
+      "path": "tests/__pycache__/transient_verifier_test.cpython-314.pyc",
+      "bytes": 6573,
+      "sha256": "0cbc5422ed6c7af7494cb6a896fac59e180d1dc4ec6f983f255318d39013bcdc"
+    },
+    {
+      "path": "tests/__pycache__/variable_viscosity_cli_test.cpython-314.pyc",
+      "bytes": 12636,
+      "sha256": "03dcbe23b775a985af0cbfaa491e84998835e70fc3bad37e3a7c63432366e3a6"
+    },
+    {
+      "path": "tools/.DS_Store",
+      "bytes": 6148,
+      "sha256": "08956eef74c97c6879d11e6ba5a3afce5e69e807a743527551ffe3f525110e99"
+    },
+    {
+      "path": "tools/verification/__pycache__/analyze_sst_flatplate.cpython-314.pyc",
+      "bytes": 26374,
+      "sha256": "1aad3c6884939960e1300dfbd9f70e6e90a85b732a90d0e14bd02f560cac0117"
+    },
+    {
+      "path": "tools/verification/__pycache__/audit_cavity_reference.cpython-314.pyc",
+      "bytes": 23644,
+      "sha256": "522c5197491c7f68937c58e91400667d3daeed426bc718d6dd5c4ff9448a36c5"
+    },
+    {
+      "path": "tools/verification/__pycache__/audit_wall_tractions.cpython-314.pyc",
+      "bytes": 22767,
+      "sha256": "81f438ec0141b8f6dd8fca5b8977f35ae5ebc54c5bf8432503973f28e86a67a4"
+    },
+    {
+      "path": "tools/verification/__pycache__/benchmark_flow_pair.cpython-314.pyc",
+      "bytes": 14081,
+      "sha256": "1280a4291ee5fea03fd3aabe4ab54f51300ecdf514e92eacb71634ec9ad49c74"
+    },
+    {
+      "path": "tools/verification/__pycache__/check_directional_connectivity.cpython-314.pyc",
+      "bytes": 9766,
+      "sha256": "f6f70e6e194dd46810c273365cccc4e46f16f99653adff1fa058303d68fca02a"
+    },
+    {
+      "path": "tools/verification/__pycache__/check_face_planes.cpython-314.pyc",
+      "bytes": 25479,
+      "sha256": "2d80a16642e9d58b45e28729470a93724c8e0431d531f9404b48f9f2d3162230"
+    },
+    {
+      "path": "tools/verification/__pycache__/check_layer_resolution.cpython-314.pyc",
+      "bytes": 34323,
+      "sha256": "d68293e63a914ac3cb8aa2b29090a6a65b9343ed3ce3363819a97f561ee36af9"
+    },
+    {
+      "path": "tools/verification/__pycache__/check_mesh_resolution.cpython-314.pyc",
+      "bytes": 17607,
+      "sha256": "46e187053f5694bcec8cf46d56600cf935439cfd944c192ebf71a751def99c58"
+    },
+    {
+      "path": "tools/verification/__pycache__/check_openfoam2d.cpython-314.pyc",
+      "bytes": 21006,
+      "sha256": "70eb4560178f2e4db99d060e0ac2b36fbfe121248b4898a982d3fafd0aaa1640"
+    },
+    {
+      "path": "tools/verification/__pycache__/compare_cavity_centrelines.cpython-314.pyc",
+      "bytes": 27767,
+      "sha256": "8be07c3d83b81c0a85e01cec6c4fc4c8561bdc424773f16908a3697992dc38c2"
+    },
+    {
+      "path": "tools/verification/__pycache__/compare_transient_steps.cpython-314.pyc",
+      "bytes": 21590,
+      "sha256": "970733df8114f3a053fcdcfbebe2afc50f53b68d668d05eae1debf398cd155fe"
+    },
+    {
+      "path": "tools/verification/__pycache__/desktop_platform_smoke.cpython-314.pyc",
+      "bytes": 6676,
+      "sha256": "b9e962022574a79bb58a82b9b69f23a1310db66a49b6c17a659949700cf38217"
+    },
+    {
+      "path": "tools/verification/__pycache__/engineering_hybrid_survey.cpython-314.pyc",
+      "bytes": 16619,
+      "sha256": "51d3d550ee42072f4dd0544a7cbd18c6c5ce8824e38e361d6acf813b8cef29a9"
+    },
+    {
+      "path": "tools/verification/__pycache__/engineering_performance_compare.cpython-314.pyc",
+      "bytes": 9086,
+      "sha256": "fde9d79815387a904d63fe7edae59aa7cce67c775cae03bb53fcd30e770d1e18"
+    },
+    {
+      "path": "tools/verification/__pycache__/engineering_scale_survey.cpython-314.pyc",
+      "bytes": 13156,
+      "sha256": "73184211627b2695ea287f34603ced2ce06ed480c1f587ae74302bd9e1cb26d8"
+    },
+    {
+      "path": "tools/verification/__pycache__/generate_q0_baselines.cpython-314.pyc",
+      "bytes": 40260,
+      "sha256": "f2f8d1df197490309441f4b3292437c791510de91c60656410c87ee5f0f7d7a6"
+    },
+    {
+      "path": "tools/verification/__pycache__/generate_q1_baselines.cpython-314.pyc",
+      "bytes": 9953,
+      "sha256": "b49d3f4e0d2789d70e00e7f94eb4c7ff6a225fc0151674d1a48a5ec74ef1dd9e"
+    },
+    {
+      "path": "tools/verification/__pycache__/openfoam_harmonic_mms.cpython-314.pyc",
+      "bytes": 17446,
+      "sha256": "c9cc80facb19bdea3504bbf92fbf4989d08e0045847a74126aeb7f1c5e0147e2"
+    },
+    {
+      "path": "tools/verification/__pycache__/openfoam_nozzle_flow.cpython-314.pyc",
+      "bytes": 60973,
+      "sha256": "3b5b6126cb83a085dc7941fa7005d7732b2460d58e0d51f5708e94e7af884363"
+    },
+    {
+      "path": "tools/verification/__pycache__/plot_transient_comparison.cpython-314.pyc",
+      "bytes": 10033,
+      "sha256": "9235d44f347a41cd4f4ade02f81e7c602ef815d80c3e7da660f6493975b3549f"
+    },
+    {
+      "path": "tools/verification/__pycache__/plot_transient_flow.cpython-314.pyc",
+      "bytes": 13764,
+      "sha256": "8d52d6d907c48c510939dd2aaa41f781ffda9759d45915182097e672be967baa"
+    },
+    {
+      "path": "tools/verification/__pycache__/refinement_ladder.cpython-314.pyc",
+      "bytes": 25622,
+      "sha256": "8a3a144b1c151a44ca8ef2cf12602fffdc71cd4c927952368d24d633e2569921"
+    },
+    {
+      "path": "tools/verification/__pycache__/run_airfoil_rans.cpython-314.pyc",
+      "bytes": 17337,
+      "sha256": "6ca8e7cff894672c250d80e027495b4e2c75c58222c6b013c3b9ecdd7d11d24c"
+    },
+    {
+      "path": "tools/verification/__pycache__/run_engineering_mms.cpython-314.pyc",
+      "bytes": 18894,
+      "sha256": "a73081ab3344a6dee1b01911ee1637555399d861b2b73ca8a474a152dc827316"
+    },
+    {
+      "path": "tools/verification/__pycache__/run_manufactured_flow.cpython-314.pyc",
+      "bytes": 32621,
+      "sha256": "f1a7e80d4360daaebf8a9ac5599dd08f1d0ef19ae3ca73132aa74b7ad24f9b4e"
+    },
+    {
+      "path": "tools/verification/__pycache__/run_nozzle_flow.cpython-314.pyc",
+      "bytes": 13209,
+      "sha256": "04f23f9092731284a3a773b7851afcf4c8d9855102cda5f50ff28ce9adafe0f3"
+    },
+    {
+      "path": "tools/verification/__pycache__/run_transient_flow.cpython-314.pyc",
+      "bytes": 7959,
+      "sha256": "f7ebacb551fb457c3a9fba6630684debd494380aaa9995da02efb05d98a114f5"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_cavity_vorticity.cpython-314.pyc",
+      "bytes": 26044,
+      "sha256": "15b92347b2a868f0669641a6c9c85e78503645b577a383df9d1afb763cbe9fc1"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_native_flow.cpython-314.pyc",
+      "bytes": 190244,
+      "sha256": "bbd8e77519914a9c34c897b7d84fca17b7a3331a8191e4bcd54ca54485771621"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_native_fv.cpython-314.pyc",
+      "bytes": 74623,
+      "sha256": "9c4a9ba88e9c6e8142f4cab19081f5e1ea144a9392a6d488c3be710c4ffde657"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_q1_scale_invariance.cpython-314.pyc",
+      "bytes": 8233,
+      "sha256": "97d73c26d0c591b7a9edb558e777d8d64b36a0fb933c662c2ca8c82b9f6aef4a"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_q2_intersections.cpython-314.pyc",
+      "bytes": 14842,
+      "sha256": "10d5211f4db75f1d69776392dad62d738b45344cba748d09c0fb63b652ff8b3b"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_q2a_construction.cpython-314.pyc",
+      "bytes": 14738,
+      "sha256": "d2d41adaec4f9f47e23e621353a6691e086362a0e5db755fd0d7bf3dfa87286f"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_rectilinear_refinement.cpython-314.pyc",
+      "bytes": 10910,
+      "sha256": "80448bc4c5de0ef7eef7d0e385de20b79f299b8b89b9ff19b67ec173a68dce20"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_scalar_transport.cpython-314.pyc",
+      "bytes": 39804,
+      "sha256": "d7a4544684d8305e230637358091fa57cb734cc22c0650b522543d28cf9d42a4"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_sst_decay.cpython-314.pyc",
+      "bytes": 15595,
+      "sha256": "312abbb6c412d37f7e3a9ad51ee0612ab6614b036f021823850a1183876752b9"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_sst_nonlinear.cpython-314.pyc",
+      "bytes": 21191,
+      "sha256": "581284a0d46f6c84483a43725526b8058d5422e82ede154a111d1e329829611f"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_sst_rans.cpython-314.pyc",
+      "bytes": 52994,
+      "sha256": "48be4e3716bf90fa0b0ac8cd24256732922bac514197a480bc0251bf60183f74"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_sst_spatial.cpython-314.pyc",
+      "bytes": 17673,
+      "sha256": "f164ffcd487f4899116c9a7020337158676c0674e5fcfb978a4568227e764bec"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_thermal_scale.cpython-314.pyc",
+      "bytes": 42283,
+      "sha256": "74417446c6857fa568693dfdc775fd6469c8cf9d6425b07eeeed9959d4cc3efc"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_thermal_time.cpython-314.pyc",
+      "bytes": 9150,
+      "sha256": "0b586d7a8dce6d9d0d72e5e15aaffa95e541ace913cbd7c233987cff0423c8ed"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_transient_flow.cpython-314.pyc",
+      "bytes": 31855,
+      "sha256": "a545364ec97f7835c02cf062e66e29ce198591b4e6feabacc643eb6d40a85f70"
+    },
+    {
+      "path": "tools/verification/__pycache__/verify_wall_distance.cpython-314.pyc",
+      "bytes": 7122,
+      "sha256": "f4f414ca33e5df7fc96ce1051ab57971a5111e5cf6858967baa2aa1a2543ef08"
+    },
+    {
+      "path": "tools/visualization/__pycache__/build_experiment_history.cpython-314.pyc",
+      "bytes": 15987,
+      "sha256": "c19091718e961d559a662d52da86d20f394733a72be602f6f0e12bc4fd9eea87"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_aggregation_performance.cpython-314.pyc",
+      "bytes": 9211,
+      "sha256": "b16e1c85253f56253d7c8e0c0853efc80593e2e680c4faa8a31557bdceae6c29"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_airfoil_rans.cpython-314.pyc",
+      "bytes": 72667,
+      "sha256": "03650c58a35b0b3f46f7e0b2a3691a2797915892d2ceabb8d00ce875b4ead2a1"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_cm2d.cpython-314.pyc",
+      "bytes": 31346,
+      "sha256": "689517e24907d7bc50dfc5351b87b8da6414a29e607cf1264af98da6cc7cea96"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_manufactured_flow.cpython-314.pyc",
+      "bytes": 8954,
+      "sha256": "ef8a8fec910a3eefb694da24c79b200adfe7914eaa48075affb1264c36799fff"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_native_flow.cpython-314.pyc",
+      "bytes": 34059,
+      "sha256": "061599b7e3293d678f3ed27944812dd152e8c106e5c6803e9f26610788cf0899"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_native_fv.cpython-314.pyc",
+      "bytes": 12288,
+      "sha256": "1a276ea930e200749cff626d8178f07e7cafdb54be80fe358d61b255a80ea1fb"
+    },
+    {
+      "path": "tools/visualization/__pycache__/render_q2_microedge.cpython-314.pyc",
+      "bytes": 6520,
+      "sha256": "152872967680c93b1ac98e2ec1f523a5dbbb54a73b93f9cd7fdbe8909f4bdc17"
+    },
+    {
+      "path": "展示素材.zip",
+      "bytes": 1064938,
+      "sha256": "85dac96293072c5baaf635785b18a4285047f58b287d6b6e70687c4fff8f250c"
+    }
+  ],
+  "deleted_files": 100,
+  "deleted_logical_bytes": 1171249259,
+  "free_space_delta": 1170022400,
+  "protected_files_verified": 2336,
+  "retained_desktop_version": "0.4.11",
+  "scope": "Only obsolete local packages, duplicate presentation archive, Python caches and Finder metadata; no cloud upload"
+}
