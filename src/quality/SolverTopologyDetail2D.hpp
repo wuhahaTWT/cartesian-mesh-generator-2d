@@ -169,6 +169,28 @@ void rankRelativeToBase(LocalQualityRank2D& rank,const LocalQualityRank2D& base)
 [[nodiscard]] std::optional<BoundaryRegion2D> patchBoundaryRegion(
     const TopologyMesh2D& topology,const std::vector<std::size_t>& cells,
     const TolerancePolicy& tol);
+struct LocalPatchQualityScope2D {
+    std::optional<BoundaryRegion2D> boundary;
+    Domain2D domain;
+    std::vector<CutCell2D> unchangedBefore;
+    std::vector<CutCell2D> unchangedAfter;
+    std::vector<Segment2D> physicalBoundaryEdges;
+    TolerancePolicy tol;
+    bool ok = false;
+
+    [[nodiscard]] bool valid() const noexcept { return ok; }
+    [[nodiscard]] std::optional<TopologyMesh2D> buildPatch(
+        const std::vector<Polygon2D>& replacementPieces) const;
+    [[nodiscard]] std::optional<LocalQualityRank2D> rankFromPatch(
+        const TopologyMesh2D& patch,const SolverQualityPolicy2D& policy = {}) const;
+    [[nodiscard]] std::optional<LocalQualityRank2D> evaluate(
+        const std::vector<Polygon2D>& replacementPieces,
+        const SolverQualityPolicy2D& policy = {}) const;
+};
+
+[[nodiscard]] LocalPatchQualityScope2D makeLocalPatchQualityScope(
+    const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
+    const std::vector<std::size_t>& removedCells,const TolerancePolicy& tol);
 [[nodiscard]] std::optional<LocalQualityRank2D> localReplacementQualityRank(
     const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
     const std::vector<std::size_t>& removedCells,

@@ -46,12 +46,50 @@ struct GlobalTopologyBuildTimer {
     return dot(p - a, d) / denom;
 }
 
+[[nodiscard]] bool segmentBoxContainsPoint(const Point2D& p, const Segment2D& seg,
+                                           const TolerancePolicy& tol) noexcept {
+    const double minX = std::min(seg.a.x, seg.b.x);
+    const double maxX = std::max(seg.a.x, seg.b.x);
+    const double minY = std::min(seg.a.y, seg.b.y);
+    const double maxY = std::max(seg.a.y, seg.b.y);
+    const double eps = tol.scale(std::max({1.0, std::abs(p.x), std::abs(p.y),
+                                           maxX - minX, maxY - minY}));
+    return p.x >= minX - eps && p.x <= maxX + eps && p.y >= minY - eps && p.y <= maxY + eps;
+}
+
+[[nodiscard]] AABB2D segmentsBounds(const std::vector<Segment2D>& fragments) noexcept {
+    AABB2D box{{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()},
+               {-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()}};
+    for (const auto& f : fragments) {
+        box.min.x = std::min({box.min.x, f.a.x, f.b.x});
+        box.min.y = std::min({box.min.y, f.a.y, f.b.y});
+        box.max.x = std::max({box.max.x, f.a.x, f.b.x});
+        box.max.y = std::max({box.max.y, f.a.y, f.b.y});
+    }
+    return box;
+}
+
+[[nodiscard]] AABB2D boundaryBounds(const BoundaryRegion2D& boundary) noexcept {
+    AABB2D box{{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()},
+               {-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()}};
+    for (const auto& loop : boundary.loops()) {
+        for (const auto& p : loop.vertices()) {
+            box.min.x = std::min(box.min.x, p.x);
+            box.min.y = std::min(box.min.y, p.y);
+            box.max.x = std::max(box.max.x, p.x);
+            box.max.y = std::max(box.max.y, p.y);
+        }
+    }
+    return box;
+}
+
 [[nodiscard]] bool pointOnBoundary(const Point2D& p, const BoundaryRegion2D& boundary,
                                    const TolerancePolicy& tol) noexcept {
     for (const auto& loop : boundary.loops()) {
         const auto& vertices = loop.vertices();
         for (std::size_t i = 0; i < vertices.size(); ++i) {
-            if (pointOnSegment(p, {vertices[i], vertices[(i + 1) % vertices.size()]}, tol)) return true;
+            const Segment2D seg{vertices[i], vertices[(i + 1) % vertices.size()]};
+            if (segmentBoxContainsPoint(p, seg, tol) && pointOnSegment(p, seg, tol)) return true;
         }
     }
     return false;
@@ -59,7 +97,10 @@ struct GlobalTopologyBuildTimer {
 
 [[nodiscard]] bool segmentOnInputBoundary(const Point2D& a, const Point2D& b,
                                           const BoundaryRegion2D& boundary,
+                                          const AABB2D& bounds,
                                           const TolerancePolicy& tol) noexcept {
+    if (!(bounds.max.x >= bounds.min.x) || !bounds.contains(a, tol) || !bounds.contains(b, tol))
+        return false;
     const Point2D mid{0.5 * (a.x + b.x), 0.5 * (a.y + b.y)};
     return pointOnBoundary(a, boundary, tol) && pointOnBoundary(b, boundary, tol) &&
            pointOnBoundary(mid, boundary, tol);
@@ -68,9 +109,16 @@ struct GlobalTopologyBuildTimer {
 [[nodiscard]] bool segmentOnEmbeddedFragments(
     const Point2D& a, const Point2D& b,
     const std::vector<Segment2D>& fragments,
+    const AABB2D* bounds,
     const TolerancePolicy& tol) noexcept {
+    if (fragments.empty()) return false;
+    if (bounds && (!(bounds->max.x >= bounds->min.x) ||
+                   !bounds->contains(a, tol) || !bounds->contains(b, tol)))
+        return false;
     const Point2D mid{0.5 * (a.x + b.x), 0.5 * (a.y + b.y)};
     for (const auto& fragment : fragments) {
+        if (!segmentBoxContainsPoint(a, fragment, tol) || !segmentBoxContainsPoint(b, fragment, tol))
+            continue;
         if (pointOnSegment(a, fragment, tol) && pointOnSegment(b, fragment, tol) &&
             pointOnSegment(mid, fragment, tol)) return true;
     }
@@ -218,18 +266,11 @@ void appendGeneralEdgeVertices(
     }
 }
 
-struct EdgeKey {
-    std::size_t a = 0;
-    std::size_t b = 0;
-    [[nodiscard]] bool operator<(const EdgeKey& rhs) const noexcept {
-        return std::tie(a, b) < std::tie(rhs.a, rhs.b);
-    }
-};
-
-struct EdgeUse {
+struct EdgeUseRecord {
+    std::size_t keyA = 0;
+    std::size_t keyB = 0;
     std::size_t cellId = 0;
-    std::size_t from = 0;
-    std::size_t to = 0;
+    std::size_t localEdgeIdx = 0;
 };
 
 [[nodiscard]] double polygonAreaFromVertexLoop(const std::vector<std::size_t>& loop,
@@ -357,8 +398,11 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         return std::tie(a.y, a.x, lhs) < std::tie(b.y, b.x, rhs);
     });
 
-    std::map<EdgeKey, std::vector<EdgeUse>> uses;
+    std::vector<EdgeUseRecord> uses;
+    uses.reserve(cells.size() * 4U + 16U);
     mesh.cells.reserve(cells.size());
+    std::vector<std::pair<double, std::size_t>> onEdge;
+    std::vector<std::size_t> loop;
 
     for (std::size_t cellId = 0; cellId < cells.size(); ++cellId) {
         const auto& source = cells[cellId];
@@ -376,7 +420,24 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         topo.refinementLineageKeys = source.refinementLineageKeys;
 
         const auto& polygon = source.fluidPolygon.vertices;
-        std::vector<std::size_t> loop;
+        loop.clear();
+        std::size_t cellEdgeIdx = 0U;
+        const auto emitFragment = [&](std::size_t from, std::size_t to) -> bool {
+            if (from == to) return true;
+            const Point2D& p0 = mesh.vertices[from].point;
+            const Point2D& p1 = mesh.vertices[to].point;
+            if (squaredNorm(p1 - p0) <= coordinateEps * coordinateEps) return true;
+            if (loop.empty()) loop.push_back(from);
+            if (loop.back() != from) {
+                mesh.issues.push_back({TopologyIssueCode2D::OpenCellLoop, cellId,
+                                       "split fragments are not contiguous"});
+                return false;
+            }
+            loop.push_back(to);
+            uses.push_back({std::min(from, to), std::max(from, to), cellId, cellEdgeIdx++});
+            return true;
+        };
+
         for (std::size_t e = 0; e < polygon.size(); ++e) {
             const Point2D a = polygon[e];
             const Point2D b = polygon[(e + 1) % polygon.size()];
@@ -405,49 +466,42 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                 return mesh;
             }
 
-            std::vector<std::pair<double, std::size_t>> onEdge{{0.0, aId}, {1.0, bId}};
-            const double edgeLength = std::sqrt(squaredNorm(b - a));
-            const double tEps = coordinateEps /
-                                std::max(edgeLength, coordinateEps);
-            const std::size_t before = onEdge.size();
             if (sharedPartition) {
-                onEdge=sharedPartition->partition(aId,bId,coordinateEps,tol);
-                if (aId>bId) {
-                    std::reverse(onEdge.begin(),onEdge.end());
-                    for (auto& item:onEdge) item.first=1-item.first;
+                const auto& part = sharedPartition->partition(aId, bId, coordinateEps, tol);
+                if (aId < bId) {
+                    for (std::size_t k = 0; k + 1 < part.size(); ++k) {
+                        if (!emitFragment(part[k].second, part[k + 1].second)) return mesh;
+                    }
+                } else {
+                    for (std::size_t k = part.size(); k > 1; --k) {
+                        if (!emitFragment(part[k - 1].second, part[k - 2].second)) return mesh;
+                    }
                 }
-            } else appendGeneralEdgeVertices(a, b, mesh.vertices, verticesByY,
-                                             coordinateEps, tol, aId, bId, onEdge);
-            if (!sharedPartition)
-            onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
-                                        onEdge.end(), [&](const auto& item) {
-                                            return item.first <= tEps ||
-                                                   item.first >= 1.0 - tEps;
-                                        }), onEdge.end());
-
-            std::sort(onEdge.begin(), onEdge.end(), [](const auto& lhs, const auto& rhs) {
-                if (lhs.first != rhs.first) return lhs.first < rhs.first;
-                return lhs.second < rhs.second;
-            });
-            onEdge.erase(std::unique(onEdge.begin(), onEdge.end(),
-                                     [](const auto& lhs, const auto& rhs) { return lhs.second == rhs.second; }),
-                         onEdge.end());
-
-            for (std::size_t k = 0; k + 1 < onEdge.size(); ++k) {
-                const std::size_t from = onEdge[k].second;
-                const std::size_t to = onEdge[k + 1].second;
-                if (from == to) continue;
-                const Point2D& p0 = mesh.vertices[from].point;
-                const Point2D& p1 = mesh.vertices[to].point;
-                if (squaredNorm(p1 - p0) <= coordinateEps * coordinateEps) continue;
-                if (loop.empty()) loop.push_back(from);
-                if (loop.back() != from) {
-                    mesh.issues.push_back({TopologyIssueCode2D::OpenCellLoop, cellId,
-                                           "split fragments are not contiguous"});
-                    return mesh;
+            } else {
+                onEdge.clear();
+                onEdge.push_back({0.0, aId});
+                onEdge.push_back({1.0, bId});
+                const double edgeLength = std::sqrt(squaredNorm(b - a));
+                const double tEps = coordinateEps /
+                                    std::max(edgeLength, coordinateEps);
+                const std::size_t before = onEdge.size();
+                appendGeneralEdgeVertices(a, b, mesh.vertices, verticesByY,
+                                          coordinateEps, tol, aId, bId, onEdge);
+                onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
+                                            onEdge.end(), [&](const auto& item) {
+                                                return item.first <= tEps ||
+                                                       item.first >= 1.0 - tEps;
+                                            }), onEdge.end());
+                std::sort(onEdge.begin(), onEdge.end(), [](const auto& lhs, const auto& rhs) {
+                    if (lhs.first != rhs.first) return lhs.first < rhs.first;
+                    return lhs.second < rhs.second;
+                });
+                onEdge.erase(std::unique(onEdge.begin(), onEdge.end(),
+                                         [](const auto& lhs, const auto& rhs) { return lhs.second == rhs.second; }),
+                             onEdge.end());
+                for (std::size_t k = 0; k + 1 < onEdge.size(); ++k) {
+                    if (!emitFragment(onEdge[k].second, onEdge[k + 1].second)) return mesh;
                 }
-                loop.push_back(to);
-                uses[{std::min(from, to), std::max(from, to)}].push_back({cellId, from, to});
             }
         }
         if (loop.size() > 1 && loop.front() == loop.back()) loop.pop_back();
@@ -456,28 +510,42 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    "cell topology loop has fewer than three vertices"});
             return mesh;
         }
-        topo.vertices = std::move(loop);
+        topo.vertices = loop;
+        topo.edges.assign(topo.vertices.size(), std::numeric_limits<std::size_t>::max());
         mesh.cells.push_back(std::move(topo));
     }
 
-    std::map<EdgeKey, std::size_t> edgeIds;
-    for (const auto& [key, incident] : uses) {
-        if (incident.empty()) continue;
+    std::sort(uses.begin(), uses.end(), [](const EdgeUseRecord& lhs, const EdgeUseRecord& rhs) {
+        return std::tie(lhs.keyA, lhs.keyB, lhs.cellId, lhs.localEdgeIdx) <
+               std::tie(rhs.keyA, rhs.keyB, rhs.cellId, rhs.localEdgeIdx);
+    });
+
+    const AABB2D knownEmbBounds = segmentsBounds(knownEmbeddedBoundary);
+    const AABB2D inputBoundaryBounds = boundaryBounds(boundary);
+    mesh.edges.reserve(uses.size() / 2U + 16U);
+
+    for (std::size_t idx = 0; idx < uses.size();) {
+        const std::size_t keyA = uses[idx].keyA;
+        const std::size_t keyB = uses[idx].keyB;
+        std::size_t end = idx + 1U;
+        while (end < uses.size() && uses[end].keyA == keyA && uses[end].keyB == keyB) ++end;
+        const std::size_t incidenceCount = end - idx;
+
         Edge2D edge;
         edge.id = mesh.edges.size();
-        edge.v0 = key.a;
-        edge.v1 = key.b;
-        edge.owner = incident.front().cellId;
-        if (incident.size() == 2) {
-            edge.neighbour = incident[1].cellId;
+        edge.v0 = keyA;
+        edge.v1 = keyB;
+        edge.owner = uses[idx].cellId;
+        if (incidenceCount == 2U) {
+            edge.neighbour = uses[idx + 1U].cellId;
             edge.patch = BoundaryPatch2D::None;
-        } else if (incident.size() == 1) {
-            const auto& a = mesh.vertices[key.a].point;
-            const auto& b = mesh.vertices[key.b].point;
+        } else if (incidenceCount == 1U) {
+            const auto& a = mesh.vertices[keyA].point;
+            const auto& b = mesh.vertices[keyB].point;
             const auto& ownerSource = cells[edge.owner];
-            if (segmentOnEmbeddedFragments(a, b, ownerSource.embeddedBoundary, tol) ||
-                segmentOnEmbeddedFragments(a, b, knownEmbeddedBoundary, tol) ||
-                segmentOnInputBoundary(a, b, boundary, tol)) {
+            if (segmentOnEmbeddedFragments(a, b, ownerSource.embeddedBoundary, nullptr, tol) ||
+                segmentOnEmbeddedFragments(a, b, knownEmbeddedBoundary, &knownEmbBounds, tol) ||
+                segmentOnInputBoundary(a, b, boundary, inputBoundaryBounds, tol)) {
                 edge.patch = BoundaryPatch2D::EmbeddedBoundary;
             } else if (segmentOnDomainBoundary(a, b, domain, tol) &&
                        pointOnDomainBoundary(a, domain, tol) && pointOnDomainBoundary(b, domain, tol)) {
@@ -501,30 +569,32 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             mesh.issues.push_back({TopologyIssueCode2D::NonManifoldEdge, edge.id,
                                    "edge has more than two incident cells"});
         }
-        edgeIds[key] = edge.id;
+        for (std::size_t u = idx; u < end; ++u) {
+            auto& cellEdges = mesh.cells[uses[u].cellId].edges;
+            if (uses[u].localEdgeIdx < cellEdges.size()) {
+                cellEdges[uses[u].localEdgeIdx] = edge.id;
+            }
+        }
         mesh.edges.push_back(edge);
         if (edge.patch == BoundaryPatch2D::EmbeddedBoundary) {
             mesh.embeddedBoundaryFragments.push_back({
                 mesh.vertices[edge.v0].point, mesh.vertices[edge.v1].point});
         }
+        idx = end;
     }
 
     for (auto& cell : mesh.cells) {
-        cell.edges.clear();
-        for (std::size_t i = 0; i < cell.vertices.size(); ++i) {
-            const auto a = cell.vertices[i];
-            const auto b = cell.vertices[(i + 1) % cell.vertices.size()];
-            const EdgeKey key{std::min(a, b), std::max(a, b)};
-            const auto it = edgeIds.find(key);
-            if (it == edgeIds.end()) {
+        std::size_t validEdges = 0U;
+        for (std::size_t i = 0; i < cell.edges.size(); ++i) {
+            if (cell.edges[i] == std::numeric_limits<std::size_t>::max()) {
                 ++mesh.audit.openCellLoops;
                 mesh.issues.push_back({TopologyIssueCode2D::OpenCellLoop, cell.id,
                                        "cell loop references a missing global edge"});
-                continue;
+            } else {
+                ++validEdges;
             }
-            cell.edges.push_back(it->second);
         }
-        if (cell.edges.size() != cell.vertices.size()) ++mesh.audit.openCellLoops;
+        if (validEdges != cell.vertices.size()) ++mesh.audit.openCellLoops;
         const double reconstructed = polygonAreaFromVertexLoop(cell.vertices, mesh.vertices);
         const double eps = tol.scale(std::max({1.0, reconstructed, cell.geometryArea}));
         if (std::abs(reconstructed - cell.geometryArea) > eps) {

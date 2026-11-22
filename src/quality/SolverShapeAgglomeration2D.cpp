@@ -11,6 +11,41 @@ using namespace solver_topology_detail;
 
 namespace {
 
+// Lightweight copy of an unchanged topology cell into a CutCell2D ready for
+// buildGlobalTopology. Preserves exact canonical vertex handles when present so
+// unchanged cells skip polygon centroid/area recomputation and registry interning.
+[[nodiscard]] CutCell2D makeUnchangedCell(const TopologyMesh2D& mesh, std::size_t id) {
+    const auto& old = mesh.cells[id];
+    CutCell2D cell;
+    cell.sourceId = old.sourceId;
+    cell.sourceKey = old.sourceKey;
+    cell.sourceLineage = old.sourceLineage;
+    cell.refinementLineageKeys = old.refinementLineageKeys;
+    cell.kind = CutCellKind::Cut;
+    cell.area = old.geometryArea;
+    cell.areaFraction = 1.0;
+    cell.fluidPolygon.vertices.reserve(old.vertices.size());
+    const bool hasHandles = mesh.constructionRegistry &&
+                            mesh.canonicalVertexIds.size() == mesh.vertices.size();
+    if (hasHandles) {
+        cell.canonicalVertexIds.reserve(old.vertices.size());
+        cell.canonicalRegistry = mesh.constructionRegistry.get();
+    }
+    AABB2D box{{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()},
+               {-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()}};
+    for (const auto vid : old.vertices) {
+        const auto& pt = mesh.vertices[vid].point;
+        cell.fluidPolygon.vertices.push_back(pt);
+        if (hasHandles) cell.canonicalVertexIds.push_back(mesh.canonicalVertexIds[vid]);
+        box.min.x = std::min(box.min.x, pt.x);
+        box.min.y = std::min(box.min.y, pt.y);
+        box.max.x = std::max(box.max.x, pt.x);
+        box.max.y = std::max(box.max.y, pt.y);
+    }
+    cell.backgroundBounds = box;
+    return cell;
+}
+
 template<class SimplifyUnion>
 void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
     std::vector<double>& referenceArea,const Domain2D& domain,
@@ -19,6 +54,7 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
     // Restore input-grid resolution after merging, and repartition sharp-tip
     // cut cells whose centroid cannot support all their faces. Only the cell
     // and its direct neighbours participate; no physical boundary is moved.
+    std::optional<SolverQualityReport2D> cachedLegacy;
     for (std::size_t pass=0;pass<policy.maximumPasses;++pass) {
         const auto& mesh=result.topology;
         struct SplitProposal {
@@ -32,6 +68,7 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
         for (const auto& issue:result.after.issues) {
             if (issue.cellId<mesh.cells.size()) issueCells.insert(issue.cellId);
             const bool faceIssue=internalInterfaceIssue(issue.code) ||
+                issue.code==SolverQualityIssueCode2D::InvalidFaceGeometry ||
                 issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness ||
                 issue.code==SolverQualityIssueCode2D::ShortFace;
             if (faceIssue && issue.edgeId<mesh.edges.size()) {
@@ -148,8 +185,13 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
             std::sort(halo.begin(),halo.end());halo.erase(std::unique(halo.begin(),halo.end()),halo.end());
             const double areaTolerance=tol.absolute*tol.absolute+tol.relative*resolutionArea;
             const bool oversized=members.size()==1 && polygon.area()>resolutionArea+areaTolerance;
-            const auto before=localReplacementQualityRank(mesh,halo,members,originals,tol,policy.target);
-            const auto beforeLegacy=localReplacementQualityRank(mesh,halo,members,originals,tol);
+            const auto scope=makeLocalPatchQualityScope(mesh,halo,members,tol);
+            if (!scope.valid()) return std::nullopt;
+            const auto beforePatch=scope.buildPatch(originals);
+            const auto before=beforePatch?scope.rankFromPatch(*beforePatch,policy.target):std::nullopt;
+            const auto beforeLegacy=(!badGeometry && oversized && beforePatch)
+                ? scope.rankFromPatch(*beforePatch,{})
+                : std::nullopt;
             std::optional<LocalQualityRank2D> bestRank;
             std::vector<Polygon2D> bestPieces;
             double bestLargest=std::numeric_limits<double>::infinity();
@@ -163,21 +205,24 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                 if (std::abs(sum-polygon.area())>tol.absolute*tol.absolute+
                     tol.relative*polygon.area()) return;
                 if (members.size()>1 && largest>resolutionArea+areaTolerance) return;
-                auto rank=localReplacementQualityRank(mesh,halo,members,pieces,tol,policy.target);
+                if (oversized && largest>=polygon.area()-areaTolerance) return;
+                const double excess=std::max(0.0,largest-resolutionArea);
+                const double bestExcess=std::max(0.0,bestLargest-resolutionArea);
+                if (oversized && bestRank && excess>bestExcess) return;
+                const auto candidatePatch=scope.buildPatch(pieces);
+                if (!candidatePatch) return;
+                auto rank=scope.rankFromPatch(*candidatePatch,policy.target);
                 if (!rank) return;
-                if (!badGeometry && oversized) {
-                    const auto candidateLegacy=localReplacementQualityRank(mesh,halo,members,pieces,tol);
-                    if (!candidateLegacy ||
-                        (beforeLegacy && betterQualityScore(beforeLegacy->issues,candidateLegacy->issues))) return;
-                }
                 if (!badGeometry && !oversized && (!before ||
                     !betterQualityScore(rank->issues,before->issues))) return;
-                if (oversized && largest>=polygon.area()-areaTolerance) return;
                 // Size restoration must not create the thin, poorly connected
                 // triangles that agglomeration was introduced to remove.
                 if (!badGeometry && before && betterQualityScore(before->issues,rank->issues)) return;
-                const double excess=std::max(0.0,largest-resolutionArea);
-                const double bestExcess=std::max(0.0,bestLargest-resolutionArea);
+                if (!badGeometry && oversized) {
+                    const auto candidateLegacy=scope.rankFromPatch(*candidatePatch,{});
+                    if (!candidateLegacy ||
+                        (beforeLegacy && betterQualityScore(beforeLegacy->issues,candidateLegacy->issues))) return;
+                }
                 if (!bestRank || (oversized && excess<bestExcess) ||
                     ((!oversized || excess==bestExcess) && betterLocalQualityRank(*rank,*bestRank))) {
                     bestRank=*rank;bestPieces=std::move(pieces);bestLargest=largest;
@@ -211,9 +256,9 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
             std::vector<std::vector<std::size_t>> halos;
             for (const auto& proposal:proposals) halos.push_back(proposal.halo);
             const auto selected=selectIndependentSolverRepairPatches2D(halos);
-            const auto legacyBefore=evaluateSolverQuality2D(mesh,{},tol);
+            if (restoringSizeOnly && !cachedLegacy) cachedLegacy=evaluateSolverQuality2D(mesh,{},tol);
             const auto targetScoreBefore=qualityScore(result.after);
-            const auto legacyScoreBefore=qualityScore(legacyBefore);
+            const auto legacyScoreBefore=restoringSizeOnly?qualityScore(*cachedLegacy):QualityScore2D{};
             const auto invalidFaceCount=[](const SolverQualityReport2D& report) {
                 std::size_t count=0;
                 for (const auto& issue:report.issues)
@@ -236,31 +281,34 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                 std::size_t nextSource=0;
                 for (const auto& cell:mesh.cells) nextSource=std::max(nextSource,cell.sourceId+1);
                 std::vector<CutCell2D> cells;
+                cells.reserve(mesh.cells.size()+added);
                 std::map<std::pair<std::uint64_t,std::size_t>,std::pair<double,bool>> metadata;
                 for (std::size_t id=0;id<mesh.cells.size();++id) {
                     if (removed.contains(id)) continue;
                     const auto& old=mesh.cells[id];
                     const auto replacement=replacements.find(id);
-                    const auto pieces=replacement==replacements.end()
-                        ?std::vector<Polygon2D>{topologyCellPolygon(mesh,id)}:replacement->second->pieces;
+                    const bool isLocked=!result.immutableCells.empty() && result.immutableCells[id];
+                    if (replacement==replacements.end()) {
+                        auto cell=makeUnchangedCell(mesh,id);
+                        metadata[{cell.sourceKey,cell.sourceId}]={referenceArea[id],isLocked};
+                        cells.push_back(std::move(cell));
+                        continue;
+                    }
+                    const auto& pieces=replacement->second->pieces;
                     auto lineage=old.sourceLineage;
                     auto refinementKeys=old.refinementLineageKeys;
-                    double resolutionArea=referenceArea[id];
-                    if (replacement!=replacements.end()) {
-                        resolutionArea=replacement->second->referenceArea;
-                        for (const auto member:replacement->second->members) {
-                            lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
-                            const auto& keys=mesh.cells[member].refinementLineageKeys;
-                            refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
-                        }
-                        std::sort(refinementKeys.begin(),refinementKeys.end());
-                        refinementKeys.erase(std::unique(refinementKeys.begin(),refinementKeys.end()),refinementKeys.end());
+                    const double resolutionArea=replacement->second->referenceArea;
+                    for (const auto member:replacement->second->members) {
+                        lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
+                        const auto& keys=mesh.cells[member].refinementLineageKeys;
+                        refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
                     }
+                    std::sort(refinementKeys.begin(),refinementKeys.end());
+                    refinementKeys.erase(std::unique(refinementKeys.begin(),refinementKeys.end()),refinementKeys.end());
                     for (std::size_t piece=0;piece<pieces.size();++piece) {
                         auto cell=makeCell(piece==0?old.sourceId:nextSource++,pieces[piece],tol,lineage);
                         cell.sourceKey=old.sourceKey;cell.refinementLineageKeys=refinementKeys;
-                        metadata[{cell.sourceKey,cell.sourceId}]={resolutionArea,
-                            !result.immutableCells.empty() && result.immutableCells[id]};
+                        metadata[{cell.sourceKey,cell.sourceId}]={resolutionArea,isLocked};
                         cells.push_back(std::move(cell));
                     }
                 }
@@ -268,20 +316,24 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                     mesh.constructionRegistry,mesh.embeddedBoundaryFragments);
                 if (!candidate.valid()) return false;
                 const auto afterTarget=evaluateSolverQuality2D(candidate,policy.target,tol);
-                const auto afterLegacy=evaluateSolverQuality2D(candidate,{},tol);
+                std::optional<SolverQualityReport2D> afterLegacy;
                 const std::size_t badFacesAfter=invalidFaceCount(afterTarget);
                 if (fixingBadGeometry) {
                     if (badFacesAfter>=badFacesBefore) return false;
                 } else {
                     const bool targetImproved=betterQualityScore(qualityScore(afterTarget),targetScoreBefore);
                     const bool targetWorse=betterQualityScore(targetScoreBefore,qualityScore(afterTarget));
-                    const bool legacyWorse=restoringSizeOnly &&
-                        betterQualityScore(legacyScoreBefore,qualityScore(afterLegacy));
-                    if (badFacesAfter>badFacesBefore || legacyWorse || targetWorse ||
+                    if (badFacesAfter>badFacesBefore || targetWorse ||
                         (!restoringSizeOnly && !targetImproved)) return false;
+                    if (restoringSizeOnly) {
+                        afterLegacy=evaluateSolverQuality2D(candidate,{},tol);
+                        if (betterQualityScore(legacyScoreBefore,qualityScore(*afterLegacy))) return false;
+                    }
                 }
                 std::vector<double> newAreas;
                 std::vector<bool> locked;
+                newAreas.reserve(candidate.cells.size());
+                locked.reserve(candidate.cells.size());
                 for (const auto& cell:candidate.cells) {
                     const auto& entry=metadata.at({cell.sourceKey,cell.sourceId});
                     newAreas.push_back(entry.first);locked.push_back(entry.second);
@@ -290,6 +342,7 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
                 result.immutableCells=std::move(locked);
                 result.repartitionedCellCount+=changed;result.addedCellCount+=added;
                 result.after=afterTarget;
+                cachedLegacy=std::move(afterLegacy);
                 return true;
             };
             // Try full independent batch first, then halved prefixes; if prefix 1
@@ -314,11 +367,16 @@ void repartitionAgglomeratedCells(SolverShapeAgglomerationResult2D& result,
         std::vector<SplitProposal> badProposals,issueProposals,sizeProposals;
         for (std::size_t id=0;id<mesh.cells.size();++id) {
             if (!result.immutableCells.empty() && result.immutableCells[id]) continue;
-            const auto polygon=topologyCellPolygon(mesh,id);
-            const bool badGeometry=!usable(polygon);
             const bool hasIssue=issueCells.contains(id);
-            const bool oversized=polygon.area()>referenceArea[id]+tol.absolute*tol.absolute+
-                tol.relative*referenceArea[id];
+            const double areaMargin=tol.absolute*tol.absolute+tol.relative*referenceArea[id];
+            // evaluateSolverQuality2D reports every cell with an invalid centroid
+            // or nonpositive face normal distance in result.after.issues, so
+            // any cell outside issueCells that is within its reference area can
+            // be skipped in O(1) without constructing its Polygon2D.
+            if (!hasIssue && mesh.cells[id].geometryArea<=referenceArea[id]+areaMargin) continue;
+            const auto polygon=topologyCellPolygon(mesh,id);
+            const bool badGeometry=hasIssue && !usable(polygon);
+            const bool oversized=polygon.area()>referenceArea[id]+areaMargin;
             if (!badGeometry && !hasIssue && !oversized) continue;
             auto best=propose({id},polygon);
             if (badGeometry || hasIssue) {
@@ -425,9 +483,11 @@ SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
         return std::abs(polygon.area()-original.area())<=
             tol.absolute*tol.absolute+tol.relative*original.area()?polygon:original;
     };
+    std::optional<SolverQualityReport2D> cachedLegacy;
     for (;result.passes<policy.maximumPasses && !result.after.valid();++result.passes) {
         const auto& mesh=result.topology;
-        const auto legacy=evaluateSolverQuality2D(mesh,{},tol);
+        if (!cachedLegacy) cachedLegacy=evaluateSolverQuality2D(mesh,{},tol);
+        const auto& legacy=*cachedLegacy;
         std::set<std::pair<std::size_t,std::size_t>> pairs;
         for (const auto& issue:result.after.issues) {
             std::vector<std::size_t> affected{issue.cellId};
@@ -474,21 +534,11 @@ SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
         // A pair can be stuck although a three/four-cell union improves the
         // whole patch. Grow only when no smaller union improves local quality.
         for (std::size_t width=2;width<=policy.maximumPatchCells && proposals.empty();++width) {
-          std::map<std::vector<std::size_t>,Polygon2D> next;
           for (const auto& [members,rawMerged]:frontier) {
             const auto merged=simplifyUnion(rawMerged);
             double areaScale=0;
             for (const auto cell:members) areaScale=std::max(areaScale,referenceArea[cell]);
             if (merged.area()>policy.maximumAreaRatio*areaScale) continue;
-            const auto halo=neighbours(members);
-            if (width<policy.maximumPatchCells) for (const auto other:halo) {
-                if (std::binary_search(members.begin(),members.end(),other) ||
-                    (!result.immutableCells.empty() && result.immutableCells[other])) continue;
-                auto grown=members;grown.push_back(other);std::sort(grown.begin(),grown.end());
-                if (next.contains(grown)) continue;
-                const auto polygon=mergeAdjacentPolygonsSimple(rawMerged,topologyCellPolygon(mesh,other),tol);
-                if (polygon) next.emplace(std::move(grown),*polygon);
-            }
             const auto centroid=merged.centroid(tol);
             if (!centroid) continue;
             bool admissible=true;
@@ -497,18 +547,42 @@ SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
                     merged.vertices[(i+1)%merged.vertices.size()],*centroid).valid;
             if (!admissible) continue;
             ++result.candidateCount;
+            const auto halo=neighbours(members);
             std::vector<Polygon2D> originals;
+            originals.reserve(members.size());
             for (const auto cell:members) originals.push_back(topologyCellPolygon(mesh,cell));
-            const auto before=localReplacementQualityRank(mesh,halo,members,originals,tol,policy.target);
-            auto after=localReplacementQualityRank(mesh,halo,members,{merged},tol,policy.target);
+            const auto scope=makeLocalPatchQualityScope(mesh,halo,members,tol);
+            if (!scope.valid()) continue;
+            const auto beforePatch=scope.buildPatch(originals);
+            const auto afterPatch=scope.buildPatch({merged});
+            if (!beforePatch || !afterPatch) continue;
+            const auto before=scope.rankFromPatch(*beforePatch,policy.target);
+            auto after=scope.rankFromPatch(*afterPatch,policy.target);
             if (!before || !after || !betterQualityScore(after->issues,before->issues)) continue;
-            const auto oldLegacy=localReplacementQualityRank(mesh,halo,members,originals,tol);
-            const auto newLegacy=localReplacementQualityRank(mesh,halo,members,{merged},tol);
+            const auto oldLegacy=scope.rankFromPatch(*beforePatch,{});
+            const auto newLegacy=scope.rankFromPatch(*afterPatch,{});
             if (!oldLegacy || !newLegacy || betterQualityScore(oldLegacy->issues,newLegacy->issues)) continue;
             rankRelativeToBase(*after,*before);
             proposals.push_back({members,halo,merged,*after});
           }
-          frontier=std::move(next);
+          if (proposals.empty() && width<policy.maximumPatchCells) {
+            std::map<std::vector<std::size_t>,Polygon2D> next;
+            for (const auto& [members,rawMerged]:frontier) {
+              double areaScale=0;
+              for (const auto cell:members) areaScale=std::max(areaScale,referenceArea[cell]);
+              if (rawMerged.area()>policy.maximumAreaRatio*areaScale) continue;
+              const auto halo=neighbours(members);
+              for (const auto other:halo) {
+                if (std::binary_search(members.begin(),members.end(),other) ||
+                    (!result.immutableCells.empty() && result.immutableCells[other])) continue;
+                auto grown=members;grown.push_back(other);std::sort(grown.begin(),grown.end());
+                if (next.contains(grown)) continue;
+                const auto polygon=mergeAdjacentPolygonsSimple(rawMerged,topologyCellPolygon(mesh,other),tol);
+                if (polygon) next.emplace(std::move(grown),*polygon);
+              }
+            }
+            frontier=std::move(next);
+          }
         }
         std::sort(proposals.begin(),proposals.end(),[](const auto& a,const auto& b) {
             if (betterLocalQualityRank(a.rank,b.rank)) return true;
@@ -536,24 +610,28 @@ SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
             std::vector<CutCell2D> cells;
             std::vector<bool> locked;
             std::vector<double> newAreas;
+            cells.reserve(mesh.cells.size()-mergedCount);
+            locked.reserve(mesh.cells.size()-mergedCount);
+            newAreas.reserve(mesh.cells.size()-mergedCount);
             for (std::size_t i=0;i<mesh.cells.size();++i) if (!removed[i]) {
-                const auto& old=mesh.cells[i];
-                auto lineage=old.sourceLineage;
-                auto refinementKeys=old.refinementLineageKeys;
-                if (replacement[i]) for (const auto member:replacement[i]->members) {
-                    lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
-                    const auto& keys=mesh.cells[member].refinementLineageKeys;
-                    refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
-                }
-                if (replacement[i]) {
+                if (!replacement[i]) {
+                    cells.push_back(makeUnchangedCell(mesh,i));
+                } else {
+                    const auto& old=mesh.cells[i];
+                    auto lineage=old.sourceLineage;
+                    auto refinementKeys=old.refinementLineageKeys;
+                    for (const auto member:replacement[i]->members) {
+                        lineage=mergedLineage(lineage,mesh.cells[member].sourceLineage);
+                        const auto& keys=mesh.cells[member].refinementLineageKeys;
+                        refinementKeys.insert(refinementKeys.end(),keys.begin(),keys.end());
+                    }
                     std::sort(refinementKeys.begin(),refinementKeys.end());
                     refinementKeys.erase(std::unique(refinementKeys.begin(),refinementKeys.end()),refinementKeys.end());
+                    auto cell=makeCell(old.sourceId,replacement[i]->polygon,tol,std::move(lineage));
+                    cell.sourceKey=old.sourceKey;
+                    cell.refinementLineageKeys=std::move(refinementKeys);
+                    cells.push_back(std::move(cell));
                 }
-                auto cell=makeCell(old.sourceId,replacement[i]?replacement[i]->polygon:
-                    topologyCellPolygon(mesh,i),tol,std::move(lineage));
-                cell.sourceKey=old.sourceKey;
-                cell.refinementLineageKeys=std::move(refinementKeys);
-                cells.push_back(std::move(cell));
                 locked.push_back(!result.immutableCells.empty() && result.immutableCells[i]);
                 newAreas.push_back(areas[i]);
             }
@@ -568,6 +646,7 @@ SolverShapeAgglomerationResult2D agglomerateSolverByShape2D(
             result.topology=std::move(candidate);
             result.immutableCells=std::move(locked);
             result.after=after;
+            cachedLegacy=newLegacy;
             result.mergedCellCount+=mergedCount;
             for (std::size_t k=0;k<count;++k) result.maximumUnionCellCount=
                 std::max(result.maximumUnionCellCount,proposals[selected[k]].members.size());

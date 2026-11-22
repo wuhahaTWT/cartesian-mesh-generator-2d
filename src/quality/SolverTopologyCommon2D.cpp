@@ -1003,34 +1003,65 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     return boundary;
 }
 
-[[nodiscard]] std::optional<LocalQualityRank2D> localReplacementQualityRank(
+[[nodiscard]] LocalPatchQualityScope2D makeLocalPatchQualityScope(
     const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
-    const std::vector<std::size_t>& removedCells,
-    const std::vector<Polygon2D>& replacementPieces,
-    const TolerancePolicy& tol,const SolverQualityPolicy2D& policy) {
-    if (removedCells.empty() || replacementPieces.empty() ||
+    const std::vector<std::size_t>& removedCells,const TolerancePolicy& tol) {
+    LocalPatchQualityScope2D scope;
+    scope.tol=tol;
+    if (removedCells.empty() ||
         !std::is_sorted(removedCells.begin(),removedCells.end()) ||
-        !std::is_sorted(halo.begin(),halo.end())) return std::nullopt;
+        !std::is_sorted(halo.begin(),halo.end())) return scope;
     for (const auto cell:removedCells) {
-        if (!std::binary_search(halo.begin(),halo.end(),cell)) return std::nullopt;
+        if (!std::binary_search(halo.begin(),halo.end(),cell)) return scope;
     }
-    const auto boundary=patchBoundaryRegion(topology,halo,tol);
-    if (!boundary) return std::nullopt;
-    const Domain2D domain{boundary->bounds()};
-    if (!domain.valid(tol)) return std::nullopt;
-    std::vector<CutCell2D> cells;
-    cells.reserve(halo.size()+replacementPieces.size());
+    scope.boundary=patchBoundaryRegion(topology,halo,tol);
+    if (!scope.boundary) return scope;
+    scope.domain=Domain2D{scope.boundary->bounds()};
+    if (!scope.domain.valid(tol)) return scope;
+    bool passedInsert=false;
     for (const auto cell:halo) {
-        if (cell==removedCells.front()) {
-            for (const auto& piece:replacementPieces)
-                cells.push_back(makeCell(cells.size(),piece,tol));
+        if (cell==removedCells.front()) passedInsert=true;
+        if (cell>=topology.cells.size()) return scope;
+        for (const auto edgeId:topology.cells[cell].edges) {
+            const auto& edge=topology.edges[edgeId];
+            if (!edge.neighbour) {
+                scope.physicalBoundaryEdges.push_back(
+                    {topology.vertices[edge.v0].point,topology.vertices[edge.v1].point});
+            }
         }
         if (std::binary_search(removedCells.begin(),removedCells.end(),cell)) continue;
-        if (cell>=topology.cells.size()) return std::nullopt;
-        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        auto built=makeCell(0U,topologyCellPolygon(topology,cell),tol);
+        if (!passedInsert) scope.unchangedBefore.push_back(std::move(built));
+        else scope.unchangedAfter.push_back(std::move(built));
     }
-    const auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
+    scope.ok=true;
+    return scope;
+}
+
+std::optional<TopologyMesh2D> LocalPatchQualityScope2D::buildPatch(
+    const std::vector<Polygon2D>& replacementPieces) const {
+    if (!ok || replacementPieces.empty()) return std::nullopt;
+    std::vector<CutCell2D> cells;
+    cells.reserve(unchangedBefore.size()+replacementPieces.size()+unchangedAfter.size());
+    for (const auto& cell:unchangedBefore) {
+        cells.push_back(cell);
+        cells.back().sourceId=cells.size()-1U;
+    }
+    for (const auto& piece:replacementPieces) {
+        cells.push_back(makeCell(cells.size(),piece,tol));
+    }
+    for (const auto& cell:unchangedAfter) {
+        cells.push_back(cell);
+        cells.back().sourceId=cells.size()-1U;
+    }
+    auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
     if (!patch.valid()) return std::nullopt;
+    return patch;
+}
+
+std::optional<LocalQualityRank2D> LocalPatchQualityScope2D::rankFromPatch(
+    const TopologyMesh2D& patch,const SolverQualityPolicy2D& policy) const {
+    if (!ok || !patch.valid()) return std::nullopt;
     const auto quality=evaluateSolverQuality2D(patch,policy,tol);
     SolverQualityReport2D filtered;
     filtered.policy=quality.policy;
@@ -1038,16 +1069,9 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     const auto isPhysicalBoundaryEdge=[&](const Edge2D& patchEdge) {
         const auto& patchA=patch.vertices[patchEdge.v0].point;
         const auto& patchB=patch.vertices[patchEdge.v1].point;
-        for (const auto cell:halo) {
-            for (const auto edgeId:topology.cells[cell].edges) {
-                const auto& edge=topology.edges[edgeId];
-                if (edge.neighbour) continue;
-                const auto& a=topology.vertices[edge.v0].point;
-                const auto& b=topology.vertices[edge.v1].point;
-                const Segment2D sourceEdge{a,b};
-                if (pointOnSegment(patchA,sourceEdge,tol) &&
-                    pointOnSegment(patchB,sourceEdge,tol)) return true;
-            }
+        for (const auto& sourceEdge:physicalBoundaryEdges) {
+            if (pointOnSegment(patchA,sourceEdge,tol) &&
+                pointOnSegment(patchB,sourceEdge,tol)) return true;
         }
         return false;
     };
@@ -1070,6 +1094,25 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     rank.negativeMinFaceWeight=-quality.minFaceWeight;
     rank.negativeMinVolumeRatio=-quality.minVolumeRatio;
     return rank;
+}
+
+std::optional<LocalQualityRank2D> LocalPatchQualityScope2D::evaluate(
+    const std::vector<Polygon2D>& replacementPieces,
+    const SolverQualityPolicy2D& policy) const {
+    const auto patch=buildPatch(replacementPieces);
+    if (!patch) return std::nullopt;
+    return rankFromPatch(*patch,policy);
+}
+
+[[nodiscard]] std::optional<LocalQualityRank2D> localReplacementQualityRank(
+    const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
+    const std::vector<std::size_t>& removedCells,
+    const std::vector<Polygon2D>& replacementPieces,
+    const TolerancePolicy& tol,const SolverQualityPolicy2D& policy) {
+    if (replacementPieces.empty()) return std::nullopt;
+    const auto scope=makeLocalPatchQualityScope(topology,halo,removedCells,tol);
+    if (!scope.valid()) return std::nullopt;
+    return scope.evaluate(replacementPieces,policy);
 }
 
 [[nodiscard]] std::vector<Polygon2D> applySourceMergeBatch(
