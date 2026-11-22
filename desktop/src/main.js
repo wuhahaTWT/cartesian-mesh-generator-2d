@@ -19,7 +19,7 @@ const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
-const { buildAdaptiveInvocation, parseAdaptiveSuggestion } = require('./core/adaptive-refinement');
+const { buildAdaptiveInvocation, validateAdaptiveFields, parseAdaptiveSuggestion } = require('./core/adaptive-refinement');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { runSmoke } = require('./smoke-runner');
@@ -463,21 +463,35 @@ app.whenReady().then(async () => {
     const cellsCsvPath = `${currentResult.prefix}.flow.cells.csv`;
     await fs.stat(cellsCsvPath);
     const outputJsonPath = `${currentResult.prefix}.flow.adaptive.json`;
+    const fieldsJsonPath = `${currentResult.prefix}.flow.adaptive.fields.json`;
+    const vtkPath = `${currentResult.prefix}.flow.adaptive.vtk`;
+    let scalarCsvPath = null;
+    if (currentResult.thermal?.files?.['.cells.csv']) {
+      const candidate = path.join(currentResult.outputDirectory, currentResult.thermal.files['.cells.csv']);
+      try { await fs.stat(candidate); scalarCsvPath = candidate; } catch (_) {}
+    }
     const sizeField = currentResult.result?.sizeField || null;
     const mergedRequest = {
       ...request,
       wallLevel: request.wallLevel ?? sizeField?.wall_level ?? undefined,
-      maxTargetLevel: request.maxTargetLevel ?? sizeField?.max_level ?? undefined
+      maxTargetLevel: request.maxTargetLevel ?? sizeField?.max_level ?? undefined,
+      scalarCsvPath: scalarCsvPath || undefined,
+      fieldsJsonPath,
+      vtkPath
     };
     const invocation = buildAdaptiveInvocation(currentResult.cm2dPath, cellsCsvPath, outputJsonPath, mergedRequest);
-    log('正在按当前流场速度/压力梯度提取自适应加密区…');
+    log(scalarCsvPath
+      ? '正在按当前流场速度/压力与温度梯度提取多物理自适应加密区…'
+      : '正在按当前流场速度/压力梯度提取自适应加密区…');
     await runProcess(executable(invocation.executable), invocation.args, line => log(line), operation.signal);
     operation.signal.throwIfAborted();
-    const raw = await readJson(outputJsonPath);
+    const [raw, rawFields] = await Promise.all([readJson(outputJsonPath), readJson(fieldsJsonPath)]);
     const parsed = parseAdaptiveSuggestion(raw, currentResult.frame || null);
-    currentResult.adaptiveRefinement = parsed;
+    const fields = validateAdaptiveFields(rawFields, currentResult.mesh?.cells?.length);
+    const payload = { ...parsed, fields };
+    currentResult.adaptiveRefinement = payload;
     log(`流场自适应分析完成：提取 ${parsed.regions.length} 个加密区（选中 ${parsed.selectedCellCount}/${parsed.cellCount} 单元）。`);
-    return parsed;
+    return payload;
   }));
 
   ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));

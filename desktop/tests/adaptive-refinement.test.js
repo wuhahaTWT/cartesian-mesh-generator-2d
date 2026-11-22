@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   validateAdaptiveRequest,
   buildAdaptiveInvocation,
+  validateAdaptiveFields,
   parseAdaptiveSuggestion
 } = require('../src/core/adaptive-refinement');
 
@@ -77,4 +78,35 @@ test('parseAdaptiveSuggestion maps world boxes into active body-frame regions', 
   assert.throws(() => parseAdaptiveSuggestion({
     format: 'cartmesh2d-adaptive-refinement-v1', valid: false, issues: ['NaN'], boxes: []
   }), /NaN/);
+});
+
+test('buildAdaptiveInvocation forwards optional thermal scalar, VTK, and fields JSON paths', () => {
+  const inv = buildAdaptiveInvocation('m.solver.cm2d', 'm.flow.cells.csv', 'm.adaptive.json', {
+    scalarCsvPath: 'thermal.cells.csv',
+    vtkPath: 'm.adaptive.vtk',
+    fieldsJsonPath: 'm.adaptive.fields.json'
+  });
+  assert.ok(inv.args.includes('--adapt-scalar-csv'));
+  assert.ok(inv.args.includes('thermal.cells.csv'));
+  assert.ok(inv.args.includes('--adapt-vtk'));
+  assert.ok(inv.args.includes('m.adaptive.vtk'));
+  assert.ok(inv.args.includes('--adapt-fields-json'));
+  assert.ok(inv.args.includes('m.adaptive.fields.json'));
+});
+
+test('validateAdaptiveFields accepts v1 cell indicators and rejects mismatches or NaN', () => {
+  const valid = {
+    format: 'cartmesh2d-adaptive-fields-v1',
+    cells: [
+      { id: 0, indicator: 0.12, selected: 0 },
+      { id: 1, indicator: 0.85, selected: 1 }
+    ]
+  };
+  assert.equal(validateAdaptiveFields(valid, 2), valid);
+  assert.throws(() => validateAdaptiveFields(valid, 3), /单元数/);
+  assert.throws(() => validateAdaptiveFields({ format: 'bad', cells: [] }), /格式/);
+  assert.throws(() => validateAdaptiveFields({
+    format: 'cartmesh2d-adaptive-fields-v1',
+    cells: [{ id: 0, indicator: Number.NaN, selected: 0 }]
+  }, 1), /无效/);
 });

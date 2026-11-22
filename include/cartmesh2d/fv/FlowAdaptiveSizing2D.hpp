@@ -4,6 +4,7 @@
 #include "cartmesh2d/quadtree/Quadtree2D.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -29,9 +30,11 @@ struct FlowAdaptivePolicy2D {
     // Area fill threshold below which clusters of >= 8 cells are recursively
     // bisected along their longest axis so curved wakes stay tight.
     double splitFillThreshold = 0.40;
-    // Relative weights on velocity-gradient Frobenius norm and pressure gradient.
+    // Relative weights on velocity-gradient Frobenius norm, pressure gradient,
+    // and optional passive scalar / temperature gradient.
     double velocityWeight = 1.0;
     double pressureWeight = 1.0;
+    double scalarWeight = 1.0;
     // Optional ceiling on suggested targetLevel. Unset uses the inferred finest
     // level present in the solved mesh so re-meshing stays within the verified
     // wall level budget unless the caller explicitly raises it.
@@ -68,6 +71,7 @@ struct FlowAdaptiveRefinement2D {
     std::size_t maxTargetLevel = 0;
     double referenceVelocity = 0.0;
     double referencePressure = 0.0;
+    double referenceScalarSpan = 0.0;
     double indicatorP50 = 0.0;
     double indicatorP90 = 0.0;
     double indicatorMax = 0.0;
@@ -76,6 +80,7 @@ struct FlowAdaptiveRefinement2D {
     double bodySpan = 0.0;
     bool bodyFromEmbeddedWall = false;
     std::vector<double> cellIndicators;
+    std::vector<bool> cellSelected;
     std::vector<FlowAdaptiveBox2D> boxes;
     std::vector<std::string> issues;
 
@@ -91,10 +96,21 @@ struct FlowAdaptiveRefinement2D {
     const FlowAdaptivePolicy2D& policy = {},
     const std::vector<double>& boundaryU = {},
     const std::vector<double>& boundaryV = {},
-    const std::vector<double>& boundaryP = {});
+    const std::vector<double>& boundaryP = {},
+    const std::vector<double>& scalar = {},
+    const std::vector<double>& boundaryScalar = {});
 
 [[nodiscard]] std::string flowAdaptiveRefinementToJson2D(
     const FlowAdaptiveRefinement2D& suggestion,
     int indentSpaces = 2);
+
+[[nodiscard]] std::string flowAdaptiveFieldsToJson2D(
+    const FlowAdaptiveRefinement2D& suggestion);
+
+[[nodiscard]] bool writeFlowAdaptiveVtk2D(
+    const TopologyMesh2D& topology,
+    const FlowAdaptiveRefinement2D& suggestion,
+    const std::filesystem::path& vtkPath,
+    std::string* error = nullptr);
 
 } // namespace cartmesh2d::fv

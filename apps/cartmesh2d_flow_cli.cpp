@@ -122,6 +122,87 @@ fv::FlowInitialGuess2D flowFieldCsv(const std::string& path,const fv::FvMesh2D& 
     return result;
 }
 
+std::vector<double> scalarFieldCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open adaptive scalar CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    const bool transportHeader=(line=="cell,x,y,area,value,previous,sourceIntegral,temporalIntegral,exact");
+    const bool compactHeader=(line=="cell,x,y,area,value");
+    if(!transportHeader && !compactHeader)
+        throw std::runtime_error("adaptive scalar CSV header must match cartmesh2d_transport_cli .cells.csv");
+    const std::size_t expectedCols=transportHeader?9U:5U;
+    std::vector<double> scalar;scalar.reserve(mesh.cells.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        if(line.empty())continue;
+        std::istringstream row(line);std::string token;std::vector<std::string> fields;
+        while(std::getline(row,token,',')) {
+            if(fields.size()==expectedCols)throw std::runtime_error("adaptive scalar CSV row has extra fields");
+            fields.push_back(token);
+        }
+        const auto i=scalar.size();
+        if(fields.size()!=expectedCols || line.back()==',' || i>=mesh.cells.size() || number(fields[0])!=static_cast<double>(i))
+            throw std::runtime_error("adaptive scalar CSV row or cell order invalid");
+        const auto centre=mesh.cells[i].centre;
+        const double scale=std::max({std::abs(centre.x),std::abs(centre.y),std::sqrt(mesh.cells[i].area)});
+        if(std::abs(number(fields[1])-centre.x)>64*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(number(fields[2])-centre.y)>64*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("adaptive scalar CSV coordinates differ from target mesh");
+        scalar.push_back(number(fields[4]));
+    }
+    if(!input.eof() || scalar.size()!=mesh.cells.size())throw std::runtime_error("adaptive scalar CSV does not cover target mesh");
+    return scalar;
+}
+
+void writeAdaptiveSuggestionOutputs(
+    const TopologyMesh2D& topology,
+    const fv::FvMesh2D& mesh,
+    const std::vector<double>& u,
+    const std::vector<double>& v,
+    const std::vector<double>& p,
+    const std::vector<double>& scalar,
+    const fv::FlowAdaptivePolicy2D& policy,
+    const std::string& suggestPath,
+    const std::string& adaptVtkPath,
+    const std::string& adaptFieldsJsonPath,
+    bool printSummary) {
+    const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
+        topology, mesh, u, v, p, policy, {}, {}, {}, scalar);
+    if (!suggestion.valid()) {
+        throw std::runtime_error(suggestion.issues.front());
+    }
+    const auto ensureParent = [](const std::string& filePath) {
+        const auto pDir = std::filesystem::path(filePath).parent_path();
+        if (!pDir.empty()) std::filesystem::create_directories(pDir);
+    };
+    ensureParent(suggestPath);
+    std::ofstream suggestFile(suggestPath);
+    suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
+    suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
+    suggestFile.close();
+    if (!adaptFieldsJsonPath.empty()) {
+        ensureParent(adaptFieldsJsonPath);
+        std::ofstream fieldsFile(adaptFieldsJsonPath);
+        fieldsFile.exceptions(std::ios::badbit | std::ios::failbit);
+        fieldsFile << fv::flowAdaptiveFieldsToJson2D(suggestion);
+        fieldsFile.close();
+    }
+    if (!adaptVtkPath.empty()) {
+        ensureParent(adaptVtkPath);
+        std::string vtkErr;
+        if (!fv::writeFlowAdaptiveVtk2D(topology, suggestion, adaptVtkPath, &vtkErr)) {
+            throw std::runtime_error(vtkErr);
+        }
+    }
+    if (printSummary) {
+        std::cout << "adaptive_refinement_json=" << suggestPath
+                  << "\nadaptive_boxes=" << suggestion.boxes.size()
+                  << "\nadaptive_selected_cells=" << suggestion.selectedCellCount
+                  << "\nadaptive_indicator_max=" << std::setprecision(17) << suggestion.indicatorMax << '\n';
+        if (!adaptVtkPath.empty()) std::cout << "adaptive_vtk=" << adaptVtkPath << '\n';
+        if (!adaptFieldsJsonPath.empty()) std::cout << "adaptive_fields_json=" << adaptFieldsJsonPath << '\n';
+    }
+}
+
 std::vector<double> initialFluxCsv(const std::string& path,const fv::FvMesh2D& mesh) {
     std::ifstream input(path);if(!input)throw std::runtime_error("cannot open initial flux CSV");
     std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
@@ -183,7 +264,7 @@ int main(int argc, char** argv) {
     bool transientOutputStarted=false;
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
-        std::string suggestPath,suggestFromCsvPath;
+        std::string suggestPath,suggestFromCsvPath,adaptScalarCsvPath,adaptVtkPath,adaptFieldsJsonPath;
         fv::FlowAdaptivePolicy2D adaptPolicy;
         bool adaptOptions=false;
         fv::FlowControls2D controls;
@@ -218,7 +299,9 @@ int main(int argc, char** argv) {
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--suggest-refinement FILE.adaptive.json: emit flow-gradient adaptive refinement boxes JSON.\n"
             "--suggest-refinement-from CELLS.csv: generate --suggest-refinement from an existing cells CSV without re-solving.\n"
-            "--adapt-fraction 0.15 --adapt-max-boxes 6 --adapt-pad-cells 1 --adapt-max-level N --adapt-wall-level N: AMR controls.\n"
+            "--adapt-scalar-csv CELLS.csv: optional passive scalar/temperature CSV to include thermal gradients in AMR.\n"
+            "--adapt-vtk FILE.adaptive.vtk --adapt-fields-json FILE.adaptive.fields.json: optional AMR indicator exports.\n"
+            "--adapt-fraction 0.15 --adapt-max-boxes 6 --adapt-pad-cells 1 --adapt-max-level N --adapt-wall-level N --adapt-scalar-weight 1: AMR controls.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--minimum-iterations 10: explicit steady-laminar stop delay; >=1, residual/flux gates unchanged.\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
@@ -276,6 +359,20 @@ int main(int argc, char** argv) {
                 suggestPath = v;
             } else if (a == "--suggest-refinement-from") {
                 suggestFromCsvPath = v;
+            } else if (a == "--adapt-scalar-csv") {
+                adaptOptions = true;
+                adaptScalarCsvPath = v;
+            } else if (a == "--adapt-vtk") {
+                adaptOptions = true;
+                adaptVtkPath = v;
+            } else if (a == "--adapt-fields-json") {
+                adaptOptions = true;
+                adaptFieldsJsonPath = v;
+            } else if (a == "--adapt-scalar-weight") {
+                adaptOptions = true;
+                adaptPolicy.scalarWeight = number(v);
+                if (adaptPolicy.scalarWeight < 0.0)
+                    throw std::invalid_argument("adapt-scalar-weight must be non-negative");
             } else if (a == "--adapt-fraction") {
                 adaptOptions = true;
                 adaptPolicy.refineFraction = number(v);
@@ -471,20 +568,11 @@ int main(int argc, char** argv) {
         const auto mesh = fv::makeFvMesh2D(read.topology);
         if (!suggestFromCsvPath.empty()) {
             const auto field = flowFieldCsv(suggestFromCsvPath, mesh);
-            const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
-                read.topology, mesh, field.u, field.v, field.p, adaptPolicy);
-            if (!suggestion.valid()) {
-                throw std::runtime_error(suggestion.issues.front());
-            }
-            const auto outParent = std::filesystem::path(suggestPath).parent_path();
-            if (!outParent.empty()) std::filesystem::create_directories(outParent);
-            std::ofstream suggestFile(suggestPath);
-            suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
-            suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
-            suggestFile.close();
-            std::cout << "adaptive_refinement_json=" << suggestPath
-                      << "\nadaptive_boxes=" << suggestion.boxes.size()
-                      << "\nadaptive_selected_cells=" << suggestion.selectedCellCount << '\n';
+            std::vector<double> scalar;
+            if (!adaptScalarCsvPath.empty()) scalar = scalarFieldCsv(adaptScalarCsvPath, mesh);
+            writeAdaptiveSuggestionOutputs(
+                read.topology, mesh, field.u, field.v, field.p, scalar,
+                adaptPolicy, suggestPath, adaptVtkPath, adaptFieldsJsonPath, true);
             return 0;
         }
         if (controls.scenario == "custom") {
@@ -955,17 +1043,11 @@ int main(int argc, char** argv) {
         summary.close();
         vtk.close();
         if (!suggestPath.empty()) {
-            const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
-                read.topology, mesh, r.u, r.v, r.p, adaptPolicy);
-            if (!suggestion.valid()) {
-                throw std::runtime_error(suggestion.issues.front());
-            }
-            const auto suggestParent = std::filesystem::path(suggestPath).parent_path();
-            if (!suggestParent.empty()) std::filesystem::create_directories(suggestParent);
-            std::ofstream suggestFile(suggestPath);
-            suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
-            suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
-            suggestFile.close();
+            std::vector<double> scalar;
+            if (!adaptScalarCsvPath.empty()) scalar = scalarFieldCsv(adaptScalarCsvPath, mesh);
+            writeAdaptiveSuggestionOutputs(
+                read.topology, mesh, r.u, r.v, r.p, scalar,
+                adaptPolicy, suggestPath, adaptVtkPath, adaptFieldsJsonPath, false);
         }
         if (controls.profile) {
             const auto& p = r.performance;

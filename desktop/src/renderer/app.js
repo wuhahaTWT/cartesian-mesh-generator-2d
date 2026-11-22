@@ -106,12 +106,14 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();
     $('flowCaseFileInfo').textContent='保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。';}
   view.setFlowFields(null);
+  view.setAdaptiveFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
   $('suggestFlowRefinement').disabled = true;
   $('flowSpeedOption').hidden = true;
   $('flowPressureOption').hidden = true;
-  if (['speed', 'pressure'].includes($('displayMode').value)) {
+  $('adaptiveIndicatorOption').hidden = true;
+  if (['speed', 'pressure', 'adaptive'].includes($('displayMode').value)) {
     $('displayMode').value = 'level'; view.mode = 'level';
     $('canvasWrap').classList.remove('light');
     view.draw();
@@ -664,7 +666,7 @@ function renderLegend(mesh, basis) {
     }
     container.hidden=false;return;
   }
-  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode);
+  const fieldMode = ['speed', 'pressure', 'temperature', 'adaptive'].includes(view.mode);
   const coloured = view.mode === 'level' || fieldMode;
   const ramp = document.createElement('div');
   ramp.className = 'ramp';
@@ -680,7 +682,7 @@ function renderLegend(mesh, basis) {
   const fine = document.createElement('span');
   if (fieldMode) {
     const range = view.fieldRange;
-    const unit = view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²';
+    const unit = view.mode === 'adaptive' ? '无量纲指示子' : view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²';
     coarse.textContent = range ? `${range.min.toPrecision(4)} ${unit}` : '最小';
     fine.textContent = range ? `${range.max.toPrecision(4)} ${unit}` : '最大';
   } else {
@@ -1323,6 +1325,15 @@ async function suggestFlowRefinement() {
   status('流场自适应分析中', '正在按当前速度与压力梯度提取局部加密区…');
   try {
     const suggestion = await window.cartmesh.suggestFlowRefinement({ refineFraction, maxBoxes });
+    if (suggestion.fields?.cells?.length) {
+      view.setAdaptiveFields(suggestion.fields.cells);
+      $('adaptiveIndicatorOption').hidden = false;
+      $('displayMode').value = 'adaptive';
+      view.mode = 'adaptive';
+      $('canvasWrap').classList.remove('light');
+      view.draw();
+      if (state.mesh) renderLegend(state.mesh, state.levelBasis);
+    }
     if (!suggestion.regions.length) {
       $('flowAdaptNote').textContent = '当前流场梯度接近均匀，未生成新的局部加密区。';
       status('无需局部加密', '当前流场未检测到显著高梯度区。');
@@ -1337,8 +1348,9 @@ async function suggestFlowRefinement() {
     }));
     renderRegions();
     const pct = (suggestion.selectedAreaFraction * 100).toFixed(1);
-    $('flowAdaptNote').textContent = `已生成 ${state.regions.length} 个加密区（选中 ${suggestion.selectedCellCount}/${suggestion.cellCount} 单元，面积占比 ${pct}%），可微调后点击“生成网格”。`;
-    status('自适应加密区已就绪', `已按流场梯度填入 ${state.regions.length} 个局部加密区并显示在画布上，点击“生成网格”即可局部重划。`);
+    const thermalSuffix = suggestion.referenceScalarSpan > 0 ? '（含温度梯度）' : '';
+    $('flowAdaptNote').textContent = `已生成 ${state.regions.length} 个加密区${thermalSuffix}（选中 ${suggestion.selectedCellCount}/${suggestion.cellCount} 单元，面积占比 ${pct}%），已切换至梯度热图，可微调后点击“生成网格”。`;
+    status('自适应加密区已就绪', `已按梯度${thermalSuffix}填入 ${state.regions.length} 个局部加密区并显示梯度热图，点击“生成网格”即可局部重划。`);
   } catch (error) {
     const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
     status('自适应分析失败', message.split('\n')[0]);

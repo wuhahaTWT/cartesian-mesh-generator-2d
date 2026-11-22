@@ -56,7 +56,31 @@ function buildAdaptiveInvocation(cm2dPath, cellsCsvPath, outputJsonPath, request
   if (normalized.wallLevel !== undefined) {
     args.push('--adapt-wall-level', String(normalized.wallLevel));
   }
+  if (request.scalarCsvPath) {
+    args.push('--adapt-scalar-csv', request.scalarCsvPath);
+  }
+  if (request.vtkPath) {
+    args.push('--adapt-vtk', request.vtkPath);
+  }
+  if (request.fieldsJsonPath) {
+    args.push('--adapt-fields-json', request.fieldsJsonPath);
+  }
   return { executable: 'cartmesh2d_flow_cli', args, request: normalized };
+}
+
+function validateAdaptiveFields(payload, expectedCells) {
+  if (!payload || payload.format !== 'cartmesh2d-adaptive-fields-v1' || !Array.isArray(payload.cells)) {
+    throw new Error('自适应梯度场文件格式无效。');
+  }
+  if (expectedCells !== undefined && payload.cells.length !== expectedCells) {
+    throw new Error('自适应梯度场单元数与当前最终网格不匹配。');
+  }
+  payload.cells.forEach((cell, index) => {
+    if (!cell || cell.id !== index || !Number.isFinite(cell.indicator)) {
+      throw new Error(`自适应梯度场第 ${index} 号单元无效。`);
+    }
+  });
+  return payload;
 }
 
 function roundBoxPair(lo, hi) {
@@ -120,6 +144,7 @@ function parseAdaptiveSuggestion(payload, frame = null) {
     inferredWallLevel: Number(payload.inferred_wall_level ?? 0),
     maxTargetLevel: Number(payload.max_target_level ?? 0),
     indicatorMax: Number(payload.indicator_max ?? 0),
+    referenceScalarSpan: Number(payload.reference_scalar_span ?? 0),
     regions
   };
 }
@@ -127,5 +152,6 @@ function parseAdaptiveSuggestion(payload, frame = null) {
 module.exports = {
   validateAdaptiveRequest,
   buildAdaptiveInvocation,
+  validateAdaptiveFields,
   parseAdaptiveSuggestion
 };

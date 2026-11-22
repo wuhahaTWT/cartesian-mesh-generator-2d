@@ -2,8 +2,11 @@
 #include "cartmesh2d/sizing/SizeField2D.hpp"
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <vector>
 
 using namespace cartmesh2d;
@@ -180,6 +183,59 @@ int main() {
             maxDiff = std::max(maxDiff, std::abs(r1.cellIndicators[i] - r2.cellIndicators[i]));
         }
         check(maxDiff < 1e-11, "dimensionless indicator must be scale- and rotation-invariant");
+    }
+
+    // 3b. Multi-physics scalar/thermal gradient drives localized refinement even
+    // when velocity and pressure are completely uniform, and VTK / fields JSON export work.
+    {
+        std::vector<double> u(n, 1.0), v(n, 0.0), p(n, 0.0), theta(n, 300.0);
+        for (std::size_t i = 0; i < n; ++i) {
+            const auto pt = fv.cells[i].centre;
+            const double r2 = (pt.x - 0.30) * (pt.x - 0.30) + (pt.y - 0.70) * (pt.y - 0.70);
+            theta[i] = 300.0 + 50.0 * std::exp(-r2 / 0.01);
+        }
+        fv::FlowAdaptivePolicy2D policy;
+        policy.embeddedWallsNoSlip = false;
+        policy.refineFraction = 0.15;
+        policy.maxBoxes = 4U;
+        policy.maxTargetLevel = 6U;
+        policy.wallLevel = 7U;
+        const auto res = fv::suggestFlowAdaptiveRefinement2D(
+            topo, fv, u, v, p, policy, {}, {}, {}, theta);
+        check(res.valid() && !res.boxes.empty(), "localized thermal plume should emit adaptive boxes");
+        check(res.referenceScalarSpan > 25.0 && res.referenceScalarSpan < 50.0,
+              "referenceScalarSpan should reflect thermal range");
+        check(res.cellSelected.size() == n && res.selectedCellCount > 0U,
+              "cellSelected bitmask must match cell count");
+        bool coversPlume = false;
+        for (const auto& box : res.boxes) {
+            const auto& b = box.region.bounds;
+            if (b.min.x <= 0.30 && b.max.x >= 0.30 && b.min.y <= 0.70 && b.max.y >= 0.70)
+                coversPlume = true;
+        }
+        check(coversPlume, "emitted thermal adaptive boxes must cover the plume peak (0.30, 0.70)");
+
+        const std::string fieldsJson = fv::flowAdaptiveFieldsToJson2D(res);
+        check(fieldsJson.find("\"cartmesh2d-adaptive-fields-v1\"") != std::string::npos &&
+              fieldsJson.find("\"indicator\":") != std::string::npos &&
+              fieldsJson.find("\"selected\":") != std::string::npos,
+              "flowAdaptiveFieldsToJson2D must emit v1 indicator/selected cell records");
+
+        const auto tmpVtk = std::filesystem::temp_directory_path() / "cartmesh2d_adaptive_test.vtk";
+        std::string vtkErr;
+        check(fv::writeFlowAdaptiveVtk2D(topo, res, tmpVtk, &vtkErr),
+              "writeFlowAdaptiveVtk2D must succeed");
+        {
+            std::ifstream in(tmpVtk);
+            std::ostringstream ss;
+            ss << in.rdbuf();
+            const std::string content = ss.str();
+            check(content.find("SCALARS adaptive_indicator double 1") != std::string::npos &&
+                  content.find("SCALARS adaptive_selected int 1") != std::string::npos,
+                  "adaptive VTK must contain adaptive_indicator and adaptive_selected scalars");
+        }
+        std::error_code ec;
+        std::filesystem::remove(tmpVtk, ec);
     }
 
     // 4. Fail-closed checks for non-finite fields, invalid policy, and malformed JSON.

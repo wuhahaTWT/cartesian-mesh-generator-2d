@@ -1,7 +1,9 @@
 #include "cartmesh2d/fv/FlowAdaptiveSizing2D.hpp"
+#include "cartmesh2d/io/MeshIO2D.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <numeric>
@@ -142,7 +144,9 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
     const FlowAdaptivePolicy2D& policy,
     const std::vector<double>& boundaryU,
     const std::vector<double>& boundaryV,
-    const std::vector<double>& boundaryP) {
+    const std::vector<double>& boundaryP,
+    const std::vector<double>& scalar,
+    const std::vector<double>& boundaryScalar) {
     FlowAdaptiveRefinement2D result;
     const std::size_t nCells = fvMesh.cells.size();
     const std::size_t nFaces = fvMesh.faces.size();
@@ -160,9 +164,14 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
         result.issues.push_back("velocity/pressure fields contain non-finite values");
         return result;
     }
+    if (!scalar.empty() && (scalar.size() != nCells || !finiteValues(scalar))) {
+        result.issues.push_back("optional scalar/temperature field must match cell count and be finite");
+        return result;
+    }
     if ((!boundaryU.empty() && (boundaryU.size() != nFaces || !finiteValues(boundaryU))) ||
         (!boundaryV.empty() && (boundaryV.size() != nFaces || !finiteValues(boundaryV))) ||
-        (!boundaryP.empty() && (boundaryP.size() != nFaces || !finiteValues(boundaryP)))) {
+        (!boundaryP.empty() && (boundaryP.size() != nFaces || !finiteValues(boundaryP))) ||
+        (!boundaryScalar.empty() && (boundaryScalar.size() != nFaces || !finiteValues(boundaryScalar)))) {
         result.issues.push_back("optional boundary field values must match face count and be finite");
         return result;
     }
@@ -173,7 +182,9 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
         !std::isfinite(policy.splitFillThreshold) || policy.splitFillThreshold < 0.0 || policy.splitFillThreshold > 1.0 ||
         !std::isfinite(policy.velocityWeight) || policy.velocityWeight < 0.0 ||
         !std::isfinite(policy.pressureWeight) || policy.pressureWeight < 0.0 ||
-        (policy.velocityWeight == 0.0 && policy.pressureWeight == 0.0) ||
+        !std::isfinite(policy.scalarWeight) || policy.scalarWeight < 0.0 ||
+        (policy.velocityWeight == 0.0 && policy.pressureWeight == 0.0 &&
+         (scalar.empty() || policy.scalarWeight == 0.0)) ||
         (policy.maxTargetLevel && *policy.maxTargetLevel > 28U) ||
         (policy.wallLevel && *policy.wallLevel > 28U)) {
         result.issues.push_back("flow adaptive sizing policy parameters are out of valid range");
@@ -298,6 +309,27 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
     const auto gradV = reconstructGradient(fvMesh, v, bV);
     const auto gradP = reconstructGradient(fvMesh, p, bP);
 
+    std::vector<Vector2D> gradS;
+    double sSpan = 0.0;
+    if (!scalar.empty()) {
+        std::vector<double> bS = boundaryScalar;
+        if (bS.empty()) {
+            bS.resize(nFaces, 0.0);
+            for (std::size_t f = 0; f < nFaces; ++f) {
+                const auto& face = fvMesh.faces[f];
+                if (!face.neighbour) bS[f] = scalar[face.owner];
+            }
+        }
+        gradS = reconstructGradient(fvMesh, scalar, bS);
+        double sMin = std::numeric_limits<double>::infinity();
+        double sMax = -std::numeric_limits<double>::infinity();
+        for (double val : scalar) {
+            sMin = std::min(sMin, val);
+            sMax = std::max(sMax, val);
+        }
+        sSpan = std::max(0.0, sMax - sMin);
+    }
+
     double uRef = 0.0;
     double pMin = std::numeric_limits<double>::infinity();
     double pMax = -std::numeric_limits<double>::infinity();
@@ -310,8 +342,10 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
     const double pRef = std::max(pSpan, uRef * uRef);
     result.referenceVelocity = uRef;
     result.referencePressure = pRef;
+    result.referenceScalarSpan = sSpan;
 
     result.cellIndicators.assign(nCells, 0.0);
+    result.cellSelected.assign(nCells, false);
     for (std::size_t i = 0; i < nCells; ++i) {
         const double h = std::sqrt(std::max(fvMesh.cells[i].area, 0.0));
         double ind = 0.0;
@@ -324,6 +358,10 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
         if (pRef > 1.0e-15 && policy.pressureWeight > 0.0) {
             const double pGradNorm = std::hypot(gradP[i].x, gradP[i].y);
             ind += policy.pressureWeight * h * pGradNorm / pRef;
+        }
+        if (!gradS.empty() && sSpan > 1.0e-15 && policy.scalarWeight > 0.0) {
+            const double sGradNorm = std::hypot(gradS[i].x, gradS[i].y);
+            ind += policy.scalarWeight * h * sGradNorm / sSpan;
         }
         if (std::isfinite(ind) && ind > 0.0) result.cellIndicators[i] = ind;
     }
@@ -365,6 +403,7 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
         selected[id] = true;
         selectedArea += fvMesh.cells[id].area;
     }
+    result.cellSelected = selected;
     result.selectedCellCount = ranked.size();
     result.selectedAreaFraction = totalArea > 0.0 ? selectedArea / totalArea : 0.0;
 
@@ -511,6 +550,7 @@ std::string flowAdaptiveRefinementToJson2D(const FlowAdaptiveRefinement2D& sugge
     out << i1 << "\"max_target_level\": " << suggestion.maxTargetLevel << ",\n";
     out << i1 << "\"reference_velocity\": " << suggestion.referenceVelocity << ",\n";
     out << i1 << "\"reference_pressure\": " << suggestion.referencePressure << ",\n";
+    out << i1 << "\"reference_scalar_span\": " << suggestion.referenceScalarSpan << ",\n";
     out << i1 << "\"indicator_p50\": " << suggestion.indicatorP50 << ",\n";
     out << i1 << "\"indicator_p90\": " << suggestion.indicatorP90 << ",\n";
     out << i1 << "\"indicator_max\": " << suggestion.indicatorMax << ",\n";
@@ -550,6 +590,56 @@ std::string flowAdaptiveRefinementToJson2D(const FlowAdaptiveRefinement2D& sugge
     out << i1 << "]\n";
     out << "}\n";
     return out.str();
+}
+
+std::string flowAdaptiveFieldsToJson2D(const FlowAdaptiveRefinement2D& suggestion) {
+    std::ostringstream out;
+    out << std::setprecision(10);
+    out << "{\"format\":\"cartmesh2d-adaptive-fields-v1\",\"indicatorMax\":" << suggestion.indicatorMax
+        << ",\"cells\":[";
+    for (std::size_t i = 0; i < suggestion.cellIndicators.size(); ++i) {
+        if (i > 0U) out << ',';
+        const int sel = (i < suggestion.cellSelected.size() && suggestion.cellSelected[i]) ? 1 : 0;
+        out << "{\"id\":" << i << ",\"indicator\":" << suggestion.cellIndicators[i]
+            << ",\"selected\":" << sel << '}';
+    }
+    out << "]}\n";
+    return out.str();
+}
+
+bool writeFlowAdaptiveVtk2D(
+    const TopologyMesh2D& topology,
+    const FlowAdaptiveRefinement2D& suggestion,
+    const std::filesystem::path& vtkPath,
+    std::string* error) {
+    if (!suggestion.valid() || suggestion.cellIndicators.size() != topology.cells.size()) {
+        if (error) *error = "adaptive VTK export requires valid suggestion matching topology cell count";
+        return false;
+    }
+    const auto parent = vtkPath.parent_path();
+    if (!parent.empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(parent, ec);
+    }
+    if (!writeLegacyVtk2D(topology, vtkPath, error)) return false;
+    std::ofstream vtk(vtkPath, std::ios::app);
+    if (!vtk) {
+        if (error) *error = "failed to reopen adaptive VTK file for scalar fields";
+        return false;
+    }
+    vtk << std::setprecision(17)
+        << "SCALARS adaptive_indicator double 1\nLOOKUP_TABLE default\n";
+    for (double val : suggestion.cellIndicators) vtk << val << '\n';
+    vtk << "SCALARS adaptive_selected int 1\nLOOKUP_TABLE default\n";
+    for (std::size_t i = 0; i < suggestion.cellIndicators.size(); ++i) {
+        const int sel = (i < suggestion.cellSelected.size() && suggestion.cellSelected[i]) ? 1 : 0;
+        vtk << sel << '\n';
+    }
+    if (!vtk.good()) {
+        if (error) *error = "failed while writing adaptive VTK scalar fields";
+        return false;
+    }
+    return true;
 }
 
 } // namespace cartmesh2d::fv

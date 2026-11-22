@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ScalarTransport2D.hpp"
+#include "cartmesh2d/fv/FlowAdaptiveSizing2D.hpp"
 #include "cartmesh2d/fv/ThermalCheckpoint2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numbers>
 #include <sstream>
 #include <stdexcept>
@@ -118,6 +120,9 @@ int main(int argc,char**argv) {
     std::string prefix; bool started=false; double acceptedTime=0;
     try {
         std::string meshPath,flowPath,bcPath,verification,evolve,restart,diffusivityPath;
+        std::string suggestPath,adaptVtkPath,adaptFieldsJsonPath;
+        fv::FlowAdaptivePolicy2D adaptPolicy;
+        bool adaptOptions=false;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
         bool explicitVelocityRelaxation=false;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
@@ -143,6 +148,8 @@ int main(int argc,char**argv) {
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
+                    "  --suggest-refinement FILE.adaptive.json [--adapt-vtk FILE] [--adapt-fields-json FILE] [--adapt-fraction 0.15] [--adapt-max-boxes 6] [--adapt-pad-cells 1] [--adapt-max-level N] [--adapt-wall-level N] [--adapt-scalar-weight 1]:\n"
+                    "    emit coupled flow+thermal adaptive refinement boxes JSON and optional indicator exports.\n"
                     "Outputs .json .vtk .cells.csv .faces.csv .history.csv; evolving mode adds joint checkpoint.\n";
                 return 0;
             }
@@ -185,9 +192,34 @@ int main(int argc,char**argv) {
             } else if(arg=="--convection") {
                 require(value=="upwind"||value=="limited-linear","unknown convection scheme");
                 controls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+            } else if(arg=="--suggest-refinement") {
+                suggestPath=value;
+            } else if(arg=="--adapt-vtk") {
+                adaptOptions=true; adaptVtkPath=value;
+            } else if(arg=="--adapt-fields-json") {
+                adaptOptions=true; adaptFieldsJsonPath=value;
+            } else if(arg=="--adapt-fraction") {
+                adaptOptions=true; adaptPolicy.refineFraction=number(value);
+            } else if(arg=="--adapt-max-boxes") {
+                adaptOptions=true;
+                const double n=number(value);
+                require(n>=1&&n<=32&&n==std::floor(n),"adapt-max-boxes must be an integer in [1, 32]");
+                adaptPolicy.maxBoxes=static_cast<std::size_t>(n);
+            } else if(arg=="--adapt-pad-cells") {
+                adaptOptions=true; adaptPolicy.padCells=number(value);
+            } else if(arg=="--adapt-max-level"||arg=="--adapt-wall-level") {
+                adaptOptions=true;
+                const double n=number(value);
+                require(n>=0&&n<=28&&n==std::floor(n),arg+" must be an integer in [0, 28]");
+                if(arg=="--adapt-max-level")adaptPolicy.maxTargetLevel=static_cast<std::size_t>(n);
+                else adaptPolicy.wallLevel=static_cast<std::size_t>(n);
+            } else if(arg=="--adapt-scalar-weight") {
+                adaptOptions=true; adaptPolicy.scalarWeight=number(value);
+                require(adaptPolicy.scalarWeight>=0,"adapt-scalar-weight must be non-negative");
             } else throw std::runtime_error("unknown option: "+arg);
         }
         require(!meshPath.empty()&&!prefix.empty(),"--mesh and --output required");
+        require(!adaptOptions||!suggestPath.empty(),"adaptive sizing options require --suggest-refinement FILE");
         require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final solver mesh");
         require(dt>=0&&diffusivity>0&&(dt>0||steps==1),"invalid time settings or diffusivity");
         require(verification.empty()||verification=="sine"||verification=="variable-sine"||verification=="decay"||verification=="thermal-vortex","unknown verification");
@@ -223,12 +255,13 @@ int main(int argc,char**argv) {
             }
         }
         std::vector<fv::ScalarBoundary2D> bc;
+        fv::FlowState2D frozenCarrier;
         double carrierTime=0,time=0;
         fv::ThermalSetup2D thermalSetup; fv::ThermalFlowState2D state;
         const double pi=std::numbers::pi;
         const auto exact=[&](Point2D x) {return std::sin(pi*x.x)*std::sin(pi*x.y)*std::exp(!steadySine?-2*pi*pi*diffusivity*time:0.);};
         if(verification.empty()) {
-            if(!evolving) {const auto frozen=carrier(flowPath,mesh); p.volumeFlux=frozen.flux; carrierTime=frozen.time;}
+            if(!evolving) {frozenCarrier=carrier(flowPath,mesh); p.volumeFlux=frozenCarrier.flux; carrierTime=frozenCarrier.time;}
             bc=boundaries(bcPath,mesh);
             p.boundary=[&](std::size_t id,const fv::Face&){return bc[id];};
             p.source=[&](Point2D){return source;};
@@ -377,6 +410,57 @@ int main(int argc,char**argv) {
         if(!p.faceDiffusivity.empty())json<<",\n\"diffusivityModel\":\"face-values\",\n\"diffusivityFile\":"<<quote(diffusivityPath);
         json<<",\n\"nativeTopologyRevalidated\":true,\n\"solverQualityPassed\":true,\n\"externalCheckMesh\":\"not run\"\n}\n";
         cells.close();faces.close();vtk.close();history.close();json.close();
+        if (!suggestPath.empty()) {
+            std::vector<double> u, v, pr;
+            if (evolving) {
+                u = state.flow.u;
+                v = state.flow.v;
+                pr = state.flow.p;
+            } else if (verification.empty()) {
+                u = frozenCarrier.u;
+                v = frozenCarrier.v;
+                pr = frozenCarrier.p;
+            } else {
+                u.assign(mesh.cells.size(), steadySine ? speed : 0.0);
+                v.assign(mesh.cells.size(), 0.0);
+                pr.assign(mesh.cells.size(), 0.0);
+            }
+            std::vector<double> boundaryScalar(mesh.faces.size(), 0.0);
+            for (std::size_t f = 0; f < mesh.faces.size(); ++f) {
+                boundaryScalar[f] = result.values[mesh.faces[f].owner];
+                if (!mesh.faces[f].neighbour) {
+                    if (!bc.empty() && bc[f].kind == fv::ScalarBoundaryKind2D::Value) {
+                        boundaryScalar[f] = bc[f].value;
+                    } else if (!verification.empty()) {
+                        boundaryScalar[f] = exact(mesh.faces[f].centre);
+                    }
+                }
+            }
+            const auto suggestion = fv::suggestFlowAdaptiveRefinement2D(
+                read.topology, mesh, u, v, pr, adaptPolicy, {}, {}, {}, result.values, boundaryScalar);
+            require(suggestion.valid(), suggestion.issues.empty() ? "adaptive refinement failed" : suggestion.issues.front());
+            const auto ensureParent = [](const std::string& filePath) {
+                const auto pDir = std::filesystem::path(filePath).parent_path();
+                if (!pDir.empty()) std::filesystem::create_directories(pDir);
+            };
+            ensureParent(suggestPath);
+            std::ofstream suggestFile(suggestPath);
+            suggestFile.exceptions(std::ios::badbit | std::ios::failbit);
+            suggestFile << fv::flowAdaptiveRefinementToJson2D(suggestion);
+            suggestFile.close();
+            if (!adaptFieldsJsonPath.empty()) {
+                ensureParent(adaptFieldsJsonPath);
+                std::ofstream fieldsFile(adaptFieldsJsonPath);
+                fieldsFile.exceptions(std::ios::badbit | std::ios::failbit);
+                fieldsFile << fv::flowAdaptiveFieldsToJson2D(suggestion);
+                fieldsFile.close();
+            }
+            if (!adaptVtkPath.empty()) {
+                ensureParent(adaptVtkPath);
+                std::string vtkErr;
+                require(fv::writeFlowAdaptiveVtk2D(read.topology, suggestion, adaptVtkPath, &vtkErr), vtkErr);
+            }
+        }
         std::cout<<(result.converged?"Converged":"Correction limit")<<": "<<mesh.cells.size()<<" cells, time="<<time<<", scalar range=["<<result.minValue<<','<<result.maxValue<<"], balance="<<result.globalBalance<<'\n';
         return result.converged?0:2;
     } catch(const std::exception& e) {
