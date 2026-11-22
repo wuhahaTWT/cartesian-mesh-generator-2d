@@ -39,6 +39,7 @@ add_library(cartmesh2d
     src/io/MeshIO2D.cpp
     src/io/BackgroundGridIO2D.cpp
     src/io/BoundaryMetadata2D.cpp
+    src/io/FluentMsh2D.cpp
     src/io/OpenFoam2D.cpp
     src/io/Dxf2D.cpp
 )

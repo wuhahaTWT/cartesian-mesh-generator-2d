@@ -46,6 +46,7 @@ function exportGuide({ result, rasterImport, flow, thermal, background }) {
 | --- | --- |
 | mesh-preview.png | 本次真实网格的图片，可查看、汇报；不是仿真输入文件。 |
 | *-openfoam 文件夹 | OpenFOAM 算例。网格在 constant/polyMesh；计算前设置边界条件、物性和求解器，再运行 checkMesh。 |
+| *.msh | 原生二维 ANSYS Fluent ASCII 网格（保留精确多边形与 2D 边界区）；导入 Fluent 2D 后先运行 Mesh Check。 |
 | *.cm2d | CartMesh2D 原生网格。混合模式以 *.hybrid.solver.cm2d 为最终求解网格。 |
 | *.vtk | 用 ParaView 查看。混合模式以 *.hybrid.solver.vtk 为最终网格，其余可能是中间过程。 |
 | result.json / selection.json | 本次参数、检查结果和自动选参记录。 |

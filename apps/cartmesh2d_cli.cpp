@@ -1,5 +1,6 @@
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include "cartmesh2d/io/BackgroundGridIO2D.hpp"
+#include "cartmesh2d/io/FluentMsh2D.hpp"
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/geometry/BoundarySimplification2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
@@ -209,6 +210,7 @@ bool parseSizingOptions(int argc, char** argv, int first,
                         bool& sizeFieldOnly,
                         std::string& backgroundMode,
                         bool& shapeAgglomeration,
+                        std::optional<std::filesystem::path>& fluentMshPath,
                         std::string& error) {
     // The size-field options describe intent (wall resolution, growth, far field)
     // and are compiled onto the primitives above.  They stay opt-in so every
@@ -222,6 +224,14 @@ bool parseSizingOptions(int argc, char** argv, int first,
         const std::string option=argv[index++];
         if (option=="--shape-agglomeration") {
             shapeAgglomeration=true;
+            continue;
+        }
+        if (option=="--fluent-msh") {
+            if (index>=argc || fluentMshPath) {
+                error="--fluent-msh requires one <file.msh> path";
+                return false;
+            }
+            fluentMshPath=std::filesystem::path(argv[index++]);
             continue;
         }
         if (option=="--background-grid") {
@@ -575,7 +585,8 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "[boundary-simplify-cell-fraction=0] "
                  "[--distance-band <distance> <target-level>]... "
                  "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]... "
-                 "[--refine-boxes-json <file.adaptive.json>]...\n"
+                 "[--refine-boxes-json <file.adaptive.json>]... "
+                 "[--fluent-msh <file.msh>]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
                  "--shape-agglomeration: opt-in shape-driven exact unions, no convex partition;\n"
@@ -668,20 +679,23 @@ int main(int argc, char** argv) {
     bool sizeFieldOnly=false;
     bool shapeAgglomeration=false;
     std::string backgroundMode;
+    std::optional<std::filesystem::path> fluentMshPath;
     if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,
-                            sizeFieldPolicy,sizeFieldOnly,backgroundMode,shapeAgglomeration,sizingError)) {
+                            sizeFieldPolicy,sizeFieldOnly,backgroundMode,shapeAgglomeration,
+                            fluentMshPath,sizingError)) {
         std::cerr<<sizingError<<'\n';
         usage();
         return EXIT_FAILURE;
     }
-    if (shapeAgglomeration && (!openFoamCase || !backgroundMode.empty() || sizeFieldOnly)) {
+    const bool needsSolverExport = openFoamCase.has_value() || fluentMshPath.has_value();
+    if (shapeAgglomeration && (!needsSolverExport || !backgroundMode.empty() || sizeFieldOnly)) {
         std::cerr<<"--shape-agglomeration requires a fluid solver export, not background or size-field-only output\n";
         return EXIT_FAILURE;
     }
-    if(!backgroundMode.empty() && (openFoamCase || fluidRegion!=FluidRegion2D::Exterior ||
+    if(!backgroundMode.empty() && (needsSolverExport || fluidRegion!=FluidRegion2D::Exterior ||
                                   boundarySimplifyCellFraction!=0 || sizeFieldOnly)) {
         std::cerr<<"background grid is a complete domain, not an interior/exterior fluid mesh; "
-                    "OpenFOAM, boundary simplification and size-field-only are not supported\n";
+                    "OpenFOAM/Fluent, boundary simplification and size-field-only are not supported\n";
         return EXIT_FAILURE;
     }
     if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
@@ -1136,7 +1150,7 @@ int main(int argc, char** argv) {
     const auto solverTopologyStart = std::chrono::steady_clock::now();
     std::optional<SolverQualityReport2D> solverQuality;
     std::optional<SolverTopologyResult2D> solverTopology;
-    if (openFoamCase) {
+    if (needsSolverExport) {
         if (shapeResult) {
             solverTopology.emplace();
             solverTopology->topology=shapeResult->topology;
@@ -1316,6 +1330,16 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
     }
+    std::optional<FluentMshWriteReport2D> fluentReport;
+    if (fluentMshPath) {
+        error.clear();
+        fluentReport=writeFluentMsh2D(solverTopology->topology,domain,boundary,
+                                      *fluentMshPath,&error,{},embeddedPatches);
+        if (!fluentReport->valid()) {
+            std::cerr<<error<<'\n';
+            return EXIT_FAILURE;
+        }
+    }
 
     const MeshReadback2D readback = readCm2dTopology(cm2dPath);
     if (!readback.valid() || !sameReadbackTopology(stabilized.topology, readback.topology)) {
@@ -1388,7 +1412,7 @@ int main(int argc, char** argv) {
                   << "sizing_segment_bands=" << refinement.segmentBands.size() << '\n'
                   << "size_field_json=" << sizeFieldPath.string() << '\n';
     }
-    if (openFoamReport) {
+    if (solverTopology && solverQuality) {
         std::cout<<"solver_quality="<<(solverQuality->valid()?"NO_ADVISORIES":"ADVISORY")<<'\n'
                  <<"solver_quality_issue_count="<<solverQuality->issues.size()<<'\n'
                  <<"native_fv_compatible="<<(solverQuality->nativeFvCompatible()?"true":"false")<<'\n'
@@ -1456,10 +1480,18 @@ int main(int argc, char** argv) {
                  <<solverTopology->profile.repartitionIterations<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"solver_output_vertices="<<solverTopology->topology.vertices.size()<<'\n'
-                 <<"solver_output_faces="<<solverTopology->topology.edges.size()<<'\n'
-                 <<"openfoam_case="<<openFoamCase->string()<<'\n'
-                 <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
-                 <<"openfoam_faces="<<openFoamReport->faceCount<<'\n';
+                 <<"solver_output_faces="<<solverTopology->topology.edges.size()<<'\n';
+        if (openFoamReport) {
+            std::cout<<"openfoam_case="<<openFoamCase->string()<<'\n'
+                     <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
+                     <<"openfoam_faces="<<openFoamReport->faceCount<<'\n';
+        }
+        if (fluentReport) {
+            std::cout<<"fluent_msh="<<fluentMshPath->string()<<'\n'
+                     <<"fluent_cells="<<fluentReport->cellCount<<'\n'
+                     <<"fluent_faces="<<fluentReport->faceCount<<'\n'
+                     <<"fluent_zones="<<fluentReport->zones.size()<<'\n';
+        }
     }
     return EXIT_SUCCESS;
 }

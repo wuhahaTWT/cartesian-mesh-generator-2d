@@ -155,3 +155,11 @@ test('shape repartition is an explicit pure Cut-cell strategy and is omitted fro
   assert.ok(!buildInvocation(job, paths, {dryRun: true}).args.includes('--shape-agglomeration'));
   assert.throws(() => validateJob(cutcell({cutcellStrategy: 'unknown'})), /处理策略/);
 });
+
+test('fluent .msh export flag is forwarded for fluid runs and omitted on dry runs', () => {
+  const { job } = validateJob(cutcell());
+  const withFluent = buildInvocation(job, { ...paths, fluentMshPath: '/tmp/out/circle.msh' }).args;
+  const idx = withFluent.indexOf('--fluent-msh');
+  assert.ok(idx > 0 && withFluent[idx + 1] === '/tmp/out/circle.msh');
+  assert.ok(!buildInvocation(job, { ...paths, fluentMshPath: '/tmp/out/circle.msh' }, { dryRun: true }).args.includes('--fluent-msh'));
+});

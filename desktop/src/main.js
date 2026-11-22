@@ -600,7 +600,7 @@ app.whenReady().then(async () => {
     await fs.mkdir(root, { recursive: true });
     job.outputDirectory = await fs.mkdtemp(path.join(root, 'mesh-'));
     const prefix = path.join(job.outputDirectory, safeBaseName(job.geometryPath));
-    const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam` };
+    const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam`, fluentMshPath: `${prefix}.msh` };
 
     const rasterImport = rasterImports.get(job.geometryPath);
     if (rasterImport) job.sourceUnits = 'm';
