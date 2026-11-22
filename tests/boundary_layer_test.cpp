@@ -292,6 +292,30 @@ int main() {
            degenerate.failureReason == WallChainFailureReason2D::DegenerateSegment),
           "duplicate consecutive point is rejected before layer construction");
 
+    // High-Re anisotropic boundary layer (Re~1e6, y+~1, dy1=4.6e-5, 26 layers, r=1.2)
+    // must keep tangential column spacing bounded by policy.maximumColumnLength
+    // rather than subdividing isotropically to 4*firstLayerThickness.
+    const auto highReWall = makeClosedWallChain2D(
+        BoundaryLoop({{0.0, 0.0}, {1.0, 0.0}, {1.0, 0.2}, {0.0, 0.2}}),
+        30U, "high_re_plate");
+    check(highReWall.success(), "high-Re test plate chain builds");
+    if (highReWall.success()) {
+        BoundaryLayerPolicy2D highRePolicy;
+        highRePolicy.maximumColumnLength = 0.05;
+        const auto highReResult = buildLocallyReducedBoundaryLayerStrip2D(
+            *highReWall.chain, firstThickness(26U, 4.6e-5, 1.2), highRePolicy);
+        check(highReResult.success(), "high-Re 26-layer anisotropic BL succeeds");
+        if (highReResult.success()) {
+            const auto& strip = highReResult.strips.front();
+            check(strip.wallChain.segmentCount() <= 128U,
+                  "high-Re tangential segments stay bounded by maximumColumnLength");
+            check(strip.cells.size() > 1000U && strip.cells.size() < 4000U,
+                  "high-Re 26-layer BL produces bounded anisotropic cell count");
+            near(strip.metrics.minLayerThickness, 4.6e-5, 1.0e-7,
+                 "high-Re first layer thickness preserved accurately");
+        }
+    }
+
     if (failures == 0) {
         std::cout << "cartmesh2d H4-1 boundary-layer tests: PASS\n";
         return EXIT_SUCCESS;

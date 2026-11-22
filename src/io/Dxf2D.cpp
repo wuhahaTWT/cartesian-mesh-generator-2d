@@ -30,7 +30,71 @@ struct EntityRecord {
     std::string layer = "0";
     std::size_t line = 0;
     std::vector<DxfGroup> groups;
+    std::vector<EntityRecord> subEntities;
 };
+
+struct BlockDefinition {
+    std::string name;
+    double baseX = 0.0;
+    double baseY = 0.0;
+    double baseZ = 0.0;
+    std::vector<EntityRecord> entities;
+};
+
+struct Affine2D {
+    double a00 = 1.0, a01 = 0.0, tx = 0.0;
+    double a10 = 0.0, a11 = 1.0, ty = 0.0;
+    bool identity = true;
+
+    [[nodiscard]] Point2D apply(const Point2D& p) const noexcept {
+        return {a00 * p.x + a01 * p.y + tx, a10 * p.x + a11 * p.y + ty};
+    }
+
+    [[nodiscard]] Affine2D compose(const Affine2D& inner) const noexcept {
+        Affine2D out;
+        out.a00 = a00 * inner.a00 + a01 * inner.a10;
+        out.a01 = a00 * inner.a01 + a01 * inner.a11;
+        out.tx  = a00 * inner.tx  + a01 * inner.ty + tx;
+        out.a10 = a10 * inner.a00 + a11 * inner.a10;
+        out.a11 = a10 * inner.a01 + a11 * inner.a11;
+        out.ty  = a10 * inner.tx  + a11 * inner.ty + ty;
+        out.identity = false;
+        return out;
+    }
+
+    // Upper bound on spectral norm ||A||_2 <= ||A||_F so local chord sampling
+    // tolerance = worldMaxChordError / maxLinearScale guarantees world error
+    // <= worldMaxChordError under arbitrary rotation, reflection, and scale.
+    [[nodiscard]] double maxLinearScale() const noexcept {
+        return std::sqrt(a00 * a00 + a01 * a01 + a10 * a10 + a11 * a11);
+    }
+};
+
+[[nodiscard]] bool isAnnotationEntityType(const std::string& type) noexcept {
+    return type == "TEXT" || type == "MTEXT" || type == "DIMENSION" ||
+           type == "LEADER" || type == "MLEADER" || type == "MULTILEADER" ||
+           type == "POINT" || type == "ATTDEF" || type == "ATTRIB" ||
+           type == "HATCH" || type == "VIEWPORT" || type == "XLINE" ||
+           type == "RAY" || type == "SOLID" || type == "WIPEOUT" ||
+           type == "IMAGE" || type == "OLE2FRAME";
+}
+
+[[nodiscard]] bool layerAllowed(const std::string& layer,
+                                const DxfImportOptions2D& options) {
+    if (!options.includeLayers.empty()) {
+        if (std::find(options.includeLayers.begin(), options.includeLayers.end(), layer) ==
+            options.includeLayers.end()) {
+            return false;
+        }
+    }
+    if (!options.excludeLayers.empty()) {
+        if (std::find(options.excludeLayers.begin(), options.excludeLayers.end(), layer) !=
+            options.excludeLayers.end()) {
+            return false;
+        }
+    }
+    return true;
+}
 
 struct OpenChain {
     std::vector<Point2D> points;
@@ -789,13 +853,93 @@ DxfImportResult2D readAsciiDxfBoundary2D(
 
     bool inEntities=false;
     bool inHeader=false;
+    bool inBlocks=false;
     bool sawEntities=false;
     std::vector<EntityRecord> entities;
+    std::map<std::string, BlockDefinition> blocks;
+
+    auto readEntityStream = [&](std::size_t& idx, std::vector<EntityRecord>& target,
+                                const std::string& stopToken) -> bool {
+        while (idx < groups.size()) {
+            if (groups[idx].code == 999) { ++idx; continue; }
+            if (groups[idx].code == 0 && groups[idx].value == stopToken) return true;
+            if (groups[idx].code == 0 && groups[idx].value == "ENDSEC") return true;
+            if (groups[idx].code != 0) {
+                result.issues.push_back({DxfIssueCode2D::MalformedGroupPair, groups[idx].line,
+                                         "", "", "entity does not begin with group code 0"});
+                return false;
+            }
+            EntityRecord entity;
+            entity.type = groups[idx].value;
+            entity.line = groups[idx].line;
+            ++idx;
+            while (idx < groups.size() && groups[idx].code != 0) {
+                entity.groups.push_back(groups[idx]);
+                if (groups[idx].code == 8) entity.layer = groups[idx].value;
+                ++idx;
+            }
+            // Bundle POLYLINE -> VERTEX* -> SEQEND and INSERT(attribs) -> ATTRIB* -> SEQEND.
+            if (entity.type == "POLYLINE") {
+                bool closedSeq = false;
+                while (idx < groups.size()) {
+                    if (groups[idx].code == 999) { ++idx; continue; }
+                    if (groups[idx].code != 0) {
+                        result.issues.push_back({DxfIssueCode2D::MalformedGroupPair,
+                                                 groups[idx].line, "POLYLINE", entity.layer,
+                                                 "malformed POLYLINE sub-entity"});
+                        return false;
+                    }
+                    const std::string subType = groups[idx].value;
+                    const std::size_t subLine = groups[idx].line;
+                    ++idx;
+                    EntityRecord sub;
+                    sub.type = subType;
+                    sub.line = subLine;
+                    sub.layer = entity.layer;
+                    while (idx < groups.size() && groups[idx].code != 0) {
+                        sub.groups.push_back(groups[idx]);
+                        if (groups[idx].code == 8) sub.layer = groups[idx].value;
+                        ++idx;
+                    }
+                    if (subType == "SEQEND") { closedSeq = true; break; }
+                    entity.subEntities.push_back(std::move(sub));
+                }
+                if (!closedSeq) {
+                    result.issues.push_back({DxfIssueCode2D::MalformedGroupPair, entity.line,
+                                             "POLYLINE", entity.layer,
+                                             "POLYLINE missing terminating SEQEND"});
+                    return false;
+                }
+            } else if (entity.type == "INSERT") {
+                bool hasAttribs = false;
+                for (const auto& g : entity.groups) {
+                    if (g.code == 66) {
+                        long long v = 0;
+                        if (parseInteger(g.value, v) && v != 0) hasAttribs = true;
+                    }
+                }
+                if (hasAttribs) {
+                    while (idx < groups.size()) {
+                        if (groups[idx].code == 999) { ++idx; continue; }
+                        if (groups[idx].code != 0) break;
+                        const std::string subType = groups[idx].value;
+                        ++idx;
+                        while (idx < groups.size() && groups[idx].code != 0) ++idx;
+                        if (subType == "SEQEND") break;
+                    }
+                }
+            }
+            target.push_back(std::move(entity));
+        }
+        return true;
+    };
+
     for (std::size_t i=0;i<groups.size();) {
         if (groups[i].code==0 && groups[i].value=="SECTION" && i+1<groups.size() &&
             groups[i+1].code==2) {
             inEntities=groups[i+1].value=="ENTITIES";
             inHeader=groups[i+1].value=="HEADER";
+            inBlocks=groups[i+1].value=="BLOCKS";
             sawEntities=sawEntities || inEntities;
             i+=2;
             continue;
@@ -803,6 +947,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
         if (groups[i].code==0 && groups[i].value=="ENDSEC") {
             inEntities=false;
             inHeader=false;
+            inBlocks=false;
             ++i;
             continue;
         }
@@ -825,24 +970,33 @@ DxfImportResult2D readAsciiDxfBoundary2D(
             i+=2;
             continue;
         }
-        if (!inEntities) { ++i; continue; }
-        if (groups[i].code==999) { ++i; continue; }
-        if (groups[i].code!=0) {
-            result.issues.push_back({DxfIssueCode2D::MalformedGroupPair,groups[i].line,"","",
-                                     "entity does not begin with group code 0"});
-            return result;
-        }
-        EntityRecord entity;
-        entity.type=groups[i].value;
-        entity.line=groups[i].line;
-        ++i;
-        while (i<groups.size() && groups[i].code!=0) {
-            entity.groups.push_back(groups[i]);
-            if (groups[i].code==8) entity.layer=groups[i].value;
+        if (inBlocks) {
+            if (groups[i].code == 999) { ++i; continue; }
+            if (groups[i].code == 0 && groups[i].value == "BLOCK") {
+                ++i;
+                BlockDefinition blk;
+                while (i < groups.size() && groups[i].code != 0) {
+                    if (groups[i].code == 2) blk.name = groups[i].value;
+                    else if (groups[i].code == 10) (void)parseDouble(groups[i].value, blk.baseX);
+                    else if (groups[i].code == 20) (void)parseDouble(groups[i].value, blk.baseY);
+                    else if (groups[i].code == 30) (void)parseDouble(groups[i].value, blk.baseZ);
+                    ++i;
+                }
+                if (!readEntityStream(i, blk.entities, "ENDBLK")) return result;
+                if (i < groups.size() && groups[i].code == 0 && groups[i].value == "ENDBLK") {
+                    ++i;
+                    while (i < groups.size() && groups[i].code != 0) ++i;
+                }
+                if (!blk.name.empty()) blocks[blk.name] = std::move(blk);
+                continue;
+            }
             ++i;
+            continue;
         }
-        entities.push_back(std::move(entity));
+        if (!inEntities) { ++i; continue; }
+        if (!readEntityStream(i, entities, "ENDSEC")) return result;
     }
+    result.report.blockDefinitionCount = blocks.size();
     if (!sawEntities) {
         result.issues.push_back({DxfIssueCode2D::MissingEntitiesSection,0,"","",
                                  "DXF has no ENTITIES section"});
@@ -870,95 +1024,228 @@ DxfImportResult2D readAsciiDxfBoundary2D(
     std::vector<OpenChain> openChains;
     std::vector<ClosedPath> closedLoops;
     std::set<std::string> layers;
-    for (const auto& entity:entities) {
+    std::set<std::string> ignoredTypes;
+
+    const auto mapPoints = [&](std::vector<Point2D>& pts, const Affine2D& xform) {
+        if (xform.identity) return;
+        for (auto& pt : pts) pt = xform.apply(pt);
+    };
+
+    std::function<bool(const EntityRecord&, const std::string&, const Affine2D&,
+                       double, std::size_t, std::set<std::string>&)> processEntity;
+    processEntity = [&](const EntityRecord& rawEntity, const std::string& inheritedLayer,
+                        const Affine2D& xform, double zOffsetWorld,
+                        std::size_t depth, std::set<std::string>& activeBlocks) -> bool {
+        const std::string effLayer =
+            (!inheritedLayer.empty() && (rawEntity.layer.empty() || rawEntity.layer == "0"))
+                ? inheritedLayer : rawEntity.layer;
+        EntityRecord entity = rawEntity;
+        entity.layer = effLayer;
+
+        const double linearScale = xform.identity ? 1.0 : xform.maxLinearScale();
+        DxfImportOptions2D localOptions = options;
+        if (!xform.identity && linearScale > 0.0) {
+            localOptions.maximumChordError = options.maximumChordError / linearScale;
+        }
+        const double coordScaleForEntity = xform.identity ? coordinateScale : 1.0;
+
+        if (entity.type == "INSERT") {
+            if (depth >= 16U) {
+                result.issues.push_back({DxfIssueCode2D::UnsupportedEntity, entity.line,
+                                         entity.type, entity.layer,
+                                         "INSERT block nesting depth exceeds 16"});
+                return false;
+            }
+            const auto extrusionX = lastDouble(entity, 210, result).value_or(0.0);
+            const auto extrusionY = lastDouble(entity, 220, result).value_or(0.0);
+            const auto extrusionZ = lastDouble(entity, 230, result).value_or(1.0);
+            const auto thickness = lastDouble(entity, 39, result).value_or(0.0) * coordinateScale;
+            const auto ix = lastDouble(entity, 10, result, true);
+            const auto iy = lastDouble(entity, 20, result, true);
+            const double iz = lastDouble(entity, 30, result).value_or(0.0) * coordinateScale;
+            const double sx = lastDouble(entity, 41, result).value_or(1.0);
+            const double sy = lastDouble(entity, 42, result).value_or(1.0);
+            const double rotDeg = lastDouble(entity, 50, result).value_or(0.0);
+            const long long cols = lastInteger(entity, 70, result).value_or(1);
+            const long long rows = lastInteger(entity, 71, result).value_or(1);
+            const double colSpacing = lastDouble(entity, 44, result).value_or(0.0);
+            const double rowSpacing = lastDouble(entity, 45, result).value_or(0.0);
+            std::string blockName;
+            for (const auto& g : entity.groups) {
+                if (g.code == 2) blockName = g.value;
+            }
+            if (!result.issues.empty()) return false;
+            if (blockName.empty()) {
+                result.issues.push_back({DxfIssueCode2D::MissingRequiredGroup, entity.line,
+                                         entity.type, entity.layer,
+                                         "INSERT missing required block name (group 2)"});
+                return false;
+            }
+            const auto blkIt = blocks.find(blockName);
+            if (blkIt == blocks.end()) {
+                result.issues.push_back({DxfIssueCode2D::MissingRequiredGroup, entity.line,
+                                         entity.type, entity.layer,
+                                         "INSERT references undefined block: " + blockName});
+                return false;
+            }
+            if (activeBlocks.contains(blockName)) {
+                result.issues.push_back({DxfIssueCode2D::UnsupportedEntity, entity.line,
+                                         entity.type, entity.layer,
+                                         "cyclic INSERT block reference detected: " + blockName});
+                return false;
+            }
+            if (std::abs(sx) <= 1.0e-12 || std::abs(sy) <= 1.0e-12 ||
+                cols < 1 || rows < 1 || cols * rows > 10000) {
+                result.issues.push_back({DxfIssueCode2D::InvalidNumericValue, entity.line,
+                                         entity.type, entity.layer,
+                                         "INSERT scale or array count is invalid"});
+                return false;
+            }
+            if (!validatePlanarAttributes(entity, zOffsetWorld + iz, thickness,
+                                          extrusionX, extrusionY, extrusionZ,
+                                          options, result)) return false;
+
+            const auto& blk = blkIt->second;
+            const double theta = rotDeg * std::numbers::pi / 180.0;
+            const double c = std::cos(theta);
+            const double s = std::sin(theta);
+            Affine2D parentWorld = xform;
+            if (parentWorld.identity) {
+                parentWorld = Affine2D{coordinateScale, 0.0, 0.0,
+                                       0.0, coordinateScale, 0.0, false};
+            }
+            activeBlocks.insert(blockName);
+            for (long long row = 0; row < rows; ++row) {
+                for (long long col = 0; col < cols; ++col) {
+                    const double dxGrid = static_cast<double>(col) * colSpacing;
+                    const double dyGrid = static_cast<double>(row) * rowSpacing;
+                    const double txLocal = *ix + c * dxGrid - s * dyGrid
+                                           - (c * sx * blk.baseX - s * sy * blk.baseY);
+                    const double tyLocal = *iy + s * dxGrid + c * dyGrid
+                                           - (s * sx * blk.baseX + c * sy * blk.baseY);
+                    Affine2D childLocal{c * sx, -s * sy, txLocal,
+                                        s * sx,  c * sy, tyLocal, false};
+                    const Affine2D combined = parentWorld.compose(childLocal);
+                    ++result.report.insertEntityCount;
+                    for (const auto& child : blk.entities) {
+                        if (!processEntity(child, entity.layer, combined,
+                                           zOffsetWorld + iz - blk.baseZ * coordinateScale,
+                                           depth + 1U, activeBlocks)) {
+                            activeBlocks.erase(blockName);
+                            return false;
+                        }
+                    }
+                }
+            }
+            activeBlocks.erase(blockName);
+            return true;
+        }
+
+        if (!layerAllowed(entity.layer, options)) {
+            ++result.report.skippedByLayerCount;
+            return true;
+        }
+
+        if (options.ignoreAnnotationEntities && isAnnotationEntityType(entity.type)) {
+            ++result.report.ignoredAnnotationCount;
+            ignoredTypes.insert(entity.type);
+            return true;
+        }
+
         layers.insert(entity.layer);
         const auto extrusionX=lastDouble(entity,210,result).value_or(0.0);
         const auto extrusionY=lastDouble(entity,220,result).value_or(0.0);
         const auto extrusionZ=lastDouble(entity,230,result).value_or(1.0);
         const auto thickness=lastDouble(entity,39,result).value_or(0.0)*coordinateScale;
-        if (!result.issues.empty()) return result;
+        if (!result.issues.empty()) return false;
 
         if (entity.type=="LINE") {
             const auto x0=lastDouble(entity,10,result,true);
             const auto y0=lastDouble(entity,20,result,true);
             const auto x1=lastDouble(entity,11,result,true);
             const auto y1=lastDouble(entity,21,result,true);
-            const double z0=lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
-            const double z1=lastDouble(entity,31,result).value_or(0.0)*coordinateScale;
-            if (!result.issues.empty()) return result;
+            const double z0=zOffsetWorld+lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
+            const double z1=zOffsetWorld+lastDouble(entity,31,result).value_or(0.0)*coordinateScale;
+            if (!result.issues.empty()) return false;
             if (std::abs(z0-z1)>options.endpointWeldTolerance) {
                 result.issues.push_back({DxfIssueCode2D::NonPlanarEntity,entity.line,
                                          entity.type,entity.layer,
                                          "LINE endpoints do not lie in one XY plane"});
-                return result;
+                return false;
             }
             if (!validatePlanarAttributes(entity,z0,thickness,extrusionX,extrusionY,
-                                           extrusionZ,options,result)) return result;
-            const Point2D a{*x0*coordinateScale,*y0*coordinateScale};
-            const Point2D b{*x1*coordinateScale,*y1*coordinateScale};
+                                           extrusionZ,options,result)) return false;
+            Point2D a{*x0*coordScaleForEntity,*y0*coordScaleForEntity};
+            Point2D b{*x1*coordScaleForEntity,*y1*coordScaleForEntity};
+            if (!xform.identity) { a = xform.apply(a); b = xform.apply(b); }
             if (std::hypot(a.x-b.x,a.y-b.y)<=options.endpointWeldTolerance) {
                 result.issues.push_back({DxfIssueCode2D::DegenerateEntity,entity.line,
                                          entity.type,entity.layer,"zero-length LINE"});
-                return result;
+                return false;
             }
             openChains.push_back({{a,b},entity.line,entity.type,entity.layer});
             ++result.report.lineEntityCount;
         } else if (entity.type=="ARC") {
             const auto cx=lastDouble(entity,10,result,true);
             const auto cy=lastDouble(entity,20,result,true);
-            const double z=lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
+            const double z=zOffsetWorld+lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
             const auto radius=lastDouble(entity,40,result,true);
             const auto start=lastDouble(entity,50,result,true);
             const auto end=lastDouble(entity,51,result,true);
-            if (!result.issues.empty()) return result;
+            if (!result.issues.empty()) return false;
             if (!validatePlanarAttributes(entity,z,thickness,extrusionX,extrusionY,
-                                           extrusionZ,options,result)) return result;
+                                           extrusionZ,options,result)) return false;
             double sweep=std::fmod(*end-*start,360.0);
             if (sweep<=0.0) sweep+=360.0;
             if (std::abs(sweep-360.0)<1.0e-12) {
                 result.issues.push_back({DxfIssueCode2D::DegenerateEntity,entity.line,
                                          entity.type,entity.layer,
                                          "ARC start and end angles coincide; use CIRCLE"});
-                return result;
+                return false;
             }
             std::vector<Point2D> points;
-            if (!appendCircularArc(points,{*cx*coordinateScale,*cy*coordinateScale},
-                    *radius*coordinateScale,
+            if (!appendCircularArc(points,{*cx*coordScaleForEntity,*cy*coordScaleForEntity},
+                    *radius*coordScaleForEntity,
                     *start*std::numbers::pi/180.0,sweep*std::numbers::pi/180.0,
-                    options,result,entity,true)) return result;
+                    localOptions,result,entity,true)) return false;
+            mapPoints(points, xform);
             openChains.push_back({std::move(points),entity.line,entity.type,entity.layer});
             ++result.report.arcEntityCount;
         } else if (entity.type=="CIRCLE") {
             const auto cx=lastDouble(entity,10,result,true);
             const auto cy=lastDouble(entity,20,result,true);
-            const double z=lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
+            const double z=zOffsetWorld+lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
             const auto radius=lastDouble(entity,40,result,true);
-            if (!result.issues.empty()) return result;
+            if (!result.issues.empty()) return false;
             if (!validatePlanarAttributes(entity,z,thickness,extrusionX,extrusionY,
-                                           extrusionZ,options,result)) return result;
+                                           extrusionZ,options,result)) return false;
             std::vector<Point2D> points;
-            if (!appendCircularArc(points,{*cx*coordinateScale,*cy*coordinateScale},
-                    *radius*coordinateScale,0.0,
-                    2.0*std::numbers::pi,options,result,entity,true)) return result;
+            if (!appendCircularArc(points,{*cx*coordScaleForEntity,*cy*coordScaleForEntity},
+                    *radius*coordScaleForEntity,0.0,
+                    2.0*std::numbers::pi,localOptions,result,entity,true)) return false;
             if (!points.empty()) points.pop_back();
+            mapPoints(points, xform);
             closedLoops.push_back({std::move(points),entity.layer});
             ++result.report.circleEntityCount;
         } else if (entity.type=="ELLIPSE") {
             const auto cx=lastDouble(entity,10,result,true);
             const auto cy=lastDouble(entity,20,result,true);
-            const double centreZ=lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
+            const double centreZ=zOffsetWorld+lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
             const auto majorX=lastDouble(entity,11,result,true);
             const auto majorY=lastDouble(entity,21,result,true);
             const double majorZ=lastDouble(entity,31,result).value_or(0.0)*coordinateScale;
             const auto ratio=lastDouble(entity,40,result,true);
             const double start=lastDouble(entity,41,result).value_or(0.0);
             const double end=lastDouble(entity,42,result).value_or(2.0*std::numbers::pi);
-            if (!result.issues.empty()) return result;
+            if (!result.issues.empty()) return false;
             if (!validatePlanarAttributes(entity,centreZ,thickness,extrusionX,extrusionY,
-                                           extrusionZ,options,result)) return result;
-            const Vector2D major{*majorX*coordinateScale,*majorY*coordinateScale};
+                                           extrusionZ,options,result)) return false;
+            const Vector2D major{*majorX*coordScaleForEntity,*majorY*coordScaleForEntity};
             const double majorLength=std::sqrt(squaredNorm(major));
-            if (!(majorLength>options.endpointWeldTolerance) ||
+            const double localWeld = xform.identity
+                ? options.endpointWeldTolerance
+                : options.endpointWeldTolerance / std::max(linearScale, 1.0e-12);
+            if (!(majorLength>localWeld) ||
                 !nearZero(majorZ,options.endpointWeldTolerance) ||
                 !(*ratio>0.0 && *ratio<=1.0) || !std::isfinite(start) ||
                 !std::isfinite(end)) {
@@ -966,7 +1253,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                                          entity.type,entity.layer,
                                          "ELLIPSE requires a planar non-zero major axis and "
                                          "minor/major ratio in (0,1]"});
-                return result;
+                return false;
             }
             double sweep=end-start;
             const bool full=std::abs(std::abs(sweep)-2.0*std::numbers::pi)<=1.0e-12;
@@ -977,10 +1264,10 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                     result.issues.push_back({DxfIssueCode2D::DegenerateEntity,entity.line,
                                              entity.type,entity.layer,
                                              "ELLIPSE parameter interval is degenerate"});
-                    return result;
+                    return false;
                 }
             } else sweep=2.0*std::numbers::pi;
-            const Point2D centre{*cx*coordinateScale,*cy*coordinateScale};
+            const Point2D centre{*cx*coordScaleForEntity,*cy*coordScaleForEntity};
             const Vector2D minor{-major.y*(*ratio),major.x*(*ratio)};
             const auto evaluate=[=](double parameter) {
                 return centre+major*std::cos(parameter)+minor*std::sin(parameter);
@@ -989,8 +1276,9 @@ DxfImportResult2D readAsciiDxfBoundary2D(
             std::size_t sampled=0;
             const Point2D finish=evaluate(start+sweep);
             if (!appendAdaptiveParametricSpan(points,evaluate,start,start+sweep,points.front(),
-                    finish,options.maximumChordError,0,sampled,result,entity)) return result;
+                    finish,localOptions.maximumChordError,0,sampled,result,entity)) return false;
             result.report.sampledEllipseSegmentCount+=sampled;
+            mapPoints(points, xform);
             if (full) {
                 points.pop_back();
                 closedLoops.push_back({std::move(points),entity.layer});
@@ -1004,16 +1292,16 @@ DxfImportResult2D readAsciiDxfBoundary2D(
             const auto fitCount=lastInteger(entity,74,result).value_or(0);
             auto knots=repeatedDoubles(entity,40,result);
             auto weights=repeatedDoubles(entity,41,result);
-            auto control3=repeatedPoints(entity,10,20,30,coordinateScale,result);
+            auto control3=repeatedPoints(entity,10,20,30,coordScaleForEntity,result);
             if (!flags || !degreeRaw || !knotCount || !controlCount || !knots ||
-                !weights || !control3 || !result.issues.empty()) return result;
+                !weights || !control3 || !result.issues.empty()) return false;
             if (*degreeRaw<1 || *degreeRaw>16 || *knotCount<0 || *controlCount<0 ||
                 fitCount<0 || static_cast<unsigned long long>(*controlCount)!=control3->size() ||
                 static_cast<unsigned long long>(*knotCount)!=knots->size()) {
                 result.issues.push_back({DxfIssueCode2D::InvalidSplineDefinition,entity.line,
                                          entity.type,entity.layer,
                                          "SPLINE degree or declared knot/control counts are invalid"});
-                return result;
+                return false;
             }
             const auto degree=static_cast<std::size_t>(*degreeRaw);
             if (control3->size()<=degree || knots->size()!=control3->size()+degree+1 ||
@@ -1026,24 +1314,28 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                                          entity.type,entity.layer,
                                          "SPLINE must contain a valid nondecreasing NURBS knot "
                                          "vector and positive control-point weights"});
-                return result;
+                return false;
             }
             std::vector<Point2D> control;
             control.reserve(control3->size());
+            const double firstZWorld = zOffsetWorld +
+                (xform.identity ? control3->front().z : control3->front().z * coordinateScale);
             for (const auto& point:*control3) {
-                if (std::abs(point.z-control3->front().z)>options.endpointWeldTolerance) {
+                const double zWorld = zOffsetWorld +
+                    (xform.identity ? point.z : point.z * coordinateScale);
+                if (std::abs(zWorld-firstZWorld)>options.endpointWeldTolerance) {
                     result.issues.push_back({DxfIssueCode2D::NonPlanarEntity,entity.line,
                                              entity.type,entity.layer,
                                              "SPLINE control points do not share one XY plane"});
-                    return result;
+                    return false;
                 }
-                control.push_back(point.xy);
+                control.push_back(xform.identity ? point.xy : xform.apply(point.xy));
             }
-            if (!validatePlanarAttributes(entity,control3->front().z,thickness,extrusionX,
-                                           extrusionY,extrusionZ,options,result)) return result;
+            if (!validatePlanarAttributes(entity,firstZWorld,thickness,extrusionX,
+                                           extrusionY,extrusionZ,options,result)) return false;
             std::vector<Point2D> points;
             if (!appendNurbs(points,control,*weights,*knots,degree,options,result,entity))
-                return result;
+                return false;
             const bool closed=((*flags&1LL)!=0) || ((*flags&2LL)!=0);
             if (closed) {
                 if (!nearlyEqual(points.front(),points.back(),
@@ -1051,7 +1343,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                     result.issues.push_back({DxfIssueCode2D::InvalidSplineDefinition,
                                              entity.line,entity.type,entity.layer,
                                              "closed/periodic SPLINE endpoints do not coincide"});
-                    return result;
+                    return false;
                 }
                 points.pop_back();
                 closedLoops.push_back({std::move(points),entity.layer});
@@ -1060,17 +1352,17 @@ DxfImportResult2D readAsciiDxfBoundary2D(
         } else if (entity.type=="LWPOLYLINE") {
             const auto expected=lastInteger(entity,90,result,true);
             const auto flags=lastInteger(entity,70,result).value_or(0);
-            const double z=lastDouble(entity,38,result).value_or(0.0)*coordinateScale;
+            const double z=zOffsetWorld+lastDouble(entity,38,result).value_or(0.0)*coordinateScale;
             const double constantWidth=
                 lastDouble(entity,43,result).value_or(0.0)*coordinateScale;
-            if (!result.issues.empty()) return result;
+            if (!result.issues.empty()) return false;
             if (!validatePlanarAttributes(entity,z,thickness,extrusionX,extrusionY,
-                                           extrusionZ,options,result)) return result;
+                                           extrusionZ,options,result)) return false;
             if (!nearZero(constantWidth,options.endpointWeldTolerance)) {
                 result.issues.push_back({DxfIssueCode2D::NonZeroWidthOrThickness,entity.line,
                                          entity.type,entity.layer,
                                          "wide LWPOLYLINE is not a boundary centreline"});
-                return result;
+                return false;
             }
             struct Vertex { Point2D point; double bulge=0.0; bool hasY=false; };
             std::vector<Vertex> vertices;
@@ -1081,9 +1373,9 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                         result.issues.push_back({DxfIssueCode2D::InvalidNumericValue,
                                                  group.line,entity.type,entity.layer,
                                                  "invalid LWPOLYLINE x coordinate"});
-                        return result;
+                        return false;
                     }
-                    vertices.push_back({{x*coordinateScale,0.0},0.0,false});
+                    vertices.push_back({{x*coordScaleForEntity,0.0},0.0,false});
                 } else if (group.code==20) {
                     double y=0.0;
                     if (vertices.empty() || vertices.back().hasY ||
@@ -1091,9 +1383,9 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                         result.issues.push_back({DxfIssueCode2D::MalformedGroupPair,
                                                  group.line,entity.type,entity.layer,
                                                  "LWPOLYLINE y coordinate is out of order"});
-                        return result;
+                        return false;
                     }
-                    vertices.back().point.y=y*coordinateScale;
+                    vertices.back().point.y=y*coordScaleForEntity;
                     vertices.back().hasY=true;
                 } else if (group.code==42) {
                     double bulge=0.0;
@@ -1101,7 +1393,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                         result.issues.push_back({DxfIssueCode2D::InvalidNumericValue,
                                                  group.line,entity.type,entity.layer,
                                                  "invalid LWPOLYLINE bulge"});
-                        return result;
+                        return false;
                     }
                     vertices.back().bulge=bulge;
                 } else if (group.code==40 || group.code==41) {
@@ -1112,7 +1404,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                         result.issues.push_back({DxfIssueCode2D::NonZeroWidthOrThickness,
                                                  group.line,entity.type,entity.layer,
                                                  "variable-width LWPOLYLINE is unsupported"});
-                        return result;
+                        return false;
                     }
                 }
             }
@@ -1124,7 +1416,7 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                 result.issues.push_back({DxfIssueCode2D::MissingRequiredGroup,entity.line,
                                          entity.type,entity.layer,
                                          "LWPOLYLINE vertex count/group structure is invalid"});
-                return result;
+                return false;
             }
             const bool closed=(flags&1LL)!=0;
             std::vector<Point2D> points{vertices.front().point};
@@ -1132,8 +1424,9 @@ DxfImportResult2D readAsciiDxfBoundary2D(
             for (std::size_t i=0;i<segmentCount;++i) {
                 const std::size_t next=(i+1)%vertices.size();
                 if (!appendBulgeSegment(points,vertices[i].point,vertices[next].point,
-                        vertices[i].bulge,options,result,entity)) return result;
+                        vertices[i].bulge,localOptions,result,entity)) return false;
             }
+            mapPoints(points, xform);
             if (closed) {
                 if (points.size()>1 && nearlyEqual(points.front(),points.back(),
                         TolerancePolicy{options.endpointWeldTolerance,0.0})) points.pop_back();
@@ -1142,18 +1435,98 @@ DxfImportResult2D readAsciiDxfBoundary2D(
                 openChains.push_back({std::move(points),entity.line,entity.type,entity.layer});
             }
             ++result.report.lightweightPolylineCount;
+        } else if (entity.type=="POLYLINE") {
+            const auto flags=lastInteger(entity,70,result).value_or(0);
+            const double headerZ=zOffsetWorld+lastDouble(entity,30,result).value_or(0.0)*coordinateScale;
+            const double startW=lastDouble(entity,40,result).value_or(0.0)*coordinateScale;
+            const double endW=lastDouble(entity,41,result).value_or(0.0)*coordinateScale;
+            if (!result.issues.empty()) return false;
+            if ((flags & (8LL | 16LL | 64LL)) != 0) {
+                result.issues.push_back({DxfIssueCode2D::NonPlanarEntity,entity.line,
+                                         entity.type,entity.layer,
+                                         "3D POLYLINE / polygon mesh is not a 2-D boundary"});
+                return false;
+            }
+            if (!nearZero(startW,options.endpointWeldTolerance) ||
+                !nearZero(endW,options.endpointWeldTolerance)) {
+                result.issues.push_back({DxfIssueCode2D::NonZeroWidthOrThickness,entity.line,
+                                         entity.type,entity.layer,
+                                         "wide POLYLINE is not a boundary centreline"});
+                return false;
+            }
+            if (!validatePlanarAttributes(entity,headerZ,thickness,extrusionX,extrusionY,
+                                           extrusionZ,options,result)) return false;
+            struct PolyVertex { Point2D point; double bulge=0.0; };
+            std::vector<PolyVertex> vertices;
+            for (const auto& sub : entity.subEntities) {
+                if (sub.type != "VERTEX") continue;
+                const auto vFlags = lastInteger(sub, 70, result).value_or(0);
+                // Skip spline frame control points (flag 16) when fitted vertices exist.
+                if ((vFlags & 16LL) != 0) continue;
+                const auto vx = lastDouble(sub, 10, result, true);
+                const auto vy = lastDouble(sub, 20, result, true);
+                const double vz = zOffsetWorld + lastDouble(sub, 30, result).value_or(0.0) * coordinateScale;
+                const double bulge = lastDouble(sub, 42, result).value_or(0.0);
+                const double vw0 = lastDouble(sub, 40, result).value_or(0.0) * coordinateScale;
+                const double vw1 = lastDouble(sub, 41, result).value_or(0.0) * coordinateScale;
+                if (!result.issues.empty()) return false;
+                if (std::abs(vz - headerZ) > options.endpointWeldTolerance) {
+                    result.issues.push_back({DxfIssueCode2D::NonPlanarEntity, sub.line,
+                                             sub.type, entity.layer,
+                                             "POLYLINE vertex does not lie on entity XY plane"});
+                    return false;
+                }
+                if (!nearZero(vw0, options.endpointWeldTolerance) ||
+                    !nearZero(vw1, options.endpointWeldTolerance)) {
+                    result.issues.push_back({DxfIssueCode2D::NonZeroWidthOrThickness, sub.line,
+                                             sub.type, entity.layer,
+                                             "variable-width POLYLINE is unsupported"});
+                    return false;
+                }
+                vertices.push_back({{*vx * coordScaleForEntity, *vy * coordScaleForEntity}, bulge});
+            }
+            if (vertices.size() < 2U) {
+                result.issues.push_back({DxfIssueCode2D::MissingRequiredGroup, entity.line,
+                                         entity.type, entity.layer,
+                                         "POLYLINE requires at least two VERTEX entities"});
+                return false;
+            }
+            const bool closed = (flags & 1LL) != 0;
+            std::vector<Point2D> points{vertices.front().point};
+            const std::size_t segmentCount = closed ? vertices.size() : vertices.size() - 1U;
+            for (std::size_t i = 0; i < segmentCount; ++i) {
+                const std::size_t next = (i + 1U) % vertices.size();
+                if (!appendBulgeSegment(points, vertices[i].point, vertices[next].point,
+                        vertices[i].bulge, localOptions, result, entity)) return false;
+            }
+            mapPoints(points, xform);
+            if (closed) {
+                if (points.size() > 1U && nearlyEqual(points.front(), points.back(),
+                        TolerancePolicy{options.endpointWeldTolerance, 0.0})) points.pop_back();
+                closedLoops.push_back({std::move(points), entity.layer});
+            } else {
+                openChains.push_back({std::move(points), entity.line, entity.type, entity.layer});
+            }
+            ++result.report.polylineEntityCount;
         } else if (options.rejectUnsupportedEntities) {
             result.issues.push_back({DxfIssueCode2D::UnsupportedEntity,entity.line,
                                      entity.type,entity.layer,
-                                     "DXF-2 supports LINE, LWPOLYLINE, ARC, CIRCLE, "
-                                     "ELLIPSE and control-point SPLINE only"});
-            return result;
+                                     "DXF supports LINE, LWPOLYLINE, 2D POLYLINE, ARC, CIRCLE, "
+                                     "ELLIPSE, control-point SPLINE and BLOCK/INSERT only"});
+            return false;
         }
+        return true;
+    };
+
+    std::set<std::string> activeBlocks;
+    for (const auto& entity : entities) {
+        if (!processEntity(entity, "", Affine2D{}, 0.0, 0U, activeBlocks)) return result;
     }
+    result.report.ignoredEntityTypes.assign(ignoredTypes.begin(), ignoredTypes.end());
     result.report.sourceEntityCount=result.report.lineEntityCount+
-        result.report.lightweightPolylineCount+result.report.arcEntityCount+
-        result.report.circleEntityCount+result.report.ellipseEntityCount+
-        result.report.splineEntityCount;
+        result.report.lightweightPolylineCount+result.report.polylineEntityCount+
+        result.report.arcEntityCount+result.report.circleEntityCount+
+        result.report.ellipseEntityCount+result.report.splineEntityCount;
     result.report.layers.assign(layers.begin(),layers.end());
     if (result.report.sourceEntityCount==0) {
         result.issues.push_back({DxfIssueCode2D::InvalidBoundaryRegion,0,"","",
@@ -1217,8 +1590,23 @@ DxfImportResult2D readAsciiDxfBoundary2D(
         return result;
     }
     result.report.outputLoopCount=result.boundary->loops().size();
-    for (const auto& loop:result.boundary->loops())
+    result.report.loopSummaries.clear();
+    result.report.loopSummaries.reserve(result.boundary->loops().size());
+    for (std::size_t i=0;i<result.boundary->loops().size();++i) {
+        const auto& loop=result.boundary->loops()[i];
         result.report.outputVertexCount+=loop.vertices().size();
+        const auto& patch=result.embeddedPatches[i];
+        Polygon2D poly{loop.vertices()};
+        result.report.loopSummaries.push_back({
+            i,
+            patch.name,
+            boundaryConditionRoleName(patch.role),
+            patch.sourceLayer,
+            loop.vertices().size(),
+            std::abs(poly.signedArea()),
+            poly.bounds()
+        });
+    }
     return result;
 }
 
@@ -1274,10 +1662,16 @@ std::string dxfImportReportToJson(const DxfImportResult2D& result,int indentSpac
        <<indent<<"\"line_entity_count\": "<<result.report.lineEntityCount<<",\n"
        <<indent<<"\"lwpolyline_entity_count\": "
        <<result.report.lightweightPolylineCount<<",\n"
+       <<indent<<"\"polyline_entity_count\": "
+       <<result.report.polylineEntityCount<<",\n"
        <<indent<<"\"arc_entity_count\": "<<result.report.arcEntityCount<<",\n"
        <<indent<<"\"circle_entity_count\": "<<result.report.circleEntityCount<<",\n"
        <<indent<<"\"ellipse_entity_count\": "<<result.report.ellipseEntityCount<<",\n"
        <<indent<<"\"spline_entity_count\": "<<result.report.splineEntityCount<<",\n"
+       <<indent<<"\"block_definition_count\": "<<result.report.blockDefinitionCount<<",\n"
+       <<indent<<"\"insert_entity_count\": "<<result.report.insertEntityCount<<",\n"
+       <<indent<<"\"ignored_annotation_count\": "<<result.report.ignoredAnnotationCount<<",\n"
+       <<indent<<"\"skipped_by_layer_count\": "<<result.report.skippedByLayerCount<<",\n"
        <<indent<<"\"output_loop_count\": "<<result.report.outputLoopCount<<",\n"
        <<indent<<"\"output_vertex_count\": "<<result.report.outputVertexCount<<",\n"
        <<indent<<"\"sampled_arc_segment_count\": "
@@ -1309,6 +1703,11 @@ std::string dxfImportReportToJson(const DxfImportResult2D& result,int indentSpac
         if (i!=0) out<<", ";
         out<<'"'<<jsonEscape(result.report.layers[i])<<'"';
     }
+    out<<"],\n"<<indent<<"\"ignored_entity_types\": [";
+    for (std::size_t i=0;i<result.report.ignoredEntityTypes.size();++i) {
+        if (i!=0) out<<", ";
+        out<<'"'<<jsonEscape(result.report.ignoredEntityTypes[i])<<'"';
+    }
     out<<"],\n"<<indent<<"\"embedded_patches\": [";
     for (std::size_t i=0;i<result.embeddedPatches.size();++i) {
         if (i!=0) out<<", ";
@@ -1317,6 +1716,19 @@ std::string dxfImportReportToJson(const DxfImportResult2D& result,int indentSpac
            <<jsonEscape(patch.type)<<"\", \"role\": \""
            <<boundaryConditionRoleName(patch.role)<<"\", \"source_layer\": \""
            <<jsonEscape(patch.sourceLayer)<<"\"}";
+    }
+    out<<"],\n"<<indent<<"\"loop_summaries\": [";
+    for (std::size_t i=0;i<result.report.loopSummaries.size();++i) {
+        if (i!=0) out<<", ";
+        const auto& s=result.report.loopSummaries[i];
+        out<<"{\"loop_id\": "<<s.loopId
+           <<", \"patch_name\": \""<<jsonEscape(s.patchName)<<"\""
+           <<", \"role\": \""<<jsonEscape(s.role)<<"\""
+           <<", \"source_layer\": \""<<jsonEscape(s.sourceLayer)<<"\""
+           <<", \"vertex_count\": "<<s.vertexCount
+           <<", \"area\": "<<s.area
+           <<", \"bounds\": ["<<s.bounds.min.x<<", "<<s.bounds.min.y<<", "
+           <<s.bounds.max.x<<", "<<s.bounds.max.y<<"]}";
     }
     out<<"],\n"<<indent<<"\"issues\": [";
     for (std::size_t i=0;i<result.issues.size();++i) {

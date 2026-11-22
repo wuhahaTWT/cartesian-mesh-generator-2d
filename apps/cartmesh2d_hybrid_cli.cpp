@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -43,6 +44,7 @@ bool parseDouble(const std::string& text, double& value) {
 
 bool readLoops(const std::filesystem::path& path,
                std::vector<std::vector<Point2D>>& loops,
+               std::vector<EmbeddedBoundaryPatch2D>& embeddedPatches,
                std::string& error) {
     std::ifstream input(path);
     if (!input) {
@@ -50,22 +52,60 @@ bool readLoops(const std::filesystem::path& path,
         return false;
     }
     std::vector<Point2D> current;
+    std::optional<EmbeddedBoundaryPatch2D> pendingPatch;
     std::string line;
     std::size_t lineNumber = 0U;
     const auto finish = [&]() {
-        if (!current.empty()) {
-            loops.push_back(std::move(current));
-            current.clear();
+        if (current.empty()) return true;
+        if (current.size() < 3U) {
+            error = "each boundary loop must contain at least three vertices";
+            return false;
         }
+        const std::size_t loopId = loops.size();
+        loops.push_back(std::move(current));
+        current.clear();
+        embeddedPatches.push_back(pendingPatch.value_or(EmbeddedBoundaryPatch2D{
+            "wall_" + std::to_string(loopId), "wall", BoundaryConditionRole2D::Wall, ""}));
+        pendingPatch.reset();
+        return true;
     };
     while (std::getline(input, line)) {
         ++lineNumber;
         const auto first = line.find_first_not_of(" \t\r\n");
         if (first == std::string::npos) {
-            finish();
+            if (!finish()) return false;
             continue;
         }
-        if (line[first] == '#') continue;
+        if (line[first] == '#') {
+            std::istringstream metadata(line.substr(first + 1U));
+            std::string marker;
+            metadata >> marker;
+            if (marker != "cartmesh2d-loop") continue;
+            if (!current.empty() || pendingPatch) {
+                error = "boundary metadata must appear once before its loop";
+                return false;
+            }
+            EmbeddedBoundaryPatch2D patch;
+            std::string key, role;
+            if (!(metadata >> key) || key != "patch" || !(metadata >> std::quoted(patch.name)) ||
+                !(metadata >> key) || key != "type" || !(metadata >> std::quoted(patch.type)) ||
+                !(metadata >> key) || key != "role" || !(metadata >> std::quoted(role)) ||
+                !(metadata >> key) || key != "layer" ||
+                !(metadata >> std::quoted(patch.sourceLayer)) ||
+                !parseBoundaryConditionRole(role, patch.role)) {
+                error = "invalid cartmesh2d-loop metadata on line " +
+                        std::to_string(lineNumber);
+                return false;
+            }
+            std::string trailing;
+            if (metadata >> trailing) {
+                error = "unexpected boundary metadata token on line " +
+                        std::to_string(lineNumber);
+                return false;
+            }
+            pendingPatch = std::move(patch);
+            continue;
+        }
         std::istringstream row(line.substr(first));
         Point2D point;
         if (!(row >> point.x >> point.y) || !std::isfinite(point.x) ||
@@ -82,7 +122,11 @@ bool readLoops(const std::filesystem::path& path,
         }
         current.push_back(point);
     }
-    finish();
+    if (!finish()) return false;
+    if (pendingPatch) {
+        error = "boundary metadata has no following loop";
+        return false;
+    }
     if (loops.empty()) {
         error = "boundary file contains no loops";
         return false;
@@ -319,8 +363,9 @@ int main(int argc, char** argv) {
     layerParameters.thicknessMode = LayerThicknessMode2D::FirstLayerThickness;
 
     std::vector<std::vector<Point2D>> loopPoints;
+    std::vector<EmbeddedBoundaryPatch2D> embeddedPatches;
     std::string error;
-    if (!readLoops(boundaryPath, loopPoints, error)) {
+    if (!readLoops(boundaryPath, loopPoints, embeddedPatches, error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -342,8 +387,12 @@ int main(int argc, char** argv) {
     std::vector<WallChain2D> chains;
     chains.reserve(loops.size());
     for (std::size_t loopId = 0; loopId < loops.size(); ++loopId) {
+        const std::string patchIdentity = loopId < embeddedPatches.size() &&
+            !embeddedPatches[loopId].name.empty()
+                ? embeddedPatches[loopId].name
+                : ("wall_" + std::to_string(loopId));
         auto chain = makeClosedWallChain2D(
-            loops[loopId], loopId, "wall_" + std::to_string(loopId),
+            loops[loopId], loopId, patchIdentity,
             fluidRegion == FluidRegion2D::Interior
                 ? WallFluidRegion2D::Interior : WallFluidRegion2D::Exterior);
         if (!chain.success()) {
@@ -416,10 +465,21 @@ int main(int argc, char** argv) {
     hybridPolicy.enableOuterTransitionRadialMatching=q5OuterTransitionRadial;
     hybridPolicy.enableTerminationBufferRadialMatching=q5TerminationBufferRadial;
     hybridPolicy.targetExtrusionThickness=extrusionThickness;
+    BoundaryLayerPolicy2D layerPolicy;
+    if (resolvedSizeField) {
+        layerPolicy.maximumColumnLength = resolvedSizeField->requestedWallSize;
+    } else {
+        const double remainderCellSize = std::ldexp(
+            std::max(domain.width(), domain.height()),
+            -static_cast<int>(refinement.boundaryLevel));
+        if (4.0 * layerParameters.thickness < 0.25 * remainderCellSize) {
+            layerPolicy.maximumColumnLength = remainderCellSize;
+        }
+    }
     const double inputSeconds = elapsedSeconds(totalStart);
     const auto buildStart = std::chrono::steady_clock::now();
     auto robust=buildRobustH4Mesh2D(
-        chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
+        chains,layerParameters,domain,originalWalls,maxLevel,refinement,layerPolicy,hybridPolicy);
     const double buildSeconds = elapsedSeconds(buildStart);
     const auto exportStart = std::chrono::steady_clock::now();
 
@@ -527,12 +587,23 @@ int main(int argc, char** argv) {
         if (argc==12) {
             const auto foam=writeExtrudedOpenFoam2D(
                 fallback.solverTopology,domain,originalWalls,argv[10],
-                *extrusionThickness,&error);
+                *extrusionThickness,&error,{},embeddedPatches);
             if (!foam.valid()) {
                 std::cerr<<"OpenFOAM output failed: "<<error<<'\n';
                 return EXIT_FAILURE;
             }
             openFoamStatus="written";
+        }
+        std::string fluentStatus="not_requested";
+        if (fluentMshPath) {
+            const auto fluent=writeFluentMsh2D(
+                fallback.solverTopology,domain,originalWalls,*fluentMshPath,
+                &error,{},embeddedPatches);
+            if (!fluent.valid()) {
+                std::cerr<<"Fluent .msh output failed: "<<error<<'\n';
+                return EXIT_FAILURE;
+            }
+            fluentStatus=fluentMshPath->string();
         }
         std::cout<<"h4_status=success mesh_mode=pure_cutcell_fallback"
                  <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)
@@ -546,6 +617,7 @@ int main(int argc, char** argv) {
                  <<" solver_cells="<<fallback.solverTopology.cells.size()
                  <<" area_error="<<fallback.areaError
                  <<" solver_quality="<<(fallback.solverQuality.valid()?"no_advisories":"advisory")<<" openfoam="<<openFoamStatus
+                 <<" fluent_msh="<<fluentStatus
                  <<" vtk="<<vtkPath<<'\n';
         printTiming(elapsedSeconds(exportStart));
         return EXIT_SUCCESS;
@@ -621,7 +693,7 @@ int main(int argc, char** argv) {
         }
         const auto foam = writeExtrudedOpenFoam2D(
             hybrid.solverTopology, domain, originalWalls, argv[10],
-            *extrusionThickness, &error);
+            *extrusionThickness, &error, {}, embeddedPatches);
         if (!foam.valid()) {
             std::cerr << "OpenFOAM output failed: " << error << '\n';
             return EXIT_FAILURE;
@@ -635,7 +707,8 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
         const auto fluent = writeFluentMsh2D(
-            hybrid.solverTopology, domain, originalWalls, *fluentMshPath, &error);
+            hybrid.solverTopology, domain, originalWalls, *fluentMshPath,
+            &error, {}, embeddedPatches);
         if (!fluent.valid()) {
             std::cerr << "Fluent .msh output failed: " << error << '\n';
             return EXIT_FAILURE;

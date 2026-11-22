@@ -341,6 +341,85 @@ int main() {
           missingEntitiesResult.issues.front().code==DxfIssueCode2D::MissingEntitiesSection,
           "missing ENTITIES issue is explicit");
 
+    // Legacy 2D POLYLINE + VERTEX + SEQEND with bulge.
+    const auto legacyPoly=writeText(directory,"legacy_poly.dxf",prefix+
+        "0\nPOLYLINE\n8\nwall_poly\n66\n1\n70\n1\n"
+        "0\nVERTEX\n8\nwall_poly\n10\n-1\n20\n0\n42\n1\n"
+        "0\nVERTEX\n8\nwall_poly\n10\n1\n20\n0\n42\n0\n"
+        "0\nSEQEND\n"+suffix);
+    const auto legacyPolyResult=readAsciiDxfBoundary2D(legacyPoly,options);
+    check(legacyPolyResult.valid(),"legacy 2D POLYLINE with bulge imports");
+    if (legacyPolyResult.valid()) {
+        check(legacyPolyResult.report.polylineEntityCount==1,
+              "legacy POLYLINE entity count recorded");
+        near(legacyPolyResult.boundary->area(),0.5*std::numbers::pi,0.03,
+             "legacy POLYLINE semicircle area matches analytic value");
+        check(legacyPolyResult.embeddedPatches.size()==1 &&
+              legacyPolyResult.embeddedPatches[0].name=="wall_poly",
+              "legacy POLYLINE layer propagates to patch metadata");
+    }
+
+    // Multi-body BLOCKS + INSERT: translation, rotation, scaling, array insert,
+    // layer "0" inheritance, plus optional annotation skipping & layer exclusion.
+    const std::string multiBodyDxf=
+        "0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n"
+        "0\nSECTION\n2\nBLOCKS\n"
+        "0\nBLOCK\n2\nPIN_UNIT\n10\n0\n20\n0\n30\n0\n"
+        "0\nCIRCLE\n8\n0\n10\n0\n20\n0\n40\n50\n"
+        "0\nENDBLK\n"
+        "0\nBLOCK\n2\nFIN_UNIT\n10\n0\n20\n0\n30\n0\n"
+        "0\nLWPOLYLINE\n8\n0\n90\n4\n70\n1\n"
+        "10\n-100\n20\n-20\n10\n100\n20\n-20\n10\n100\n20\n20\n10\n-100\n20\n20\n"
+        "0\nENDBLK\n"
+        "0\nENDSEC\n"
+        "0\nSECTION\n2\nENTITIES\n"
+        "0\nINSERT\n8\npin_bank\n2\nPIN_UNIT\n10\n0\n20\n0\n41\n1\n42\n1\n50\n0\n"
+        "70\n2\n71\n1\n44\n300\n45\n0\n"
+        "0\nINSERT\n8\nflap_fin\n2\nFIN_UNIT\n10\n600\n20\n100\n41\n1.5\n42\n1\n50\n90\n"
+        "0\nTEXT\n8\nnotes\n10\n0\n20\n300\n1\nPin Array\n"
+        "0\nCIRCLE\n8\nconstruction\n10\n1200\n20\n0\n40\n100\n"
+        "0\nENDSEC\n0\nEOF\n";
+    const auto multiBodyPath=writeText(directory,"multi_body_blocks.dxf",multiBodyDxf);
+    // Default options reject TEXT annotation fail-closed.
+    const auto multiStrict=readAsciiDxfBoundary2D(multiBodyPath,curveOptions);
+    check(!multiStrict.valid(),"default DXF import still rejects TEXT fail-closed");
+    // Explicit annotation skip + layer exclusion imports the 3 bodies cleanly.
+    auto multiOpt=curveOptions;
+    multiOpt.ignoreAnnotationEntities=true;
+    multiOpt.excludeLayers={"construction"};
+    const auto multiResult=readAsciiDxfBoundary2D(multiBodyPath,multiOpt);
+    check(multiResult.valid(),"multi-body BLOCK/INSERT with annotation skip and layer filter imports");
+    if (multiResult.valid()) {
+        check(multiResult.report.outputLoopCount==3,"three distinct bodies extracted");
+        check(multiResult.report.blockDefinitionCount==2,"two blocks parsed");
+        check(multiResult.report.insertEntityCount==3,"array(2x1) + single insert = 3 instances");
+        check(multiResult.report.ignoredAnnotationCount==1,"one TEXT annotation recorded");
+        check(multiResult.report.skippedByLayerCount==1,"one construction entity skipped");
+        check(multiResult.report.loopSummaries.size()==3,"per-loop summaries populated");
+        std::size_t pinCount=0,finCount=0;
+        for (const auto& p:multiResult.embeddedPatches) {
+            if (p.name=="pin_bank") ++pinCount;
+            if (p.name=="flap_fin") ++finCount;
+        }
+        check(pinCount==2 && finCount==1,
+              "layer '0' inside BLOCK inherits INSERT layer into patch metadata");
+        // Area: 2 circles of r=0.05m + 1 rotated rectangle of 0.3m x 0.04m (=0.012 m^2).
+        const double expectedArea=2.0*std::numbers::pi*0.05*0.05 + 0.30*0.04;
+        near(multiResult.boundary->area(),expectedArea,0.001,
+             "multi-body INSERT scaled/rotated total area matches analytic value");
+    }
+
+    // Cyclic BLOCK reference must fail closed.
+    const auto cyclicDxf=writeText(directory,"cyclic_blocks.dxf",
+        "0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n6\n0\nENDSEC\n"
+        "0\nSECTION\n2\nBLOCKS\n"
+        "0\nBLOCK\n2\nA\n0\nINSERT\n8\n0\n2\nB\n10\n0\n20\n0\n0\nENDBLK\n"
+        "0\nBLOCK\n2\nB\n0\nINSERT\n8\n0\n2\nA\n10\n0\n20\n0\n0\nENDBLK\n"
+        "0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"
+        "0\nINSERT\n8\nwall\n2\nA\n10\n0\n20\n0\n0\nENDSEC\n0\nEOF\n");
+    const auto cyclicResult=readAsciiDxfBoundary2D(cyclicDxf,options);
+    check(!cyclicResult.valid(),"cyclic BLOCK INSERT fails closed");
+
     if (failures!=0) {
         std::cerr<<failures<<" DXF test(s) failed\n";
         return EXIT_FAILURE;

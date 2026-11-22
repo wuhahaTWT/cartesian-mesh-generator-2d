@@ -119,6 +119,11 @@ struct BoundaryLayerPolicy2D {
     // H4-3 transition fronts and explicitly selected interior channels may
     // march through converging corners under the same collision/length bounds.
     bool permitConcaveTerminationMarching = false;
+    // Optional upper bound on tangential column spacing during H4-3 local
+    // reduction. When unset, legacy callers retain 4*firstLayerThickness; high-Re
+    // anisotropic boundary layers pass wall target spacing so thin y+~1 first
+    // layers do not trigger isotropic tangential subdivision.
+    std::optional<double> maximumColumnLength;
 };
 
 enum class BoundaryLayerFailureReason2D {

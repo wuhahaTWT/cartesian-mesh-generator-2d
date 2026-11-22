@@ -144,7 +144,10 @@ void canonicalRotate(std::vector<Point2D>& vertices) {
            policy.cornerLengthFraction < 0.5 &&
            std::isfinite(policy.collisionClearanceFraction) &&
            policy.collisionClearanceFraction > 0.0 &&
-           policy.collisionClearanceFraction < 0.5;
+           policy.collisionClearanceFraction < 0.5 &&
+           (!policy.maximumColumnLength ||
+            (std::isfinite(*policy.maximumColumnLength) &&
+             *policy.maximumColumnLength > 0.0));
 }
 
 [[nodiscard]] BoundaryLayerBuildResult2D failedResult(
@@ -595,14 +598,11 @@ struct ChainGeometryResult2D {
         std::size_t expected = 0;
         if (a.ring == b.ring) {
             std::optional<std::size_t> segment;
-            for (std::size_t candidate=0;candidate<strip.wallChain.segmentCount();
-                 ++candidate) {
-                const std::size_t next=(candidate+1U)%ringSize;
-                if ((a.chainVertex==candidate && b.chainVertex==next) ||
-                    (b.chainVertex==candidate && a.chainVertex==next)) {
-                    segment=candidate;
-                    break;
-                }
+            const std::size_t segCount = strip.wallChain.segmentCount();
+            if (a.chainVertex < segCount && ((a.chainVertex + 1U) % ringSize) == b.chainVertex) {
+                segment = a.chainVertex;
+            } else if (b.chainVertex < segCount && ((b.chainVertex + 1U) % ringSize) == a.chainVertex) {
+                segment = b.chainVertex;
             }
             if (segment && a.ring<=strip.actualLayerCounts[*segment]) {
                 expected=(a.ring==0U ||
@@ -628,16 +628,31 @@ struct ChainGeometryResult2D {
         }
     }
 
-    // Broad-phase AABB followed by exact edge and containment checks prevents
-    // visually plausible but overlapping non-neighbour quads.
+    // Deterministic X-axis sweep-line broad-phase followed by exact edge and
+    // containment checks prevents visually plausible but overlapping non-neighbour
+    // quads while scaling cleanly to high-Re multi-layer strips.
     std::vector<AABB2D> bounds;
     bounds.reserve(strip.cells.size());
     for (const auto& cell : strip.cells) bounds.push_back(cellBounds(cell, strip.vertices));
-    for (std::size_t lhsId = 0; lhsId < strip.cells.size(); ++lhsId) {
-        const auto& lhs = strip.cells[lhsId];
-        for (std::size_t rhsId = lhsId + 1U; rhsId < strip.cells.size(); ++rhsId) {
+    std::vector<std::size_t> sweepOrder(strip.cells.size());
+    for (std::size_t i = 0; i < sweepOrder.size(); ++i) sweepOrder[i] = i;
+    std::sort(sweepOrder.begin(), sweepOrder.end(), [&](std::size_t a, std::size_t b) {
+        return std::tie(bounds[a].min.x, bounds[a].min.y, a) <
+               std::tie(bounds[b].min.x, bounds[b].min.y, b);
+    });
+    for (std::size_t oi = 0; oi < sweepOrder.size(); ++oi) {
+        const std::size_t aId = sweepOrder[oi];
+        const auto& aBounds = bounds[aId];
+        for (std::size_t oj = oi + 1U; oj < sweepOrder.size(); ++oj) {
+            const std::size_t bId = sweepOrder[oj];
+            const auto& bBounds = bounds[bId];
+            if (bBounds.min.x > aBounds.max.x + lengthEpsilon) break;
+            if (aBounds.max.y + lengthEpsilon < bBounds.min.y ||
+                bBounds.max.y + lengthEpsilon < aBounds.min.y) continue;
+            const std::size_t lhsId = std::min(aId, bId);
+            const std::size_t rhsId = std::max(aId, bId);
+            const auto& lhs = strip.cells[lhsId];
             const auto& rhs = strip.cells[rhsId];
-            if (!boxesOverlap(bounds[lhsId], bounds[rhsId], lengthEpsilon)) continue;
             bool shareEdge = false;
             for (std::size_t li = 0; li < 4U; ++li) {
                 const std::size_t la = lhs.vertices[li];
@@ -837,21 +852,67 @@ struct ChainGeometryResult2D {
 [[nodiscard]] bool stripsIntersect(const BoundaryLayerStrip2D& lhs,
                                    const BoundaryLayerStrip2D& rhs,
                                    const TolerancePolicy& tol) {
-    for (const auto& lhsCell : lhs.cells) {
-        const auto lhsBounds = cellBounds(lhsCell, lhs.vertices);
-        for (const auto& rhsCell : rhs.cells) {
-            const auto rhsBounds = cellBounds(rhsCell, rhs.vertices);
+    if (lhs.cells.empty() || rhs.cells.empty()) return false;
+    auto stripBounds = [](const BoundaryLayerStrip2D& strip, std::vector<AABB2D>& cellBoxes) {
+        cellBoxes.reserve(strip.cells.size());
+        AABB2D overall = cellBounds(strip.cells.front(), strip.vertices);
+        for (const auto& cell : strip.cells) {
+            const auto box = cellBounds(cell, strip.vertices);
+            cellBoxes.push_back(box);
+            overall.min.x = std::min(overall.min.x, box.min.x);
+            overall.min.y = std::min(overall.min.y, box.min.y);
+            overall.max.x = std::max(overall.max.x, box.max.x);
+            overall.max.y = std::max(overall.max.y, box.max.y);
+        }
+        return overall;
+    };
+    std::vector<AABB2D> lhsBoxes;
+    std::vector<AABB2D> rhsBoxes;
+    const auto lhsOverall = stripBounds(lhs, lhsBoxes);
+    const auto rhsOverall = stripBounds(rhs, rhsBoxes);
+    const double overallScale = std::max({lhsOverall.max.x - lhsOverall.min.x,
+                                          lhsOverall.max.y - lhsOverall.min.y,
+                                          rhsOverall.max.x - rhsOverall.min.x,
+                                          rhsOverall.max.y - rhsOverall.min.y, 1.0});
+    const double broadEps = tol.scale(overallScale);
+    if (!boxesOverlap(lhsOverall, rhsOverall, broadEps)) return false;
+
+    std::vector<std::size_t> rhsOrder;
+    rhsOrder.reserve(rhs.cells.size());
+    for (std::size_t i = 0; i < rhs.cells.size(); ++i) {
+        if (boxesOverlap(rhsBoxes[i], lhsOverall, broadEps)) rhsOrder.push_back(i);
+    }
+    if (rhsOrder.empty()) return false;
+    std::sort(rhsOrder.begin(), rhsOrder.end(), [&](std::size_t a, std::size_t b) {
+        return rhsBoxes[a].min.x < rhsBoxes[b].min.x;
+    });
+    double maxRhsWidth = 0.0;
+    for (const auto idx : rhsOrder) {
+        maxRhsWidth = std::max(maxRhsWidth, rhsBoxes[idx].max.x - rhsBoxes[idx].min.x);
+    }
+
+    for (std::size_t li = 0; li < lhs.cells.size(); ++li) {
+        const auto& lhsBounds = lhsBoxes[li];
+        if (!boxesOverlap(lhsBounds, rhsOverall, broadEps)) continue;
+        const auto& lhsCell = lhs.cells[li];
+        const double lowerX = lhsBounds.min.x - maxRhsWidth - broadEps;
+        auto it = std::lower_bound(rhsOrder.begin(), rhsOrder.end(), lowerX,
+            [&](std::size_t idx, double x) { return rhsBoxes[idx].min.x < x; });
+        for (; it != rhsOrder.end(); ++it) {
+            const auto& rhsBounds = rhsBoxes[*it];
+            if (rhsBounds.min.x > lhsBounds.max.x + broadEps) break;
+            const auto& rhsCell = rhs.cells[*it];
             const double scale = std::max({lhsBounds.max.x - lhsBounds.min.x,
                                            lhsBounds.max.y - lhsBounds.min.y,
                                            rhsBounds.max.x - rhsBounds.min.x,
                                            rhsBounds.max.y - rhsBounds.min.y, 1.0});
             if (!boxesOverlap(lhsBounds, rhsBounds, tol.scale(scale))) continue;
-            for (std::size_t li = 0; li < 4U; ++li) {
-                const Segment2D left{lhs.vertices[lhsCell.vertices[li]].point,
-                    lhs.vertices[lhsCell.vertices[(li + 1U) % 4U]].point};
-                for (std::size_t ri = 0; ri < 4U; ++ri) {
-                    const Segment2D right{rhs.vertices[rhsCell.vertices[ri]].point,
-                        rhs.vertices[rhsCell.vertices[(ri + 1U) % 4U]].point};
+            for (std::size_t le = 0; le < 4U; ++le) {
+                const Segment2D left{lhs.vertices[lhsCell.vertices[le]].point,
+                    lhs.vertices[lhsCell.vertices[(le + 1U) % 4U]].point};
+                for (std::size_t re = 0; re < 4U; ++re) {
+                    const Segment2D right{rhs.vertices[rhsCell.vertices[re]].point,
+                        rhs.vertices[rhsCell.vertices[(re + 1U) % 4U]].point};
                     if (intersectSegments(left, right, tol).kind !=
                         SegmentIntersectionKind::None) return true;
                 }
@@ -1291,7 +1352,8 @@ BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrips2D(
     // collinear points; the physical wall geometry and patch identity remain
     // unchanged. Four first-layer heights gives bounded layer aspect while
     // leaving the strict H4-1 builder and its historical IDs untouched.
-    const double maximumColumnLength=4.0*resolved.firstLayerThickness;
+    const double maximumColumnLength =
+        policy.maximumColumnLength.value_or(4.0 * resolved.firstLayerThickness);
     std::vector<WallChain2D> workingChains;
     workingChains.reserve(wallChains.size());
     for (const auto& chain:wallChains) {
