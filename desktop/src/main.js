@@ -488,9 +488,10 @@ app.whenReady().then(async () => {
     const [raw, rawFields] = await Promise.all([readJson(outputJsonPath), readJson(fieldsJsonPath)]);
     const parsed = parseAdaptiveSuggestion(raw, currentResult.frame || null);
     const fields = validateAdaptiveFields(rawFields, currentResult.mesh?.cells?.length);
-    const payload = { ...parsed, fields };
+    const payload = { ...parsed, fields, adaptiveFieldPath: outputJsonPath };
     currentResult.adaptiveRefinement = payload;
-    log(`流场自适应分析完成：提取 ${parsed.regions.length} 个加密区（选中 ${parsed.selectedCellCount}/${parsed.cellCount} 单元）。`);
+    currentResult.adaptiveFieldPath = outputJsonPath;
+    log(`流场自适应分析完成：提取 ${parsed.regions.length} 个加密区、${parsed.cellTargetCount} 个单元级目标（选中 ${parsed.selectedCellCount}/${parsed.cellCount} 单元）。`);
     return payload;
   }));
 
@@ -606,6 +607,14 @@ app.whenReady().then(async () => {
 
   async function generateOnce(request, retainPrevious = false) {
     const { job, method } = validateJob(request);
+    let adaptiveFieldContent = null;
+    if (request.useAdaptiveCellField) {
+      const sourceFieldPath = currentResult?.adaptiveFieldPath;
+      if (!sourceFieldPath || (request.adaptiveFieldPath && request.adaptiveFieldPath !== sourceFieldPath)) {
+        throw new Error('当前单元级自适应场已过期，请重新运行流场自适应分析或切换为矩形加密框模式。');
+      }
+      adaptiveFieldContent = await fs.readFile(sourceFieldPath, 'utf8');
+    }
     if (currentResult && !retainPrevious) await fs.rm(currentResult.outputDirectory, { recursive: true, force: true });
     currentResult = null;
     // Only smoke runs may override the temporary root. Every run owns a new folder.
@@ -615,6 +624,11 @@ app.whenReady().then(async () => {
     job.outputDirectory = await fs.mkdtemp(path.join(root, 'mesh-'));
     const prefix = path.join(job.outputDirectory, safeBaseName(job.geometryPath));
     const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam`, fluentMshPath: `${prefix}.msh` };
+    if (adaptiveFieldContent !== null) {
+      const fieldPath = `${prefix}.input-adaptive-field.json`;
+      await fs.writeFile(fieldPath, adaptiveFieldContent, 'utf8');
+      paths.refineFieldJsonPath = fieldPath;
+    }
 
     const rasterImport = rasterImports.get(job.geometryPath);
     if (rasterImport) job.sourceUnits = 'm';
@@ -775,6 +789,7 @@ app.whenReady().then(async () => {
              choice.cellsPerLevel < choices[0].cellsPerLevel || choice.farLevel < choices[0].farLevel)
           : choice.maxLevel < choices[0].maxLevel));
         payload.attempts = attempts;
+        if (request.automatic) payload.selectedRequest = choice;
         await fs.writeFile(path.join(payload.outputDirectory, 'selection.json'), JSON.stringify({
           automatic: payload.automatic, attempts
         }, null, 2));

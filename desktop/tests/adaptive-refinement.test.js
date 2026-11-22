@@ -53,6 +53,10 @@ test('parseAdaptiveSuggestion maps world boxes into active body-frame regions', 
     inferred_wall_level: 8,
     max_target_level: 8,
     indicator_max: 0.42,
+    cell_targets: [
+      { xmin: 1.5, ymin: -0.1, xmax: 1.7, ymax: 0.1, target_level: 7 },
+      { xmin: 1.7, ymin: -0.1, xmax: 1.9, ymax: 0.1, target_level: 7 }
+    ],
     boxes: [{
       xmin: 1.5, ymin: -0.5, xmax: 3.5, ymax: 0.5,
       target_level: 7, levels_below_wall: 1,
@@ -61,6 +65,7 @@ test('parseAdaptiveSuggestion maps world boxes into active body-frame regions', 
     }]
   };
   const parsed = parseAdaptiveSuggestion(payload, { cx: 0.5, cy: 0, span: 2.0 });
+  assert.equal(parsed.cellTargetCount, 2);
   assert.equal(parsed.regions.length, 1);
   assert.deepEqual(parsed.regions[0], {
     xmin: 0.5,

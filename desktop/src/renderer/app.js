@@ -15,6 +15,8 @@ const state = {
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
+  adaptiveFieldPath: null,
+  adaptiveSuggestion: null,
   thermal: null,
   thermalRestart: null,
   thermalHistory: [],
@@ -102,6 +104,9 @@ function validFlowInputs() {
 function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
   state.flowHistory=[];
+  state.adaptiveFieldPath = null;
+  state.adaptiveSuggestion = null;
+  updateFlowAdaptNote();
   $('flowTimeline').hidden=true;
   if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();
     $('flowCaseFileInfo').textContent='保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。';}
@@ -217,6 +222,14 @@ function buildRequest() {
     allowUnsafeWallLevel: $('relativeAllowUnsafe').checked,
     ...importSettings()
   };
+  const useAdaptiveCellField = !base.automatic && !base.targetCells &&
+    Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+  const adaptiveRequest = {
+    useAdaptiveCellField,
+    adaptiveFieldPath: useAdaptiveCellField ? state.adaptiveFieldPath : undefined,
+    refineBoxes: (base.targetCells || useAdaptiveCellField ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
+      ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
+  };
   if (state.method === 'hybrid') {
     return {
       ...base,
@@ -230,8 +243,7 @@ function buildRequest() {
       growthRatio: Number($('controlMode').value === 'auto' ? $('autoGrowth').value : $('growthRatio').value),
       domainPadding: Number($('domainPadding').value),
       extrusionThickness: Number($('extrusionThickness').value),
-      refineBoxes: (base.targetCells ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
-        ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
+      ...adaptiveRequest
     };
   }
   return {
@@ -248,8 +260,7 @@ function buildRequest() {
       halfWidthSpans: Number($('wakeHalfWidth').value),
       levelsBelowWall: Number($('wakeLevels').value)
     } : null,
-    refineBoxes: (base.targetCells ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
-      ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
+    ...adaptiveRequest
   };
 }
 
@@ -329,6 +340,9 @@ function applyManualParameters(request) {
     $('referenceMode').value = 'explicit'; $('referenceLength').value = request.referenceLength;
     $('referenceLengthField').hidden = false;
     $('referenceMode').closest('details').open = true;
+  } else {
+    $('referenceMode').value = 'bbox';
+    $('referenceLengthField').hidden = true;
   }
   $('relativeAllowUnsafe').checked = Boolean(request.allowUnsafeWallLevel);
   $('controlMode').value = 'manual'; updateControlMode(); syncRegions();
@@ -592,13 +606,14 @@ function advice(message) {
 
 async function generate() {
   if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
+  const request = buildRequest();
   clearResult();
   setBusy(true);
   $('generate').textContent = '正在生成…';
   $('log').textContent = '';
   status('生成中', state.method==='background'?'几何诊断 → 完整笛卡尔网格 → 分类 → 导出':'几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
   try {
-    const payload = await window.cartmesh.generate(buildRequest());
+    const payload = await window.cartmesh.generate(request);
     state.mesh = payload.mesh;
     state.wallBounds = payload.wallBounds;
     state.result = payload.result;
@@ -1029,6 +1044,35 @@ async function runFlow() {
   } finally {setBusy(false);applyRestartControls();}
 }
 
+function updateFlowAdaptNote(overrideMessage = '') {
+  if (overrideMessage) {
+    $('flowAdaptNote').textContent = overrideMessage;
+    return;
+  }
+  const s = state.adaptiveSuggestion;
+  if (!s) {
+    $('flowAdaptNote').textContent = '完成层流预览后可用；自动继承本次参数并展示梯度热图与参考框。';
+    return;
+  }
+  const pct = (s.selectedAreaFraction * 100).toFixed(1);
+  const thermalSuffix = s.referenceScalarSpan > 0 ? '（含温度梯度）' : '';
+  const fieldActive = Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+  if (fieldActive) {
+    $('flowAdaptNote').textContent =
+      `已就绪紧凑单元级流场 AMR${thermalSuffix}（${s.cellTargetCount || s.selectedCellCount} 个高梯度目标单元，选中 ${s.selectedCellCount}/${s.cellCount}，面积占比 ${pct}%；下方 ${state.regions.length} 个参考框仅用于预览，手动编辑将自动切换为矩形加密框模式），点击“生成预览”即可重划。`;
+  } else {
+    $('flowAdaptNote').textContent =
+      `已启用可编辑矩形加密框模式${thermalSuffix}（共 ${state.regions.length} 个加密区；原流场选中 ${s.selectedCellCount}/${s.cellCount} 单元，面积占比 ${pct}%），微调后点击“生成预览”即可局部重划。`;
+  }
+}
+
+function switchToBoxAdaptOnManualEdit() {
+  if ($('flowAdaptMode').value === 'field' && state.adaptiveFieldPath) {
+    $('flowAdaptMode').value = 'boxes';
+    updateFlowAdaptNote('检测到手动编辑加密区，已自动切换为“可编辑矩形加密框”模式；点击“生成预览”将按下方矩形框局部重划。');
+  }
+}
+
 async function suggestFlowRefinement() {
   if (state.busy || !state.result || !state.flow || state.method === 'background') return;
   const refineFraction = Number($('flowAdaptFraction').value);
@@ -1046,7 +1090,9 @@ async function suggestFlowRefinement() {
       view.draw();
       if (state.mesh) renderLegend(state.mesh, state.levelBasis);
     }
-    if (!suggestion.regions.length) {
+    if (!suggestion.regions.length && !(suggestion.cellTargetCount > 0)) {
+      state.adaptiveFieldPath = null;
+      state.adaptiveSuggestion = null;
       $('flowAdaptNote').textContent = '当前流场梯度接近均匀，未生成新的局部加密区。';
       status('无需局部加密', '当前流场未检测到显著高梯度区。');
       return;
@@ -1059,14 +1105,19 @@ async function suggestFlowRefinement() {
         updateControlMode();
       }
     }
+    state.adaptiveFieldPath = suggestion.cellTargetCount > 0 && suggestion.adaptiveFieldPath
+      ? suggestion.adaptiveFieldPath : null;
+    state.adaptiveSuggestion = suggestion;
     state.regions = suggestion.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) => ({
       xmin, xmax, ymin, ymax, levelsBelowWall, active: true
     }));
     renderRegions();
-    const pct = (suggestion.selectedAreaFraction * 100).toFixed(1);
     const thermalSuffix = suggestion.referenceScalarSpan > 0 ? '（含温度梯度）' : '';
-    $('flowAdaptNote').textContent = `已生成 ${state.regions.length} 个加密区${thermalSuffix}（选中 ${suggestion.selectedCellCount}/${suggestion.cellCount} 单元，面积占比 ${pct}%），已切换至梯度热图，可微调后点击“生成网格”。`;
-    status('自适应加密区已就绪', `已按梯度${thermalSuffix}填入 ${state.regions.length} 个局部加密区并显示梯度热图，点击“生成网格”即可局部重划。`);
+    const fieldActive = Boolean(state.adaptiveFieldPath) && $('flowAdaptMode').value === 'field';
+    updateFlowAdaptNote();
+    status('自适应加密已就绪', fieldActive
+      ? `已按梯度${thermalSuffix}生成 ${suggestion.cellTargetCount} 个单元级 AMR 目标并显示梯度热图，点击“生成预览”即可紧凑重划。`
+      : `已按梯度${thermalSuffix}填入 ${state.regions.length} 个局部加密框并显示梯度热图，点击“生成预览”即可局部重划。`);
   } catch (error) {
     const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
     status('自适应分析失败', message.split('\n')[0]);
@@ -1131,6 +1182,7 @@ $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
 $('suggestFlowRefinement').addEventListener('click', suggestFlowRefinement);
+$('flowAdaptMode').addEventListener('change', () => updateFlowAdaptNote());
 $('saveFlowCase').addEventListener('click', saveFlowCase);
 $('loadFlowCase').addEventListener('click', loadFlowCase);
 $('runThermal').addEventListener('click', runThermal);
@@ -1297,6 +1349,7 @@ function syncRegions() {
 function addRegion() {
   // A downstream patch is the common case, so the default is one: from just behind the
   // body out to six body lengths, four levels coarser than the wall.
+  switchToBoxAdaptOnManualEdit();
   state.regions.push({ xmin: 0.6, xmax: 6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4, active: true });
   renderRegions();
 }
@@ -1322,6 +1375,7 @@ function renderRegions() {
     depthInput.value = String(box.levelsBelowWall);
     depthInput.addEventListener('input', () => {
       box.levelsBelowWall = Number(depthInput.value);
+      switchToBoxAdaptOnManualEdit();
       syncRegions();
     });
     depth.append(document.createTextNode('低于壁面'), depthInput, document.createTextNode('级'));
@@ -1333,6 +1387,7 @@ function renderRegions() {
     drop.title = '删除这个加密区';
     drop.addEventListener('click', () => {
       state.regions.splice(index, 1);
+      switchToBoxAdaptOnManualEdit();
       renderRegions();
     });
     top.append(name, grow, depth, drop);
@@ -1349,6 +1404,7 @@ function renderRegions() {
       input.value = String(box[key]);
       input.addEventListener('input', () => {
         box[key] = Number(input.value);
+        switchToBoxAdaptOnManualEdit();
         syncRegions();
       });
       input.addEventListener('focus', () => {

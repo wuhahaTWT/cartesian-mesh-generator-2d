@@ -329,14 +329,23 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
       if (${JSON.stringify(argument('adapt-flow') === 'true')}) {
+        const adaptMode = ${JSON.stringify(argument('adapt-mode') || '')};
+        if (adaptMode) {
+          const select = document.getElementById('flowAdaptMode');
+          select.value = adaptMode;
+          select.dispatchEvent(new Event('change'));
+        }
         await smoke.suggestFlowRefinement();
-        if (!smoke.state.regions.length)
-          throw new Error('Adaptive refinement did not populate refinement regions');
+        if (!smoke.state.regions.length && !(smoke.state.adaptiveSuggestion?.cellTargetCount > 0))
+          throw new Error('Adaptive refinement did not populate refinement targets');
         if (document.getElementById('adaptiveIndicatorOption').hidden ||
             document.getElementById('displayMode').value !== 'adaptive')
           throw new Error('Adaptive gradient heatmap did not activate in displayMode');
         smoke.state.adaptiveRefinementSmoke = {
+          adaptMode: document.getElementById('flowAdaptMode').value,
           regionCount: smoke.state.regions.length,
+          cellTargetCount: smoke.state.adaptiveSuggestion?.cellTargetCount || 0,
+          hasAdaptiveFieldPath: Boolean(smoke.state.adaptiveFieldPath),
           displayMode: document.getElementById('displayMode').value,
           indicatorRange: smoke.view.fieldRange,
           note: document.getElementById('flowAdaptNote').textContent
@@ -518,8 +527,21 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       await mainWindow.webContents.executeJavaScript(`(async () => {
         await window.__smoke.generate();
       })()`);
-      const afterCells = await mainWindow.webContents.executeJavaScript('window.__smoke.state.result?.counts?.cells || 0');
-      report.adaptiveRemeshCells = afterCells;
+      const afterState = await mainWindow.webContents.executeJavaScript(`({
+        cells: window.__smoke.state.result?.counts?.cells || 0,
+        status: document.getElementById('statusTitle').textContent,
+        detail: document.getElementById('statusText').textContent
+      })`);
+      report.adaptiveRemeshCells = afterState.cells;
+      report.adaptiveRemeshStatus = afterState.status;
+      if (!(afterState.cells > 0) || /失败/.test(afterState.status)) {
+        throw new Error(`Adaptive remesh failed: ${afterState.status} (${afterState.detail})`);
+      }
+      const current = getCurrentResult();
+      if (current?.outputDirectory) {
+        const entries = await fs.readdir(current.outputDirectory);
+        report.adaptiveRemeshUsedCellField = entries.some(name => name.endsWith('.input-adaptive-field.json'));
+      }
       if (argument('remesh-shot')) await captureFreshPng(argument('remesh-shot'));
       if (argument('remesh-export')) report.remeshExported = await exportPackage(argument('remesh-export'));
     }

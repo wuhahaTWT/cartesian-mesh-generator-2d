@@ -145,6 +145,7 @@ function parseAdaptiveSuggestion(payload, frame = null) {
     maxTargetLevel: Number(payload.max_target_level ?? 0),
     indicatorMax: Number(payload.indicator_max ?? 0),
     referenceScalarSpan: Number(payload.reference_scalar_span ?? 0),
+    cellTargetCount: Array.isArray(payload.cell_targets) ? payload.cell_targets.length : 0,
     regions
   };
 }
