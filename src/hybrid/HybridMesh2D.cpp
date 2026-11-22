@@ -947,6 +947,23 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     auto remainderStabilization=agglomerateSmallCells(
         remainderSourceCells,remainderTopology,remainderSmallCells,
         domain,remainderBoundaryRegion,policy.tolerance);
+    if (!remainderStabilization.valid() &&
+        !remainderStabilization.issues.empty() &&
+        remainderStabilization.issues.front().code ==
+            AgglomerationIssueCode2D::SmallTargetUnsupported) {
+        // Concave outer-envelope corners can pinch two small remainder cells
+        // together before reaching a stable neighbour. Retry once with bounded
+        // small-cell chaining while preserving exact polygon union & area audits.
+        auto chainedSmallCells = remainderSmallCells;
+        chainedSmallCells.policy.allowBoundedSmallChaining = true;
+        auto chained = agglomerateSmallCells(
+            remainderSourceCells, remainderTopology, chainedSmallCells,
+            domain, remainderBoundaryRegion, policy.tolerance);
+        if (chained.valid()) {
+            remainderSmallCells = std::move(chainedSmallCells);
+            remainderStabilization = std::move(chained);
+        }
+    }
     if (!remainderStabilization.valid()) {
         const std::string detail=remainderStabilization.issues.empty()
             ?"hybrid remainder agglomeration failed"

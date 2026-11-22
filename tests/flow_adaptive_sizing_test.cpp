@@ -221,6 +221,31 @@ int main() {
               fieldsJson.find("\"selected\":") != std::string::npos,
               "flowAdaptiveFieldsToJson2D must emit v1 indicator/selected cell records");
 
+        // Verify cell-level AMR targets round-trip through JSON and spatial-indexed Quadtree2D::refine.
+        check(res.cellTargets.size() == res.selectedCellCount && !res.cellTargets.empty(),
+              "cellTargets must emit one compact target per selected cell");
+        const std::string fullJson = fv::flowAdaptiveRefinementToJson2D(res);
+        std::vector<BoxRefinementRegion2D> parsedField;
+        std::string parseErr;
+        check(parseCellRefinementFieldJson2D(fullJson, parsedField, &parseErr) &&
+              parsedField.size() == res.cellTargets.size(),
+              "parseCellRefinementFieldJson2D must round-trip all cell_targets");
+        // Duplicate/tile to >16 targets so the 64x64 spatial bin path in Quadtree2D::refine is exercised.
+        auto denseField = parsedField;
+        while (denseField.size() <= 20U) denseField.insert(denseField.end(), parsedField.begin(), parsedField.end());
+        const Domain2D fieldDomain{{{0.0, 0.0}, {1.0, 1.0}}};
+        const BoundaryLoop fieldLoop({{0.45, 0.45}, {0.55, 0.45}, {0.55, 0.55}, {0.45, 0.55}});
+        Quadtree2D fieldTree(fieldDomain, 6, fieldLoop);
+        QuadtreeRefinementPolicy2D fieldPol;
+        fieldPol.minimumLevel = 3;
+        fieldPol.boundaryLevel = 4;
+        fieldPol.boxRegions = denseField;
+        fieldTree.refine(fieldLoop, fieldPol);
+        const auto bal = fieldTree.enforceTwoToOneBalance(fieldLoop);
+        check(bal.violationsAfter == 0U && fieldTree.deterministicOrderingValid() &&
+              fieldTree.leaves().size() > 64U,
+              "spatial-indexed cell-level AMR refinement must produce balanced deterministic quadtree");
+
         const auto tmpVtk = std::filesystem::temp_directory_path() / "cartmesh2d_adaptive_test.vtk";
         std::string vtkErr;
         check(fv::writeFlowAdaptiveVtk2D(topo, res, tmpVtk, &vtkErr),

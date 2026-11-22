@@ -266,6 +266,10 @@ AgglomerationResult2D agglomerateSmallCells(
     }
 
     Dsu2D dsu(topology.cells.size());
+    std::vector<bool> isSmallCell(topology.cells.size(), false);
+    std::vector<double> cellAlpha(topology.cells.size(), 1.0);
+    std::vector<double> cellArea(topology.cells.size(), 0.0);
+    std::vector<double> cellBgArea(topology.cells.size(), 0.0);
     for (const auto& record : analysis.records) {
         if (record.topologyCellId >= topology.cells.size()) {
             result.issues.push_back({AgglomerationIssueCode2D::InvalidTopologyReference,
@@ -273,33 +277,138 @@ AgglomerationResult2D agglomerateSmallCells(
                                      "small-cell record references an invalid topology cell"});
             return result;
         }
+        const std::size_t cid = record.topologyCellId;
+        cellAlpha[cid] = record.areaFraction;
+        cellArea[cid] = record.area;
+        cellBgArea[cid] = record.areaFraction > 0.0 ? record.area / record.areaFraction : record.area;
+        isSmallCell[cid] = (record.status != SmallCellStatus2D::Stable);
         if (record.status == SmallCellStatus2D::CandidateFound) {
             ++result.mergedSmallCellCount;
             if (!record.targetTopologyCellId) {
                 result.issues.push_back({AgglomerationIssueCode2D::MissingCandidate,
-                                         record.topologyCellId,
+                                         cid,
                                          "small cell is marked CandidateFound without a target"});
                 return result;
             }
             if (*record.targetTopologyCellId >= topology.cells.size() ||
-                *record.targetTopologyCellId == record.topologyCellId) {
+                *record.targetTopologyCellId == cid) {
                 result.issues.push_back({AgglomerationIssueCode2D::InvalidTopologyReference,
-                                         record.topologyCellId,
+                                         cid,
                                          "small-cell candidate target is invalid"});
                 return result;
             }
-            if (record.targetIsSmall) {
+            if (record.targetIsSmall && !analysis.policy.allowBoundedSmallChaining) {
                 result.issues.push_back({AgglomerationIssueCode2D::SmallTargetUnsupported,
-                                         record.topologyCellId,
+                                         cid,
                                          "2D-5B does not silently chain small-to-small agglomeration"});
                 return result;
             }
-            dsu.unite(record.topologyCellId, *record.targetTopologyCellId);
+            dsu.unite(cid, *record.targetTopologyCellId);
         } else if (record.status == SmallCellStatus2D::Unresolved) {
             result.issues.push_back({AgglomerationIssueCode2D::MissingCandidate,
-                                     record.topologyCellId,
+                                     cid,
                                      "unresolved small cell cannot be safely agglomerated"});
             return result;
+        }
+    }
+
+    if (analysis.policy.allowBoundedSmallChaining) {
+        constexpr std::size_t maxChainedGroupMembers = 8U;
+        std::vector<std::map<std::size_t, double>> adj(topology.cells.size());
+        for (const auto& edge : topology.edges) {
+            if (!edge.neighbour) continue;
+            const std::size_t a = edge.owner;
+            const std::size_t b = *edge.neighbour;
+            if (a >= topology.cells.size() || b >= topology.cells.size() || a == b) continue;
+            const auto& pa = topology.vertices[edge.v0].point;
+            const auto& pb = topology.vertices[edge.v1].point;
+            const double len = std::hypot(pb.x - pa.x, pb.y - pa.y);
+            adj[a][b] += len;
+            adj[b][a] += len;
+        }
+        for (std::size_t hop = 0U; hop < 3U; ++hop) {
+            std::map<std::size_t, std::vector<std::size_t>> curGroups;
+            for (std::size_t cid = 0U; cid < topology.cells.size(); ++cid) {
+                curGroups[dsu.find(cid)].push_back(cid);
+            }
+            bool anyMerged = false;
+            for (const auto& [root, members] : curGroups) {
+                bool hasSmall = false;
+                bool hasStable = false;
+                double sumArea = 0.0;
+                double maxBg = 0.0;
+                for (const auto m : members) {
+                    if (isSmallCell[m]) hasSmall = true;
+                    else hasStable = true;
+                    sumArea += cellArea[m];
+                    maxBg = std::max(maxBg, cellBgArea[m]);
+                }
+                if (!hasSmall || hasStable) continue;
+                if (maxBg > 0.0 && sumArea >= analysis.policy.areaFractionThreshold * maxBg) continue;
+                std::map<std::size_t, double> extShared;
+                for (const auto m : members) {
+                    for (const auto& [nbr, len] : adj[m]) {
+                        if (dsu.find(nbr) == root) continue;
+                        extShared[nbr] += len;
+                    }
+                }
+                std::optional<std::size_t> bestNbr;
+                bool bestStable = false;
+                double bestLen = -1.0;
+                double bestAlpha = -1.0;
+                double bestArea = -1.0;
+                for (const auto& [nbr, len] : extShared) {
+                    const bool nbrStable = !isSmallCell[nbr];
+                    const std::size_t nbrRoot = dsu.find(nbr);
+                    const std::size_t combinedSize = members.size() + curGroups[nbrRoot].size();
+                    if (combinedSize > maxChainedGroupMembers) continue;
+                    bool better = !bestNbr.has_value();
+                    if (!better && nbrStable != bestStable) better = nbrStable;
+                    else if (!better && len > bestLen + tol.scale(std::max({1.0, len, bestLen}))) better = true;
+                    else if (!better && !(bestLen > len + tol.scale(std::max({1.0, len, bestLen})))) {
+                        if (cellAlpha[nbr] > bestAlpha + tol.scale(1.0)) better = true;
+                        else if (!(bestAlpha > cellAlpha[nbr] + tol.scale(1.0)) &&
+                                 cellArea[nbr] > bestArea + tol.scale(std::max({1.0, cellArea[nbr], bestArea}))) better = true;
+                    }
+                    if (better) {
+                        bestNbr = nbr;
+                        bestStable = nbrStable;
+                        bestLen = len;
+                        bestAlpha = cellAlpha[nbr];
+                        bestArea = cellArea[nbr];
+                    }
+                }
+                if (bestNbr) {
+                    dsu.unite(root, *bestNbr);
+                    anyMerged = true;
+                }
+            }
+            if (!anyMerged) break;
+        }
+        std::map<std::size_t, std::vector<std::size_t>> checkGroups;
+        for (std::size_t cid = 0U; cid < topology.cells.size(); ++cid) {
+            checkGroups[dsu.find(cid)].push_back(cid);
+        }
+        for (const auto& [root, members] : checkGroups) {
+            (void)root;
+            bool hasSmall = false;
+            bool hasStable = false;
+            double sumArea = 0.0;
+            double maxBg = 0.0;
+            for (const auto m : members) {
+                if (isSmallCell[m]) hasSmall = true;
+                else hasStable = true;
+                sumArea += cellArea[m];
+                maxBg = std::max(maxBg, cellBgArea[m]);
+            }
+            if (!hasSmall) continue;
+            if (members.size() > maxChainedGroupMembers ||
+                (!hasStable && !(maxBg > 0.0 && sumArea >= analysis.policy.areaFractionThreshold * maxBg))) {
+                result.issues.push_back({AgglomerationIssueCode2D::SmallTargetUnsupported,
+                                         members.front(),
+                                         "bounded small-cell chaining could not reach a stable target"});
+                return result;
+            }
         }
     }
 

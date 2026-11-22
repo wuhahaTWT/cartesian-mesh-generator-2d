@@ -548,8 +548,58 @@ struct JsonCursor {
 
 } // namespace
 
-bool parseBoxRefinementRegionsJson2D(
+namespace {
+
+bool parseRegionArrayJson(
+    JsonCursor& cursor,
+    const char* arrayName,
+    std::vector<BoxRefinementRegion2D>& parsed,
+    std::string& errorMessage) {
+    const auto fail = [&](const std::string& msg) {
+        errorMessage = msg;
+        return false;
+    };
+    if (!cursor.consume('[')) return fail(std::string("\"") + arrayName + "\" must be a JSON array");
+    if (cursor.consume(']')) return true;
+    for (;;) {
+        if (!cursor.consume('{')) return fail("each region entry must be a JSON object");
+        double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0, levelNum = -1.0;
+        bool hasXmin = false, hasYmin = false, hasXmax = false, hasYmax = false, hasLevel = false;
+        if (!cursor.consume('}')) {
+            for (;;) {
+                std::string field;
+                if (!cursor.parseString(field) || !cursor.consume(':'))
+                    return fail("malformed region object key/value");
+                if (field == "xmin") { if (!cursor.parseNumber(xmin)) return fail("invalid region xmin"); hasXmin = true; }
+                else if (field == "ymin") { if (!cursor.parseNumber(ymin)) return fail("invalid region ymin"); hasYmin = true; }
+                else if (field == "xmax") { if (!cursor.parseNumber(xmax)) return fail("invalid region xmax"); hasXmax = true; }
+                else if (field == "ymax") { if (!cursor.parseNumber(ymax)) return fail("invalid region ymax"); hasYmax = true; }
+                else if (field == "target_level" || field == "targetLevel") {
+                    if (!cursor.parseNumber(levelNum)) return fail("invalid region target_level");
+                    hasLevel = true;
+                } else {
+                    if (!cursor.skipValue()) return fail("malformed value in region object");
+                }
+                if (cursor.consume('}')) break;
+                if (!cursor.consume(',')) return fail("expected ',' or '}' in region object");
+            }
+        }
+        if (!hasXmin || !hasYmin || !hasXmax || !hasYmax || !hasLevel)
+            return fail("region entry missing xmin/ymin/xmax/ymax/target_level");
+        if (!(xmax > xmin) || !(ymax > ymin))
+            return fail("region entry must satisfy xmax > xmin and ymax > ymin");
+        if (levelNum < 0.0 || levelNum > 28.0 || std::floor(levelNum) != levelNum)
+            return fail("region target_level must be an integer in [0, 28]");
+        parsed.push_back({{{xmin, ymin}, {xmax, ymax}}, static_cast<std::size_t>(levelNum)});
+        if (cursor.consume(']')) break;
+        if (!cursor.consume(',')) return fail("expected ',' or ']' in region array");
+    }
+    return true;
+}
+
+bool parseAdaptiveRegionsImpl(
     const std::string& jsonText,
+    bool preferCellTargets,
     std::vector<BoxRefinementRegion2D>& out,
     std::string* error) {
     const auto fail = [&](const std::string& msg) {
@@ -557,9 +607,12 @@ bool parseBoxRefinementRegionsJson2D(
         return false;
     };
     JsonCursor cursor{jsonText, 0U};
-    if (!cursor.consume('{')) return fail("expected JSON object for refinement boxes");
+    if (!cursor.consume('{')) return fail("expected JSON object for refinement regions");
     bool sawBoxes = false;
-    std::vector<BoxRefinementRegion2D> parsed;
+    bool sawCellTargets = false;
+    std::vector<BoxRefinementRegion2D> parsedBoxes;
+    std::vector<BoxRefinementRegion2D> parsedCells;
+    std::string arrayError;
     if (!cursor.consume('}')) {
         for (;;) {
             std::string key;
@@ -567,54 +620,48 @@ bool parseBoxRefinementRegionsJson2D(
                 return fail("malformed top-level JSON key/value");
             if (key == "boxes") {
                 sawBoxes = true;
-                if (!cursor.consume('[')) return fail("\"boxes\" must be a JSON array");
-                if (!cursor.consume(']')) {
-                    for (;;) {
-                        if (!cursor.consume('{')) return fail("each box entry must be a JSON object");
-                        double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0, levelNum = -1.0;
-                        bool hasXmin = false, hasYmin = false, hasXmax = false, hasYmax = false, hasLevel = false;
-                        if (!cursor.consume('}')) {
-                            for (;;) {
-                                std::string field;
-                                if (!cursor.parseString(field) || !cursor.consume(':'))
-                                    return fail("malformed box object key/value");
-                                if (field == "xmin") { if (!cursor.parseNumber(xmin)) return fail("invalid box xmin"); hasXmin = true; }
-                                else if (field == "ymin") { if (!cursor.parseNumber(ymin)) return fail("invalid box ymin"); hasYmin = true; }
-                                else if (field == "xmax") { if (!cursor.parseNumber(xmax)) return fail("invalid box xmax"); hasXmax = true; }
-                                else if (field == "ymax") { if (!cursor.parseNumber(ymax)) return fail("invalid box ymax"); hasYmax = true; }
-                                else if (field == "target_level" || field == "targetLevel") {
-                                    if (!cursor.parseNumber(levelNum)) return fail("invalid box target_level");
-                                    hasLevel = true;
-                                } else {
-                                    if (!cursor.skipValue()) return fail("malformed value in box object");
-                                }
-                                if (cursor.consume('}')) break;
-                                if (!cursor.consume(',')) return fail("expected ',' or '}' in box object");
-                            }
-                        }
-                        if (!hasXmin || !hasYmin || !hasXmax || !hasYmax || !hasLevel)
-                            return fail("box entry missing xmin/ymin/xmax/ymax/target_level");
-                        if (!(xmax > xmin) || !(ymax > ymin))
-                            return fail("box entry must satisfy xmax > xmin and ymax > ymin");
-                        if (levelNum < 0.0 || levelNum > 28.0 || std::floor(levelNum) != levelNum)
-                            return fail("box target_level must be an integer in [0, 28]");
-                        parsed.push_back({{{xmin, ymin}, {xmax, ymax}}, static_cast<std::size_t>(levelNum)});
-                        if (cursor.consume(']')) break;
-                        if (!cursor.consume(',')) return fail("expected ',' or ']' in boxes array");
-                    }
-                }
+                if (!parseRegionArrayJson(cursor, "boxes", parsedBoxes, arrayError))
+                    return fail(arrayError);
+            } else if (key == "cell_targets") {
+                sawCellTargets = true;
+                if (!parseRegionArrayJson(cursor, "cell_targets", parsedCells, arrayError))
+                    return fail(arrayError);
             } else {
-                if (!cursor.skipValue()) return fail("malformed value in refinement boxes JSON");
+                if (!cursor.skipValue()) return fail("malformed value in refinement regions JSON");
             }
             if (cursor.consume('}')) break;
             if (!cursor.consume(',')) return fail("expected ',' or '}' in top-level JSON object");
         }
     }
     cursor.skipWs();
-    if (cursor.pos != jsonText.size()) return fail("trailing characters after refinement boxes JSON");
-    if (!sawBoxes) return fail("refinement boxes JSON is missing \"boxes\" array");
-    out.insert(out.end(), parsed.begin(), parsed.end());
-    return true;
+    if (cursor.pos != jsonText.size()) return fail("trailing characters after refinement regions JSON");
+    if (preferCellTargets && sawCellTargets) {
+        out.insert(out.end(), parsedCells.begin(), parsedCells.end());
+        return true;
+    }
+    if (sawBoxes) {
+        out.insert(out.end(), parsedBoxes.begin(), parsedBoxes.end());
+        return true;
+    }
+    return fail(preferCellTargets
+        ? "refinement field JSON is missing \"cell_targets\" and \"boxes\" arrays"
+        : "refinement boxes JSON is missing \"boxes\" array");
+}
+
+} // namespace
+
+bool parseBoxRefinementRegionsJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error) {
+    return parseAdaptiveRegionsImpl(jsonText, false, out, error);
+}
+
+bool parseCellRefinementFieldJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error) {
+    return parseAdaptiveRegionsImpl(jsonText, true, out, error);
 }
 
 } // namespace cartmesh2d

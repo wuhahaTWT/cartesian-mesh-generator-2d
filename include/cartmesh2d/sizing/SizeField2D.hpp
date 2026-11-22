@@ -151,4 +151,12 @@ struct ResolvedSizeField2D {
     std::vector<BoxRefinementRegion2D>& out,
     std::string* error = nullptr);
 
+// Parse cell-level flow-aligned refinement targets from "cell_targets" in a
+// cartmesh2d-adaptive-refinement-v1 JSON file (falling back cleanly to "boxes"
+// if the file was emitted by an older producer without "cell_targets").
+[[nodiscard]] bool parseCellRefinementFieldJson2D(
+    const std::string& jsonText,
+    std::vector<BoxRefinementRegion2D>& out,
+    std::string* error = nullptr);
+
 } // namespace cartmesh2d

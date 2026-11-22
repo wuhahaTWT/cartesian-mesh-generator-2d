@@ -123,6 +123,7 @@ void usage(std::ostream& out = std::cerr) {
            "  --max-safe-wall-level <n> --allow-unsafe-wall-level --size-field-only\n"
            "  --refine-box <xmin> <ymin> <xmax> <ymax> <target-level>\n"
            "  --refine-boxes-json <file.adaptive.json>\n"
+           "  --refine-field-json <file.adaptive.json>\n"
            "  --fluent-msh <file.msh>\n";
 }
 
@@ -195,21 +196,25 @@ int main(int argc, char** argv) {
             extraBoxRegions.push_back(region);
             continue;
         }
-        if (option=="--refine-boxes-json") {
+        if (option=="--refine-boxes-json" || option=="--refine-field-json") {
+            const bool cellField = (option == "--refine-field-json");
             if (++i>=argc) {
-                std::cerr<<"--refine-boxes-json requires <file.adaptive.json>\n";
+                std::cerr<<option<<" requires <file.adaptive.json>\n";
                 return EXIT_FAILURE;
             }
             std::ifstream in(argv[i]);
             if (!in) {
-                std::cerr<<"cannot open --refine-boxes-json file: "<<argv[i]<<'\n';
+                std::cerr<<"cannot open "<<option<<" file: "<<argv[i]<<'\n';
                 return EXIT_FAILURE;
             }
             std::ostringstream buffer;
             buffer<<in.rdbuf();
             std::string parseError;
-            if (!parseBoxRefinementRegionsJson2D(buffer.str(),extraBoxRegions,&parseError)) {
-                std::cerr<<"invalid --refine-boxes-json file: "<<parseError<<'\n';
+            const bool ok = cellField
+                ? parseCellRefinementFieldJson2D(buffer.str(),extraBoxRegions,&parseError)
+                : parseBoxRefinementRegionsJson2D(buffer.str(),extraBoxRegions,&parseError);
+            if (!ok) {
+                std::cerr<<"invalid "<<option<<" file: "<<parseError<<'\n';
                 return EXIT_FAILURE;
             }
             continue;

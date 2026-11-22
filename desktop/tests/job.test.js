@@ -163,3 +163,27 @@ test('fluent .msh export flag is forwarded for fluid runs and omitted on dry run
   assert.ok(idx > 0 && withFluent[idx + 1] === '/tmp/out/circle.msh');
   assert.ok(!buildInvocation(job, { ...paths, fluentMshPath: '/tmp/out/circle.msh' }, { dryRun: true }).args.includes('--fluent-msh'));
 });
+
+test('hybrid relative sizing forwards refinement boxes to cartmesh2d_hybrid_cli', () => {
+  const { job } = validateJob({
+    method: 'hybrid',
+    geometryPath: '/tmp/circle.xy',
+    outputDirectory: '/tmp/out',
+    sizingMode: 'relative',
+    wallRelativeSize: 0.05,
+    backgroundRelativeSize: 0.4,
+    farFieldSpans: 2,
+    cellsPerLevel: 3,
+    nLayers: 4,
+    firstLayerRelativeSize: 0.01,
+    growthRatio: 1.2,
+    extrusionRelativeSize: 0.01,
+    refineBoxes: [{ xmin: 0.5, xmax: 3.0, ymin: -0.6, ymax: 0.6, levelsBelowWall: 1 }]
+  });
+  const frame = { centreX: 0, centreY: 0, bodySpan: 2 };
+  const inv = buildInvocation(job, { ...paths, frame });
+  assert.equal(inv.executable, 'cartmesh2d_hybrid_cli');
+  const idx = inv.args.indexOf('--refine-box');
+  assert.ok(idx > 0, 'hybrid invocation must include --refine-box');
+  assert.deepEqual(inv.args.slice(idx + 1, idx + 5), ['1', '-1.2', '6', '1.2']);
+});

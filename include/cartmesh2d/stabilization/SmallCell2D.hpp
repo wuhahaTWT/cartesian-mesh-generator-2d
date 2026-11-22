@@ -50,6 +50,7 @@ struct SmallCellRecord2D {
 struct SmallCellPolicy2D {
     double areaFractionThreshold = 0.10;
     std::vector<double> histogramUpperBounds{0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 1.0};
+    bool allowBoundedSmallChaining = false;
 };
 
 struct SmallCellReport2D {

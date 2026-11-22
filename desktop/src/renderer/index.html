@@ -152,16 +152,6 @@
       <p class="note">尾迹方向只控制网格加密，不改变流动入口方向或几何攻角。</p>
       <label class="toggle" hidden><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
 
-      <div class="regions">
-        <div class="regionsHead">
-          <span>手动加密区</span>
-          <button id="addRegion" class="mini">+ 添加</button>
-        </div>
-        <div id="regionList"></div>
-        <p class="note">坐标以 Lref 为单位、相对物体中心。这是尾流这类"非必要加密"区域的手动出口：
-          物面附近的加密由尺寸场保证，这里只管你想额外加密的地方。</p>
-      </div>
-
       <button id="probe" class="ghost wide" hidden>预检尺寸场</button>
       <div id="probeResult" class="probe" hidden></div>
     </section>
@@ -183,6 +173,17 @@
         <label class="field">挤出厚度<input id="extrusionThickness" type="number" min="0.000000000001" step="any" value="0.01"></label>
       </div>
       <p class="note">贴体层与余域使用同一参考长度。急弯可能局部停层或回退；实际保留情况与质量结果分别报告。</p>
+    </section>
+
+    <section class="block" id="regionsBlock" hidden>
+      <div class="regions">
+        <div class="regionsHead">
+          <span>局部 / 自适应加密区</span>
+          <button id="addRegion" class="mini">+ 添加</button>
+        </div>
+        <div id="regionList"></div>
+        <p class="note">坐标以 Lref 为单位、相对物体中心，适用于 Cut-cell 与混合网格余域。可手添尾迹区，也可由下方流场梯度自动生成。</p>
+      </div>
     </section>
 
     <section class="block">

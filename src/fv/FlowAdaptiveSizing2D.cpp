@@ -407,6 +407,37 @@ FlowAdaptiveRefinement2D suggestFlowAdaptiveRefinement2D(
     result.selectedCellCount = ranked.size();
     result.selectedAreaFraction = totalArea > 0.0 ? selectedArea / totalArea : 0.0;
 
+    // 4b. Emit compact flow-aligned cell-level AMR targets (one per selected
+    // high-gradient cell) in deterministic cell-id order. Each cell upgrades by
+    // at most +1 level (capped at capLevel) with a tight isotropic halo plus a
+    // subtle downstream convective lead along the local velocity vector so
+    // oblique wakes/shear layers stay crisp without dead bounding-box corners.
+    result.cellTargets.reserve(ranked.size());
+    for (std::size_t i = 0; i < nCells; ++i) {
+        if (!selected[i]) continue;
+        const std::size_t targetLevel = std::max<std::size_t>(
+            1U, std::min(capLevel, cellLevels[i] + 1U));
+        const double h = std::sqrt(std::max(fvMesh.cells[i].area, 0.0));
+        const double isoPad = 0.5 * policy.padCells * h;
+        AABB2D box = cellBounds[i];
+        box.min.x -= isoPad;
+        box.max.x += isoPad;
+        box.min.y -= isoPad;
+        box.max.y += isoPad;
+        const double speed = std::hypot(u[i], v[i]);
+        if (uRef > 1.0e-15 && speed > 1.0e-6 * uRef && policy.padCells > 0.0) {
+            const double lead = 0.5 * policy.padCells * h;
+            const double dxLead = (u[i] / speed) * lead;
+            const double dyLead = (v[i] / speed) * lead;
+            if (dxLead > 0.0) box.max.x += dxLead; else box.min.x += dxLead;
+            if (dyLead > 0.0) box.max.y += dyLead; else box.min.y += dyLead;
+        }
+        box = clampBox(box, domainBox);
+        if (box.max.x > box.min.x && box.max.y > box.min.y) {
+            result.cellTargets.push_back({box, targetLevel});
+        }
+    }
+
     // 5. Face-adjacency connected components over selected cells, keeping
     // clusters within one grid level of their seed so fine near-wall cells do
     // not promote an entire coarse far-wake box to wall-level resolution.
@@ -580,6 +611,17 @@ std::string flowAdaptiveRefinementToJson2D(const FlowAdaptiveRefinement2D& sugge
             << ", \"max_indicator\": " << b.maxIndicator
             << ", \"score\": " << b.score << "}"
             << (k + 1U < suggestion.boxes.size() ? "," : "") << "\n";
+    }
+    out << i1 << "],\n";
+    out << i1 << "\"cell_targets\": [\n";
+    for (std::size_t k = 0; k < suggestion.cellTargets.size(); ++k) {
+        const auto& t = suggestion.cellTargets[k];
+        out << i2 << "{\"xmin\": " << t.bounds.min.x
+            << ", \"ymin\": " << t.bounds.min.y
+            << ", \"xmax\": " << t.bounds.max.x
+            << ", \"ymax\": " << t.bounds.max.y
+            << ", \"target_level\": " << t.targetLevel << "}"
+            << (k + 1U < suggestion.cellTargets.size() ? "," : "") << "\n";
     }
     out << i1 << "],\n";
     out << i1 << "\"issues\": [\n";

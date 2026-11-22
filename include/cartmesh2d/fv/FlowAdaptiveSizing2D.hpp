@@ -82,6 +82,10 @@ struct FlowAdaptiveRefinement2D {
     std::vector<double> cellIndicators;
     std::vector<bool> cellSelected;
     std::vector<FlowAdaptiveBox2D> boxes;
+    // Per-cell compact flow-aligned refinement footprints (one per selected
+    // high-gradient cell), enabling contour-hugging quadtree AMR without
+    // axis-aligned bounding-box bloat on oblique wakes and curved shear layers.
+    std::vector<BoxRefinementRegion2D> cellTargets;
     std::vector<std::string> issues;
 
     [[nodiscard]] bool valid() const noexcept { return issues.empty(); }

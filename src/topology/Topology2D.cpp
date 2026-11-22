@@ -521,6 +521,9 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
     });
 
     const AABB2D knownEmbBounds = segmentsBounds(knownEmbeddedBoundary);
+    const std::vector<Segment2D> canonicalWall =
+        registry ? registry->canonicalWallBoundarySegments() : std::vector<Segment2D>{};
+    const AABB2D canonicalWallBounds = segmentsBounds(canonicalWall);
     const AABB2D inputBoundaryBounds = boundaryBounds(boundary);
     mesh.edges.reserve(uses.size() / 2U + 16U);
 
@@ -545,6 +548,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             const auto& ownerSource = cells[edge.owner];
             if (segmentOnEmbeddedFragments(a, b, ownerSource.embeddedBoundary, nullptr, tol) ||
                 segmentOnEmbeddedFragments(a, b, knownEmbeddedBoundary, &knownEmbBounds, tol) ||
+                segmentOnEmbeddedFragments(a, b, canonicalWall, &canonicalWallBounds, tol) ||
                 segmentOnInputBoundary(a, b, boundary, inputBoundaryBounds, tol)) {
                 edge.patch = BoundaryPatch2D::EmbeddedBoundary;
             } else if (segmentOnDomainBoundary(a, b, domain, tol) &&

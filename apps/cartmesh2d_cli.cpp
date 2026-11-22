@@ -279,22 +279,26 @@ bool parseSizingOptions(int argc, char** argv, int first,
             boxRegions.push_back(region);
             continue;
         }
-        if (option=="--refine-boxes-json") {
+        if (option=="--refine-boxes-json" || option=="--refine-field-json") {
+            const bool cellField = (option == "--refine-field-json");
             if (index+1>argc) {
-                error="--refine-boxes-json requires <file.json>";
+                error=option+" requires <file.json>";
                 return false;
             }
             const std::filesystem::path jsonPath=argv[index++];
             std::ifstream in(jsonPath);
             if (!in) {
-                error="cannot open --refine-boxes-json file: "+jsonPath.string();
+                error="cannot open "+option+" file: "+jsonPath.string();
                 return false;
             }
             std::ostringstream buffer;
             buffer<<in.rdbuf();
             std::string parseError;
-            if (!parseBoxRefinementRegionsJson2D(buffer.str(),boxRegions,&parseError)) {
-                error="invalid --refine-boxes-json file: "+parseError;
+            const bool ok = cellField
+                ? parseCellRefinementFieldJson2D(buffer.str(),boxRegions,&parseError)
+                : parseBoxRefinementRegionsJson2D(buffer.str(),boxRegions,&parseError);
+            if (!ok) {
+                error="invalid "+option+" file: "+parseError;
                 return false;
             }
             continue;
@@ -420,13 +424,17 @@ bool writeSizingFieldReport(const std::filesystem::path& path,
         out<<"{\"distance\": "<<band.distance<<", \"target_level\": "
            <<band.targetLevel<<"}";
     }
-    out<<"],\n  \"box_regions\": [";
-    for (std::size_t i=0;i<policy.boxRegions.size();++i) {
+    out<<"],\n  \"box_region_count\": "<<policy.boxRegions.size()<<",\n  \"box_regions\": [";
+    const bool detailedBoxCounts = policy.boxRegions.size() <= 64U;
+    const std::size_t reportedBoxes = std::min<std::size_t>(policy.boxRegions.size(), 64U);
+    for (std::size_t i=0;i<reportedBoxes;++i) {
         if (i!=0) out<<", ";
         const auto& region=policy.boxRegions[i];
         std::size_t overlappingLeaves=0;
-        for (const auto& leaf:tree.leaves()) {
-            if (boxesOverlapPositive(leaf.bounds,region.bounds)) ++overlappingLeaves;
+        if (detailedBoxCounts) {
+            for (const auto& leaf:tree.leaves()) {
+                if (boxesOverlapPositive(leaf.bounds,region.bounds)) ++overlappingLeaves;
+            }
         }
         out<<"{\"bounds\": ["<<region.bounds.min.x<<", "<<region.bounds.min.y<<", "
            <<region.bounds.max.x<<", "<<region.bounds.max.y<<"], \"target_level\": "
@@ -586,6 +594,7 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "[--distance-band <distance> <target-level>]... "
                  "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]... "
                  "[--refine-boxes-json <file.adaptive.json>]... "
+                 "[--refine-field-json <file.adaptive.json>]... "
                  "[--fluent-msh <file.msh>]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"

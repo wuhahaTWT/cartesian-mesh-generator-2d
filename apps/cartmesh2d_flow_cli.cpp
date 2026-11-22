@@ -196,6 +196,7 @@ void writeAdaptiveSuggestionOutputs(
     if (printSummary) {
         std::cout << "adaptive_refinement_json=" << suggestPath
                   << "\nadaptive_boxes=" << suggestion.boxes.size()
+                  << "\nadaptive_cell_targets=" << suggestion.cellTargets.size()
                   << "\nadaptive_selected_cells=" << suggestion.selectedCellCount
                   << "\nadaptive_indicator_max=" << std::setprecision(17) << suggestion.indicatorMax << '\n';
         if (!adaptVtkPath.empty()) std::cout << "adaptive_vtk=" << adaptVtkPath << '\n';

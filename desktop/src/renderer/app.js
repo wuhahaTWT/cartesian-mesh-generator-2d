@@ -229,7 +229,9 @@ function buildRequest() {
       firstThickness: Number($('firstThickness').value),
       growthRatio: Number($('controlMode').value === 'auto' ? $('autoGrowth').value : $('growthRatio').value),
       domainPadding: Number($('domainPadding').value),
-      extrusionThickness: Number($('extrusionThickness').value)
+      extrusionThickness: Number($('extrusionThickness').value),
+      refineBoxes: (base.targetCells ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
+        ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
     };
   }
   return {
@@ -411,6 +413,7 @@ function updateControlMode() {
   $('resolutionBlock').hidden = automatic||background;
   $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
+  $('regionsBlock').hidden = automatic || background;
   $('cutcellStrategyField').hidden = state.method !== 'cutcell';
   $('smallAlphaField').hidden = automatic || state.method !== 'cutcell' || $('cutcellStrategy').value === 'shape';
   $('smallAlphaNote').hidden = $('smallAlphaField').hidden;
