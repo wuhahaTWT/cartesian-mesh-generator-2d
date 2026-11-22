@@ -129,6 +129,11 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       if (!regionInput.isConnected || document.activeElement !== regionInput) throw new Error('Region input lost focus');
     }
     if (${JSON.stringify(Boolean(argument('welcome-shot')))}) return { welcomeOnly: true };
+    if (${JSON.stringify(Boolean(argument('cutcell-strategy')))}) {
+      const strat = document.getElementById('cutcellStrategy');
+      strat.value = ${JSON.stringify(argument('cutcell-strategy') || 'legacy')};
+      strat.dispatchEvent(new Event('change'));
+    }
     const pending = smoke.generate();
     if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
       throw new Error('Parameters are not locked during generation');
@@ -323,6 +328,20 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       if (!smoke.state.flow || document.getElementById('flowSpeedOption').hidden ||
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
+      if (${JSON.stringify(argument('adapt-flow') === 'true')}) {
+        await smoke.suggestFlowRefinement();
+        if (!smoke.state.regions.length)
+          throw new Error('Adaptive refinement did not populate refinement regions');
+        if (document.getElementById('adaptiveIndicatorOption').hidden ||
+            document.getElementById('displayMode').value !== 'adaptive')
+          throw new Error('Adaptive gradient heatmap did not activate in displayMode');
+        smoke.state.adaptiveRefinementSmoke = {
+          regionCount: smoke.state.regions.length,
+          displayMode: document.getElementById('displayMode').value,
+          indicatorRange: smoke.view.fieldRange,
+          note: document.getElementById('flowAdaptNote').textContent
+        };
+      }
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
@@ -381,13 +400,14 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
         throw new Error('Sidebar Control+B shortcut did not restore state');
       const actual = smoke.state.selectedRequest;
       if (actual) {
+      const previousMode = document.getElementById('controlMode').value;
       document.getElementById('actualToManual').click();
       if (document.getElementById('controlMode').value !== 'manual' ||
           Number(document.getElementById('wallRelativeSize').value) !== actual.wallRelativeSize ||
           Number(document.getElementById('relativeBandCells').value) !== actual.cellsPerLevel ||
           Number(document.getElementById('relativePadding').value) !== actual.farFieldSpans)
         throw new Error('Actual-to-manual transfer lost parameters');
-      document.getElementById('controlMode').value = 'auto';
+      document.getElementById('controlMode').value = previousMode;
       document.getElementById('controlMode').dispatchEvent(new Event('change'));
       } else if (document.getElementById('controlMode').value !== 'manual') {
         throw new Error('Missing selected automatic parameters');
@@ -410,6 +430,7 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       cellBudget: smoke.state.cellBudget,
       raster: smoke.state.rasterEvidence,
       adaptive: smoke.state.adaptiveSmoke || null,
+      adaptiveRefinement: smoke.state.adaptiveRefinementSmoke || null,
       initialVortex: smoke.state.initialVortexSmoke || null,
       flowCase: smoke.state.flowCaseSmoke || null,
       bundledChineseFontLoaded: true,
@@ -486,7 +507,22 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
       await new Promise(resolve => setTimeout(resolve, 300));
     }
-    if (argument('mesh-shot')) await fs.writeFile(argument('mesh-shot'), (await mainWindow.webContents.capturePage()).toPNG());
+    const captureFreshPng = async filePath => {
+      await mainWindow.webContents.executeJavaScript('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))');
+      await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
+      await new Promise(resolve => setTimeout(resolve, 180));
+      await fs.writeFile(filePath, (await mainWindow.webContents.capturePage(undefined, { stayAwake: true })).toPNG());
+    };
+    if (argument('mesh-shot')) await captureFreshPng(argument('mesh-shot'));
+    if (argument('adapt-remesh') === 'true') {
+      await mainWindow.webContents.executeJavaScript(`(async () => {
+        await window.__smoke.generate();
+      })()`);
+      const afterCells = await mainWindow.webContents.executeJavaScript('window.__smoke.state.result?.counts?.cells || 0');
+      report.adaptiveRemeshCells = afterCells;
+      if (argument('remesh-shot')) await captureFreshPng(argument('remesh-shot'));
+      if (argument('remesh-export')) report.remeshExported = await exportPackage(argument('remesh-export'));
+    }
     if (argument('home-check')) {
       report.previewTiming = await mainWindow.webContents.executeJavaScript(`(() => {
         const view = window.__smoke.view;

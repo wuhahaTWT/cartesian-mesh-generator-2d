@@ -317,8 +317,8 @@ function schedulePlan() {
     }
   }, 160);
 }
-function useManualParameters(request) {
-  if (!request || state.busy) return;
+function applyManualParameters(request) {
+  if (!request) return;
   const fields = { wallRelativeSize:'wallRelativeSize', backgroundRelativeSize:'backgroundRelativeSize',
     farFieldSpans:'relativePadding', cellsPerLevel:'relativeBandCells', firstLayerRelativeSize:'firstLayerRelativeSize',
     nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha', cutcellStrategy:'cutcellStrategy' };
@@ -330,6 +330,10 @@ function useManualParameters(request) {
   }
   $('relativeAllowUnsafe').checked = Boolean(request.allowUnsafeWallLevel);
   $('controlMode').value = 'manual'; updateControlMode(); syncRegions();
+}
+function useManualParameters(request) {
+  if (!request || state.busy) return;
+  applyManualParameters(request);
   status('已转为手动设置', '参数已填入，可微调后重新生成。');
 }
 $('planToManual').addEventListener('click', () => useManualParameters(state.budgetSuggestion));
@@ -1045,8 +1049,12 @@ async function suggestFlowRefinement() {
       return;
     }
     if ($('controlMode').value !== 'manual') {
-      $('controlMode').value = 'manual';
-      updateControlMode();
+      if (state.selectedRequest) {
+        applyManualParameters(state.selectedRequest);
+      } else {
+        $('controlMode').value = 'manual';
+        updateControlMode();
+      }
     }
     state.regions = suggestion.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) => ({
       xmin, xmax, ymin, ymax, levelsBelowWall, active: true

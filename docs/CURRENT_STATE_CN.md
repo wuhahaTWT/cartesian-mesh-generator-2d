@@ -17,7 +17,10 @@
   - CLI 闭环：`cartmesh2d_flow_cli` 支持 `--suggest-refinement`、`--suggest-refinement-from`、`--adapt-scalar-csv`、`--adapt-vtk`、`--adapt-fields-json`；`cartmesh2d_transport_cli` 支持耦合流热 `--suggest-refinement`；`cartmesh2d_cli` 与 `cartmesh2d_hybrid_cli` 均支持 `--refine-boxes-json`。
   - 桌面端闭环：`desktop/src/core/adaptive-refinement.js` + `suggest-flow-refinement` IPC + 画布**“自适应梯度热图”**模式（若有同网格温度场自动融合温度梯度），将分级加密框直接填入局部加密列表并在画布叠加显示。
   - 实测闭环与效率对照：共形混合圆柱两轮 AMR（720→759 格，保留 4 层边界层并加密尾迹，均收敛）；热圆柱流热耦合 AMR（`ΔT=47.07 K`，`transport_cli` 与 `flow_cli --adapt-scalar-csv` 均精确选中 130/720 格生成 4 个加密区）；圆柱 Re=40 三轮 Cut-cell AMR 对照 5,960 格细均匀网格（`Fx=1.4301`）：Pass 1（1,192 格，误差 11.48%，总 0.98 s）→ Pass 2（1,804 格，误差 7.01%，总 1.79 s）→ **Pass 3（3,640 格，误差 3.19%，单元少 39%，单轮求解 5.06 s 对比细均匀 14.63 s 快 2.89×，三轮累计总耗时 8.31 s 仍快于细均匀单次 15.38 s，全轮 0 告警）**。
-- **产物与限制**：Windows x64 Release 全部 5 份主线 CLI 已全量构建并同步 `build/Release` 与 `desktop/runtime/bin`（`verifyRuntime` 通过）；本次验证覆盖原生核心 CTest、Fluent 2026 R1 `/mesh/check` 实测、桌面单测（190/190）与 OpenFOAM 交换单测（3/3），**未重打跨平台安装包、未执行外部 OpenFOAM/Fluent 批量 CFD 求解精度研究**；`outputs/` 历史研究场、失败输入、`outputs/cfd-demo-reference/`、`artifacts/` 与 `mesher-v0.3.0` 保持不变；本次可重建验证产物位于忽略目录 `outputs/{fluent-native-check,direction-c-benchmark,n3-perf-bench,direction-a-hard-stress}`，供复查或随时清理。
+- **产物、桌面打包与真机视觉验收**：Windows x64 Release 全部 5 份主线 CLI 已全量构建并同步 `build/Release` 与 `desktop/runtime/bin`（`verifyRuntime` 通过）；已重打 Windows x64 桌面解包版 `desktop/dist/win-unpacked/CartMesh2D.exe` 与便携包 `desktop/dist/CartMesh2D-0.4.41-win.zip`（136.9 MB，`postpack:win` 自动保留最近两版规则生效），并直接运行打包后 `CartMesh2D.exe` 完成真机视觉验收：
+  - 验收覆盖 Cut-cell 形状聚合 → 外流层流收敛（89 轮）→ 自适应梯度热图与加密框叠加 → 自动转手动并保留原尺寸重划（`2,268 → 2,472` 格，0 告警）→ 导出 ZIP（含 Fluent 2D `.msh` 与 OpenFOAM `polyMesh`）、共形边界层混合圆柱（`1,420` 格 / `128` 边界层）、侧边栏折叠/快捷键/明暗主题/参数迁移交互，以及 `800×560` 窄窗口布局；
+  - 视觉检查同步发现并修复两处真实 UI 问题：侧边栏底部 `生成预览` 粘性按钮下方 20px 透出滚动内容（改为实底 `.panel-footer` 吸附栏，兼容 `modern`/`duet` 双主题与窄窗），以及自动模式下点击“按当前流场生成自适应加密区”切回手动模式时未继承本次实际参数 `selectedRequest`；
+  - 桌面单测 **190/190** 与本机 Fluent 2026 R1 `/mesh/check` 实测通过；**未重打 macOS/Linux 安装包、未执行外部 OpenFOAM/Fluent 批量 CFD 求解精度研究**；可重建验证产物留在忽略目录 `outputs/{desktop-visual-acceptance,fluent-native-check,direction-c-benchmark,n3-perf-bench,direction-a-hard-stress}`，历史研究场与 `mesher-v0.3.0` 保持不变。
 
 ## 当前网格方法与翼型选型
 
