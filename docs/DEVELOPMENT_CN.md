@@ -10,28 +10,32 @@
 
 | 模块 | 关键源码入口 | 职责 |
 | --- | --- | --- |
-| 形状聚合与局部重划分（方向 A） | `src/quality/SolverShapeAgglomeration2D.cpp`、`SolverTopology{Common,QualityRepair,ShortFaceRepair,TerminationRepair}2D.cpp` | 形状驱动多格精确聚合、全告警触发重划分、三层优先级提交及合并外轮廓共线 T 节点射线精确吸附；回归见 `tests/shape_agglomeration_test.cpp`。 |
-| 边界层与混合网格 | `src/boundary_layer/BoundaryLayer{,IO}2D.cpp`、`src/hybrid/HybridMesh{,Fallback,IO}2D.cpp` | 共形贴壁边界层、局部终止区与余域 Cut-cell 统一拓扑及 I/O 导出。 |
-| 流场驱动自适应加密（方向 C） | `include/cartmesh2d/fv/FlowAdaptiveSizing2D.hpp`、`src/fv/FlowAdaptiveSizing2D.cpp`、`src/sizing/SizeField2D.cpp`（`parseBoxRefinementRegionsJson2D`） | 基于真实多边形最小二乘梯度的尺度/旋转不变指示子、同级带聚类、稀疏二分与分级加密框 JSON 输出/解析；回归见 `tests/flow_adaptive_sizing_test.cpp`。 |
-| 桌面端与自检 | `desktop/src/main.js`、`desktop/src/smoke-runner.js`、`desktop/src/core/adaptive-refinement.js`、`desktop/tests/adaptive-refinement.test.js` | Electron IPC、流场自适应建议闭环及前端单测。 |
+| 形状聚合与局部重划分（方向 A） | `src/quality/SolverShapeAgglomeration2D.cpp`、`SolverTopology{Common,QualityRepair,ShortFaceRepair,TerminationRepair}2D.cpp`、`src/topology/{Topology2D,SharedEdgePartition2D}.cpp` | 形状驱动多格精确聚合、全告警触发重划分、三层优先级提交、扁平边表与局部拓扑作用域复用（`LocalPatchQualityScope2D`）；回归见 `tests/shape_agglomeration_test.cpp`。 |
+| 原生 Fluent 2D 导出 | `include/cartmesh2d/io/FluentMsh2D.hpp`、`src/io/FluentMsh2D.cpp`、`tests/fluent_msh_test.cpp` | 直接写出 ANSYS Fluent 2D ASCII `.msh`（多边形单元与 `wall`/`velocity-inlet`/`pressure-outlet`/`symmetry` 分区），已接入 `cartmesh2d_cli --fluent-msh`、`cartmesh2d_hybrid_cli --fluent-msh` 与桌面导出包。 |
+| 边界层与混合网格 | `src/boundary_layer/BoundaryLayer{,IO}2D.cpp`、`src/hybrid/HybridMesh{,Fallback,IO}2D.cpp` | 共形贴壁边界层、局部终止区与余域 Cut-cell 统一拓扑及 I/O 导出（含 `--refine-boxes-json` 与 `--fluent-msh`）。 |
+| 多物理自适应加密（方向 C） | `include/cartmesh2d/fv/FlowAdaptiveSizing2D.hpp`、`src/fv/FlowAdaptiveSizing2D.cpp`、`src/sizing/SizeField2D.cpp`（`parseBoxRefinementRegionsJson2D`） | 速度/压力/被动温度最小二乘梯度复合无量纲指示子、同级带聚类、稀疏二分、分级加密框 JSON、`.adaptive.vtk` 与桌面热图 JSON；回归见 `tests/flow_adaptive_sizing_test.cpp`。 |
+| 桌面端与自检 | `desktop/src/main.js`、`desktop/src/smoke-runner.js`、`desktop/src/core/adaptive-refinement.js`、`desktop/src/renderer/{viewport,results-view,app}.js` | Electron IPC、流热自适应建议与热图渲染、结果与时间监测视图拆分及前端单测。 |
 
-**方向 C 两步命令行复现**（以圆柱 Re=40 为例，无需预先指定尾迹方向或壁面层级）：
+**方向 C 多物理与 Fluent 导出命令行复现**（以圆柱 Re=40 为例，无需预先指定尾迹方向或壁面层级）：
 
 ```sh
-# Pass 1: 粗网格 + 形状聚合重划分 -> 快速层流预览并输出自适应加密建议 JSON
+# Pass 1: 粗网格 + 形状聚合重划分 + 同步导出 Fluent 2D .msh
 cartmesh2d_cli examples/acceptance/circle.xy out/pass1 8 0.3 0.02 exterior out/pass1-foam 0 0 \
-  --size-field --far-field-spans 5 --wall-cells-per-span 24 --cells-per-level 2 --far-level 4 --shape-agglomeration
-cartmesh2d_flow_cli --mesh out/pass1.solver.cm2d --output out/flow1 --case external --nu 0.05 --speed 1 \
-  --max-iterations 1500 --tolerance 1e-6 --suggest-refinement out/pass1.adaptive.json --adapt-fraction 0.15 --adapt-max-boxes 6
+  --size-field --far-field-spans 6 --wall-cells-per-span 24 --cells-per-level 2 --far-level 3 \
+  --shape-agglomeration --fluent-msh out/pass1.msh
+cartmesh2d_flow_cli --mesh out/pass1.solver.cm2d --output out/flow1 --case external --nu 0.025 --speed 1 \
+  --max-iterations 1500 --tolerance 1e-6 --suggest-refinement out/pass1.adaptive.json \
+  --adapt-vtk out/pass1.adaptive.vtk --adapt-fields-json out/pass1.adaptive.fields.json \
+  --adapt-fraction 0.18 --adapt-max-boxes 6
 
-# （可选）基于已有 flow1.cells.csv 离线调参生成建议，无需重算流场
+# （可选）基于已有流场/温度 CSV 离线生成多物理自适应建议，无需重算
 cartmesh2d_flow_cli --mesh out/pass1.solver.cm2d --suggest-refinement-from out/flow1.cells.csv \
-  --suggest-refinement out/pass1.adaptive.json --adapt-fraction 0.15 --adapt-max-boxes 6
+  --adapt-scalar-csv out/thermal.cells.csv --suggest-refinement out/pass1.adaptive.json
 
-# Pass 2: 注入自适应加密框重划网格
+# Pass 2: 注入自适应加密框重划（Cut-cell 或共形混合网格 cartmesh2d_hybrid_cli 均支持 --refine-boxes-json）
 cartmesh2d_cli examples/acceptance/circle.xy out/pass2 8 0.3 0.02 exterior out/pass2-foam 0 0 \
-  --size-field --far-field-spans 5 --wall-cells-per-span 24 --cells-per-level 2 --far-level 4 \
-  --refine-boxes-json out/pass1.adaptive.json --shape-agglomeration
+  --size-field --far-field-spans 6 --wall-cells-per-span 24 --cells-per-level 2 --far-level 3 \
+  --refine-boxes-json out/pass1.adaptive.json --shape-agglomeration --fluent-msh out/pass2.msh
 ```
 
 ## 本地研究文件导航
