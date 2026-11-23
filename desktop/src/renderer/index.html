@@ -201,11 +201,24 @@
             </select>
           </label>
           <label class="field">目标增长率<input id="yplusGrowth" type="number" min="1.05" max="3" step="0.05" value="1.2"></label>
+          <label class="field">边界层覆盖
+            <select id="yplusCoverage">
+              <option value="1" selected>1.0× δ₉₉（标准）</option>
+              <option value="1.5">1.5× δ₉₉（翼型）</option>
+              <option value="2">2.0× δ₉₉（大攻角）</option>
+            </select>
+          </label>
         </div>
         <div id="yplusPreview" class="budget" aria-live="polite">选择几何或输入工况后实时估算首层高度 Δy₁ 与层数。</div>
-        <label class="toggle"><input id="yplusSyncWall" type="checkbox" checked>同步更新壁面与背景尺寸以平滑过渡</label>
-        <button id="applyYPlus" class="ghost wide" type="button">填入边界层参数</button>
-        <p class="note">按有限体积单元中心约定给出首层总高度 Δy₁ = 2 y_P（适用于 Fluent / OpenFOAM）。平板经验式用于初始布网，曲面驻点/分离区仍须求解后复核实测 y⁺。</p>
+        <label class="toggle"><input id="yplusSyncWall" type="checkbox" checked>同步更新壁面、远场与背景尺寸以平滑过渡</label>
+        <label class="toggle" id="yplusSyncWakeToggle"><input id="yplusSyncWake" type="checkbox" checked>同步生成尾迹加密框（--refine-box）</label>
+        <div class="pair" id="yplusWakeFields">
+          <label class="field">尾迹长度<span class="unit"><input id="yplusWakeLength" type="number" min="0.2" max="50" step="0.5" value="2"><i>Lref</i></span></label>
+          <label class="field">尾迹低于壁面<span class="unit"><input id="yplusWakeLevelsBelow" type="number" min="0" max="10" step="1" value="2"><i>级</i></span></label>
+          <label class="field">尾迹偏角<span class="unit"><input id="yplusWakeAngle" type="number" min="-45" max="45" step="1" value="0"><i>°</i></span></label>
+        </div>
+        <button id="applyYPlus" class="ghost wide" type="button">一键填入边界层与尾迹区</button>
+        <p class="note">按有限体积单元中心约定给出首层总高度 Δy₁ = 2 y_P（适用于 Fluent / OpenFOAM），外流可同步联动尾迹加密框以稳定捕获后缘与尾迹剪切层。</p>
       </details>
     </section>
 

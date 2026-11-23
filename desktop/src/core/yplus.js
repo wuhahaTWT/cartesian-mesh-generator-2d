@@ -25,6 +25,90 @@ const FLUID_PRESETS = Object.freeze({
 const TURBULENT_RE_THRESHOLD = 5e5;
 const MIN_RECOMMENDED_LAYERS = 4;
 const MAX_SUPPORTED_LAYERS = 64;
+const WAKE_REGION_SOURCE = 'yplus-wake';
+
+function roundCoord(value) {
+  return Math.round(value * 1000) / 1000;
+}
+
+function buildRecommendedWakeBox(input = {}) {
+  const fluidRegion = input.fluidRegion === 'interior' ? 'interior' : 'exterior';
+  if (fluidRegion === 'interior') return null;
+
+  const referenceLength = positiveFinite(input.referenceLength, '参考长度 Lref');
+  const totalThickness = Number.isFinite(Number(input.totalThickness)) ? Math.max(0, Number(input.totalThickness)) : 0;
+  const delta99 = Number.isFinite(Number(input.delta99)) ? Math.max(0, Number(input.delta99)) : 0;
+  const wakeLengthSpans = positiveFinite(input.wakeLengthSpans ?? 2.0, '尾迹长度');
+  if (wakeLengthSpans < 0.2 || wakeLengthSpans > 50) {
+    throw new Error('尾迹长度需在 0.2 至 50 Lref 之间。');
+  }
+  const wakeAngleDeg = Number(input.wakeAngleDeg ?? 0);
+  if (!Number.isFinite(wakeAngleDeg) || wakeAngleDeg < -45 || wakeAngleDeg > 45) {
+    throw new Error('尾迹偏角需在 -45° 至 45° 之间。');
+  }
+  const wakeLevelsBelowWall = Math.round(Number(input.wakeLevelsBelowWall ?? 2));
+  if (!Number.isInteger(wakeLevelsBelowWall) || wakeLevelsBelowWall < 0 || wakeLevelsBelowWall > 10) {
+    throw new Error('尾迹低于壁面级数需为 0 至 10 的整数。');
+  }
+
+  const frame = input.frame && typeof input.frame === 'object' ? input.frame : null;
+  const bodyHalfX = frame && Number(frame.width) > 0
+    ? (0.5 * Number(frame.width)) / referenceLength
+    : 0.5;
+  const bodyHalfY = frame && Number(frame.height) > 0
+    ? (0.5 * Number(frame.height)) / referenceLength
+    : 0.15;
+
+  const blThicknessRel = Math.max(totalThickness, delta99) / referenceLength;
+  const blMargin = Math.max(0.12, 2.5 * blThicknessRel);
+  const upstreamMargin = Math.min(0.25, blMargin);
+  const halfY = Math.max(0.35, bodyHalfY + blMargin + 0.12);
+  const dyWake = wakeLengthSpans * Math.tan((wakeAngleDeg * Math.PI) / 180);
+
+  let xmin = -(bodyHalfX + upstreamMargin);
+  let xmax = bodyHalfX + wakeLengthSpans;
+  let ymin = Math.min(-halfY, -halfY + dyWake);
+  let ymax = Math.max(halfY, halfY + dyWake);
+
+  // Clamp strictly inside the active far-field domain when a finite farFieldSpans
+  // is known, so the wake box never protrudes outside the background tree.
+  const farFieldSpans = Number(input.farFieldSpans);
+  if (Number.isFinite(farFieldSpans) && farFieldSpans > 0) {
+    const maxAbsX = bodyHalfX + 0.85 * farFieldSpans;
+    const maxAbsY = bodyHalfY + 0.85 * farFieldSpans;
+    xmin = Math.max(-maxAbsX, xmin);
+    xmax = Math.min(maxAbsX, xmax);
+    ymin = Math.max(-maxAbsY, ymin);
+    ymax = Math.min(maxAbsY, ymax);
+    if (!(xmax > xmin) || !(ymax > ymin)) return null;
+  }
+
+  return {
+    xmin: roundCoord(xmin),
+    xmax: roundCoord(xmax),
+    ymin: roundCoord(ymin),
+    ymax: roundCoord(ymax),
+    levelsBelowWall: wakeLevelsBelowWall,
+    source: WAKE_REGION_SOURCE
+  };
+}
+
+function upsertYPlusWakeRegion(regions, wakeBox) {
+  const retained = (Array.isArray(regions) ? regions : [])
+    .filter(box => box && box.source !== WAKE_REGION_SOURCE)
+    .map(box => ({ ...box, active: false }));
+  if (!wakeBox) return retained;
+  retained.push({
+    xmin: wakeBox.xmin,
+    xmax: wakeBox.xmax,
+    ymin: wakeBox.ymin,
+    ymax: wakeBox.ymax,
+    levelsBelowWall: wakeBox.levelsBelowWall,
+    source: WAKE_REGION_SOURCE,
+    active: true
+  });
+  return retained;
+}
 
 function positiveFinite(value, label) {
   const n = Number(value);
@@ -134,12 +218,33 @@ function estimateBoundaryLayerYPlus(input = {}) {
     warnings.push('估算边界层总厚度超过 0.25 Lref（低 Re 厚边界层），复杂窄缝/凹角可能触发局部降层。');
   }
 
+  const fluidRegion = input.fluidRegion === 'interior' ? 'interior' : 'exterior';
+  const wakeLengthSpans = input.wakeLengthSpans ?? 2.0;
+  const recommendedFarFieldSpans = fluidRegion === 'interior'
+    ? null
+    : (reynolds >= 1e5
+        ? Math.max(15, Math.ceil(Number(wakeLengthSpans) * 5))
+        : Math.max(8, Math.ceil(Number(wakeLengthSpans) * 3)));
+  const recommendedWakeBox = buildRecommendedWakeBox({
+    fluidRegion,
+    referenceLength,
+    totalThickness,
+    delta99,
+    frame: input.frame,
+    farFieldSpans: input.farFieldSpans,
+    wakeLengthSpans,
+    wakeAngleDeg: input.wakeAngleDeg ?? 0,
+    wakeLevelsBelowWall: input.wakeLevelsBelowWall ?? 2
+  });
+
   return {
     referenceLength,
     velocity,
     nu,
     targetYPlus,
     growthRatio,
+    coverageRatio,
+    fluidRegion,
     reynolds,
     effectiveRegime,
     correlation,
@@ -159,6 +264,8 @@ function estimateBoundaryLayerYPlus(input = {}) {
     recommendedWallSize,
     recommendedWallRelativeSize,
     recommendedBackgroundRelativeSize,
+    recommendedFarFieldSpans,
+    recommendedWakeBox,
     estimatedFirstLayerAspectRatio,
     warnings
   };
@@ -168,5 +275,8 @@ module.exports = {
   FLUID_PRESETS,
   TURBULENT_RE_THRESHOLD,
   MAX_SUPPORTED_LAYERS,
+  WAKE_REGION_SOURCE,
+  buildRecommendedWakeBox,
+  upsertYPlusWakeRegion,
   estimateBoundaryLayerYPlus
 };

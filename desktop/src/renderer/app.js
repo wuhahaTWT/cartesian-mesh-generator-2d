@@ -1186,7 +1186,7 @@ for (const id of ['farFieldSpans', 'wallCellsPerSpan', 'cellsPerLevel', 'farLeve
   $(id).addEventListener('input', updateBudget);
 }
 for (const id of ['wallRelativeSize','backgroundRelativeSize','relativePadding','relativeBandCells','referenceLength'])
-  $(id).addEventListener('input', () => { updateBudget(); syncRegions(); if (id === 'referenceLength') scheduleYPlus(); });
+  $(id).addEventListener('input', () => { updateBudget(); syncRegions(); if (id === 'referenceLength' || id === 'relativePadding') scheduleYPlus(); });
 $('relativeAllowUnsafe').addEventListener('change', () => { updateBudget(); schedulePlan(); });
 $('referenceMode').addEventListener('change', () => {
   $('referenceLengthField').hidden = $('referenceMode').value !== 'explicit';
@@ -1210,10 +1210,23 @@ function activeYPlusReferenceLength() {
   return state.frame?.bodySpan > 0 ? state.frame.bodySpan : 1.0;
 }
 
+function updateYPlusWakeControls() {
+  const exterior = $('fluidRegion')?.value !== 'interior';
+  const syncWake = Boolean($('yplusSyncWake')?.checked) && exterior;
+  if ($('yplusSyncWakeToggle')) $('yplusSyncWakeToggle').hidden = !exterior;
+  if ($('yplusWakeFields')) $('yplusWakeFields').hidden = !syncWake;
+  if ($('applyYPlus')) {
+    $('applyYPlus').textContent = syncWake ? '一键填入边界层与尾迹区' : '填入边界层参数';
+  }
+}
+
 async function scheduleYPlus() {
   if (!$('yplusPreview') || !window.cartmesh?.estimateYPlus) return;
+  updateYPlusWakeControls();
   const sequence = ++yplusSequence;
   const Lref = activeYPlusReferenceLength();
+  const fluidRegion = $('fluidRegion')?.value === 'interior' ? 'interior' : 'exterior';
+  const currentFar = Number($('relativePadding')?.value);
   try {
     const est = await window.cartmesh.estimateYPlus({
       referenceLength: Lref,
@@ -1221,7 +1234,14 @@ async function scheduleYPlus() {
       nu: Number($('yplusNu').value),
       targetYPlus: Number($('yplusTarget').value),
       growthRatio: Number($('yplusGrowth').value),
-      regime: $('yplusRegime').value
+      coverageRatio: Number($('yplusCoverage')?.value ?? 1),
+      regime: $('yplusRegime').value,
+      fluidRegion,
+      frame: state.frame || undefined,
+      farFieldSpans: !$('yplusSyncWall')?.checked && currentFar > 0 ? currentFar : undefined,
+      wakeLengthSpans: Number($('yplusWakeLength')?.value ?? 2),
+      wakeLevelsBelowWall: Number($('yplusWakeLevelsBelow')?.value ?? 2),
+      wakeAngleDeg: Number($('yplusWakeAngle')?.value ?? 0)
     });
     if (sequence !== yplusSequence) return;
     state.yplusEstimate = est;
@@ -1232,6 +1252,13 @@ async function scheduleYPlus() {
       `建议 ${est.nLayers} 层（增长率 ${est.growthRatio}）→ 总厚 ${(est.totalThickness * 1000).toPrecision(4)} mm ≈ ${(est.coverageAchieved * 100).toFixed(0)}% δ₉₉（δ₉₉ = ${(est.delta99 * 1000).toPrecision(4)} mm）`,
       `最外层高 ${(est.lastLayerHeight * 1000).toPrecision(4)} mm；推荐壁面格 h/Lref ≈ ${est.recommendedWallRelativeSize.toPrecision(4)}（首层展弦比 ≈ ${est.estimatedFirstLayerAspectRatio.toFixed(0)}）`
     ];
+    if (est.recommendedWakeBox && $('yplusSyncWake')?.checked) {
+      const wb = est.recommendedWakeBox;
+      const farHint = est.recommendedFarFieldSpans ? `，外流远场 ≥ ${est.recommendedFarFieldSpans} Lref` : '';
+      lines.push(`联动尾迹框（--refine-box）：x ∈ [${wb.xmin}, ${wb.xmax}]，y ∈ [${wb.ymin}, ${wb.ymax}] Lref，低于壁面 ${wb.levelsBelowWall} 级${farHint}`);
+    } else if (fluidRegion === 'interior') {
+      lines.push('内流通道模式不生成外部尾迹加密框。');
+    }
     if (est.warnings.length) lines.push(`提示：${est.warnings.join('；')}`);
     $('yplusPreview').className = `budget${est.warnings.length ? ' over' : ''}`;
     $('yplusPreview').textContent = lines.join('\n');
@@ -1254,21 +1281,29 @@ $('yplusNu')?.addEventListener('input', () => {
   if ($('yplusFluid')) $('yplusFluid').value = 'custom';
   scheduleYPlus();
 });
-for (const id of ['yplusVelocity', 'yplusTarget', 'yplusGrowth', 'yplusRegime']) {
+for (const id of ['yplusVelocity', 'yplusTarget', 'yplusGrowth', 'yplusCoverage', 'yplusRegime', 'yplusSyncWall', 'yplusSyncWake', 'yplusWakeLength', 'yplusWakeLevelsBelow', 'yplusWakeAngle']) {
   $(id)?.addEventListener('input', scheduleYPlus);
   $(id)?.addEventListener('change', scheduleYPlus);
 }
-$('applyYPlus')?.addEventListener('click', () => {
+function applyYPlusToForm() {
   const est = state.yplusEstimate;
-  if (!est || state.busy) return;
+  if (!est || state.busy) return false;
   $('controlMode').value = 'manual';
   updateControlMode();
   $('nLayers').value = String(est.nLayers);
   $('firstLayerRelativeSize').value = Number(est.firstLayerRelativeSize.toPrecision(6));
   $('growthRatio').value = String(est.growthRatio);
+  const exterior = $('fluidRegion')?.value !== 'interior';
+  const applyWake = Boolean($('yplusSyncWake')?.checked) && exterior && Boolean(est.recommendedWakeBox);
   if ($('yplusSyncWall')?.checked) {
     $('wallRelativeSize').value = Number(est.recommendedWallRelativeSize.toPrecision(5));
     $('backgroundRelativeSize').value = Number(est.recommendedBackgroundRelativeSize.toPrecision(5));
+    if (exterior && est.recommendedFarFieldSpans) {
+      const curFar = Number($('relativePadding').value);
+      if (!Number.isFinite(curFar) || curFar < est.recommendedFarFieldSpans) {
+        $('relativePadding').value = String(est.recommendedFarFieldSpans);
+      }
+    }
     const span = state.frame?.bodySpan || est.referenceLength;
     const far = Number($('relativePadding').value);
     const domain = span + 2 * far * est.referenceLength;
@@ -1276,9 +1311,37 @@ $('applyYPlus')?.addEventListener('click', () => {
     const ceiling = state.catalog?.methods?.[state.method]?.safeWallLevel ?? 8;
     if (depth > ceiling) $('relativeAllowUnsafe').checked = true;
   }
+  if (applyWake) {
+    switchToBoxAdaptOnManualEdit();
+    const retained = state.regions
+      .filter(box => box && box.source !== 'yplus-wake')
+      .map(box => ({ ...box, active: false }));
+    retained.push({
+      xmin: est.recommendedWakeBox.xmin,
+      xmax: est.recommendedWakeBox.xmax,
+      ymin: est.recommendedWakeBox.ymin,
+      ymax: est.recommendedWakeBox.ymax,
+      levelsBelowWall: est.recommendedWakeBox.levelsBelowWall,
+      source: 'yplus-wake',
+      active: true
+    });
+    state.regions = retained;
+    renderRegions();
+  } else if (!exterior && state.regions.some(box => box && box.source === 'yplus-wake')) {
+    state.regions = state.regions.filter(box => box && box.source !== 'yplus-wake');
+    renderRegions();
+  } else {
+    syncRegions();
+  }
   updateBudget();
-  status('已按 y⁺ 填入边界层参数', `Re=${est.reynolds.toExponential(2)}，y⁺=${est.targetYPlus}，首层 h₁/Lref=${est.firstLayerRelativeSize.toExponential(3)}，${est.nLayers} 层。`);
-});
+  const wakeNote = applyWake
+    ? `，已联动尾迹框 x∈[${est.recommendedWakeBox.xmin},${est.recommendedWakeBox.xmax}]`
+    : '';
+  status(applyWake ? '已按 y⁺ 填入边界层与尾迹区' : '已按 y⁺ 填入边界层参数',
+    `Re=${est.reynolds.toExponential(2)}，y⁺=${est.targetYPlus}，首层 h₁/Lref=${est.firstLayerRelativeSize.toExponential(3)}，${est.nLayers} 层${wakeNote}。`);
+  return true;
+}
+$('applyYPlus')?.addEventListener('click', applyYPlusToForm);
 $('allowUnsafe').addEventListener('change', updateBudget);
 $('useCurvature').addEventListener('change', event => {
   $('curvatureCellsPerRadius').disabled = !event.target.checked;
@@ -1357,6 +1420,7 @@ $('cutcellStrategy').addEventListener('change', () => { clearResult(); updateCon
 $('fluidRegion').addEventListener('change', () => {
   clearResult();
   selectMethod(state.method);
+  scheduleYPlus();
   if (state.geometryPath) drawGeometryOutline();
 });
 
@@ -1432,7 +1496,7 @@ window.addEventListener('resize', () => view.requestDraw());
   renderRegions();
   scheduleYPlus();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, suggestFlowRefinement, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile, scheduleYPlus };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, suggestFlowRefinement, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile, scheduleYPlus, applyYPlusToForm };
 })();
 
 function setOutput(directory) {
@@ -1477,7 +1541,7 @@ function renderRegions() {
     const top = document.createElement('div');
     top.className = 'regionTop';
     const name = document.createElement('b');
-    name.textContent = `R${index + 1}`;
+    name.textContent = box.source === 'yplus-wake' ? `R${index + 1} · 尾迹` : `R${index + 1}`;
     const depth = document.createElement('span');
     depth.className = 'depth';
     const depthInput = document.createElement('input');
