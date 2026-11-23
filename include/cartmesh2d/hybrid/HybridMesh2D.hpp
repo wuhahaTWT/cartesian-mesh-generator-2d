@@ -51,6 +51,7 @@ struct HybridSourceCell2D {
     std::vector<std::uint64_t> refinementLineageKeys;
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;
+    std::optional<std::size_t> cornerFanVertex;
     std::optional<std::size_t> stripId;
     double localBackgroundH = 0.0;
     std::vector<Segment2D> embeddedBoundary;

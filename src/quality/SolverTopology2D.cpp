@@ -92,6 +92,13 @@ SolverTopologyResult2D buildSolverTopology2D(
         for (std::size_t cell=0;cell<partition.sourceForCell.size();++cell)
             cellsForSource[partition.sourceForCell[cell]].push_back(cell);
         std::vector<SourceMergeProposal2D> proposals;
+        std::vector<std::pair<std::size_t,std::size_t>> fallbackPairs;
+        const auto locallyImproves=[](const LocalQualityRank2D& rank) noexcept {
+            return rank.issueDelta<0 ||
+                   (rank.issueDelta==0 &&
+                    (rank.maximumSeverityDelta<-1.0e-12 ||
+                     rank.totalSeverityDelta<-1.0e-12));
+        };
         for (const auto& [first,second]:pairs) {
             if (second>=sourcePolygons.size()) continue;
             const auto polygonStart=ProfileClock::now();
@@ -113,30 +120,41 @@ SolverTopologyResult2D buildSolverTopology2D(
                     // A merge changes centres on interfaces with its neighbours.
                     // Rank those real interfaces as well as the merged interior;
                     // isolated-polygon scoring misses their face weight and skew.
-                    // This is proposal ordering only. Every accepted batch still
-                    // requires the unchanged complete topology and quality gate,
-                    // and the exhaustive fallback remains authoritative.
-                    auto rank=localReplacementQualityRank(
-                        partition.topology,cellHalo,removed,*pieces,tol);
-                    if (rank) {
-                        std::vector<Polygon2D> originalPieces;
-                        for (const auto cell:removed)
-                            originalPieces.push_back(topologyCellPolygon(partition.topology,cell));
-                        const auto baseRank=localReplacementQualityRank(
-                            partition.topology,cellHalo,removed,originalPieces,tol);
-                        if (baseRank) {
-                            rankRelativeToBase(*rank,*baseRank);
+                    // Because every face and cell outside cellHalo is unchanged,
+                    // a pair that does not improve within cellHalo cannot improve
+                    // the global QualityScore2D; pre-screening both batch and
+                    // fallback candidates with one LocalPatchQualityScope avoids
+                    // rebuilding the full topology on provably non-improving pairs.
+                    bool screenedOut=false;
+                    std::optional<LocalQualityRank2D> rank;
+                    const auto scope=makeLocalPatchQualityScope(
+                        partition.topology,cellHalo,removed,tol);
+                    if (scope.valid()) {
+                        rank=scope.evaluate(*pieces);
+                        if (rank) {
+                            std::vector<Polygon2D> originalPieces;
+                            originalPieces.reserve(removed.size());
+                            for (const auto cell:removed)
+                                originalPieces.push_back(topologyCellPolygon(partition.topology,cell));
+                            const auto baseRank=scope.evaluate(originalPieces);
+                            if (baseRank) {
+                                rankRelativeToBase(*rank,*baseRank);
+                                if (!locallyImproves(*rank)) screenedOut=true;
+                            }
                         }
                     }
-                    if (!rank) rank=localPartitionQualityRank(*merged,*pieces,tol);
-                    if (rank) {
-                        SourceMergeProposal2D proposal;
-                        proposal.first=first;
-                        proposal.second=second;
-                        proposal.merged=*merged;
-                        proposal.rank=*rank;
-                        proposal.halo=sourceHalo;
-                        proposals.push_back(std::move(proposal));
+                    if (!screenedOut) {
+                        fallbackPairs.emplace_back(first,second);
+                        if (!rank) rank=localPartitionQualityRank(*merged,*pieces,tol);
+                        if (rank) {
+                            SourceMergeProposal2D proposal;
+                            proposal.first=first;
+                            proposal.second=second;
+                            proposal.merged=*merged;
+                            proposal.rank=*rank;
+                            proposal.halo=sourceHalo;
+                            proposals.push_back(std::move(proposal));
+                        }
                     }
                 }
             }
@@ -186,7 +204,7 @@ SolverTopologyResult2D buildSolverTopology2D(
         std::optional<std::vector<bool>> bestPreserve;
         std::optional<std::vector<std::vector<std::size_t>>> bestLineages;
         QualityScore2D bestScore=qualityScore(quality);
-        for (const auto& [first,second]:pairs) {
+        for (const auto& [first,second]:fallbackPairs) {
             // No candidate can improve on a zero-issue authoritative score.
             if (bestScore.issueCount==0U) break;
             if (second>=sourcePolygons.size()) continue;

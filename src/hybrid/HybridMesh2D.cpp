@@ -1194,7 +1194,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
 
     std::vector<HybridSourceCell2D> hybridSources;
     std::size_t requestedLayerCells=0U;
-    for (const auto& strip:boundaryLayers.strips) requestedLayerCells+=strip.cells.size();
+    for (const auto& strip:boundaryLayers.strips) {
+        requestedLayerCells+=strip.cells.size()+strip.fanCells.size();
+    }
     std::size_t terminationCellCount=0U;
     hybridSources.reserve(remainderConstructionCells.size()+requestedLayerCells);
     for (const auto& cell:remainderConstructionCells) {
@@ -1331,6 +1333,47 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             if (layerCell.layer == 0U) {
                 source.embeddedBoundary.push_back(
                     strip.wallChain.segments[layerCell.wallSegment]);
+            }
+            layerArea += source.area;
+            hybridSources.push_back(std::move(source));
+            ++layerCellCount;
+        }
+        for (const auto& fanCell : strip.fanCells) {
+            HybridSourceCell2D source;
+            source.id = hybridSources.size();
+            source.kind = HybridCellKind2D::BoundaryLayer;
+            source.solverImmutable = true;
+            source.layerIndex = fanCell.layer;
+            source.cornerFanVertex = fanCell.wallVertex;
+            source.stripId = stripId;
+            for (const auto vertexId : fanCell.vertices) {
+                source.polygon.vertices.push_back(strip.vertices[vertexId].point);
+            }
+            double maxEdge = 0.0;
+            for (std::size_t i = 0; i < source.polygon.vertices.size(); ++i) {
+                maxEdge = std::max(maxEdge, segmentLength(
+                    source.polygon.vertices[i],
+                    source.polygon.vertices[(i + 1U) % source.polygon.vertices.size()]));
+            }
+            source.localBackgroundH = maxEdge;
+            source.area = source.polygon.signedArea();
+            const double boundsArea = polygonBoundsArea(source.polygon);
+            const auto centroid = source.polygon.centroid(policy.tolerance);
+            if (!(source.area > 0.0) || !centroid || !(boundsArea > 0.0)) {
+                return failed(HybridMeshFailureReason2D::LayerConversionFailed,
+                              "H4-1 corner-fan cell could not become a positive topology source",
+                              stripId, std::nullopt, fanCell.id);
+            }
+            const auto originalState = originalWalls.classifyPoint(*centroid,
+                                                                    policy.tolerance);
+            const auto outerState = outerRegion.classifyPoint(*centroid,
+                                                               policy.tolerance);
+            if (policy.fluidRegion == FluidRegion2D::Interior
+                ? (originalState == PointInPolygon::Outside || outerState == PointInPolygon::Inside)
+                : (originalState == PointInPolygon::Inside || outerState == PointInPolygon::Outside)) {
+                return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
+                              "corner-fan cell is not between original wall and outer envelope",
+                              stripId, std::nullopt, fanCell.id);
             }
             layerArea += source.area;
             hybridSources.push_back(std::move(source));

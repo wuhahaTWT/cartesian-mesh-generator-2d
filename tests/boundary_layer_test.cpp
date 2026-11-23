@@ -316,6 +316,29 @@ int main() {
         }
     }
 
+    // Sharp convex trailing edge wrapped with an O-grid radial fan retains 100%
+    // of requested wall layers even at high-Re y+~1 (dy1=9e-6, 30 layers)
+    // without failing or tapering wall columns down to 0 layers.
+    if (sharpChain.success()) {
+        BoundaryLayerPolicy2D fanPolicy;
+        fanPolicy.enableConvexCornerFan = true;
+        const auto fanResult = buildBoundaryLayerStrip2D(
+            *sharpChain.chain, firstThickness(30U, 9.0e-6, 1.2), fanPolicy);
+        check(fanResult.success(),
+              "sharp trailing-edge corner succeeds with O-grid radial corner fan");
+        if (fanResult.success()) {
+            const auto& strip = fanResult.strips.front();
+            check(strip.metrics.zeroLayerColumnCount == 0U,
+                  "O-grid fan retains all wall columns with zero 0-layer columns");
+            check(!strip.fanCells.empty(),
+                  "O-grid fan generates radial corner-fan cells");
+            check(strip.cells.size() == strip.wallChain.segmentCount() * 30U,
+                  "O-grid fan retains all 30 layers on every wall segment");
+            check(BoundaryLoop(strip.outerEnvelope()).diagnose().valid(),
+                  "O-grid fan outer envelope is a valid closed loop");
+        }
+    }
+
     if (failures == 0) {
         std::cout << "cartmesh2d H4-1 boundary-layer tests: PASS\n";
         return EXIT_SUCCESS;

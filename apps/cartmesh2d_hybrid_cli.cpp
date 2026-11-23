@@ -198,6 +198,7 @@ int main(int argc, char** argv) {
     bool q4TerminationConstruction=false;
     bool q5OuterTransitionRadial=false;
     bool q5TerminationBufferRadial=false;
+    bool convexCornerFan=true;
     std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
     std::optional<ResolvedSizeField2D> resolvedSizeField;
     std::optional<double> firstLayerRelativeSize;
@@ -327,6 +328,12 @@ int main(int argc, char** argv) {
         }
         else if (option=="--q4-termination-construction") {
             q4TerminationConstruction=true;
+        }
+        else if (option=="--no-convex-corner-fan") {
+            convexCornerFan=false;
+        }
+        else if (option=="--convex-corner-fan") {
+            convexCornerFan=true;
         }
         else { std::cerr<<"unknown option: "<<option<<'\n'; return EXIT_FAILURE; }
     }
@@ -466,6 +473,7 @@ int main(int argc, char** argv) {
     hybridPolicy.enableTerminationBufferRadialMatching=q5TerminationBufferRadial;
     hybridPolicy.targetExtrusionThickness=extrusionThickness;
     BoundaryLayerPolicy2D layerPolicy;
+    layerPolicy.enableConvexCornerFan = convexCornerFan;
     if (resolvedSizeField) {
         layerPolicy.maximumColumnLength = resolvedSizeField->requestedWallSize;
     } else {

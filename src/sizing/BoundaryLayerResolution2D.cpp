@@ -66,6 +66,18 @@ BoundaryLayerResolution2D measureBoundaryLayerResolution2D(
     for (const auto& source:hybrid->sourceCells) {
         if (source.kind!=HybridCellKind2D::BoundaryLayer) continue;
         ++result.constructedCells;
+        if (source.cornerFanVertex.has_value()) {
+            if (!source.stripId || !source.layerIndex ||
+                *source.stripId>=hybrid->strips.size() ||
+                source.id>=finalForSource.size()) {++result.sourceMismatches;continue;}
+            const auto& finals=finalForSource[source.id];
+            if (finals.size()!=1 ||
+                !samePolygon(source.polygon,mesh.cells.at(finals.front()),mesh,reference,tol)) {
+                ++result.sourceMismatches;continue;
+            }
+            ++result.retainedCells;
+            continue;
+        }
         if (!source.stripId || !source.wallSegment || !source.layerIndex ||
             *source.stripId>=hybrid->strips.size() ||
             *source.wallSegment>=hybrid->strips[*source.stripId].wallChain.segmentCount() ||

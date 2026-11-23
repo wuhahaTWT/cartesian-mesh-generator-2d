@@ -124,6 +124,11 @@ struct BoundaryLayerPolicy2D {
     // anisotropic boundary layers pass wall target spacing so thin y+~1 first
     // layers do not trigger isotropic tangential subdivision.
     std::optional<double> maximumColumnLength;
+    // Wrap sharp convex corners (solidTurn > maxConvexTurnRadians, such as
+    // sharp airfoil trailing edges) with an O-grid radial fan instead of
+    // failing or collapsing adjacent columns to 0 layers.
+    bool enableConvexCornerFan = false;
+    double convexCornerFanMaxSectorRadians = 0.6981317007977318; // 40 degrees
 };
 
 enum class BoundaryLayerFailureReason2D {
@@ -165,6 +170,7 @@ struct BoundaryLayerVertex2D {
     std::size_t ring = 0;
     std::size_t chainVertex = 0;
     Point2D point;
+    std::size_t hairIndex = 0;
 };
 
 struct BoundaryLayerCell2D {
@@ -172,6 +178,15 @@ struct BoundaryLayerCell2D {
     std::size_t layer = 0;
     std::size_t wallSegment = 0;
     std::array<std::size_t, 4> vertices{};
+    double area = 0.0;
+};
+
+struct BoundaryLayerFanCell2D {
+    std::size_t id = 0;
+    std::size_t layer = 0;
+    std::size_t wallVertex = 0;
+    std::size_t sector = 0;
+    std::vector<std::size_t> vertices;
     double area = 0.0;
 };
 
@@ -206,8 +221,12 @@ struct BoundaryLayerStrip2D {
     // edges at terminations and original-wall edges on 0-layer patches.
     std::vector<std::size_t> outerEnvelopeVertexIds;
     std::vector<std::size_t> actualLayerCounts;
+    std::vector<std::size_t> vertexFirstHair;
+    std::vector<std::size_t> vertexLastHair;
+    std::vector<std::size_t> fanLayerCounts;
     std::vector<BoundaryLayerVertex2D> vertices;
     std::vector<BoundaryLayerCell2D> cells;
+    std::vector<BoundaryLayerFanCell2D> fanCells;
     BoundaryLayerMetrics2D metrics;
 
     [[nodiscard]] std::vector<Point2D> outerEnvelope() const;
