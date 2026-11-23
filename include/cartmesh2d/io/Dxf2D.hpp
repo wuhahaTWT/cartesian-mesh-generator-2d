@@ -20,6 +20,14 @@ struct DxfImportOptions2D {
     // Missing/unitless DXF files fail closed unless an explicit code is supplied.
     std::optional<long long> sourceUnitsOverrideCode;
     bool rejectUnsupportedEntities = true;
+    // When enabled, explicitly skips non-boundary drafting/annotation entities
+    // (TEXT, MTEXT, DIMENSION, LEADER, POINT, HATCH, etc.) and records counts
+    // in DxfImportReport2D rather than failing on drafting layers.
+    bool ignoreAnnotationEntities = false;
+    // Optional layer filters (exact case-sensitive DXF layer names after INSERT
+    // layer-"0" inheritance). Empty includeLayers means include all layers.
+    std::vector<std::string> includeLayers;
+    std::vector<std::string> excludeLayers;
 };
 
 enum class DxfIssueCode2D {
@@ -50,13 +58,28 @@ struct DxfIssue2D {
     std::string message;
 };
 
+struct DxfLoopSummary2D {
+    std::size_t loopId = 0;
+    std::string patchName;
+    std::string role;
+    std::string sourceLayer;
+    std::size_t vertexCount = 0;
+    double area = 0.0;
+    AABB2D bounds;
+};
+
 struct DxfImportReport2D {
     std::size_t lineEntityCount = 0;
     std::size_t lightweightPolylineCount = 0;
+    std::size_t polylineEntityCount = 0;
     std::size_t arcEntityCount = 0;
     std::size_t circleEntityCount = 0;
     std::size_t ellipseEntityCount = 0;
     std::size_t splineEntityCount = 0;
+    std::size_t blockDefinitionCount = 0;
+    std::size_t insertEntityCount = 0;
+    std::size_t ignoredAnnotationCount = 0;
+    std::size_t skippedByLayerCount = 0;
     std::size_t sourceEntityCount = 0;
     std::size_t outputLoopCount = 0;
     std::size_t outputVertexCount = 0;
@@ -74,6 +97,8 @@ struct DxfImportReport2D {
     double coordinateScaleToMetres = 0.0;
     bool unitsOverrideApplied = false;
     std::vector<std::string> layers;
+    std::vector<std::string> ignoredEntityTypes;
+    std::vector<DxfLoopSummary2D> loopSummaries;
 };
 
 struct DxfImportResult2D {

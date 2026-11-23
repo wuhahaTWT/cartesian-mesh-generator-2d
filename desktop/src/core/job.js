@@ -89,7 +89,11 @@ function validateJob(request) {
     geometryPath: request.geometryPath,
     outputDirectory: request.outputDirectory,
     chordError: number(request.chordError ?? 0.001, '曲线弦高误差', { min: 1e-12, max: 1 }),
-    sourceUnits: request.sourceUnits || 'auto'
+    sourceUnits: request.sourceUnits || 'auto',
+    dxfWeldTolerance: number(request.dxfWeldTolerance ?? 1e-10, 'DXF 端点焊接容差', { min: 1e-12, max: 0.1 }),
+    dxfIgnoreAnnotations: Boolean(request.dxfIgnoreAnnotations),
+    dxfExcludeLayers: Array.isArray(request.dxfExcludeLayers)
+      ? request.dxfExcludeLayers.map(v => String(v).trim()).filter(Boolean) : []
   };
   if (!job.geometryPath) throw new Error('请先选择几何文件或内置样例。');
 

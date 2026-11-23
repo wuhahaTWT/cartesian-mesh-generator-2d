@@ -350,6 +350,44 @@ int main() {
     check(std::abs(inwardFallback.actualFluidArea-BoundaryRegion2D(circleWall).area())<1.e-9,
           "interior fallback preserves the selected fluid area even when quality rejects it");
 
+    // Sharp convex trailing-edge airfoil wrapped by an O-grid radial corner fan
+    // builds a full conformal hybrid mesh directly on the requested strip with
+    // zero 0-layer columns and exact area/interface conservation.
+    const BoundaryLoop sharpAirfoil({
+        {0.0, 0.0}, {0.05, -0.035}, {0.25, -0.058}, {0.55, -0.048},
+        {0.82, -0.023}, {0.95, -0.007}, {1.0, 0.0},
+        {0.95, 0.007}, {0.82, 0.023}, {0.55, 0.048},
+        {0.25, 0.058}, {0.05, 0.035}});
+    const auto sharpAirfoilChain = makeClosedWallChain2D(sharpAirfoil, 0U, "wall_0");
+    check(sharpAirfoilChain.success(), "sharp airfoil test wall chain builds");
+    if (sharpAirfoilChain.success()) {
+        BoundaryLayerPolicy2D fanLayerPolicy;
+        fanLayerPolicy.enableConvexCornerFan = true;
+        fanLayerPolicy.maximumColumnLength = 0.05;
+        const Domain2D airfoilDomain{{{-3.0, -3.0}, {5.0, 3.0}}};
+        QuadtreeRefinementPolicy2D airfoilRefinement;
+        airfoilRefinement.minimumLevel = 2U;
+        airfoilRefinement.boundaryLevel = 8U;
+        const auto fanHybrid = buildRobustH4Mesh2D(
+            {*sharpAirfoilChain.chain},
+            {20U, LayerThicknessMode2D::FirstLayerThickness, 2.0e-5, 1.2},
+            airfoilDomain, BoundaryRegion2D(sharpAirfoil), 8U,
+            airfoilRefinement, fanLayerPolicy);
+        check(fanHybrid.success() && fanHybrid.mode == H4MeshMode2D::Hybrid,
+              "sharp airfoil with O-grid fan commits a conformal hybrid mesh");
+        if (fanHybrid.mode == H4MeshMode2D::Hybrid) {
+            const auto& h = fanHybrid.hybridCandidate;
+            check(h.metrics.zeroLayerColumnCount == 0U &&
+                  h.metrics.terminationEdgeCount == 0U,
+                  "sharp airfoil O-grid fan eliminates TE 0-layer columns and staircase");
+            check(h.interfaceAudit.pass(1.0e-8) &&
+                  h.solverInterfaceAudit.pass(1.0e-8),
+                  "sharp airfoil O-grid fan preserves conformal outer interface");
+            check(std::abs(h.metrics.areaError) < 1.0e-8,
+                  "sharp airfoil O-grid fan conserves fluid area");
+        }
+    }
+
     if (failures == 0) {
         std::cout << "cartmesh2d H4 solver-ready hybrid tests: PASS\n";
         return EXIT_SUCCESS;

@@ -11,6 +11,7 @@ const { SAMPLES, sampleById } = require('./core/samples');
 const geometry = require('./core/geometry');
 const { candidates, estimateSeconds } = require('./core/automatic');
 const { planBudget, BUDGET_PRESETS } = require('./core/cell-budget');
+const { FLUID_PRESETS, estimateBoundaryLayerYPlus } = require('./core/yplus');
 const { runBudget } = require('./core/budget-runner');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
@@ -80,7 +81,7 @@ const safeBaseName = filePath =>
 // Every input becomes a native .xy before the mesher sees it.  DXF goes through the
 // C++ converter because that is where unit handling and entity diagnostics live;
 // everything else is converted in process.
-async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath, reportPath, log) {
+async function prepareGeometry(geometryPath, { chordError, sourceUnits, dxfWeldTolerance, dxfIgnoreAnnotations, dxfExcludeLayers }, xyPath, reportPath, log) {
   const raster = rasterImports.get(geometryPath);
   if (raster) {
     await fs.copyFile(geometryPath, xyPath);
@@ -94,10 +95,34 @@ async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath
 
   if (kind === 'dxf') {
     log('正在读取 DXF、换算单位并离散曲线…');
-    const args = [geometryPath, xyPath, String(chordError), reportPath];
-    if (sourceUnits && sourceUnits !== 'auto') args.push('1e-10', sourceUnits);
+    const weld = Number.isFinite(Number(dxfWeldTolerance)) && Number(dxfWeldTolerance) > 0
+      ? String(dxfWeldTolerance) : '1e-10';
+    const unitArg = sourceUnits && sourceUnits !== 'auto' ? sourceUnits : 'auto';
+    const args = [geometryPath, xyPath, String(chordError), reportPath, weld, unitArg];
+    if (dxfIgnoreAnnotations) args.push('--ignore-annotations');
+    if (Array.isArray(dxfExcludeLayers)) {
+      for (const layer of dxfExcludeLayers) {
+        const trimmed = String(layer).trim();
+        if (trimmed) args.push('--exclude-layer', trimmed);
+      }
+    }
     await run(executable('cartmesh2d_dxf_cli'), args, log);
-    return { kind, converter: 'cartmesh2d_dxf_cli', warnings: [] };
+    const dxfReport = await readJson(reportPath);
+    const warnings = [];
+    if (dxfReport?.ignored_annotation_count > 0) {
+      warnings.push(`已按设置忽略 ${dxfReport.ignored_annotation_count} 个 DXF 标注/文字实体（${(dxfReport.ignored_entity_types || []).join(', ')}）。`);
+    }
+    if (dxfReport?.skipped_by_layer_count > 0) {
+      warnings.push(`已按图层过滤跳过 ${dxfReport.skipped_by_layer_count} 个实体。`);
+    }
+    return {
+      kind,
+      converter: 'cartmesh2d_dxf_cli',
+      warnings,
+      dxfReport,
+      sourceUnits: dxfReport?.effective_units_name || 'DXF report',
+      scale: dxfReport?.coordinate_scale_to_metres
+    };
   }
 
   const text = await fs.readFile(geometryPath, 'utf8');
@@ -197,10 +222,12 @@ app.whenReady().then(async () => {
     flowCases: FLOW_CASES,
     flowConvectionSchemes: FLOW_CONVECTION_SCHEMES,
     flowPressurePreconditioners: FLOW_PRESSURE_PRECONDITIONERS,
-    flowOutletBackflowModes: FLOW_OUTLET_BACKFLOW_MODES
+    flowOutletBackflowModes: FLOW_OUTLET_BACKFLOW_MODES,
+    fluidPresets: FLUID_PRESETS
   }));
 
   ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
+  ipcMain.handle('estimate-yplus', (_event, payload) => estimateBoundaryLayerYPlus(payload));
 
   ipcMain.handle('pick-geometry', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -561,15 +588,15 @@ app.whenReady().then(async () => {
 
   // Read a geometry without meshing it, so the outline can be drawn the moment a
   // file is chosen.  DXF needs the converter, so it writes into a scratch directory.
-  ipcMain.handle('preview-geometry', async (_event, { geometryPath, chordError, sourceUnits }) => {
+  ipcMain.handle('preview-geometry', async (_event, { geometryPath, chordError, sourceUnits, dxfWeldTolerance, dxfIgnoreAnnotations, dxfExcludeLayers }) => {
     const scratch = await fs.mkdtemp(path.join(sessionDirectory, 'preview-'));
     try {
     const xyPath = path.join(scratch, `${safeBaseName(geometryPath)}.xy`);
-    const info = await prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath,
+    const info = await prepareGeometry(geometryPath, { chordError, sourceUnits, dxfWeldTolerance, dxfIgnoreAnnotations, dxfExcludeLayers }, xyPath,
       path.join(scratch, 'dxf.json'), () => {});
     const loops = info.loops
       || geometry.convertToLoops(xyPath, await fs.readFile(xyPath, 'utf8')).loops;
-    return { loops, kind: info.kind, warnings: info.warnings, frame: bodyFrame(loops) };
+    return { loops, kind: info.kind, warnings: info.warnings, frame: bodyFrame(loops), dxfReport: info.dxfReport || null };
     } finally { await fs.rm(scratch, { recursive: true, force: true }); }
   });
 

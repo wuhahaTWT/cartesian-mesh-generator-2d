@@ -144,7 +144,13 @@ void canonicalRotate(std::vector<Point2D>& vertices) {
            policy.cornerLengthFraction < 0.5 &&
            std::isfinite(policy.collisionClearanceFraction) &&
            policy.collisionClearanceFraction > 0.0 &&
-           policy.collisionClearanceFraction < 0.5;
+           policy.collisionClearanceFraction < 0.5 &&
+           (!policy.maximumColumnLength ||
+            (std::isfinite(*policy.maximumColumnLength) &&
+             *policy.maximumColumnLength > 0.0)) &&
+           std::isfinite(policy.convexCornerFanMaxSectorRadians) &&
+           policy.convexCornerFanMaxSectorRadians > 0.0 &&
+           policy.convexCornerFanMaxSectorRadians < 0.5 * kPi;
 }
 
 [[nodiscard]] BoundaryLayerBuildResult2D failedResult(
@@ -174,6 +180,7 @@ struct ChainGeometry2D {
     std::vector<WallVertexKind2D> kinds;
     std::vector<Vector2D> directions;
     std::vector<double> miterCosines;
+    std::vector<std::vector<Vector2D>> fanDirections;
     std::vector<double> vertexSafeThickness;
     std::vector<double> segmentSafeThickness;
     double safeThickness = std::numeric_limits<double>::infinity();
@@ -206,6 +213,7 @@ struct ChainGeometryResult2D {
     geometry.kinds.resize(chain.vertices.size(), WallVertexKind2D::Smooth);
     geometry.directions.resize(chain.vertices.size());
     geometry.miterCosines.resize(chain.vertices.size(), 1.0);
+    geometry.fanDirections.resize(chain.vertices.size());
     geometry.vertexSafeThickness.resize(
         chain.vertices.size(), std::numeric_limits<double>::infinity());
     geometry.segmentSafeThickness.resize(
@@ -270,6 +278,30 @@ struct ChainGeometryResult2D {
         }
         if (solidTurn > policy.maxConvexTurnRadians) {
             geometry.kinds[vertexId] = WallVertexKind2D::Sharp;
+            if (policy.enableConvexCornerFan) {
+                const std::size_t sectorCount = std::max<std::size_t>(
+                    2U, static_cast<std::size_t>(
+                            std::ceil(solidTurn / policy.convexCornerFanMaxSectorRadians)));
+                const double baseAngle = std::atan2(previousNormal.y, previousNormal.x);
+                const double sweepSign = chain.fluidSide == FluidSide2D::Right ? 1.0 : -1.0;
+                auto& rays = geometry.fanDirections[vertexId];
+                rays.reserve(sectorCount + 1U);
+                for (std::size_t sector = 0U; sector <= sectorCount; ++sector) {
+                    if (sector == 0U) {
+                        rays.push_back(previousNormal);
+                    } else if (sector == sectorCount) {
+                        rays.push_back(nextNormal);
+                    } else {
+                        const double fraction = static_cast<double>(sector) /
+                                                static_cast<double>(sectorCount);
+                        const double angle = baseAngle + sweepSign * solidTurn * fraction;
+                        rays.push_back({std::cos(angle), std::sin(angle)});
+                    }
+                }
+                geometry.directions[vertexId] = rays[sectorCount / 2U];
+                geometry.miterCosines[vertexId] = 1.0;
+                continue;
+            }
             if (!allowLocalReduction) {
                 result.failure = failedResult(
                     BoundaryLayerFailureReason2D::SharpCorner,
@@ -339,23 +371,31 @@ struct ChainGeometryResult2D {
     // the requested layer. This detects narrow gaps without using a local-only
     // visual heuristic.
     for (std::size_t vertexId = 0; vertexId < chain.vertices.size(); ++vertexId) {
-        for (const auto& otherChain : allChains) {
-            for (std::size_t segmentId = 0; segmentId < otherChain.segments.size();
-                 ++segmentId) {
-                if (otherChain.id == chain.id &&
-                    incidentSegment(vertexId, segmentId, chain)) continue;
-                const auto distance = raySegmentDistance(
-                    chain.vertices[vertexId], geometry.directions[vertexId],
-                    otherChain.segments[segmentId], epsilon);
-                if (!distance) continue;
-                const double normalLimit = policy.collisionClearanceFraction *
-                                           (*distance) *
-                                           geometry.miterCosines[vertexId];
-                geometry.safeThickness = std::min(geometry.safeThickness,
-                                                   normalLimit);
-                geometry.vertexSafeThickness[vertexId] = std::min(
-                    geometry.vertexSafeThickness[vertexId], normalLimit);
+        const auto checkRay = [&](const Vector2D& direction, double miterCosine) {
+            for (const auto& otherChain : allChains) {
+                for (std::size_t segmentId = 0; segmentId < otherChain.segments.size();
+                     ++segmentId) {
+                    if (otherChain.id == chain.id &&
+                        incidentSegment(vertexId, segmentId, chain)) continue;
+                    const auto distance = raySegmentDistance(
+                        chain.vertices[vertexId], direction,
+                        otherChain.segments[segmentId], epsilon);
+                    if (!distance) continue;
+                    const double normalLimit = policy.collisionClearanceFraction *
+                                               (*distance) * miterCosine;
+                    geometry.safeThickness = std::min(geometry.safeThickness,
+                                                       normalLimit);
+                    geometry.vertexSafeThickness[vertexId] = std::min(
+                        geometry.vertexSafeThickness[vertexId], normalLimit);
+                }
             }
+        };
+        if (!geometry.fanDirections[vertexId].empty()) {
+            for (const auto& ray : geometry.fanDirections[vertexId]) {
+                checkRay(ray, 1.0);
+            }
+        } else {
+            checkRay(geometry.directions[vertexId], geometry.miterCosines[vertexId]);
         }
     }
 
@@ -405,6 +445,39 @@ struct ChainGeometryResult2D {
     return shared && nearlyEqual(*intersection.point, vertices[*shared].point, tol);
 }
 
+[[nodiscard]] AABB2D vertexListBounds(const std::vector<std::size_t>& vertexIds,
+                                      const std::vector<BoundaryLayerVertex2D>& vertices) {
+    Point2D lo = vertices[vertexIds[0]].point;
+    Point2D hi = lo;
+    for (const auto vertexId : vertexIds) {
+        const auto& point = vertices[vertexId].point;
+        lo.x = std::min(lo.x, point.x);
+        lo.y = std::min(lo.y, point.y);
+        hi.x = std::max(hi.x, point.x);
+        hi.y = std::max(hi.y, point.y);
+    }
+    return {lo, hi};
+}
+
+[[nodiscard]] bool isConvexBoundaryLayerPolygon2D(
+    const std::vector<Point2D>& points,
+    const TolerancePolicy& tol) noexcept {
+    if (points.size() < 3U) return false;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        const Point2D& previous = points[(i + points.size() - 1U) % points.size()];
+        const Point2D& current = points[i];
+        const Point2D& next = points[(i + 1U) % points.size()];
+        const Vector2D incoming = current - previous;
+        const Vector2D outgoing = next - current;
+        const double product = std::sqrt(squaredNorm(incoming) * squaredNorm(outgoing));
+        if (!(product > 0.0) ||
+            cross(incoming, outgoing) <= tol.areaScale(std::sqrt(product))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 [[nodiscard]] AABB2D cellBounds(const BoundaryLayerCell2D& cell,
                                 const std::vector<BoundaryLayerVertex2D>& vertices) {
     Point2D lo = vertices[cell.vertices[0]].point;
@@ -429,9 +502,10 @@ struct ChainGeometryResult2D {
     BoundaryLayerStrip2D strip, const BoundaryLayerPolicy2D& policy) {
     const double scale = geometryScale(strip.wallChain);
     const double lengthEpsilon = policy.tolerance.scale(scale);
-    const double areaEpsilon = policy.tolerance.areaScale(scale);
     const std::size_t ringSize = strip.wallChain.vertices.size();
     const std::size_t ringCount = strip.ringVertexIds.size();
+    const std::size_t hairCount = ringCount > 0U ? strip.ringVertexIds.front().size() : 0U;
+    const bool hasCornerFans = !strip.fanCells.empty() || hairCount != ringSize;
     const bool variableColumns=strip.actualLayerCounts.size()==
         strip.wallChain.segments.size() &&
         std::any_of(strip.actualLayerCounts.begin(),strip.actualLayerCounts.end(),
@@ -440,6 +514,9 @@ struct ChainGeometryResult2D {
                     });
     std::vector<bool> usedVertices(strip.vertices.size(),false);
     for (const auto& cell:strip.cells) {
+        for (const auto id:cell.vertices) usedVertices[id]=true;
+    }
+    for (const auto& cell:strip.fanCells) {
         for (const auto id:cell.vertices) usedVertices[id]=true;
     }
     for (const auto id:strip.outerEnvelopeVertexIds) usedVertices[id]=true;
@@ -461,7 +538,7 @@ struct ChainGeometryResult2D {
     // Strict H4-1 retains complete rings. H4-3 validates the exact stepped
     // outer envelope instead, because unused points beyond a terminated column
     // are deliberately not part of the mesh.
-    if (!variableColumns) for (std::size_t ring = 0; ring < ringCount; ++ring) {
+    if (!variableColumns) for (std::size_t ring = (hasCornerFans ? 1U : 0U); ring < ringCount; ++ring) {
         const auto& ids = strip.ringVertexIds[ring];
         const std::size_t edgeCount = strip.wallChain.closed ? ids.size() : ids.size() - 1U;
         for (std::size_t i = 0; i < edgeCount; ++i) {
@@ -515,28 +592,42 @@ struct ChainGeometryResult2D {
             }
         }
     }
-    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
-        const std::size_t previousCount=vertexId==0U
-            ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
-            :strip.actualLayerCounts[vertexId-1U];
-        const std::size_t nextCount=vertexId<strip.actualLayerCounts.size()
-            ?strip.actualLayerCounts[vertexId]
-            :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
-        const std::size_t usedLayerCount=std::max(previousCount,nextCount);
-        for (std::size_t ring = 0; ring < usedLayerCount; ++ring) {
-            const Segment2D hair{
-                strip.vertices[strip.ringVertexIds[ring][vertexId]].point,
-                strip.vertices[strip.ringVertexIds[ring + 1U][vertexId]].point};
-            for (std::size_t wallEdge = 0; wallEdge < strip.wallChain.segments.size();
-                 ++wallEdge) {
-                if (incidentSegment(vertexId, wallEdge, strip.wallChain)) continue;
-                if (intersectSegments(hair, strip.wallChain.segments[wallEdge],
-                                      policy.tolerance).kind !=
-                    SegmentIntersectionKind::None) {
-                    return failedResult(
-                        BoundaryLayerFailureReason2D::EnvelopeWallIntersection,
-                        "a hair edge crosses a non-incident wall segment",
-                        strip.wallChain.id, &strip.parameters, vertexId, wallEdge);
+    const auto hairUsedLayerCount = [&](std::size_t hairId, std::size_t vertexId) -> std::size_t {
+        const std::size_t previousCount = vertexId == 0U
+            ? (strip.wallChain.closed ? strip.actualLayerCounts.back() : 0U)
+            : strip.actualLayerCounts[vertexId - 1U];
+        const std::size_t nextCount = vertexId < strip.actualLayerCounts.size()
+            ? strip.actualLayerCounts[vertexId]
+            : (strip.wallChain.closed ? strip.actualLayerCounts.front() : 0U);
+        const std::size_t firstHair = vertexId < strip.vertexFirstHair.size()
+            ? strip.vertexFirstHair[vertexId] : vertexId;
+        const std::size_t lastHair = vertexId < strip.vertexLastHair.size()
+            ? strip.vertexLastHair[vertexId] : vertexId;
+        const std::size_t fanCount = vertexId < strip.fanLayerCounts.size()
+            ? strip.fanLayerCounts[vertexId] : 0U;
+        const std::size_t leftCount = (hairId == firstHair) ? previousCount : fanCount;
+        const std::size_t rightCount = (hairId == lastHair) ? nextCount : fanCount;
+        return std::max(leftCount, rightCount);
+    };
+    if (ringCount >= 2U) {
+        for (std::size_t hairId = 0; hairId < hairCount; ++hairId) {
+            const std::size_t vertexId = strip.vertices[strip.ringVertexIds[1U][hairId]].chainVertex;
+            const std::size_t usedLayerCount = hairUsedLayerCount(hairId, vertexId);
+            for (std::size_t ring = 0; ring < usedLayerCount; ++ring) {
+                const Segment2D hair{
+                    strip.vertices[strip.ringVertexIds[ring][hairId]].point,
+                    strip.vertices[strip.ringVertexIds[ring + 1U][hairId]].point};
+                for (std::size_t wallEdge = 0; wallEdge < strip.wallChain.segments.size();
+                     ++wallEdge) {
+                    if (incidentSegment(vertexId, wallEdge, strip.wallChain)) continue;
+                    if (intersectSegments(hair, strip.wallChain.segments[wallEdge],
+                                          policy.tolerance).kind !=
+                        SegmentIntersectionKind::None) {
+                        return failedResult(
+                            BoundaryLayerFailureReason2D::EnvelopeWallIntersection,
+                            "a hair edge crosses a non-incident wall segment",
+                            strip.wallChain.id, &strip.parameters, vertexId, wallEdge);
+                    }
                 }
             }
         }
@@ -545,6 +636,12 @@ struct ChainGeometryResult2D {
     std::map<std::pair<std::size_t, std::size_t>, std::size_t> edgeIncidence;
     double minArea = std::numeric_limits<double>::infinity();
     double maxArea = 0.0;
+    struct ValidatedCellRef {
+        std::size_t reportedId = 0U;
+        std::vector<std::size_t> vertices;
+    };
+    std::vector<ValidatedCellRef> allCells;
+    allCells.reserve(strip.cells.size() + strip.fanCells.size());
     for (auto& cell : strip.cells) {
         Polygon2D polygon;
         std::array<Point2D, 4> quadPoints{};
@@ -554,7 +651,11 @@ struct ChainGeometryResult2D {
             polygon.vertices.push_back(strip.vertices[vertexId].point);
         }
         const double signedArea = polygon.signedArea();
-        if (!std::isfinite(signedArea) || signedArea <= areaEpsilon) {
+        const auto cellBox = polygon.bounds();
+        const double cellLocalLength = std::max(
+            cellBox.max.x - cellBox.min.x, cellBox.max.y - cellBox.min.y);
+        const double cellAreaEpsilon = policy.tolerance.areaScale(cellLocalLength);
+        if (!std::isfinite(signedArea) || signedArea <= cellAreaEpsilon) {
             return failedResult(BoundaryLayerFailureReason2D::NegativeAreaCell,
                                 "layer quad has non-positive or tolerance-scale area",
                                 strip.wallChain.id, &strip.parameters,
@@ -587,39 +688,112 @@ struct ChainGeometryResult2D {
             const std::size_t b = cell.vertices[(side + 1U) % 4U];
             ++edgeIncidence[std::minmax(a, b)];
         }
+        allCells.push_back({cell.id, std::vector<std::size_t>(
+            cell.vertices.begin(), cell.vertices.end())});
+    }
+    for (std::size_t fanIdx = 0; fanIdx < strip.fanCells.size(); ++fanIdx) {
+        auto& cell = strip.fanCells[fanIdx];
+        const std::size_t reportedId = strip.cells.size() + fanIdx;
+        Polygon2D polygon;
+        polygon.vertices.reserve(cell.vertices.size());
+        for (const auto vertexId : cell.vertices) {
+            polygon.vertices.push_back(strip.vertices[vertexId].point);
+        }
+        const double signedArea = polygon.signedArea();
+        const auto cellBox = polygon.bounds();
+        const double cellLocalLength = std::max(
+            cellBox.max.x - cellBox.min.x, cellBox.max.y - cellBox.min.y);
+        const double cellAreaEpsilon = policy.tolerance.areaScale(cellLocalLength);
+        if (!std::isfinite(signedArea) || signedArea <= cellAreaEpsilon) {
+            return failedResult(BoundaryLayerFailureReason2D::NegativeAreaCell,
+                                "corner-fan cell has non-positive or tolerance-scale area",
+                                strip.wallChain.id, &strip.parameters,
+                                cell.wallVertex, std::nullopt, reportedId);
+        }
+        if (!isConvexBoundaryLayerPolygon2D(polygon.vertices, policy.tolerance)) {
+            return failedResult(BoundaryLayerFailureReason2D::NonConvexCell,
+                                "corner-fan cell is not strictly convex",
+                                strip.wallChain.id, &strip.parameters,
+                                cell.wallVertex, std::nullopt, reportedId);
+        }
+        if (polygon.vertices.size() == 4U) {
+            const Segment2D sides[4]{
+                {polygon.vertices[0], polygon.vertices[1]},
+                {polygon.vertices[1], polygon.vertices[2]},
+                {polygon.vertices[2], polygon.vertices[3]},
+                {polygon.vertices[3], polygon.vertices[0]}};
+            if (intersectSegments(sides[0], sides[2], policy.tolerance).kind !=
+                    SegmentIntersectionKind::None ||
+                intersectSegments(sides[1], sides[3], policy.tolerance).kind !=
+                    SegmentIntersectionKind::None) {
+                return failedResult(BoundaryLayerFailureReason2D::SelfIntersectingCell,
+                                    "corner-fan quad is self-intersecting", strip.wallChain.id,
+                                    &strip.parameters, cell.wallVertex, std::nullopt, reportedId);
+            }
+        }
+        cell.area = signedArea;
+        minArea = std::min(minArea, signedArea);
+        maxArea = std::max(maxArea, signedArea);
+        const std::size_t nv = cell.vertices.size();
+        for (std::size_t side = 0; side < nv; ++side) {
+            const std::size_t a = cell.vertices[side];
+            const std::size_t b = cell.vertices[(side + 1U) % nv];
+            ++edgeIncidence[std::minmax(a, b)];
+        }
+        allCells.push_back({reportedId, cell.vertices});
     }
 
     for (const auto& [edge, count] : edgeIncidence) {
-        const auto& a = strip.vertices[edge.first];
-        const auto& b = strip.vertices[edge.second];
+        const auto& va = strip.vertices[edge.first];
+        const auto& vb = strip.vertices[edge.second];
+        const auto& a = va.ring <= vb.ring ? va : vb;
+        const auto& b = va.ring <= vb.ring ? vb : va;
         std::size_t expected = 0;
         if (a.ring == b.ring) {
-            std::optional<std::size_t> segment;
-            for (std::size_t candidate=0;candidate<strip.wallChain.segmentCount();
-                 ++candidate) {
-                const std::size_t next=(candidate+1U)%ringSize;
-                if ((a.chainVertex==candidate && b.chainVertex==next) ||
-                    (b.chainVertex==candidate && a.chainVertex==next)) {
-                    segment=candidate;
-                    break;
+            if (a.ring > 0U && a.chainVertex == b.chainVertex) {
+                const std::size_t v = a.chainVertex;
+                const std::size_t fanCount = v < strip.fanLayerCounts.size()
+                    ? strip.fanLayerCounts[v] : 0U;
+                const std::size_t dh = a.hairIndex > b.hairIndex
+                    ? (a.hairIndex - b.hairIndex) : (b.hairIndex - a.hairIndex);
+                if (dh == 1U && a.ring <= fanCount) {
+                    expected = (a.ring == fanCount) ? 1U : 2U;
+                }
+            } else {
+                std::optional<std::size_t> segment;
+                const std::size_t segCount = strip.wallChain.segmentCount();
+                if (a.chainVertex < segCount &&
+                    ((a.chainVertex + 1U) % ringSize) == b.chainVertex) {
+                    segment = a.chainVertex;
+                } else if (b.chainVertex < segCount &&
+                           ((b.chainVertex + 1U) % ringSize) == a.chainVertex) {
+                    segment = b.chainVertex;
+                }
+                if (segment && a.ring <= strip.actualLayerCounts[*segment]) {
+                    expected = (a.ring == 0U ||
+                                a.ring == strip.actualLayerCounts[*segment]) ? 1U : 2U;
                 }
             }
-            if (segment && a.ring<=strip.actualLayerCounts[*segment]) {
-                expected=(a.ring==0U ||
-                          a.ring==strip.actualLayerCounts[*segment])?1U:2U;
-            }
-        } else if (a.chainVertex == b.chainVertex &&
-                   (a.ring + 1U == b.ring || b.ring + 1U == a.ring)) {
-            const std::size_t layer=std::min(a.ring,b.ring);
-            const std::size_t previousCount=a.chainVertex==0U
-                ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
-                :strip.actualLayerCounts[a.chainVertex-1U];
-            const std::size_t nextCount=
-                a.chainVertex<strip.actualLayerCounts.size()
-                ?strip.actualLayerCounts[a.chainVertex]
-                :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
-            expected=static_cast<std::size_t>(layer<previousCount)+
-                     static_cast<std::size_t>(layer<nextCount);
+        } else if (a.chainVertex == b.chainVertex && a.ring + 1U == b.ring) {
+            const std::size_t layer = a.ring;
+            const std::size_t v = a.chainVertex;
+            const std::size_t h = b.hairIndex;
+            const std::size_t previousCount = v == 0U
+                ? (strip.wallChain.closed ? strip.actualLayerCounts.back() : 0U)
+                : strip.actualLayerCounts[v - 1U];
+            const std::size_t nextCount = v < strip.actualLayerCounts.size()
+                ? strip.actualLayerCounts[v]
+                : (strip.wallChain.closed ? strip.actualLayerCounts.front() : 0U);
+            const std::size_t firstHair = v < strip.vertexFirstHair.size()
+                ? strip.vertexFirstHair[v] : v;
+            const std::size_t lastHair = v < strip.vertexLastHair.size()
+                ? strip.vertexLastHair[v] : v;
+            const std::size_t fanCount = v < strip.fanLayerCounts.size()
+                ? strip.fanLayerCounts[v] : 0U;
+            const std::size_t leftCount = (h == firstHair) ? previousCount : fanCount;
+            const std::size_t rightCount = (h == lastHair) ? nextCount : fanCount;
+            expected = static_cast<std::size_t>(layer < leftCount) +
+                       static_cast<std::size_t>(layer < rightCount);
         }
         if (expected == 0U || count != expected) {
             return failedResult(BoundaryLayerFailureReason2D::TopologyConflict,
@@ -628,23 +802,40 @@ struct ChainGeometryResult2D {
         }
     }
 
-    // Broad-phase AABB followed by exact edge and containment checks prevents
-    // visually plausible but overlapping non-neighbour quads.
+    // Deterministic X-axis sweep-line broad-phase followed by exact edge and
+    // containment checks prevents visually plausible but overlapping non-neighbour
+    // cells while scaling cleanly to high-Re multi-layer strips.
     std::vector<AABB2D> bounds;
-    bounds.reserve(strip.cells.size());
-    for (const auto& cell : strip.cells) bounds.push_back(cellBounds(cell, strip.vertices));
-    for (std::size_t lhsId = 0; lhsId < strip.cells.size(); ++lhsId) {
-        const auto& lhs = strip.cells[lhsId];
-        for (std::size_t rhsId = lhsId + 1U; rhsId < strip.cells.size(); ++rhsId) {
-            const auto& rhs = strip.cells[rhsId];
-            if (!boxesOverlap(bounds[lhsId], bounds[rhsId], lengthEpsilon)) continue;
+    bounds.reserve(allCells.size());
+    for (const auto& cell : allCells) bounds.push_back(vertexListBounds(cell.vertices, strip.vertices));
+    std::vector<std::size_t> sweepOrder(allCells.size());
+    for (std::size_t i = 0; i < sweepOrder.size(); ++i) sweepOrder[i] = i;
+    std::sort(sweepOrder.begin(), sweepOrder.end(), [&](std::size_t a, std::size_t b) {
+        return std::tie(bounds[a].min.x, bounds[a].min.y, a) <
+               std::tie(bounds[b].min.x, bounds[b].min.y, b);
+    });
+    for (std::size_t oi = 0; oi < sweepOrder.size(); ++oi) {
+        const std::size_t aId = sweepOrder[oi];
+        const auto& aBounds = bounds[aId];
+        for (std::size_t oj = oi + 1U; oj < sweepOrder.size(); ++oj) {
+            const std::size_t bId = sweepOrder[oj];
+            const auto& bBounds = bounds[bId];
+            if (bBounds.min.x > aBounds.max.x + lengthEpsilon) break;
+            if (aBounds.max.y + lengthEpsilon < bBounds.min.y ||
+                bBounds.max.y + lengthEpsilon < aBounds.min.y) continue;
+            const std::size_t lhsId = std::min(aId, bId);
+            const std::size_t rhsId = std::max(aId, bId);
+            const auto& lhs = allCells[lhsId];
+            const auto& rhs = allCells[rhsId];
             bool shareEdge = false;
-            for (std::size_t li = 0; li < 4U; ++li) {
+            const std::size_t lnv = lhs.vertices.size();
+            const std::size_t rnv = rhs.vertices.size();
+            for (std::size_t li = 0; li < lnv; ++li) {
                 const std::size_t la = lhs.vertices[li];
-                const std::size_t lb = lhs.vertices[(li + 1U) % 4U];
-                for (std::size_t ri = 0; ri < 4U; ++ri) {
+                const std::size_t lb = lhs.vertices[(li + 1U) % lnv];
+                for (std::size_t ri = 0; ri < rnv; ++ri) {
                     const std::size_t ra = rhs.vertices[ri];
-                    const std::size_t rb = rhs.vertices[(ri + 1U) % 4U];
+                    const std::size_t rb = rhs.vertices[(ri + 1U) % rnv];
                     if (std::minmax(la, lb) == std::minmax(ra, rb)) {
                         shareEdge = true;
                         continue;
@@ -659,11 +850,10 @@ struct ChainGeometryResult2D {
                     if (intersectionOnlyAtSharedVertex(intersection, la, lb, ra, rb,
                                                        strip.vertices,
                                                        policy.tolerance)) continue;
-                    if (std::minmax(la, lb) == std::minmax(ra, rb)) continue;
                     return failedResult(BoundaryLayerFailureReason2D::OverlappingCells,
                                         "non-shared layer cell edges intersect or overlap",
                                         strip.wallChain.id, &strip.parameters,
-                                        std::nullopt, std::nullopt, rhs.id);
+                                        std::nullopt, std::nullopt, rhs.reportedId);
                 }
             }
             if (shareEdge) continue;
@@ -677,7 +867,7 @@ struct ChainGeometryResult2D {
                     return failedResult(BoundaryLayerFailureReason2D::OverlappingCells,
                                         "a layer cell vertex lies inside another cell",
                                         strip.wallChain.id, &strip.parameters,
-                                        std::nullopt, std::nullopt, rhs.id);
+                                        std::nullopt, std::nullopt, rhs.reportedId);
                 }
             }
             for (const auto id : rhs.vertices) {
@@ -686,7 +876,7 @@ struct ChainGeometryResult2D {
                     return failedResult(BoundaryLayerFailureReason2D::OverlappingCells,
                                         "a layer cell vertex lies inside another cell",
                                         strip.wallChain.id, &strip.parameters,
-                                        std::nullopt, std::nullopt, rhs.id);
+                                        std::nullopt, std::nullopt, rhs.reportedId);
                 }
             }
         }
@@ -694,29 +884,26 @@ struct ChainGeometryResult2D {
 
     double minLayerThickness = std::numeric_limits<double>::infinity();
     double maxLayerThickness = 0.0;
-    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
-        const std::size_t previousCount=vertexId==0U
-            ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
-            :strip.actualLayerCounts[vertexId-1U];
-        const std::size_t nextCount=vertexId<strip.actualLayerCounts.size()
-            ?strip.actualLayerCounts[vertexId]
-            :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
-        const std::size_t usedLayerCount=std::max(previousCount,nextCount);
-        for (std::size_t ring=0;ring<usedLayerCount;++ring) {
-            const double thickness = norm(
-                strip.vertices[strip.ringVertexIds[ring + 1U][vertexId]].point -
-                strip.vertices[strip.ringVertexIds[ring][vertexId]].point);
-            if (!std::isfinite(thickness) || thickness <= lengthEpsilon) {
-                return failedResult(BoundaryLayerFailureReason2D::TopologyConflict,
-                                    "hair-edge layer spacing is not strictly positive",
-                                    strip.wallChain.id, &strip.parameters, vertexId);
+    if (ringCount >= 2U) {
+        for (std::size_t hairId = 0; hairId < hairCount; ++hairId) {
+            const std::size_t vertexId = strip.vertices[strip.ringVertexIds[1U][hairId]].chainVertex;
+            const std::size_t usedLayerCount = hairUsedLayerCount(hairId, vertexId);
+            for (std::size_t ring = 0; ring < usedLayerCount; ++ring) {
+                const double thickness = norm(
+                    strip.vertices[strip.ringVertexIds[ring + 1U][hairId]].point -
+                    strip.vertices[strip.ringVertexIds[ring][hairId]].point);
+                if (!std::isfinite(thickness) || thickness <= lengthEpsilon) {
+                    return failedResult(BoundaryLayerFailureReason2D::TopologyConflict,
+                                        "hair-edge layer spacing is not strictly positive",
+                                        strip.wallChain.id, &strip.parameters, vertexId);
+                }
+                minLayerThickness = std::min(minLayerThickness, thickness);
+                maxLayerThickness = std::max(maxLayerThickness, thickness);
             }
-            minLayerThickness = std::min(minLayerThickness, thickness);
-            maxLayerThickness = std::max(maxLayerThickness, thickness);
-    }
+        }
     }
     strip.metrics.vertexCount = strip.vertices.size();
-    strip.metrics.cellCount = strip.cells.size();
+    strip.metrics.cellCount = strip.cells.size() + strip.fanCells.size();
     strip.metrics.minCellArea = minArea;
     strip.metrics.maxCellArea = maxArea;
     strip.metrics.minLayerThickness = minLayerThickness;
@@ -740,94 +927,202 @@ struct ChainGeometryResult2D {
     const std::size_t ringSize = chain.vertices.size();
     const std::size_t segmentCount = chain.segments.size();
     if (actualLayerCounts.empty()) {
-        actualLayerCounts.assign(segmentCount,cumulative.size());
+        actualLayerCounts.assign(segmentCount, cumulative.size());
     }
-    strip.actualLayerCounts=std::move(actualLayerCounts);
+    strip.actualLayerCounts = std::move(actualLayerCounts);
+
+    struct HairSpec2D {
+        std::size_t wallVertex = 0U;
+        Vector2D direction;
+        double miterCosine = 1.0;
+    };
+    std::vector<HairSpec2D> hairs;
+    strip.vertexFirstHair.resize(ringSize);
+    strip.vertexLastHair.resize(ringSize);
+    strip.fanLayerCounts.assign(ringSize, 0U);
+    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
+        strip.vertexFirstHair[vertexId] = hairs.size();
+        if (vertexId < geometry.fanDirections.size() &&
+            geometry.fanDirections[vertexId].size() >= 2U) {
+            for (const auto& ray : geometry.fanDirections[vertexId]) {
+                hairs.push_back({vertexId, ray, 1.0});
+            }
+        } else {
+            hairs.push_back({vertexId, geometry.directions[vertexId],
+                             geometry.miterCosines[vertexId]});
+        }
+        strip.vertexLastHair[vertexId] = hairs.size() - 1U;
+    }
+    const std::size_t hairCount = hairs.size();
+
     strip.ringVertexIds.resize(cumulative.size() + 1U);
-    strip.vertices.reserve((cumulative.size() + 1U) * ringSize);
-    for (std::size_t ring = 0; ring <= cumulative.size(); ++ring) {
-        strip.ringVertexIds[ring].reserve(ringSize);
-        const double normalDistance = ring == 0U ? 0.0 : cumulative[ring - 1U];
-        for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
-            const double hairDistance = normalDistance / geometry.miterCosines[vertexId];
-            const Point2D point = chain.vertices[vertexId] +
-                                  geometry.directions[vertexId] * hairDistance;
+    strip.vertices.reserve(ringSize + cumulative.size() * hairCount);
+    std::vector<std::size_t> wallVertexIds(ringSize);
+    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
+        const std::size_t id = strip.vertices.size();
+        wallVertexIds[vertexId] = id;
+        strip.vertices.push_back({id, 0U, vertexId, chain.vertices[vertexId],
+                                  strip.vertexFirstHair[vertexId]});
+    }
+    strip.ringVertexIds[0U].reserve(hairCount);
+    for (std::size_t hairId = 0; hairId < hairCount; ++hairId) {
+        strip.ringVertexIds[0U].push_back(wallVertexIds[hairs[hairId].wallVertex]);
+    }
+    for (std::size_t ring = 1U; ring <= cumulative.size(); ++ring) {
+        strip.ringVertexIds[ring].reserve(hairCount);
+        const double normalDistance = cumulative[ring - 1U];
+        for (std::size_t hairId = 0; hairId < hairCount; ++hairId) {
+            const auto& hair = hairs[hairId];
+            const double hairDistance = normalDistance / hair.miterCosine;
+            const Point2D point = chain.vertices[hair.wallVertex] +
+                                  hair.direction * hairDistance;
             const std::size_t id = strip.vertices.size();
             strip.ringVertexIds[ring].push_back(id);
-            strip.vertices.push_back({id, ring, vertexId, point});
+            strip.vertices.push_back({id, ring, hair.wallVertex, point, hairId});
         }
     }
 
     strip.cells.reserve(cumulative.size() * segmentCount);
     for (std::size_t layer = 0; layer < cumulative.size(); ++layer) {
         for (std::size_t segment = 0; segment < segmentCount; ++segment) {
-            if (layer>=strip.actualLayerCounts[segment]) continue;
+            if (layer >= strip.actualLayerCounts[segment]) continue;
             const std::size_t next = (segment + 1U) % ringSize;
+            const std::size_t startHair = strip.vertexLastHair[segment];
+            const std::size_t endHair = strip.vertexFirstHair[next];
             BoundaryLayerCell2D cell;
             cell.id = strip.cells.size();
             cell.layer = layer;
             cell.wallSegment = segment;
             if (chain.fluidSide == FluidSide2D::Right) {
-                cell.vertices = {strip.ringVertexIds[layer][segment],
-                                 strip.ringVertexIds[layer + 1U][segment],
-                                 strip.ringVertexIds[layer + 1U][next],
-                                 strip.ringVertexIds[layer][next]};
+                cell.vertices = {strip.ringVertexIds[layer][startHair],
+                                 strip.ringVertexIds[layer + 1U][startHair],
+                                 strip.ringVertexIds[layer + 1U][endHair],
+                                 strip.ringVertexIds[layer][endHair]};
             } else {
-                cell.vertices = {strip.ringVertexIds[layer][segment],
-                                 strip.ringVertexIds[layer][next],
-                                 strip.ringVertexIds[layer + 1U][next],
-                                 strip.ringVertexIds[layer + 1U][segment]};
+                cell.vertices = {strip.ringVertexIds[layer][startHair],
+                                 strip.ringVertexIds[layer][endHair],
+                                 strip.ringVertexIds[layer + 1U][endHair],
+                                 strip.ringVertexIds[layer + 1U][startHair]};
             }
             strip.cells.push_back(cell);
         }
     }
 
-    // Trace the exact boundary of the retained column union. A count change
+    std::size_t requestedFanCells = 0U;
+    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
+        const std::size_t firstHair = strip.vertexFirstHair[vertexId];
+        const std::size_t lastHair = strip.vertexLastHair[vertexId];
+        if (lastHair <= firstHair) continue;
+        const bool hasAdjacentSegments = chain.closed || (vertexId > 0U && vertexId < segmentCount);
+        if (!hasAdjacentSegments) continue;
+        const std::size_t sectorCount = lastHair - firstHair;
+        requestedFanCells += sectorCount * parameters.nLayers;
+        const std::size_t prevSeg = vertexId == 0U ? (segmentCount - 1U) : (vertexId - 1U);
+        const std::size_t nextSeg = vertexId;
+        const std::size_t fanCount = std::min(
+            strip.actualLayerCounts[prevSeg], strip.actualLayerCounts[nextSeg]);
+        strip.fanLayerCounts[vertexId] = fanCount;
+        for (std::size_t layer = 0; layer < fanCount; ++layer) {
+            for (std::size_t sector = 0; sector < sectorCount; ++sector) {
+                const std::size_t h0 = firstHair + sector;
+                const std::size_t h1 = h0 + 1U;
+                BoundaryLayerFanCell2D fanCell;
+                fanCell.id = strip.fanCells.size();
+                fanCell.layer = layer;
+                fanCell.wallVertex = vertexId;
+                fanCell.sector = sector;
+                if (layer == 0U) {
+                    if (chain.fluidSide == FluidSide2D::Right) {
+                        fanCell.vertices = {strip.ringVertexIds[0U][h0],
+                                            strip.ringVertexIds[1U][h0],
+                                            strip.ringVertexIds[1U][h1]};
+                    } else {
+                        fanCell.vertices = {strip.ringVertexIds[0U][h0],
+                                            strip.ringVertexIds[1U][h1],
+                                            strip.ringVertexIds[1U][h0]};
+                    }
+                } else {
+                    if (chain.fluidSide == FluidSide2D::Right) {
+                        fanCell.vertices = {strip.ringVertexIds[layer][h0],
+                                            strip.ringVertexIds[layer + 1U][h0],
+                                            strip.ringVertexIds[layer + 1U][h1],
+                                            strip.ringVertexIds[layer][h1]};
+                    } else {
+                        fanCell.vertices = {strip.ringVertexIds[layer][h0],
+                                            strip.ringVertexIds[layer][h1],
+                                            strip.ringVertexIds[layer + 1U][h1],
+                                            strip.ringVertexIds[layer + 1U][h0]};
+                    }
+                }
+                strip.fanCells.push_back(std::move(fanCell));
+            }
+        }
+    }
+
+    // Trace the exact boundary of the retained column+fan union. A count change
     // contributes one or more exposed hair-edge fragments; these are the real
     // conformal termination interface consumed by H4-2/H4-3.
     if (chain.closed && !strip.actualLayerCounts.empty()) {
-        const std::size_t firstCount=strip.actualLayerCounts.front();
-        strip.outerEnvelopeVertexIds.push_back(
-            strip.ringVertexIds[firstCount][0U]);
-        for (std::size_t segment=0;segment<segmentCount;++segment) {
-            const std::size_t next=(segment+1U)%ringSize;
-            const std::size_t count=strip.actualLayerCounts[segment];
-            const std::size_t nextCount=
-                strip.actualLayerCounts[(segment+1U)%segmentCount];
-            const auto edgeEnd=strip.ringVertexIds[count][next];
-            if (edgeEnd!=strip.outerEnvelopeVertexIds.front()) {
-                strip.outerEnvelopeVertexIds.push_back(edgeEnd);
+        const auto appendUnique = [&](std::size_t id) {
+            if (strip.outerEnvelopeVertexIds.empty()) {
+                strip.outerEnvelopeVertexIds.push_back(id);
+                return;
             }
-            if (count<nextCount) {
-                for (std::size_t ring=count+1U;ring<=nextCount;++ring) {
-                    const auto id=strip.ringVertexIds[ring][next];
-                    if (id!=strip.outerEnvelopeVertexIds.front()) {
-                        strip.outerEnvelopeVertexIds.push_back(id);
+            if (id != strip.outerEnvelopeVertexIds.back() &&
+                id != strip.outerEnvelopeVertexIds.front()) {
+                strip.outerEnvelopeVertexIds.push_back(id);
+            }
+        };
+        const auto walkHair = [&](std::size_t hairId, std::size_t fromRing, std::size_t toRing) {
+            if (fromRing < toRing) {
+                for (std::size_t ring = fromRing + 1U; ring <= toRing; ++ring) {
+                    appendUnique(strip.ringVertexIds[ring][hairId]);
+                }
+            } else if (fromRing > toRing) {
+                for (std::size_t ring = fromRing; ring > toRing; --ring) {
+                    appendUnique(strip.ringVertexIds[ring - 1U][hairId]);
+                }
+            }
+        };
+        const std::size_t firstCount = strip.actualLayerCounts.front();
+        appendUnique(strip.ringVertexIds[firstCount][strip.vertexLastHair[0U]]);
+        for (std::size_t segment = 0; segment < segmentCount; ++segment) {
+            const std::size_t next = (segment + 1U) % ringSize;
+            const std::size_t count = strip.actualLayerCounts[segment];
+            const std::size_t nextCount =
+                strip.actualLayerCounts[(segment + 1U) % segmentCount];
+            const std::size_t hIn = strip.vertexFirstHair[next];
+            const std::size_t hOut = strip.vertexLastHair[next];
+            appendUnique(strip.ringVertexIds[count][hIn]);
+            if (hOut > hIn) {
+                const std::size_t fanCount = strip.fanLayerCounts[next];
+                walkHair(hIn, count, fanCount);
+                if (fanCount > 0U) {
+                    for (std::size_t h = hIn + 1U; h <= hOut; ++h) {
+                        appendUnique(strip.ringVertexIds[fanCount][h]);
                     }
                 }
+                walkHair(hOut, fanCount, nextCount);
             } else {
-                for (std::size_t ring=count;ring>nextCount;--ring) {
-                    const auto id=strip.ringVertexIds[ring-1U][next];
-                    if (id!=strip.outerEnvelopeVertexIds.front()) {
-                        strip.outerEnvelopeVertexIds.push_back(id);
-                    }
-                }
+                walkHair(hIn, count, nextCount);
             }
         }
     }
     strip.metrics.requestedTotalThickness = parameters.totalThickness;
-    const auto maximumCount=*std::max_element(
-        strip.actualLayerCounts.begin(),strip.actualLayerCounts.end());
-    strip.metrics.usedTotalThickness=maximumCount==0U
-        ?0.0:cumulative[maximumCount-1U];
+    const auto maximumCount = *std::max_element(
+        strip.actualLayerCounts.begin(), strip.actualLayerCounts.end());
+    strip.metrics.usedTotalThickness = maximumCount == 0U
+        ? 0.0 : cumulative[maximumCount - 1U];
     strip.metrics.safeThicknessLimit = geometry.safeThickness;
-    strip.metrics.requestedColumnCellCount=segmentCount*parameters.nLayers;
-    strip.metrics.retainedColumnCellCount=strip.cells.size();
-    strip.metrics.zeroLayerColumnCount=static_cast<std::size_t>(std::count(
-        strip.actualLayerCounts.begin(),strip.actualLayerCounts.end(),0U));
-    for (std::size_t segment=0;segment<segmentCount;++segment) {
-        if (strip.actualLayerCounts[segment]!=
-            strip.actualLayerCounts[(segment+1U)%segmentCount]) {
+    strip.metrics.requestedColumnCellCount =
+        segmentCount * parameters.nLayers + requestedFanCells;
+    strip.metrics.retainedColumnCellCount =
+        strip.cells.size() + strip.fanCells.size();
+    strip.metrics.zeroLayerColumnCount = static_cast<std::size_t>(std::count(
+        strip.actualLayerCounts.begin(), strip.actualLayerCounts.end(), 0U));
+    for (std::size_t segment = 0; segment < segmentCount; ++segment) {
+        if (strip.actualLayerCounts[segment] !=
+            strip.actualLayerCounts[(segment + 1U) % segmentCount]) {
             ++strip.metrics.terminationEdgeCount;
         }
     }
@@ -837,32 +1132,97 @@ struct ChainGeometryResult2D {
 [[nodiscard]] bool stripsIntersect(const BoundaryLayerStrip2D& lhs,
                                    const BoundaryLayerStrip2D& rhs,
                                    const TolerancePolicy& tol) {
-    for (const auto& lhsCell : lhs.cells) {
-        const auto lhsBounds = cellBounds(lhsCell, lhs.vertices);
-        for (const auto& rhsCell : rhs.cells) {
-            const auto rhsBounds = cellBounds(rhsCell, rhs.vertices);
+    auto collectPolygons = [](const BoundaryLayerStrip2D& strip,
+                              std::vector<std::vector<std::size_t>>& polys,
+                              std::vector<AABB2D>& boxes) {
+        polys.reserve(strip.cells.size() + strip.fanCells.size());
+        boxes.reserve(strip.cells.size() + strip.fanCells.size());
+        AABB2D overall{};
+        bool first = true;
+        auto push = [&](std::vector<std::size_t> verts) {
+            const auto box = vertexListBounds(verts, strip.vertices);
+            if (first) {
+                overall = box;
+                first = false;
+            } else {
+                overall.min.x = std::min(overall.min.x, box.min.x);
+                overall.min.y = std::min(overall.min.y, box.min.y);
+                overall.max.x = std::max(overall.max.x, box.max.x);
+                overall.max.y = std::max(overall.max.y, box.max.y);
+            }
+            polys.push_back(std::move(verts));
+            boxes.push_back(box);
+        };
+        for (const auto& cell : strip.cells) {
+            push(std::vector<std::size_t>(cell.vertices.begin(), cell.vertices.end()));
+        }
+        for (const auto& cell : strip.fanCells) {
+            push(cell.vertices);
+        }
+        return overall;
+    };
+    if ((lhs.cells.empty() && lhs.fanCells.empty()) ||
+        (rhs.cells.empty() && rhs.fanCells.empty())) return false;
+    std::vector<std::vector<std::size_t>> lhsPolys, rhsPolys;
+    std::vector<AABB2D> lhsBoxes, rhsBoxes;
+    const auto lhsOverall = collectPolygons(lhs, lhsPolys, lhsBoxes);
+    const auto rhsOverall = collectPolygons(rhs, rhsPolys, rhsBoxes);
+    const double overallScale = std::max({lhsOverall.max.x - lhsOverall.min.x,
+                                          lhsOverall.max.y - lhsOverall.min.y,
+                                          rhsOverall.max.x - rhsOverall.min.x,
+                                          rhsOverall.max.y - rhsOverall.min.y, 1.0});
+    const double broadEps = tol.scale(overallScale);
+    if (!boxesOverlap(lhsOverall, rhsOverall, broadEps)) return false;
+
+    std::vector<std::size_t> rhsOrder;
+    rhsOrder.reserve(rhsPolys.size());
+    for (std::size_t i = 0; i < rhsPolys.size(); ++i) {
+        if (boxesOverlap(rhsBoxes[i], lhsOverall, broadEps)) rhsOrder.push_back(i);
+    }
+    if (rhsOrder.empty()) return false;
+    std::sort(rhsOrder.begin(), rhsOrder.end(), [&](std::size_t a, std::size_t b) {
+        return rhsBoxes[a].min.x < rhsBoxes[b].min.x;
+    });
+    double maxRhsWidth = 0.0;
+    for (const auto idx : rhsOrder) {
+        maxRhsWidth = std::max(maxRhsWidth, rhsBoxes[idx].max.x - rhsBoxes[idx].min.x);
+    }
+
+    for (std::size_t li = 0; li < lhsPolys.size(); ++li) {
+        const auto& lhsBounds = lhsBoxes[li];
+        if (!boxesOverlap(lhsBounds, rhsOverall, broadEps)) continue;
+        const auto& lhsVerts = lhsPolys[li];
+        const double lowerX = lhsBounds.min.x - maxRhsWidth - broadEps;
+        auto it = std::lower_bound(rhsOrder.begin(), rhsOrder.end(), lowerX,
+            [&](std::size_t idx, double x) { return rhsBoxes[idx].min.x < x; });
+        for (; it != rhsOrder.end(); ++it) {
+            const auto& rhsBounds = rhsBoxes[*it];
+            if (rhsBounds.min.x > lhsBounds.max.x + broadEps) break;
+            const auto& rhsVerts = rhsPolys[*it];
             const double scale = std::max({lhsBounds.max.x - lhsBounds.min.x,
                                            lhsBounds.max.y - lhsBounds.min.y,
                                            rhsBounds.max.x - rhsBounds.min.x,
                                            rhsBounds.max.y - rhsBounds.min.y, 1.0});
             if (!boxesOverlap(lhsBounds, rhsBounds, tol.scale(scale))) continue;
-            for (std::size_t li = 0; li < 4U; ++li) {
-                const Segment2D left{lhs.vertices[lhsCell.vertices[li]].point,
-                    lhs.vertices[lhsCell.vertices[(li + 1U) % 4U]].point};
-                for (std::size_t ri = 0; ri < 4U; ++ri) {
-                    const Segment2D right{rhs.vertices[rhsCell.vertices[ri]].point,
-                        rhs.vertices[rhsCell.vertices[(ri + 1U) % 4U]].point};
+            const std::size_t lnv = lhsVerts.size();
+            const std::size_t rnv = rhsVerts.size();
+            for (std::size_t le = 0; le < lnv; ++le) {
+                const Segment2D left{lhs.vertices[lhsVerts[le]].point,
+                    lhs.vertices[lhsVerts[(le + 1U) % lnv]].point};
+                for (std::size_t re = 0; re < rnv; ++re) {
+                    const Segment2D right{rhs.vertices[rhsVerts[re]].point,
+                        rhs.vertices[rhsVerts[(re + 1U) % rnv]].point};
                     if (intersectSegments(left, right, tol).kind !=
                         SegmentIntersectionKind::None) return true;
                 }
             }
             Polygon2D leftPolygon;
             Polygon2D rightPolygon;
-            for (const auto id : lhsCell.vertices) leftPolygon.vertices.push_back(lhs.vertices[id].point);
-            for (const auto id : rhsCell.vertices) rightPolygon.vertices.push_back(rhs.vertices[id].point);
-            if (classifyPointInPolygon(lhs.vertices[lhsCell.vertices[0]].point,
+            for (const auto id : lhsVerts) leftPolygon.vertices.push_back(lhs.vertices[id].point);
+            for (const auto id : rhsVerts) rightPolygon.vertices.push_back(rhs.vertices[id].point);
+            if (classifyPointInPolygon(lhs.vertices[lhsVerts[0]].point,
                                        rightPolygon, tol) != PointInPolygon::Outside ||
-                classifyPointInPolygon(rhs.vertices[rhsCell.vertices[0]].point,
+                classifyPointInPolygon(rhs.vertices[rhsVerts[0]].point,
                                        leftPolygon, tol) != PointInPolygon::Outside) return true;
         }
     }
@@ -906,11 +1266,13 @@ void enforceOneLayerTaper(std::vector<std::size_t>& counts,bool closed) {
         const bool dangerous=
             (!policy.permitConcaveTerminationMarching &&
              geometry.kinds[segment]==WallVertexKind2D::Concave) ||
-            geometry.kinds[segment]==WallVertexKind2D::Sharp ||
+            (!policy.enableConvexCornerFan &&
+             geometry.kinds[segment]==WallVertexKind2D::Sharp) ||
             geometry.kinds[segment]==WallVertexKind2D::Degenerate ||
             (!policy.permitConcaveTerminationMarching &&
              geometry.kinds[next]==WallVertexKind2D::Concave) ||
-            geometry.kinds[next]==WallVertexKind2D::Sharp ||
+            (!policy.enableConvexCornerFan &&
+             geometry.kinds[next]==WallVertexKind2D::Sharp) ||
             geometry.kinds[next]==WallVertexKind2D::Degenerate;
         if (dangerous) {
             counts[segment]=0U;
@@ -1291,7 +1653,8 @@ BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrips2D(
     // collinear points; the physical wall geometry and patch identity remain
     // unchanged. Four first-layer heights gives bounded layer aspect while
     // leaving the strict H4-1 builder and its historical IDs untouched.
-    const double maximumColumnLength=4.0*resolved.firstLayerThickness;
+    const double maximumColumnLength =
+        policy.maximumColumnLength.value_or(4.0 * resolved.firstLayerThickness);
     std::vector<WallChain2D> workingChains;
     workingChains.reserve(wallChains.size());
     for (const auto& chain:wallChains) {
@@ -1398,11 +1761,30 @@ BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrips2D(
             }
             validation=validateStrip(strip,policy);
             if (validation.success()) break;
-            if (!validation.failure.cellId ||
-                *validation.failure.cellId>=strip.cells.size()) return validation;
-            const auto segment=strip.cells[*validation.failure.cellId].wallSegment;
-            if (counts[chainIndex][segment]==0U) return validation;
-            --counts[chainIndex][segment];
+            if (!validation.failure.cellId) return validation;
+            const std::size_t failedCell = *validation.failure.cellId;
+            if (failedCell < strip.cells.size()) {
+                const auto segment = strip.cells[failedCell].wallSegment;
+                if (counts[chainIndex][segment] == 0U) return validation;
+                --counts[chainIndex][segment];
+            } else if (failedCell < strip.cells.size() + strip.fanCells.size()) {
+                const auto v = strip.fanCells[failedCell - strip.cells.size()].wallVertex;
+                const std::size_t segCount = workingChains[chainIndex].segmentCount();
+                const std::size_t prevSeg = v == 0U ? (segCount - 1U) : (v - 1U);
+                const std::size_t nextSeg = v < segCount ? v : 0U;
+                bool reducedAny = false;
+                if (counts[chainIndex][prevSeg] > 0U) {
+                    --counts[chainIndex][prevSeg];
+                    reducedAny = true;
+                }
+                if (nextSeg != prevSeg && counts[chainIndex][nextSeg] > 0U) {
+                    --counts[chainIndex][nextSeg];
+                    reducedAny = true;
+                }
+                if (!reducedAny) return validation;
+            } else {
+                return validation;
+            }
             enforceOneLayerTaper(counts[chainIndex],workingChains[chainIndex].closed);
         }
         if (!validation.success()) return validation;

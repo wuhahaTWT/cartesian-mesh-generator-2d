@@ -38,13 +38,19 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             profile->repartitionCandidatePairs+=pairs.size();
         }
         bool acceptedBatch=false;
+        const auto locallyImproves=[](const LocalQualityRank2D& rank) noexcept {
+            return rank.issueDelta<0 ||
+                   (rank.issueDelta==0 &&
+                    (rank.maximumSeverityDelta<-1.0e-12 ||
+                     rank.totalSeverityDelta<-1.0e-12));
+        };
         if (useBatch) {
             std::vector<RepartitionProposal2D> proposals;
             for (const auto& [first,second]:pairs) {
                 const auto polygonStart=ProfileClock::now();
-                const auto merged=mergeAdjacentPolygonsSimple(
-                    topologyCellPolygon(result.topology,first),
-                    topologyCellPolygon(result.topology,second),tol);
+                const auto polyFirst=topologyCellPolygon(result.topology,first);
+                const auto polySecond=topologyCellPolygon(result.topology,second);
+                const auto merged=mergeAdjacentPolygonsSimple(polyFirst,polySecond,tol);
                 if (!merged) {
                     if (profile) {
                         profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
@@ -57,14 +63,22 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 std::optional<RepartitionProposal2D> best;
                 const auto halo=cellPairHalo(result.topology,first,second);
                 const std::vector<std::size_t> removed{first,second};
-                const auto baseRank=localReplacementQualityRank(result.topology,halo,removed,
-                    {topologyCellPolygon(result.topology,first),
-                     topologyCellPolygon(result.topology,second)},tol,policy);
+                const auto scope=makeLocalPatchQualityScope(
+                    result.topology,halo,removed,tol);
+                if (!scope.valid()) {
+                    if (profile) {
+                        profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+                    }
+                    continue;
+                }
+                const auto baseRank=scope.evaluate({polyFirst,polySecond},policy);
                 const auto consider=[&](std::vector<Polygon2D> pieces) {
-                    auto rank=localReplacementQualityRank(
-                        result.topology,halo,removed,pieces,tol,policy);
+                    auto rank=scope.evaluate(pieces,policy);
                     if (!rank) return;
-                    if (baseRank) rankRelativeToBase(*rank,*baseRank);
+                    if (baseRank) {
+                        rankRelativeToBase(*rank,*baseRank);
+                        if (!locallyImproves(*rank)) return;
+                    }
                     RepartitionProposal2D proposal;
                     proposal.first=first;
                     proposal.second=second;
@@ -118,14 +132,21 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 if (profile) profile->candidateSplits+=splits.size();
                 const auto halo=cellPairHalo(result.topology,cell,cell);
                 const std::vector<std::size_t> removed{cell};
-                const auto baseRank=localReplacementQualityRank(
-                    result.topology,halo,removed,{polygon},tol,policy);
+                const auto scope=makeLocalPatchQualityScope(result.topology,halo,removed,tol);
+                if (!scope.valid()) {
+                    if (profile) profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+                    continue;
+                }
+                const auto baseRank=scope.evaluate({polygon},policy);
                 std::optional<RepartitionProposal2D> best;
                 for (const auto& [firstPiece,secondPiece]:splits) {
                     std::vector<Polygon2D> pieces{firstPiece,secondPiece};
-                    auto rank=localReplacementQualityRank(result.topology,halo,removed,pieces,tol,policy);
+                    auto rank=scope.evaluate(pieces,policy);
                     if (!rank) continue;
-                    if (baseRank) rankRelativeToBase(*rank,*baseRank);
+                    if (baseRank) {
+                        rankRelativeToBase(*rank,*baseRank);
+                        if (!locallyImproves(*rank)) continue;
+                    }
                     RepartitionProposal2D proposal{cell,cell,std::move(pieces),*rank,halo};
                     if (!best || betterLocalQualityRank(proposal.rank,best->rank)) best=std::move(proposal);
                 }
@@ -163,8 +184,20 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
 
         // Fail closed to the H2 exhaustive global check if the locally ranked
         // independent batch does not strictly improve the authoritative score.
+        // When useBatch is enabled, pre-screen each candidate against its exact
+        // 1-ring halo scope so candidates that provably cannot improve global
+        // quality skip redundant full-mesh topology rebuilds.
         std::optional<RepartitionBatch2D> bestTopology;
         QualityScore2D bestScore=qualityScore(quality);
+        const auto localAllowsGlobal=[&](const LocalPatchQualityScope2D& scope,
+                                         const std::optional<LocalQualityRank2D>& baseRank,
+                                         const std::vector<Polygon2D>& pieces) -> bool {
+            if (!useBatch || !scope.valid() || !baseRank) return true;
+            auto rank=scope.evaluate(pieces,policy);
+            if (!rank) return false;
+            rankRelativeToBase(*rank,*baseRank);
+            return locallyImproves(*rank);
+        };
         for (const auto& [first,second]:pairs) {
             // Zero issues has score (0,0,0), the absolute minimum. The first
             // such candidate already wins the exhaustive strict ordering;
@@ -172,13 +205,23 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             // exhaustive so equivalence remains independently testable.
             if (useBatch && bestScore.issueCount==0U) break;
             const auto polygonStart=ProfileClock::now();
-            const auto merged=mergeAdjacentPolygonsSimple(
-                topologyCellPolygon(result.topology,first),
-                topologyCellPolygon(result.topology,second),tol);
+            const auto polyFirst=topologyCellPolygon(result.topology,first);
+            const auto polySecond=topologyCellPolygon(result.topology,second);
+            const auto merged=mergeAdjacentPolygonsSimple(polyFirst,polySecond,tol);
             if (!merged) {
                 if (profile) profile->candidatePolygonWorkSeconds+=
                     profileSeconds(polygonStart);
                 continue;
+            }
+            LocalPatchQualityScope2D pairScope;
+            std::optional<LocalQualityRank2D> pairBaseRank;
+            if (useBatch) {
+                const auto halo=cellPairHalo(result.topology,first,second);
+                pairScope=makeLocalPatchQualityScope(
+                    result.topology,halo,{first,second},tol);
+                if (pairScope.valid()) {
+                    pairBaseRank=pairScope.evaluate({polyFirst,polySecond},policy);
+                }
             }
             // A deterministic convex partition may create a tiny triangle
             // beside a regular cell. If their exact union is already convex,
@@ -186,7 +229,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             // volume ratio. Allow a true solver-cell agglomeration, subject to
             // the same full-topology validity and strict quality-score gate.
             if (strictlyConvex(allowCollinear?removeArtificialCollinearVertices(*merged,tol):*merged) &&
-                !underDeterminedBoundaryCell(*merged,domain,boundary,tol)) {
+                !underDeterminedBoundaryCell(*merged,domain,boundary,tol) &&
+                localAllowsGlobal(pairScope,pairBaseRank,{*merged})) {
                 auto candidate=agglomerateCellPair(
                     result.topology,first,second,*merged,domain,boundary,tol,
                     profile,result.immutableCells);
@@ -207,6 +251,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             }
             for (const auto& [firstPiece,secondPiece]:splits) {
                 if (useBatch && bestScore.issueCount==0U) break;
+                if (!localAllowsGlobal(pairScope,pairBaseRank,{firstPiece,secondPiece})) continue;
                 auto candidate=repartitionPair(result.topology,first,second,
                                                firstPiece,secondPiece,
                                                domain,boundary,tol,profile,
@@ -230,10 +275,19 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     wallCells.insert(issue.cellId);
             for (const auto cell:wallCells) {
                 if (useBatch && bestScore.issueCount==0U) break;
+                const auto polygon=topologyCellPolygon(result.topology,cell);
+                LocalPatchQualityScope2D cellScope;
+                std::optional<LocalQualityRank2D> cellBaseRank;
+                if (useBatch) {
+                    const auto halo=cellPairHalo(result.topology,cell,cell);
+                    cellScope=makeLocalPatchQualityScope(result.topology,halo,{cell},tol);
+                    if (cellScope.valid()) cellBaseRank=cellScope.evaluate({polygon},policy);
+                }
                 const auto splits=convexTwoPieceSplits(
-                    topologyCellPolygon(result.topology,cell),domain,boundary,tol,true,allowCollinear);
+                    polygon,domain,boundary,tol,true,allowCollinear);
                 for (const auto& [firstPiece,secondPiece]:splits) {
                     if (useBatch && bestScore.issueCount==0U) break;
+                    if (!localAllowsGlobal(cellScope,cellBaseRank,{firstPiece,secondPiece})) continue;
                     auto candidate=repartitionPair(result.topology,cell,cell,
                         firstPiece,secondPiece,domain,boundary,tol,profile,result.immutableCells);
                     if (!candidate.topology.valid()) continue;
@@ -255,9 +309,9 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             // and both the cell metrics and authoritative global score gate it.
             for (const auto& [first,second]:pairs) {
                 if (useBatch && bestScore.issueCount==0U) break;
-                const auto merged=mergeAdjacentPolygonsSimple(
-                    topologyCellPolygon(result.topology,first),
-                    topologyCellPolygon(result.topology,second),tol);
+                const auto polyFirst=topologyCellPolygon(result.topology,first);
+                const auto polySecond=topologyCellPolygon(result.topology,second);
+                const auto merged=mergeAdjacentPolygonsSimple(polyFirst,polySecond,tol);
                 if (!merged ||
                     strictlyConvex(removeArtificialCollinearVertices(*merged,tol)) ||
                     underDeterminedBoundaryCell(*merged,domain,boundary,tol)) continue;
@@ -266,6 +320,15 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     metrics.maxConcavityDeg>quality.policy.maxConcavityDeg ||
                     metrics.minInteriorAngleDeg<quality.policy.minInteriorAngleDeg ||
                     metrics.hydraulicAspect>quality.policy.maxCellAspect) continue;
+                if (useBatch) {
+                    const auto halo=cellPairHalo(result.topology,first,second);
+                    const auto scope=makeLocalPatchQualityScope(
+                        result.topology,halo,{first,second},tol);
+                    const auto baseRank=scope.valid()
+                        ?scope.evaluate({polyFirst,polySecond},policy)
+                        :std::nullopt;
+                    if (!localAllowsGlobal(scope,baseRank,{*merged})) continue;
+                }
                 auto candidate=agglomerateCellPair(
                     result.topology,first,second,*merged,domain,boundary,tol,
                     profile,result.immutableCells);

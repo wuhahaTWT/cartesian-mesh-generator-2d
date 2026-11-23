@@ -17,7 +17,8 @@ void usage(std::ostream& out = std::cerr) {
     out<<"usage: cartmesh2d_dxf_cli <input-ascii.dxf> <output.xy> "
                "<maximum-chord-error-metres> [report.json] "
                "[endpoint-weld-tolerance-metres=1e-10] "
-               "[source-unit=auto|in|ft|mm|cm|m|km|1..24]\n";
+               "[source-unit=auto|in|ft|mm|cm|m|km|1..24] "
+               "[--ignore-annotations] [--include-layer <name>] [--exclude-layer <name>]\n";
 }
 
 std::optional<long long> unitCode(const std::string& value,bool& valid) {
@@ -48,34 +49,55 @@ int main(int argc,char** argv) {
         usage(std::cout);
         return EXIT_SUCCESS;
     }
-    if (argc<4 || argc>7) {
+    DxfImportOptions2D options;
+    std::vector<std::string> positional;
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--ignore-annotations") {
+            options.ignoreAnnotationEntities = true;
+        } else if (arg == "--include-layer") {
+            if (i + 1 >= argc) {
+                std::cerr << "--include-layer requires a layer name\n";
+                return EXIT_FAILURE;
+            }
+            options.includeLayers.emplace_back(argv[++i]);
+        } else if (arg == "--exclude-layer") {
+            if (i + 1 >= argc) {
+                std::cerr << "--exclude-layer requires a layer name\n";
+                return EXIT_FAILURE;
+            }
+            options.excludeLayers.emplace_back(argv[++i]);
+        } else {
+            positional.push_back(arg);
+        }
+    }
+    if (positional.size() < 3 || positional.size() > 6) {
         usage();
         return EXIT_FAILURE;
     }
-    const std::filesystem::path input=argv[1];
-    const std::filesystem::path output=argv[2];
-    const std::filesystem::path report=argc>=5
-        ?std::filesystem::path(argv[4])
-        :std::filesystem::path(output.string()+".dxf.json");
-    DxfImportOptions2D options;
+    const std::filesystem::path input = positional[0];
+    const std::filesystem::path output = positional[1];
+    const std::filesystem::path report = positional.size() >= 4
+        ? std::filesystem::path(positional[3])
+        : std::filesystem::path(output.string() + ".dxf.json");
     try {
-        std::size_t consumed=0;
-        const std::string chordText=argv[3];
-        options.maximumChordError=std::stod(chordText,&consumed);
-        if (consumed!=chordText.size()) throw std::invalid_argument("trailing chord token");
-        if (argc>=6) {
-            consumed=0;
-            const std::string weldText=argv[5];
-            options.endpointWeldTolerance=std::stod(weldText,&consumed);
-            if (consumed!=weldText.size()) throw std::invalid_argument("trailing weld token");
+        std::size_t consumed = 0;
+        const std::string& chordText = positional[2];
+        options.maximumChordError = std::stod(chordText, &consumed);
+        if (consumed != chordText.size()) throw std::invalid_argument("trailing chord token");
+        if (positional.size() >= 5) {
+            consumed = 0;
+            const std::string& weldText = positional[4];
+            options.endpointWeldTolerance = std::stod(weldText, &consumed);
+            if (consumed != weldText.size()) throw std::invalid_argument("trailing weld token");
         }
-        if (argc>=7) {
-            bool valid=false;
-            options.sourceUnitsOverrideCode=unitCode(argv[6],valid);
+        if (positional.size() >= 6) {
+            bool valid = false;
+            options.sourceUnitsOverrideCode = unitCode(positional[5], valid);
             if (!valid) throw std::invalid_argument("invalid source unit");
         }
     } catch (const std::exception&) {
-        std::cerr<<"invalid numeric DXF tolerance\n";
+        std::cerr << "invalid numeric DXF tolerance\n";
         return EXIT_FAILURE;
     }
     if (!(options.maximumChordError>0.0) ||
@@ -120,6 +142,11 @@ int main(int argc,char** argv) {
     std::cout<<std::setprecision(17)
              <<"cartmesh2d DXF import PASS\n"
              <<"source_entities="<<imported.report.sourceEntityCount<<'\n'
+             <<"polyline_entities="<<imported.report.polylineEntityCount<<'\n'
+             <<"block_definitions="<<imported.report.blockDefinitionCount<<'\n'
+             <<"insert_instances="<<imported.report.insertEntityCount<<'\n'
+             <<"ignored_annotations="<<imported.report.ignoredAnnotationCount<<'\n'
+             <<"skipped_by_layer="<<imported.report.skippedByLayerCount<<'\n'
              <<"output_loops="<<imported.report.outputLoopCount<<'\n'
              <<"output_vertices="<<imported.report.outputVertexCount<<'\n'
              <<"sampled_arc_segments="<<imported.report.sampledArcSegmentCount<<'\n'

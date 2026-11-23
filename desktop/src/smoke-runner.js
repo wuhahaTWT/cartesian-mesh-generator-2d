@@ -134,6 +134,48 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       strat.value = ${JSON.stringify(argument('cutcell-strategy') || 'legacy')};
       strat.dispatchEvent(new Event('change'));
     }
+    if (${JSON.stringify(Boolean(argument('yplus-wake')))}) {
+      // Verify interior mode suppresses exterior wake linkage controls and recommendation
+      const fluidSel = document.getElementById('fluidRegion');
+      fluidSel.value = 'interior';
+      fluidSel.dispatchEvent(new Event('change'));
+      for (let w = 0; w < 100 && smoke.state.geometryLoading; w++) await new Promise(r => setTimeout(r, 40));
+      await smoke.scheduleYPlus();
+      if (!document.getElementById('yplusSyncWakeToggle').hidden || smoke.state.yplusEstimate?.recommendedWakeBox !== null)
+        throw new Error('Interior mode did not suppress exterior wake linkage');
+      // Switch back to exterior and drive high-Re y+ + wake --refine-box linkage
+      fluidSel.value = 'exterior';
+      fluidSel.dispatchEvent(new Event('change'));
+      for (let w = 0; w < 100 && smoke.state.geometryLoading; w++) await new Promise(r => setTimeout(r, 40));
+      document.getElementById('yplusVelocity').value = ${JSON.stringify(argument('yplus-velocity') || '15')};
+      document.getElementById('yplusTarget').value = ${JSON.stringify(argument('yplus-target') || '1')};
+      document.getElementById('yplusCoverage').value = ${JSON.stringify(argument('yplus-coverage') || '1.5')};
+      document.getElementById('yplusWakeLength').value = ${JSON.stringify(argument('yplus-wake-length') || '2')};
+      document.getElementById('yplusWakeLevelsBelow').value = ${JSON.stringify(argument('yplus-wake-levels') || '2')};
+      document.getElementById('yplusWakeAngle').value = ${JSON.stringify(argument('yplus-wake-angle') || '0')};
+      document.getElementById('yplusSyncWall').checked = true;
+      document.getElementById('yplusSyncWake').checked = true;
+      await smoke.scheduleYPlus();
+      if (!smoke.state.yplusEstimate?.recommendedWakeBox)
+        throw new Error('Exterior high-Re y+ estimate did not produce recommendedWakeBox');
+      if (!smoke.applyYPlusToForm() || !smoke.applyYPlusToForm())
+        throw new Error('applyYPlusToForm failed');
+      const wakeBoxes = smoke.state.regions.filter(r => r.source === 'yplus-wake');
+      if (wakeBoxes.length !== 1)
+        throw new Error('Repeated applyYPlusToForm was not idempotent: count=' + wakeBoxes.length);
+      const labelText = document.querySelector('#regionList .regionTop b')?.textContent || '';
+      if (!labelText.includes('尾迹'))
+        throw new Error('Wake region badge missing: ' + labelText);
+      smoke.state.yplusWakeSmoke = {
+        reynolds: smoke.state.yplusEstimate.reynolds,
+        nLayers: Number(document.getElementById('nLayers').value),
+        firstLayerRelativeSize: Number(document.getElementById('firstLayerRelativeSize').value),
+        wallRelativeSize: Number(document.getElementById('wallRelativeSize').value),
+        farFieldSpans: Number(document.getElementById('relativePadding').value),
+        wakeBox: wakeBoxes[0],
+        regionBadge: labelText
+      };
+    }
     const pending = smoke.generate();
     if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
       throw new Error('Parameters are not locked during generation');
@@ -706,6 +748,26 @@ async function runSmoke({ app, fs, mainWindow, getCurrentResult, getSessionDirec
       if (argument('flow-coupling-shot')) {
         mainWindow.setSize(1320,900);
         await mainWindow.webContents.executeJavaScript("document.getElementById('flowCoupling').scrollIntoView({block:'start'}); document.getElementById('flowResult').scrollIntoView({block:'start'});");
+      }
+      if (argument('yplus-wake')) {
+        report.yplusWake = await mainWindow.webContents.executeJavaScript('window.__smoke.state.yplusWakeSmoke || null');
+        mainWindow.setSize(1360, 900);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        await mainWindow.webContents.executeJavaScript(`(() => {
+          document.getElementById('yplusDetails')?.setAttribute('open', '');
+          document.getElementById('yplusDetails')?.scrollIntoView({ block: 'start' });
+          const view = window.__smoke.view;
+          const frame = window.__smoke.state.frame;
+          const wb = window.__smoke.state.regions.find(r => r.source === 'yplus-wake');
+          if (view && frame && wb) {
+            const span = frame.bodySpan || 1;
+            const minX = frame.centreX + wb.xmin * span;
+            const maxX = frame.centreX + wb.xmax * span;
+            const minY = frame.centreY + wb.ymin * span;
+            const maxY = frame.centreY + wb.ymax * span;
+            view.fitTo({ minX, minY, maxX, maxY }, 0.18);
+          }
+        })()`);
       }
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());

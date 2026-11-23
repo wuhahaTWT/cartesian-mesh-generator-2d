@@ -200,6 +200,7 @@ select { font-family: inherit; font-size: 12px; }
   font: 11px/1.6 var(--mono);
   border-left: 2px solid var(--line);
   padding: 6px 0 6px 9px; color: var(--ink-dim);
+  white-space: pre-line;
 }
 .budget.over { border-left-color: var(--fail); color: var(--fail); }.budget b { color: var(--ink); font-weight: 600; }
 .budget em { font-style: normal; color: var(--accent); }

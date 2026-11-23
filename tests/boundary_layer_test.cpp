@@ -292,6 +292,53 @@ int main() {
            degenerate.failureReason == WallChainFailureReason2D::DegenerateSegment),
           "duplicate consecutive point is rejected before layer construction");
 
+    // High-Re anisotropic boundary layer (Re~1e6, y+~1, dy1=4.6e-5, 26 layers, r=1.2)
+    // must keep tangential column spacing bounded by policy.maximumColumnLength
+    // rather than subdividing isotropically to 4*firstLayerThickness.
+    const auto highReWall = makeClosedWallChain2D(
+        BoundaryLoop({{0.0, 0.0}, {1.0, 0.0}, {1.0, 0.2}, {0.0, 0.2}}),
+        30U, "high_re_plate");
+    check(highReWall.success(), "high-Re test plate chain builds");
+    if (highReWall.success()) {
+        BoundaryLayerPolicy2D highRePolicy;
+        highRePolicy.maximumColumnLength = 0.05;
+        const auto highReResult = buildLocallyReducedBoundaryLayerStrip2D(
+            *highReWall.chain, firstThickness(26U, 4.6e-5, 1.2), highRePolicy);
+        check(highReResult.success(), "high-Re 26-layer anisotropic BL succeeds");
+        if (highReResult.success()) {
+            const auto& strip = highReResult.strips.front();
+            check(strip.wallChain.segmentCount() <= 128U,
+                  "high-Re tangential segments stay bounded by maximumColumnLength");
+            check(strip.cells.size() > 1000U && strip.cells.size() < 4000U,
+                  "high-Re 26-layer BL produces bounded anisotropic cell count");
+            near(strip.metrics.minLayerThickness, 4.6e-5, 1.0e-7,
+                 "high-Re first layer thickness preserved accurately");
+        }
+    }
+
+    // Sharp convex trailing edge wrapped with an O-grid radial fan retains 100%
+    // of requested wall layers even at high-Re y+~1 (dy1=9e-6, 30 layers)
+    // without failing or tapering wall columns down to 0 layers.
+    if (sharpChain.success()) {
+        BoundaryLayerPolicy2D fanPolicy;
+        fanPolicy.enableConvexCornerFan = true;
+        const auto fanResult = buildBoundaryLayerStrip2D(
+            *sharpChain.chain, firstThickness(30U, 9.0e-6, 1.2), fanPolicy);
+        check(fanResult.success(),
+              "sharp trailing-edge corner succeeds with O-grid radial corner fan");
+        if (fanResult.success()) {
+            const auto& strip = fanResult.strips.front();
+            check(strip.metrics.zeroLayerColumnCount == 0U,
+                  "O-grid fan retains all wall columns with zero 0-layer columns");
+            check(!strip.fanCells.empty(),
+                  "O-grid fan generates radial corner-fan cells");
+            check(strip.cells.size() == strip.wallChain.segmentCount() * 30U,
+                  "O-grid fan retains all 30 layers on every wall segment");
+            check(BoundaryLoop(strip.outerEnvelope()).diagnose().valid(),
+                  "O-grid fan outer envelope is a valid closed loop");
+        }
+    }
+
     if (failures == 0) {
         std::cout << "cartmesh2d H4-1 boundary-layer tests: PASS\n";
         return EXIT_SUCCESS;
