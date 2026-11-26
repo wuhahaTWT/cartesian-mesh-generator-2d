@@ -1,4 +1,11 @@
-# CartMesh2D
+# CartMesh2D（已归档 / Archived）
+
+> [!IMPORTANT]
+> **项目已迁移至统一仓库 [Tessera](https://github.com/wuhahaTWT/Tessera)**
+>
+> 本仓库作为原 2D 核心开发历程的**只读历史归档**永久保留（包含完整提交记录、实验证据与历史分支标签，如 [`mesher-v0.4.0`](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/mesher-v0.4.0)、[`archive/full-modules-2026-11`](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/archive/full-modules-2026-11) 与 [`archive/homework-structured-simple-heat`](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/archive/homework-structured-simple-heat)）。后续 2D / 3D 混合网格核心与统一桌面工作台均在 **[wuhahaTWT/Tessera](https://github.com/wuhahaTWT/Tessera)**（`core2d/` 与 `desktop/`）持续演进，本仓库不再更新。
+
+---
 
 原生二维网格前处理与快速流场预览工具，提供 macOS、Windows、Linux 桌面应用和命令行入口。导入轮廓、DXF 或图片后，可生成严格保真物面的 Cut-cell / 共形边界层混合网格、检查质量、进行内置不可压层流/被动温度快速预览与流场/温度梯度自适应加密，并导出 OpenFOAM / ANSYS Fluent 2D (`.msh`) / CM2D / VTK 结果。
 
